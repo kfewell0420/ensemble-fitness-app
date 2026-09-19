@@ -251,6 +251,42 @@
     scroll-snap-type: y mandatory;
     scrollbar-width: none;
   }
+  /* This reel is one full-height slide at a time (scroll-snap), so a post
+     that lands live above whatever's currently on screen isn't something
+     you'd otherwise notice - the browser holds your place on the slide
+     you're already watching. This is the "something's new" signal
+     Instagram/X show in exactly this situation - sticky at the top of the
+     reel no matter where you're scrolled to, tap it to jump up to it.
+     Ken: keep it off the person's face/photo entirely (tuck it up by the
+     name, not centered mid-image), keep it small since it's a
+     notification and not a banner, and give it its own color - the site
+     already leans heavily pink, so this uses the same orange the
+     marketing site's "new" indicators use, to read as a distinct system
+     notification rather than more brand chrome. */
+  .rp-new-pill {
+    position: sticky;
+    /* Left-aligned, tucked directly under the name/timestamp/badges
+       instead of centered lower in the photo - "above their head", not
+       over it - as close to that header block as it can sit without
+       actually covering the name text itself. */
+    top: calc(env(safe-area-inset-top, 0px) + 76px);
+    left: 14px;
+    z-index: 20;
+    margin: 0;
+    width: fit-content;
+    display: block;
+    background: #ff5a1f;
+    color: #fff;
+    border: none;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 5px 10px;
+    border-radius: 999px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.45);
+    cursor: pointer;
+    animation: rpPopIn 0.2s ease;
+  }
+  .rp-new-pill[hidden] { display: none; }
   .rp-reel::-webkit-scrollbar { display: none; }
 
   .rp-slide {
@@ -426,6 +462,54 @@
   .rp-name { font-weight: 700; font-size: 15px; margin-bottom: 2px; }
   .rp-sub { font-size: 12px; color: rgba(255,255,255,0.75); margin-bottom: 6px; }
   .rp-caption { font-size: 13.5px; line-height: 1.4; color: rgba(255,255,255,0.95); }
+
+  /* Journal slides — a Fitness Journey story (the same public "Share Your
+     Journey" posts that live on ensemblefitness.com) surfaced right in this
+     feed, next to "All". There's no photo/video behind a journey, so this
+     replaces .rp-media's usual img/video with a solid gradient and puts the
+     story text itself front and center, quote-style. Kept intentionally
+     simpler than a regular post card (no follow/react/comment) since those
+     are wired to the media table's own tables — a fast-follow if wanted. */
+  .rp-journal-media {
+    display: flex;
+    align-items: center;
+    background: linear-gradient(160deg, var(--accent-dark), #2a0f1c 60%, #0a090f);
+    padding: 96px 22px 110px;
+  }
+  .rp-journal-quote {
+    color: #fff;
+    font-family: 'Poppins', 'Inter', sans-serif;
+    font-size: 19px;
+    line-height: 1.5;
+    font-weight: 600;
+    max-height: 100%;
+    overflow-y: auto;
+  }
+  .rp-journal-link {
+    display: inline-block;
+    color: #fff;
+    background: var(--accent-2);
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    padding: 9px 14px;
+    border-radius: 999px;
+  }
+
+  /* One-time highlight on a post that just arrived live while someone was
+     already sitting on the feed (Ken's "Instagram/TikTok, see it pop up"
+     request) — same idea as the Fitness Journeys nav badge's flash on the
+     marketing site, just applied to a whole card here. */
+  .rp-slide-new {
+    animation: rpSlideNew 2.2s ease-out;
+  }
+  @keyframes rpSlideNew {
+    0% { box-shadow: inset 0 0 0 3px var(--accent-2); }
+    100% { box-shadow: inset 0 0 0 3px transparent; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .rp-slide-new { animation: none; }
+  }
 
   .rp-actions {
     position: absolute;
@@ -953,6 +1037,7 @@
   <div class="rp-filters" id="rpFilters"></div>
 
   <div class="rp-reel" id="rpReel">
+    <button type="button" class="rp-new-pill" id="rpNewPill" hidden>🔴 New posts — tap to see</button>
     <div class="rp-sentinel" id="rpSentinel"></div>
   </div>
 
@@ -1001,12 +1086,28 @@
   var loadedItems = [];
   var followingIds = new Set();
 
+  // Journeys (community_questions) page in alongside media posts, tracked
+  // with their own offset/end-of-list flag since they come from a
+  // completely separate table/query.
+  var JOURNAL_PAGE_SIZE = 4;
+  var journalOffset = 0;
+  var journalReachedEnd = false;
+  // Newest created_at currently sitting at the top of the reel, across
+  // both media and journeys — used so a live update only fetches what's
+  // genuinely new instead of re-fetching everything already on screen.
+  var newestSeenAt = null;
+
   // Category filter chips — lets a member jump straight to a workout type
   // instead of only scrolling in upload order. "Meal Prep" isn't listed
-  // here since it already has its own dedicated strip up top.
-  var CATEGORY_FILTERS = ["All", "Working Out", "Walking", "Hiking", "Biking", "Running", "Swimming", "Other"];
+  // here since it already has its own dedicated strip up top. "Journeys"
+  // sits right after "All" (Ken: "maybe that can go next to All") — it's
+  // the same public Fitness Journeys stories from ensemblefitness.com
+  // (community_questions), not the private "My Journey" workout log
+  // elsewhere in this app (journal_entries) - different feature, kept
+  // deliberately unambiguous here as "Journeys".
+  var CATEGORY_FILTERS = ["All", "Journeys", "Working Out", "Walking", "Hiking", "Biking", "Running", "Swimming", "Other"];
   var CATEGORY_ICONS = {
-    "Working Out": "💪", "Walking": "🚶", "Hiking": "🥾", "Biking": "🚴",
+    "Journeys": "📓", "Working Out": "💪", "Walking": "🚶", "Hiking": "🥾", "Biking": "🚴",
     "Running": "🏃", "Swimming": "🏊", "Meal Prep": "🍱", "Other": "✨"
   };
   var activeFilter = "All";
@@ -1025,6 +1126,11 @@
     { name: "Angela", file: "mealprep-angela.jpg", caption: "Started with this smoothie every morning. Three months in, I feel like a different person." }
   ];
   var usingIllustrativeMealPrep = false;
+  // Newest real (non-illustrative) Meal Prep post's created_at, for the
+  // live-update check below — stays null while only illustrative
+  // placeholders are showing, since those aren't real timestamps to
+  // compare against.
+  var newestMealPrepSeenAt = null;
 
   function renderFilters() {
     var wrap = document.getElementById("rpFilters");
@@ -1050,7 +1156,10 @@
     reel.querySelectorAll(".rp-slide, .rp-empty-reel").forEach(function (el) { el.remove(); });
     loadedItems = [];
     offset = 0;
+    journalOffset = 0;
     reachedEnd = false;
+    journalReachedEnd = false;
+    newestSeenAt = null;
     reel.scrollTop = 0;
     if (sentinel) reel.appendChild(sentinel); // keep sentinel last so infinite-scroll still fires
     loadMoreReel();
@@ -1119,6 +1228,70 @@
     }
     if (!data) return [];
     return filterOutBlocked(data);
+  }
+
+  // Same filtering rules as fetchBatch's general-reel branch, but for the
+  // live-update check: only rows strictly newer than what's already on
+  // screen, instead of a page by offset.
+  async function fetchNewMediaSince(sinceIso, filterType) {
+    var query = window.sb
+      .from("media")
+      .select("id, user_id, kind, storage_path, poster_path, caption, workout_type, location, created_at, profiles!media_user_id_fkey(display_name)")
+      .eq("status", "approved")
+      .in("kind", ["video", "photo"]);
+    if (filterType && filterType !== "All") {
+      query = query.eq("workout_type", filterType);
+    } else {
+      query = query.or("workout_type.neq.Meal Prep,workout_type.is.null");
+    }
+    var { data, error } = await query.gt("created_at", sinceIso).order("created_at", { ascending: true }).limit(10);
+    if (error) return [];
+    return filterOutBlocked(data || []);
+  }
+
+  // ---------------- Journeys (community_questions) ----------------
+  // Same public "Share Your Journey" stories as ensemblefitness.com's
+  // Fitness Journeys page - text posts, no photo/video, no admin queue
+  // (members' stories publish instantly, see sql/schema.sql). Fetched with
+  // the same shape (rows -> normalized items) as media posts so they can
+  // merge into the same reel and sort together by created_at.
+  async function fetchJournalBatch(limit, fromOffset) {
+    var { data, error } = await window.sb
+      .from("community_questions")
+      .select("id, user_id, asker_name, question_text, created_at")
+      .eq("status", "approved")
+      .order("created_at", { ascending: false })
+      .range(fromOffset, fromOffset + limit - 1);
+    if (error) {
+      console.warn("[feed] journeys query failed:", error);
+      return [];
+    }
+    return (data || []).map(journalRowToItem);
+  }
+
+  // Only journeys newer than `sinceIso` - used for the live "it just
+  // showed up" check rather than re-paging from the top.
+  async function fetchNewJournalsSince(sinceIso) {
+    var { data, error } = await window.sb
+      .from("community_questions")
+      .select("id, user_id, asker_name, question_text, created_at")
+      .eq("status", "approved")
+      .gt("created_at", sinceIso)
+      .order("created_at", { ascending: true })
+      .limit(10);
+    if (error) return [];
+    return (data || []).map(journalRowToItem);
+  }
+
+  function journalRowToItem(row) {
+    return {
+      id: row.id,
+      user_id: row.user_id || "",
+      kind: "journal",
+      name: row.asker_name || "A member",
+      created_at: row.created_at,
+      caption: row.question_text || ""
+    };
   }
 
   async function buildItems(rows) {
@@ -1300,6 +1473,35 @@
     wireSlideHeader(item, el);
     renderActions(item, el.querySelector(".rp-actions"));
     return el;
+  }
+
+  // A journey has no photo/video and isn't a row in the "media" table, so
+  // it skips follow/report/block/react/comment entirely (those are all
+  // wired to media-specific tables) and just shows who wrote it, when, and
+  // the story itself, with a link back to read the full thing (and reply)
+  // on ensemblefitness.com where the rest of that feature already lives.
+  function buildJournalSlide(item) {
+    var el = document.createElement("div");
+    el.className = "rp-slide";
+    var initial = (item.name || "?").trim().charAt(0).toUpperCase();
+    el.innerHTML =
+      '<div class="rp-media rp-journal-media"><div class="rp-journal-quote">' + escapeHtml(item.caption) + '</div></div>' +
+      '<div class="rp-slide-header">' +
+        '<div class="rp-slide-avatar" style="background:' + avatarColor(item.user_id || item.id) + '">' + escapeHtml(initial) + '</div>' +
+        '<div class="rp-slide-headertext">' +
+          '<div class="rp-slide-header-name">' + escapeHtml(item.name) + '</div>' +
+          '<div class="rp-slide-header-sub">' + escapeHtml(timeAgo(item.created_at)) + '</div>' +
+          '<div class="rp-context-badges"><span class="rp-context-badge rp-badge-type">📓 Journey</span></div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="rp-overlay-bottom">' +
+        '<a class="rp-journal-link" href="https://ensemblefitness.com/fitness-journey.html#journey-' + encodeURIComponent(item.id) + '" target="_blank" rel="noopener">Read &amp; reply on Fitness Journeys →</a>' +
+      '</div>';
+    return el;
+  }
+
+  function buildAnySlide(item) {
+    return item.kind === "journal" ? buildJournalSlide(item) : buildSlide(item);
   }
 
   function wireSlideHeader(item, el) {
@@ -1583,38 +1785,212 @@
     if (entries[0].isIntersecting) loadMoreReel();
   }, { root: isWideLayout ? null : document.getElementById("rpReel"), threshold: 0.05 });
 
+  function isReelExhausted() {
+    if (activeFilter === "Journeys") return journalReachedEnd;
+    if (activeFilter === "All") return reachedEnd && journalReachedEnd;
+    return reachedEnd;
+  }
+
+  function showEmptyReelMessage(msg) {
+    document.getElementById("rpReel").insertAdjacentHTML(
+      "afterbegin",
+      '<div class="rp-empty-reel">' + msg + '</div>'
+    );
+  }
+
+  // Appends one item to the bottom of the reel (used for normal
+  // page-by-page loading, at the sentinel).
+  function appendItem(item) {
+    var reel = document.getElementById("rpReel");
+    var sentinel = document.getElementById("rpSentinel");
+    loadedItems.push(item);
+    var slideEl = buildAnySlide(item);
+    reel.insertBefore(slideEl, sentinel);
+    reelObserver.observe(slideEl);
+  }
+
+  function trackNewest(items) {
+    items.forEach(function (item) {
+      if (!newestSeenAt || new Date(item.created_at) > new Date(newestSeenAt)) {
+        newestSeenAt = item.created_at;
+      }
+    });
+  }
+
   async function loadMoreReel() {
-    if (loadingMore || reachedEnd) return;
+    if (loadingMore || isReelExhausted()) return;
     loadingMore = true;
-    var rows = await fetchBatch(false, PAGE_SIZE, offset, activeFilter);
-    if (!rows.length) {
-      reachedEnd = true;
+
+    if (activeFilter === "Journeys") {
+      var journalItems = await fetchJournalBatch(JOURNAL_PAGE_SIZE, journalOffset);
+      journalOffset += journalItems.length;
+      journalReachedEnd = journalItems.length < JOURNAL_PAGE_SIZE;
       loadingMore = false;
+      if (!journalItems.length) {
+        if (loadedItems.length === 0) showEmptyReelMessage("No approved journeys yet — the first one shared will show up here live.");
+        return;
+      }
+      journalItems.forEach(appendItem);
+      trackNewest(journalItems);
+      return;
+    }
+
+    // "All" merges media + journeys, sorted together by recency. A specific
+    // workout-type filter (Working Out, Walking, ...) is media-only, same
+    // as before — journeys have no workout_type so they'd never match one.
+    var wantsJournals = activeFilter === "All" && !journalReachedEnd;
+    var mediaRowsPromise = reachedEnd ? Promise.resolve([]) : fetchBatch(false, PAGE_SIZE, offset, activeFilter);
+    var journalItemsPromise = wantsJournals ? fetchJournalBatch(JOURNAL_PAGE_SIZE, journalOffset) : Promise.resolve([]);
+    var mediaRows = await mediaRowsPromise;
+    var journalItems2 = await journalItemsPromise;
+
+    var mediaItems = await buildItems(mediaRows);
+    if (!reachedEnd) {
+      offset += mediaRows.length;
+      reachedEnd = mediaRows.length < PAGE_SIZE;
+    }
+    if (wantsJournals) {
+      journalOffset += journalItems2.length;
+      journalReachedEnd = journalItems2.length < JOURNAL_PAGE_SIZE;
+    }
+
+    var combined = mediaItems.concat(journalItems2).sort(function (a, b) {
+      return new Date(b.created_at) - new Date(a.created_at);
+    });
+
+    loadingMore = false;
+
+    if (!combined.length) {
       if (loadedItems.length === 0) {
         var reelMsg = lastFetchError
           ? "Couldn't load the feed — " + escapeHtml(lastFetchError.message || String(lastFetchError))
           : (activeFilter !== "All"
               ? "No approved " + escapeHtml(activeFilter) + " posts yet."
-              : "Nothing approved yet outside Meal Prep — once videos and photos are reviewed, they'll scroll here.");
-        document.getElementById("rpReel").insertAdjacentHTML(
-          "afterbegin",
-          '<div class="rp-empty-reel">' + reelMsg + '</div>'
-        );
+              : "Nothing approved yet outside Meal Prep — once videos, photos, or journeys are shared, they'll scroll here.");
+        showEmptyReelMessage(reelMsg);
       }
       return;
     }
+    combined.forEach(appendItem);
+    trackNewest(combined);
+  }
+
+  // Newest real Meal Prep post(s) - checked alongside the main reel on
+  // every "media" table change so the top strip pops in a new photo/video
+  // live too, exactly like the reel below it.
+  async function fetchNewMealPrepPosts() {
+    var query = window.sb
+      .from("media")
+      .select("id, user_id, kind, storage_path, poster_path, caption, workout_type, location, created_at, profiles!media_user_id_fkey(display_name)")
+      .eq("status", "approved")
+      .in("kind", ["video", "photo"])
+      .eq("workout_type", "Meal Prep")
+      .order("created_at", { ascending: false })
+      .limit(10);
+    if (newestMealPrepSeenAt) query = query.gt("created_at", newestMealPrepSeenAt);
+    var { data, error } = await query;
+    if (error) return [];
+    return filterOutBlocked(data || []);
+  }
+
+  async function checkForNewMealPrep() {
+    var rows = await fetchNewMealPrepPosts();
+    if (!rows.length) return;
     var items = await buildItems(rows);
-    var reel = document.getElementById("rpReel");
-    var sentinel = document.getElementById("rpSentinel");
-    items.forEach(function (item) {
-      loadedItems.push(item);
-      var slideEl = buildSlide(item);
-      reel.insertBefore(slideEl, sentinel);
-      reelObserver.observe(slideEl);
+    mealPrepItems = usingIllustrativeMealPrep ? items : items.concat(mealPrepItems);
+    usingIllustrativeMealPrep = false;
+    newestMealPrepSeenAt = items[0].created_at;
+    renderMealPrepStrip();
+  }
+
+  // ---------------- Live updates ----------------
+  // Ken: "if someone loads something new, you actually see it... it has to
+  // constantly keep refreshing across meal prep, workout, walking, hiking,
+  // new videos, journeys — all new sections" — the same Instagram/TikTok
+  // idea already shipped for the Fitness Journeys badge on the marketing
+  // site, extended to the feed itself. Subscribes to both tables a post can
+  // come from (media, community_questions); either firing triggers one
+  // check for anything genuinely newer than what's already on screen.
+  //
+  // Requires Realtime turned on for BOTH tables in the Supabase dashboard
+  // (Database → Replication) — community_questions already is, from the
+  // badge work; "media" needs the same switch flipped, or new posts will
+  // still show correctly on the next page load/refresh, just not live.
+  var liveUpdateInFlight = false;
+
+  async function checkForLiveUpdates() {
+    if (!newestSeenAt || liveUpdateInFlight) return;
+    liveUpdateInFlight = true;
+    try {
+      var wantsMedia = activeFilter !== "Journeys";
+      var wantsJournals = activeFilter === "All" || activeFilter === "Journeys";
+      var mediaRows = wantsMedia ? await fetchNewMediaSince(newestSeenAt, activeFilter) : [];
+      var newJournalItems = wantsJournals ? await fetchNewJournalsSince(newestSeenAt) : [];
+      var newMediaItems = await buildItems(mediaRows);
+      var freshItems = newMediaItems.concat(newJournalItems).sort(function (a, b) {
+        return new Date(a.created_at) - new Date(b.created_at); // oldest first, so inserting one-by-one at the top lands newest on top
+      });
+      if (!freshItems.length) return;
+
+      var reel = document.getElementById("rpReel");
+      var emptyMsg = reel.querySelector(".rp-empty-reel");
+      if (emptyMsg) emptyMsg.remove();
+
+      // This reel shows one full-height slide at a time (scroll-snap), so
+      // whatever's already on screen stays on screen when something new
+      // lands above it - there's no "make room and slide it into view"
+      // like a normal scrolling list. The pill (below) is what actually
+      // tells the person it happened.
+      var insertBeforeEl = reel.querySelector(".rp-slide") || document.getElementById("rpSentinel");
+      freshItems.forEach(function (item) {
+        loadedItems.unshift(item);
+        var slideEl = buildAnySlide(item);
+        slideEl.classList.add("rp-slide-new");
+        reel.insertBefore(slideEl, insertBeforeEl);
+        reelObserver.observe(slideEl);
+        insertBeforeEl = slideEl; // next one inserts above this one, keeping newest-first order
+      });
+      trackNewest(freshItems);
+      pendingNewCount += freshItems.length;
+      showNewPill();
+    } finally {
+      liveUpdateInFlight = false;
+    }
+  }
+
+  var pendingNewCount = 0;
+  function showNewPill() {
+    var pill = document.getElementById("rpNewPill");
+    if (!pill) return;
+    pill.textContent = "🔔 " + pendingNewCount + " new";
+    pill.hidden = false;
+  }
+  function wireNewPill() {
+    var pill = document.getElementById("rpNewPill");
+    if (!pill) return;
+    pill.addEventListener("click", function () {
+      var reel = document.getElementById("rpReel");
+      reel.scrollTo({ top: 0, behavior: "smooth" });
+      pendingNewCount = 0;
+      pill.hidden = true;
     });
-    offset += rows.length;
-    reachedEnd = rows.length < PAGE_SIZE;
-    loadingMore = false;
+    // Someone scrolling themselves back up to the top counts as "seen" too.
+    var reelEl = document.getElementById("rpReel");
+    reelEl.addEventListener("scroll", function () {
+      if (reelEl.scrollTop < 20 && !pill.hidden) {
+        pendingNewCount = 0;
+        pill.hidden = true;
+      }
+    });
+  }
+
+  function subscribeToLiveFeed() {
+    if (!window.sb || !window.sb.channel) return;
+    window.sb
+      .channel("feed-live-changes")
+      .on("postgres_changes", { event: "*", schema: "public", table: "media" }, function () { checkForLiveUpdates(); checkForNewMealPrep(); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "community_questions" }, function () { checkForLiveUpdates(); })
+      .subscribe();
   }
 
   (async function init() {
@@ -1631,6 +2007,7 @@
     var mealPrepRows = await fetchBatch(true, 20, 0);
     mealPrepItems = await buildItems(mealPrepRows);
     usingIllustrativeMealPrep = !mealPrepItems.length && !lastFetchError;
+    if (mealPrepItems.length) newestMealPrepSeenAt = mealPrepItems[0].created_at;
     if (usingIllustrativeMealPrep) {
       mealPrepItems = ILLUSTRATIVE_MEAL_PREP.map(function (it, i) {
         return {
@@ -1652,6 +2029,8 @@
     renderFilters();
     await loadMoreReel();
     loadMoreObserver.observe(document.getElementById("rpSentinel"));
+    wireNewPill();
+    subscribeToLiveFeed();
 
     // Desktop-dashboard-only content — skipped entirely on the phone
     // layout so the mobile app makes no extra network calls for panels
