@@ -357,7 +357,7 @@
     // that's the default now; a deep link (requireAuth() in
     // supabaseClient.js sets redirect to the specific page someone was
     // trying to reach, e.g. admin.html) is untouched and still wins.
-    var allowed = ["profile.html", "admin.html", "feed.html"];
+    var allowed = ["profile.html", "admin.html", "feed.html", "journey.html"];
     var page = allowed.indexOf(requested) !== -1 ? requested : "feed.html";
     params.delete("redirect");
     var extra = params.toString();
