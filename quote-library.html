@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Quote Library — Ensemble Fitness</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/app.css" />
+</head>
+<body>
+
+<header class="app-nav">
+  <a href="https://ensemblefitness.com" class="app-brand">
+    <span class="app-brand-mark"><img src="assets/logo.png" alt="Ensemble Fitness" /></span>Ensemble Fitness
+  </a>
+  <nav class="app-nav-links">
+    <a href="feed.html">Community</a>
+    <a href="journey.html">My Journey</a>
+    <a href="members.html">Members</a>
+    <a href="fitness-plus.html">Fitness+</a>
+    <a href="music-library.html">Music</a>
+    <a href="quote-library.html" style="color:#fff;">Quotes</a>
+    <a href="profile.html">My Profile</a>
+    <a href="admin.html" id="adminLink" style="display:none;">Queue</a>
+    <a href="#" id="signOutLink">Sign Out</a>
+  </nav>
+</header>
+
+<div class="app-shell">
+
+  <div class="eyebrow">Quote Library</div>
+  <h2 style="margin-bottom:6px;">Add your voice to these quotes.</h2>
+  <p class="card-sub" style="margin-bottom:24px;">Pick a quote below and record your own reading of it — hear how different members bring the same words to life.</p>
+
+  <div id="quoteCards">
+    <div class="card"><div class="empty-state">Loading…</div></div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/shared-session.js"></script>
+<script src="js/supabaseClient.js"></script>
+<script src="js/notifications.js"></script>
+<script>
+  var currentUser = null;
+
+  function showMsg(el, text, kind) {
+    el.textContent = text;
+    el.className = "form-msg show " + kind;
+  }
+  function hideMsg(el) { el.className = "form-msg"; }
+
+  function escapeHtml(s) {
+    return String(s || "").replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  function formatTimer(ms) {
+    var totalSec = Math.floor(ms / 1000);
+    var m = Math.floor(totalSec / 60);
+    var s = totalSec % 60;
+    return m + ":" + (s < 10 ? "0" : "") + s;
+  }
+
+  function initials(name) {
+    return (name || "?").trim().charAt(0).toUpperCase();
+  }
+
+  async function init() {
+    currentUser = await requireAuth();
+    if (!currentUser) return;
+
+    if (await isCurrentUserAdmin()) {
+      document.getElementById("adminLink").style.display = "inline";
+    }
+
+    await loadQuotes();
+  }
+
+  // ---- Quotes & recordings --------------------------------------------------
+
+  async function loadQuotes() {
+    var wrap = document.getElementById("quoteCards");
+    var { data: quotes, error } = await window.sb
+      .from("quotes")
+      .select("id, quote_text, author")
+      .eq("is_active", true)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      wrap.innerHTML = '<div class="card"><div class="empty-state">Couldn\'t load the Quote Library right now — please refresh.</div></div>';
+      return;
+    }
+    if (!quotes || quotes.length === 0) {
+      wrap.innerHTML = '<div class="card"><div class="empty-state">No quotes yet — check back soon.</div></div>';
+      return;
+    }
+
+    var quoteIds = quotes.map(function (q) { return q.id; });
+    var recordingsByQuote = {};
+    var { data: recordings } = await window.sb
+      .from("quote_recordings")
+      .select("id, quote_id, user_id, storage_path, created_at, profiles!quote_recordings_user_id_fkey(display_name)")
+      .in("quote_id", quoteIds)
+      .order("created_at", { ascending: false });
+
+    (recordings || []).forEach(function (r) {
+      if (!recordingsByQuote[r.quote_id]) recordingsByQuote[r.quote_id] = [];
+      recordingsByQuote[r.quote_id].push(r);
+    });
+
+    wrap.innerHTML = "";
+    quotes.forEach(function (quote) {
+      wrap.appendChild(buildQuoteCard(quote, recordingsByQuote[quote.id] || []));
+    });
+  }
+
+  function buildRecordingRow(rec) {
+    var name = (rec.profiles && rec.profiles.display_name) || "A member";
+    var isOwn = rec.user_id === currentUser.id;
+    var row = document.createElement("div");
+    row.className = "quote-recording-row";
+    row.innerHTML =
+      '<div class="quote-recording-avatar">' + escapeHtml(initials(name)) + "</div>" +
+      '<div class="quote-recording-body">' +
+        '<div class="quote-recording-name">' + escapeHtml(name) + (isOwn ? " (you)" : "") + "</div>" +
+        '<audio controls preload="none" class="quote-recording-audio"></audio>' +
+      "</div>" +
+      (isOwn ? '<button type="button" class="btn btn-ghost btn-sm quote-remove-btn">Remove</button>' : "");
+
+    var audio = row.querySelector(".quote-recording-audio");
+    var signedUrlLoaded = false;
+    audio.addEventListener("play", async function () {
+      if (signedUrlLoaded) return;
+      audio.pause();
+      var { data: signed } = await window.sb.storage.from("quote-voices").createSignedUrl(rec.storage_path, 3600);
+      if (signed) {
+        signedUrlLoaded = true;
+        audio.src = signed.signedUrl;
+        audio.play();
+      }
+    });
+
+    var removeBtn = row.querySelector(".quote-remove-btn");
+    if (removeBtn) {
+      removeBtn.addEventListener("click", async function () {
+        if (!confirm("Remove your recording of this quote?")) return;
+        removeBtn.disabled = true;
+        await window.sb.storage.from("quote-voices").remove([rec.storage_path]);
+        await window.sb.from("quote_recordings").delete().eq("id", rec.id);
+        row.remove();
+      });
+    }
+
+    return row;
+  }
+
+  function buildQuoteCard(quote, recordings) {
+    var card = document.createElement("div");
+    card.className = "card";
+    card.style.marginBottom = "20px";
+    card.innerHTML =
+      (quote.author ? '<div class="eyebrow">' + escapeHtml(quote.author) + "</div>" : "") +
+      '<p style="font-size:17px; font-weight:600; font-style:italic; margin:0 0 16px; line-height:1.45;">“' + escapeHtml(quote.quote_text) + '”</p>' +
+      '<div class="quote-recording-list"></div>' +
+      '<div class="narration-section show" style="margin-top:14px;">' +
+        '<div class="field-label-row">' +
+          '<label>Record your reading</label>' +
+          '<span class="narration-timer">0:00</span>' +
+        "</div>" +
+        '<div class="narration-row">' +
+          '<button type="button" class="btn btn-ghost btn-sm record-btn">🎙️ Record my reading</button>' +
+        "</div>" +
+        '<div class="narration-preview" style="display:none;">' +
+          "<audio controls></audio>" +
+          '<div style="display:flex; gap:8px; margin-top:8px;">' +
+            '<button type="button" class="btn btn-ghost btn-sm re-record-btn">Re-record</button>' +
+            '<button type="button" class="btn btn-primary btn-sm post-recording-btn">Post my reading</button>' +
+          "</div>" +
+        "</div>" +
+        '<div class="form-msg"></div>' +
+      "</div>";
+
+    var listEl = card.querySelector(".quote-recording-list");
+    if (recordings.length === 0) {
+      listEl.innerHTML = '<div class="empty-state">No recordings of this one yet — be the first.</div>';
+    } else {
+      recordings.forEach(function (rec) { listEl.appendChild(buildRecordingRow(rec)); });
+    }
+
+    wireRecorder(card, quote, listEl);
+    return card;
+  }
+
+  function wireRecorder(card, quote, listEl) {
+    var recordBtn = card.querySelector(".record-btn");
+    var timerEl = card.querySelector(".narration-timer");
+    var previewEl = card.querySelector(".narration-preview");
+    var previewAudio = previewEl.querySelector("audio");
+    var reRecordBtn = card.querySelector(".re-record-btn");
+    var postBtn = card.querySelector(".post-recording-btn");
+    var msgEl = card.querySelector(".form-msg");
+
+    var mediaRecorder = null;
+    var recordedChunks = [];
+    var recordingBlob = null;
+    var recordingStartedAt = 0;
+    var timerInterval = null;
+
+    async function startRecording() {
+      hideMsg(msgEl);
+      try {
+        var stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        recordedChunks = [];
+        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.ondataavailable = function (e) {
+          if (e.data.size > 0) recordedChunks.push(e.data);
+        };
+        mediaRecorder.onstop = function () {
+          recordingBlob = new Blob(recordedChunks, { type: "audio/webm" });
+          previewAudio.src = URL.createObjectURL(recordingBlob);
+          previewEl.style.display = "block";
+          recordBtn.style.display = "none";
+          stream.getTracks().forEach(function (t) { t.stop(); });
+        };
+        mediaRecorder.start();
+        recordingStartedAt = Date.now();
+        timerEl.style.display = "inline";
+        timerEl.textContent = "0:00";
+        timerInterval = setInterval(function () {
+          timerEl.textContent = formatTimer(Date.now() - recordingStartedAt);
+        }, 250);
+        recordBtn.textContent = "⏹ Stop recording";
+        recordBtn.classList.add("recording");
+      } catch (err) {
+        showMsg(msgEl, "Couldn't access your microphone — check your browser's permission settings and try again.", "error");
+      }
+    }
+
+    function stopRecording() {
+      if (mediaRecorder && mediaRecorder.state === "recording") mediaRecorder.stop();
+      clearInterval(timerInterval);
+      timerEl.style.display = "none";
+    }
+
+    function resetRecorder() {
+      recordingBlob = null;
+      previewEl.style.display = "none";
+      recordBtn.style.display = "inline-flex";
+      recordBtn.textContent = "🎙️ Record my reading";
+      recordBtn.classList.remove("recording");
+      hideMsg(msgEl);
+    }
+
+    recordBtn.addEventListener("click", function () {
+      if (mediaRecorder && mediaRecorder.state === "recording") {
+        stopRecording();
+      } else {
+        startRecording();
+      }
+    });
+
+    reRecordBtn.addEventListener("click", function () {
+      resetRecorder();
+      startRecording();
+    });
+
+    postBtn.addEventListener("click", async function () {
+      if (!recordingBlob) return;
+      postBtn.disabled = true;
+      reRecordBtn.disabled = true;
+      postBtn.textContent = "Posting…";
+      try {
+        var path = currentUser.id + "/" + crypto.randomUUID() + ".webm";
+        var { error: uploadError } = await window.sb.storage.from("quote-voices").upload(path, recordingBlob, {
+          cacheControl: "3600",
+          upsert: false
+        });
+        if (uploadError) throw uploadError;
+
+        var { data: inserted, error: insertError } = await window.sb
+          .from("quote_recordings")
+          .insert({ quote_id: quote.id, user_id: currentUser.id, storage_path: path, is_active: true })
+          .select("id, quote_id, user_id, storage_path, created_at")
+          .single();
+        if (insertError) throw insertError;
+
+        showMsg(msgEl, "Posted! Your reading is now live in the library.", "success");
+        inserted.profiles = { display_name: (await currentDisplayName()) };
+        if (listEl.querySelector(".empty-state")) listEl.innerHTML = "";
+        listEl.insertBefore(buildRecordingRow(inserted), listEl.firstChild);
+        resetRecorder();
+      } catch (err) {
+        showMsg(msgEl, err.message || "Couldn't post your recording — please try again.", "error");
+      }
+      postBtn.disabled = false;
+      reRecordBtn.disabled = false;
+      postBtn.textContent = "Post my reading";
+    });
+  }
+
+  var cachedDisplayName = null;
+  async function currentDisplayName() {
+    if (cachedDisplayName) return cachedDisplayName;
+    var { data } = await window.sb.from("profiles").select("display_name").eq("id", currentUser.id).maybeSingle();
+    cachedDisplayName = (data && data.display_name) || "You";
+    return cachedDisplayName;
+  }
+
+  document.getElementById("signOutLink").addEventListener("click", function (e) {
+    e.preventDefault();
+    signOut();
+  });
+
+  init();
+</script>
+</body>
+</html>
