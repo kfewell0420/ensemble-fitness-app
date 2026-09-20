@@ -627,8 +627,15 @@
     backdrop-filter: blur(3px);
     transition: transform 0.12s ease, background 0.12s ease;
   }
+  /* Bug fix: the "you reacted" fill used --accent-2 (our brighter orange),
+     which sits too close in hue/lightness to the default yellow-gold tone
+     browsers render 👍/💪 in — the glyph nearly vanished into its own
+     background (Ken: "the two colors are... blending together"). A darker
+     fill plus a light ring gives real separation no matter which emoji is
+     on top, while staying in the orange family. */
   .rp-action-btn.active .rp-action-emoji {
-    background: var(--accent-2);
+    background: var(--accent-dark);
+    border: 1.5px solid rgba(255,255,255,0.4);
     transform: scale(1.08);
   }
   .rp-action-count {
