@@ -1302,11 +1302,10 @@
          on desktop that rail has plenty of unused vertical space below
          those four icons; on mobile it just becomes a 5th bottom-bar
          icon, same as Instagram's own Home/Search/Create/Reels/Profile
-         row. Opens the marketing site's Approved Gear page in a new tab,
-         same as every other cross-site link from this app (Books,
-         Fitness+ story link, etc.) — never a deep Amazon link built here,
-         so the Associate Tag and disclosure on that page always apply. -->
-    <a href="https://ensemblefitness.com/approved-gear.html" target="_blank" rel="noopener" class="rp-tab" aria-label="Approved Gear" title="Amazon — Approved Gear">
+         row. Points at gear.html — a page inside this same app, not the
+         marketing site's approved-gear.html — so it never leaves the app
+         or opens a new tab, exactly like Home/Members/Post/Profile. -->
+    <a href="gear.html" class="rp-tab" title="Approved Gear">
       <span class="rp-tab-icon">🛒</span><span class="rp-tab-label">Gear</span>
     </a>
   </nav>
@@ -2540,10 +2539,8 @@
   // the public marketing site. Same pattern as loadBooksPanel below: a
   // small live preview pulled straight from the same approved_gear_items
   // table admin.html's "Approved Gear" tab writes to, with a link through
-  // to the full page. Links out to the marketing site (not deep-linked
-  // straight to Amazon) so the Associate Tag and honest-disclosure copy
-  // that page adds always apply — this panel never builds its own Amazon
-  // links.
+  // to gear.html — a page inside this same app (added Sept 2026 so members
+  // never have to leave the app or land on a new tab to browse picks).
   async function loadGearPanel() {
     var panel = document.getElementById("rpGearPanel");
     if (!panel) return;
@@ -2560,7 +2557,7 @@
     panel.innerHTML =
       '<div class="rp-panel-head"><span class="rp-panel-icon">🛒</span><span class="rp-panel-title">Approved Gear</span></div>' +
       (rows || '<div class="rp-panel-empty">Real Amazon picks Ken actually buys — new ones added often.</div>') +
-      '<a class="rp-panel-link" href="https://ensemblefitness.com/approved-gear.html" target="_blank" rel="noopener">Browse the picks →</a>';
+      '<a class="rp-panel-link" href="gear.html">Browse the picks →</a>';
   }
 
   async function loadMusicPanel() {
