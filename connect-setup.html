@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Set Up Payouts | Ensemble Fitness</title>
+<meta name="robots" content="noindex" />
+<link rel="icon" type="image/png" href="assets/favicon.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css?v=40" />
+</head>
+<body>
+
+<header class="nav">
+  <div class="container">
+    <a href="index.html" class="brand"><img src="assets/logo.png" alt="Ensemble Fitness logo" />Ensemble Fitness</a>
+    <div class="nav-cta"></div>
+  </div>
+</header>
+
+<section class="section" style="padding-top:64px;">
+  <div class="container" style="max-width:560px;">
+    <div class="section-head center">
+      <div class="eyebrow">Payout setup</div>
+      <h1 style="font-size:26px;">Link your bank account</h1>
+      <p>This takes you to Stripe's own secure setup — Ensemble Fitness never sees or stores your bank details, only Stripe does.</p>
+    </div>
+
+    <div class="guideline-box" id="statusBox" style="text-align:center;">
+      Getting things ready…
+    </div>
+
+    <div style="text-align:center; margin-top:24px;" id="retryWrap"></div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer-bottom">
+      <span>© 2026 Ensemble Fitness. All rights reserved.</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var statusBox = document.getElementById("statusBox");
+  var retryWrap = document.getElementById("retryWrap");
+  var params = new URLSearchParams(window.location.search);
+  var token = params.get("token");
+
+  function showError(message) {
+    statusBox.innerHTML = "<strong>Couldn't continue.</strong><br />" + message;
+    retryWrap.innerHTML = '<button type="button" class="btn btn-primary" id="retryBtn">Try Again</button>';
+    document.getElementById("retryBtn").addEventListener("click", startSetup);
+  }
+
+  async function startSetup() {
+    if (!token) {
+      showError("This link is missing its setup code — please use the exact link from your email, or contact partners@ensemblefitness.com for a new one.");
+      return;
+    }
+    statusBox.textContent = "Taking you to Stripe…";
+    retryWrap.innerHTML = "";
+    try {
+      var res = await fetch("/.netlify/functions/create-connect-link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: token })
+      });
+      var out = await res.json();
+      if (!res.ok || !out.url) throw new Error(out.error || "Something went wrong.");
+      window.location.href = out.url;
+    } catch (err) {
+      showError((err.message || "Please try again in a moment.") + " If this keeps happening, email partners@ensemblefitness.com and we'll help directly.");
+    }
+  }
+
+  startSetup();
+})();
+</script>
+</body>
+</html>

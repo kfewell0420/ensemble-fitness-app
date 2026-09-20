@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Members — See Who's Already Active | Ensemble Fitness</title>
-<meta name="description" content="Browse the Ensemble Fitness community — real people, real activities, near you. See who's active now and what they're into." />
-<link rel="canonical" href="https://ensemblefitness.com/members.html" />
+<title>Approved Gear — Real Amazon Picks | Ensemble Fitness</title>
+<meta name="description" content="Approved Gear is a curated list of Amazon products personally picked by Ensemble Fitness, based on 500-1,000 real Amazon orders a year for eight years running." />
+<link rel="canonical" href="https://ensemblefitness.com/approved-gear.html" />
 <meta property="og:type" content="website" />
 <meta property="og:site_name" content="Ensemble Fitness" />
-<meta property="og:title" content="Members — See Who's Already Active" />
-<meta property="og:description" content="Browse the Ensemble Fitness community — real people, real activities, near you." />
-<meta property="og:url" content="https://ensemblefitness.com/members.html" />
+<meta property="og:title" content="Approved Gear — Real Amazon Picks" />
+<meta property="og:description" content="Curated Amazon picks from Ensemble Fitness — 500-1,000 orders a year, eight years running." />
+<meta property="og:url" content="https://ensemblefitness.com/approved-gear.html" />
 <meta name="twitter:card" content="summary" />
 <link rel="icon" type="image/png" href="assets/favicon.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -29,9 +29,8 @@
       <a href="fitness-journey.html">Fitness <span class="journeys-wrap">Journeys<span class="journeys-badge" style="display:none;"></span></span></a>
       <a href="healthy-meal-prep.html">Healthy Meal Prep</a>
       <a href="marketplace.html">Marketplace</a>
-      <a href="members.html" style="color:#fff;">Members</a>
+      <a href="members.html">Members</a>
       <a href="fitness-plus.html">❤️ Fitness+</a>
-      <a href="index.html#safety">Safety</a>
       <a href="index.html#faq">FAQ</a>
     </nav>
     <div class="nav-cta">
@@ -53,7 +52,6 @@
   <a href="marketplace.html">Marketplace</a>
   <a href="members.html">Members</a>
   <a href="fitness-plus.html">❤️ Fitness+</a>
-  <a href="index.html#safety">Safety</a>
   <a href="index.html#faq">FAQ</a>
   <a href="index.html#contact">Contact</a>
   <a href="https://app.ensemblefitness.com/login.html">Sign In</a>
@@ -61,41 +59,59 @@
 </div>
 
 <!-- ============ HERO ============ -->
-<section class="hero" id="top" style="padding-bottom:56px;">
+<!-- Same "get to the real content fast" philosophy as books.html — the
+     credibility pitch is one short stat row, not a wall of copy. -->
+<section class="hero" id="top" style="padding:28px 0 20px;">
   <div class="container" style="display:block;">
-    <div class="hero-copy" style="max-width:680px;">
-      <div class="eyebrow on-dark">Community</div>
-      <h1 style="font-size:clamp(34px,4.6vw,52px);">Meet the people<br />already <span>moving.</span></h1>
-      <p class="lede">A look at real members of the Ensemble Fitness community — who's active right now, and what they're into.</p>
+    <div class="hero-copy" style="max-width:720px;">
+      <div class="eyebrow on-dark">Approved Gear</div>
+      <h1 style="font-size:clamp(26px,3.6vw,40px); margin-bottom:10px;">Gear Ensemble Fitness actually buys.</h1>
+      <p class="lede" style="font-size:15px; margin-bottom:6px;">Not a generic "top 10 gadgets" list. Every pick here comes from Ensemble Fitness's own Amazon cart.</p>
+      <div class="gear-stat-row">
+        <span class="gear-stat-chip"><strong>500&ndash;1,000</strong>&nbsp;Amazon orders a year</span>
+        <span class="gear-stat-chip"><strong>8 years</strong>&nbsp;running, consistently</span>
+        <span class="gear-stat-chip"><strong>4 stars+</strong>&nbsp;or it's not on this page</span>
+      </div>
+      <div class="hero-actions" style="position:static;">
+        <a href="#picks" class="btn btn-primary btn-sm">Browse The Picks</a>
+        <a href="marketplace.html" class="btn btn-ghost-dark btn-sm">See Fit Marketplace</a>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- ============ MEMBERS GRID ============ -->
-<section class="section" id="members-directory">
+<!-- ============ PICKS ============ -->
+<section class="section" id="picks" style="padding:24px 0 32px;">
   <div class="container">
-    <div class="member-filter-bar" id="memberFilterBar">
-      <button type="button" class="member-filter-chip active" data-filter="all">All Members</button>
-      <button type="button" class="member-filter-chip" data-filter="active">Active Now</button>
+    <div class="gear-disclosure">
+      <strong>Honest disclosure:</strong> Ensemble Fitness is a participant in the Amazon Associates program. If you buy something through a link on this page, we may earn a small commission at no extra cost to you. That never changes which products make this list — these are picks Ensemble Fitness would buy anyway, and the commission is just how this page helps support the site.
     </div>
-    <div class="member-grid" id="memberGrid">
-      <!-- Member cards are rendered by js/members.js from the same community
-           roster used elsewhere on the site. This keeps identities (name,
-           avatar color, activity) consistent between the homepage feed and
-           this directory until real member profiles replace the demo data. -->
+
+    <h2 style="font-size:20px; margin:0 0 4px;">Pick a category, or browse everything →</h2>
+    <p style="color:var(--muted); font-size:14px; margin:0 0 20px;">New picks get added as Ensemble Fitness tries new gear — check back often.</p>
+
+    <div class="gear-filters" id="gearFilters"></div>
+
+    <div class="gear-grid" id="gearGrid">
+      <div class="gear-empty">Loading picks…</div>
     </div>
   </div>
 </section>
 
 <!-- ============ CTA ============ -->
-<section class="section alt">
+<!-- Ken's ask (Sept 2026): this page should get people clicking into the
+     picks fast, not scrolling past a couple of empty screens first — same
+     "section-snug" treatment already used for marketplace.html's CTA
+     blocks, plus a tighter section-head margin so the button sits close
+     to its own copy instead of floating in its own whitespace. -->
+<section class="section alt section-snug">
   <div class="container" style="text-align:center;">
-    <div class="section-head center">
-      <div class="eyebrow">Join them</div>
-      <h2>Your next workout partner is already here.</h2>
-      <p>Create your profile, set what you're into, and start showing up in the feed just like everyone above.</p>
+    <div class="section-head center" style="margin-bottom:20px;">
+      <div class="eyebrow">Want a recommendation?</div>
+      <h2>Don't see what you're looking for?</h2>
+      <p>Ensemble Fitness is still adding to this list. Reach out and let us know what kind of gear you're shopping for.</p>
     </div>
-    <a href="index.html#waitlist" class="btn btn-primary">Join The Community</a>
+    <a href="index.html#contact" class="btn btn-primary">Contact Us</a>
   </div>
 </section>
 
@@ -112,14 +128,12 @@
         <a href="index.html#how-it-works">How It Works</a>
         <a href="fitness-journey.html">Fitness Journeys</a>
         <a href="healthy-meal-prep.html">Healthy Meal Prep</a>
-        <a href="index.html#feed">Feed</a>
-        <a href="members.html">Members</a>
-        <a href="index.html#pillars">What You Get</a>
         <a href="marketplace.html">Fit Marketplace</a>
         <a href="approved-gear.html">Approved Gear</a>
         <a href="books.html">Ensemble Reads</a>
         <a href="submit-music.html">Submit Your Music</a>
         <a href="share-your-journey.html">Share Your Journey</a>
+        <a href="members.html">Members</a>
         <a href="fitness-plus.html">Ensemble Fitness+</a>
       </div>
       <div class="footer-col">
@@ -138,15 +152,17 @@
     </div>
     <div class="footer-bottom">
       <span>© 2026 Ensemble Fitness. All rights reserved.</span>
-      <span>Shown members are illustrative of the community we're building — not yet a live, public directory.</span>
+      <span>Ensemble Fitness is a participant in the Amazon Associates program, an affiliate advertising program.</span>
     </div>
-    <div class="footer-disclaimer">Ensemble Fitness is currently in pre-launch development. "Ensemble Fitness" is a working product name pending trademark screening. The people shown on this page are sample profiles used to preview the Members experience before real, opted-in member directories launch.</div>
+    <div class="footer-disclaimer">Ensemble Fitness is currently in pre-launch development. "Ensemble Fitness" is a working product name pending trademark screening. As an Amazon Associate, Ensemble Fitness earns from qualifying purchases made through links on this page.</div>
   </div>
 </footer>
 
+<script src="js/approved-gear-picks.js"></script>
+<script src="js/approved-gear.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/journeys-nav-badge.js?v=4"></script>
-<script src="js/members.js?v=18"></script>
+<script src="js/approved-gear-live.js?v=1"></script>
 <script src="js/main.js?v=24"></script>
 </body>
 </html>
