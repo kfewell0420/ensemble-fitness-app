@@ -477,40 +477,12 @@
   .rp-sub { font-size: 12px; color: rgba(255,255,255,0.75); margin-bottom: 6px; }
   .rp-caption { font-size: 13.5px; line-height: 1.4; color: rgba(255,255,255,0.95); }
 
-  /* Journal slides — a Fitness Journey story (the same public "Share Your
-     Journey" posts that live on ensemblefitness.com) surfaced right in this
-     feed, next to "All". There's no photo/video behind a journey, so this
-     replaces .rp-media's usual img/video with a solid gradient and puts the
-     story text itself front and center, quote-style. Kept intentionally
-     simpler than a regular post card (no follow/react/comment) since those
-     are wired to the media table's own tables — a fast-follow if wanted. */
-  .rp-journal-media {
-    display: flex;
-    align-items: center;
-    background: linear-gradient(160deg, var(--accent-dark), #2a0f1c 60%, #0a090f);
-    padding: 96px 22px 110px;
-  }
-  .rp-journal-quote {
-    color: #fff;
-    font-family: 'Poppins', 'Inter', sans-serif;
-    font-size: 19px;
-    line-height: 1.5;
-    font-weight: 600;
-    max-height: 100%;
-    overflow-y: auto;
-  }
-  .rp-journal-link {
-    display: inline-block;
-    color: #fff;
-    background: var(--accent-2);
-    font-size: 13px;
-    font-weight: 700;
-    text-decoration: none;
-    padding: 9px 14px;
-    border-radius: 999px;
-  }
-
-  /* Compact journey card — the "Journeys" filter's list-mode item. Plain
+  /* Compact journey card — the "Journeys" filter's list-mode item. Journeys
+     (the same public "Share Your Journey" posts from ensemblefitness.com)
+     are their own dedicated tab, not mixed into "All" alongside photos and
+     videos — a text-only journey doesn't fit that full-bleed swipe format,
+     and at real scale (hundreds/thousands of journeys a day) it would
+     quickly bury actual media posts. Plain
      document flow (not the absolute-positioned overlay system the
      full-bleed .rp-slide uses), so it stacks normally and scrolls like a
      regular feed of any length. */
@@ -1191,15 +1163,14 @@
   var loadedItems = [];
   var followingIds = new Set();
 
-  // Journeys (community_questions) page in alongside media posts, tracked
-  // with their own offset/end-of-list flag since they come from a
-  // completely separate table/query.
+  // Journeys (community_questions) — their own dedicated tab and table/
+  // query, paged independently of media with their own offset/end flag.
   var JOURNAL_PAGE_SIZE = 4;
   var journalOffset = 0;
   var journalReachedEnd = false;
-  // Newest created_at currently sitting at the top of the reel, across
-  // both media and journeys — used so a live update only fetches what's
-  // genuinely new instead of re-fetching everything already on screen.
+  // Newest created_at currently sitting at the top of the reel — used so a
+  // live update only fetches what's genuinely new instead of re-fetching
+  // everything already on screen.
   var newestSeenAt = null;
 
   // Category filter chips — lets a member jump straight to a workout type
@@ -1598,33 +1569,10 @@
   // by the same story_reactions table the marketing site uses, so a member
   // can cheer someone on right here without leaving the app. Replying with
   // words still happens on ensemblefitness.com, via the link below.
-  function buildJournalSlide(item) {
-    var el = document.createElement("div");
-    el.className = "rp-slide";
-    var initial = (item.name || "?").trim().charAt(0).toUpperCase();
-    el.innerHTML =
-      '<div class="rp-media rp-journal-media"><div class="rp-journal-quote">' + escapeHtml(item.caption) + '</div></div>' +
-      '<div class="rp-slide-header">' +
-        '<div class="rp-slide-avatar" style="background:' + avatarColor(item.user_id || item.id) + '">' + escapeHtml(initial) + '</div>' +
-        '<div class="rp-slide-headertext">' +
-          '<div class="rp-slide-header-name">' + escapeHtml(item.name) + '</div>' +
-          '<div class="rp-slide-header-sub">' + escapeHtml(timeAgo(item.created_at)) + '</div>' +
-          '<div class="rp-context-badges"><span class="rp-context-badge rp-badge-type">📓 Journey</span></div>' +
-        '</div>' +
-      '</div>' +
-      '<div class="rp-actions rp-journal-actions"></div>' +
-      '<div class="rp-overlay-bottom">' +
-        '<a class="rp-journal-link" href="https://ensemblefitness.com/fitness-journey.html#journey-' + encodeURIComponent(item.id) + '" target="_blank" rel="noopener">Read &amp; reply on Fitness Journeys →</a>' +
-      '</div>';
-    renderStoryReactions(item, el.querySelector(".rp-journal-actions"));
-    return el;
-  }
-
-  // List-mode variant of a journey post, used only for the "Journeys"
-  // filter (see .rp-reel-list / .rp-slide-compact above). Plain stacked
-  // card instead of a full-height swipe slide, so the tab scales to
-  // however many entries a day come in without turning into hundreds of
-  // individual full-screen swipes.
+  //
+  // This is the only journey renderer now — journeys only ever load under
+  // the dedicated "Journeys" filter (see loadMoreReel), never mixed into
+  // "All", so there's no full-bleed-swipe variant to branch to.
   function buildJournalCard(item) {
     var el = document.createElement("div");
     el.className = "rp-slide rp-slide-compact";
@@ -1647,10 +1595,7 @@
   }
 
   function buildAnySlide(item) {
-    if (item.kind === "journal") {
-      return activeFilter === "Journeys" ? buildJournalCard(item) : buildJournalSlide(item);
-    }
-    return buildSlide(item);
+    return item.kind === "journal" ? buildJournalCard(item) : buildSlide(item);
   }
 
   function wireSlideHeader(item, el) {
@@ -1978,7 +1923,6 @@
 
   function isReelExhausted() {
     if (activeFilter === "Journeys") return journalReachedEnd;
-    if (activeFilter === "All") return reachedEnd && journalReachedEnd;
     return reachedEnd;
   }
 
@@ -2026,28 +1970,15 @@
       return;
     }
 
-    // "All" merges media + journeys, sorted together by recency. A specific
-    // workout-type filter (Working Out, Walking, ...) is media-only, same
-    // as before — journeys have no workout_type so they'd never match one.
-    var wantsJournals = activeFilter === "All" && !journalReachedEnd;
-    var mediaRowsPromise = reachedEnd ? Promise.resolve([]) : fetchBatch(false, PAGE_SIZE, offset, activeFilter);
-    var journalItemsPromise = wantsJournals ? fetchJournalBatch(JOURNAL_PAGE_SIZE, journalOffset) : Promise.resolve([]);
-    var mediaRows = await mediaRowsPromise;
-    var journalItems2 = await journalItemsPromise;
-
-    var mediaItems = await buildItems(mediaRows);
+    // "All" (and every specific workout-type filter) is media-only.
+    // Journeys are their own dedicated tab now — see the branch above —
+    // so a text journey never shows up mixed in among photos/videos here.
+    var mediaRows = reachedEnd ? [] : await fetchBatch(false, PAGE_SIZE, offset, activeFilter);
+    var combined = await buildItems(mediaRows);
     if (!reachedEnd) {
       offset += mediaRows.length;
       reachedEnd = mediaRows.length < PAGE_SIZE;
     }
-    if (wantsJournals) {
-      journalOffset += journalItems2.length;
-      journalReachedEnd = journalItems2.length < JOURNAL_PAGE_SIZE;
-    }
-
-    var combined = mediaItems.concat(journalItems2).sort(function (a, b) {
-      return new Date(b.created_at) - new Date(a.created_at);
-    });
 
     loadingMore = false;
 
@@ -2057,7 +1988,7 @@
           ? "Couldn't load the feed — " + escapeHtml(lastFetchError.message || String(lastFetchError))
           : (activeFilter !== "All"
               ? "No approved " + escapeHtml(activeFilter) + " posts yet."
-              : "Nothing approved yet outside Meal Prep — once videos, photos, or journeys are shared, they'll scroll here.");
+              : "Nothing approved yet outside Meal Prep — once videos or photos are shared, they'll scroll here.");
         showEmptyReelMessage(reelMsg);
       }
       return;
@@ -2114,7 +2045,7 @@
     liveUpdateInFlight = true;
     try {
       var wantsMedia = activeFilter !== "Journeys";
-      var wantsJournals = activeFilter === "All" || activeFilter === "Journeys";
+      var wantsJournals = activeFilter === "Journeys";
       var mediaRows = wantsMedia ? await fetchNewMediaSince(newestSeenAt, activeFilter) : [];
       var newJournalItems = wantsJournals ? await fetchNewJournalsSince(newestSeenAt) : [];
       var newMediaItems = await buildItems(mediaRows);
