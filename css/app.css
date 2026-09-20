@@ -31,6 +31,16 @@
   --red: #e2483a;
   --red-tint: rgba(226, 72, 58, 0.14);
 
+  /* A distinct gold-yellow for the Journeys "star" reaction only —
+     deliberately not --amber (that's the muted gold used for pending/
+     warning states elsewhere and would read as a status color here, not
+     a reaction). Ken: a bright star breaks up the orange/red/orange
+     repetition in the Journeys reaction row and "people gravitate to it."
+     Matched directly to his reference image (measured ~rgb(238,200,77)),
+     not a generic "yellow" guess — this is a warm gold star, not neon
+     lemon-yellow. */
+  --star: #f2c94c;
+
   --muted-invert: #a7afc0;
   --faint-invert: #6b7690;
 

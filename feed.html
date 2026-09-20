@@ -592,6 +592,13 @@
     background: none;
     color: var(--red);
   }
+  /* Star reaction (Journeys only) — bright yellow so the row reads as
+     orange / yellow / red instead of orange / (something) / red, per
+     Ken's ask to break up the repeated orange. */
+  .rp-slide-compact .rp-action-btn.active[data-reaction="clap"] .rp-action-icon {
+    background: none;
+    color: var(--star);
+  }
   .rp-slide-compact .rp-action-count { font-size: 12px; }
 
   /* One-time highlight on a post that just arrived live while someone was
@@ -1076,6 +1083,13 @@
        desktop-only rule written as just `.rp-action-icon` silently never
        applied to Journeys cards on desktop (they carry both classes) — the
        compound selector below is what actually reaches them. */
+    /* Icon-then-count side by side, not stacked — Ken: "like Instagram,
+       the number count" next to the icon, not underneath it. Journeys
+       cards already do this (.rp-slide-compact sets row-direction
+       unconditionally); this brings the desktop "All" tab grid in line
+       with that same pattern instead of leaving it on the vertical
+       icon-over-count layout the mobile swipe reel uses. */
+    .rp-action-btn { flex-direction: row; gap: 6px; }
     .rp-action-icon,
     .rp-slide-compact .rp-action-icon {
       width: 22px;
@@ -1100,6 +1114,11 @@
     .rp-slide-compact .rp-action-btn.active[data-reaction="heart"] .rp-action-icon {
       background: none;
       color: var(--red);
+    }
+    .rp-action-btn.active[data-reaction="clap"] .rp-action-icon,
+    .rp-slide-compact .rp-action-btn.active[data-reaction="clap"] .rp-action-icon {
+      background: none;
+      color: var(--star);
     }
     .rp-action-count {
       font-size: 11px;
@@ -1380,8 +1399,10 @@
     muscle: {
       outline: '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="1" y="9.3" width="3" height="5.4" rx="1"/><rect x="20" y="9.3" width="3" height="5.4" rx="1"/><rect x="4.7" y="7.2" width="3" height="9.6" rx="1"/><rect x="16.3" y="7.2" width="3" height="9.6" rx="1"/><rect x="7.7" y="10.8" width="8.6" height="2.4" rx="1"/></svg>'
     },
+    // A real 5-point star, not a sparkle burst — Ken: bright yellow, an
+    // actual star reads better and "people gravitate towards that."
     clap: {
-      outline: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.2 13.1 8l4.9-3-3 4.9L21 11l-6 1.1 3 4.9-4.9-3L12 20l-1.1-6-4.9 3 3-4.9L3 11l6-1.1-3-4.9 4.9 3Z"/></svg>'
+      outline: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>'
     }
   };
   var COMMENT_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-8.4 8.4c-1.28 0-2.5-.28-3.6-.79L3 21l1.9-5.7a8.3 8.3 0 0 1-.8-3.6A8.4 8.4 0 0 1 12.5 3.2a8.4 8.4 0 0 1 8.5 8.3Z"/></svg>';
@@ -1701,11 +1722,14 @@
   }
 
   // A journey has no photo/video and isn't a row in the "media" table, so
-  // it skips follow/comment entirely (those stay wired to media-specific
-  // tables) — but it DOES get real reactions (clap/heart/thumbs up), backed
-  // by the same story_reactions table the marketing site uses, so a member
-  // can cheer someone on right here without leaving the app. Replying with
-  // words still happens on ensemblefitness.com, via the link below.
+  // it skips the follow button and in-app comment panel (those stay wired
+  // to media-specific tables) — but it DOES get real reactions (star/
+  // heart/thumbs up), backed by the same story_reactions table the
+  // marketing site uses, so a member can cheer someone on right here
+  // without leaving the app. The 4th icon is a real reply count (from
+  // story_replies), it just opens the marketing site to actually reply —
+  // same destination as the button below, since that's where journey
+  // replies live; see renderStoryReactions/journeyReplyUrl.
   //
   // This is the only journey renderer now — journeys only ever load under
   // the dedicated "Journeys" filter (see loadMoreReel), never mixed into
@@ -1726,7 +1750,7 @@
       '</div>' +
       '<div class="rp-jc-quote">' + escapeHtml(item.caption) + '</div>' +
       '<div class="rp-actions rp-journal-actions"></div>' +
-      '<a class="rp-jc-link" href="https://ensemblefitness.com/fitness-journey.html#journey-' + encodeURIComponent(item.id) + '" target="_blank" rel="noopener">Read &amp; reply on Fitness Journeys →</a>';
+      '<a class="rp-jc-link" href="' + journeyReplyUrl(item) + '" target="_blank" rel="noopener">Read &amp; reply on Fitness Journeys →</a>';
     renderStoryReactions(item, el.querySelector(".rp-journal-actions"));
     return el;
   }
@@ -1949,14 +1973,31 @@
     }
   }
 
+  // Journeys don't have their own in-app comment panel — replies to a
+  // journey are the same story_replies rows the marketing site's Fitness
+  // Journeys page shows and writes to, so "commenting" here means sending
+  // the member there rather than opening a second, separate reply box in
+  // the app. This just gives that same destination a normal comment icon
+  // + live count, matching the look of the media post's 4th icon, instead
+  // of the reply count being invisible until you click through.
+  function journeyReplyUrl(item) {
+    return "https://ensemblefitness.com/fitness-journey.html#journey-" + encodeURIComponent(item.id);
+  }
+
   async function renderStoryReactions(item, container) {
     if (!container) return;
     container.innerHTML = STORY_REACTIONS.map(function (r) {
       return '<button type="button" class="rp-action-btn" data-reaction="' + r.type + '">' +
         '<span class="rp-action-icon">' + reactionIconMarkup(r.type, false) + '</span><span class="rp-action-count"></span></button>';
-    }).join("");
+    }).join("") +
+      '<a class="rp-action-btn rp-comment-btn" href="' + journeyReplyUrl(item) + '" target="_blank" rel="noopener">' +
+      '<span class="rp-action-icon">' + COMMENT_ICON + '</span><span class="rp-action-count"></span></a>';
 
-    var { data: reactions } = await window.sb.from("story_reactions").select("user_id, reaction").eq("question_id", item.id);
+    var [{ data: reactions }, { count: replyCount }] = await Promise.all([
+      window.sb.from("story_reactions").select("user_id, reaction").eq("question_id", item.id),
+      window.sb.from("story_replies").select("id", { count: "exact", head: true }).eq("question_id", item.id)
+    ]);
+    container.querySelector(".rp-comment-btn .rp-action-count").textContent = replyCount || "";
 
     var counts = { clap: 0, heart: 0, thumbs_up: 0 };
     var mine = {};
