@@ -902,24 +902,26 @@
 
     /* Generic sidebar panel shell — bold bordered card with a warm glow,
        reused for Meal Prep, Quotes, Music, and Books so the whole rail
-       reads as one energetic, branded set of tiles. */
+       reads as one energetic, branded set of tiles. Warm/orange-tinted
+       to match the homepage's brand color, not pink — pink is reserved
+       for Fitness+ below, the one dating-specific panel. */
     .rp-panel {
       display: block;
-      background: linear-gradient(165deg, #170a12, #120a10);
-      border: 1px solid rgba(255,61,104,0.22);
+      background: linear-gradient(165deg, #17120a, #100c0a);
+      border: 1px solid rgba(255,122,61,0.22);
       border-radius: 18px;
       padding: 16px 16px 14px;
       box-shadow: 0 10px 24px rgba(0,0,0,0.35);
     }
-    /* Fitness+ is the revenue-driving feature — a slightly warmer/bolder
-       treatment than the other sidebar panels so it doesn't just blend
-       into the rest of the stack. */
+    /* Fitness+ is the dating feature — pink, matching the homepage's
+       "Meet."/DATING/heart treatment, distinct from the orange used
+       everywhere else in the app. */
     .rp-panel-fitplus {
-      background: linear-gradient(165deg, #2a0f10, #170a0c);
-      border: 1px solid rgba(255,154,61,0.35);
-      box-shadow: 0 10px 26px rgba(255,109,31,0.16);
+      background: linear-gradient(165deg, #2a0f1c, #170a10);
+      border: 1px solid rgba(219,31,82,0.35);
+      box-shadow: 0 10px 26px rgba(219,31,82,0.16);
     }
-    .rp-panel-fitplus .rp-panel-link { color: #ff9a3d; }
+    .rp-panel-fitplus .rp-panel-link { color: var(--pink-2); }
     .rp-panel-head {
       display: flex;
       align-items: center;
@@ -1055,9 +1057,17 @@
     }
     .rp-comments-panel.open { display: flex; }
 
+    /* Bug fix: every child of .rp-mp-modal is position:absolute, so with
+       `right` unset here the box had no in-flow content to size itself
+       against and collapsed to 0 width — the modal's black backdrop
+       never painted and its text, boxed into 0px, wrapped one word per
+       line ("a blank page with some words floating over whatever was
+       behind it," per Ken). An explicit width alongside max-width fixes
+       the sizing regardless of the (all-absolute) children. */
     .rp-mp-modal {
       left: 50%;
       right: auto;
+      width: 100%;
       transform: translateX(-50%);
       margin: 0;
     }
