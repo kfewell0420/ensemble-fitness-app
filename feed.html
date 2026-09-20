@@ -1249,8 +1249,9 @@
   <!-- display:contents on mobile makes this wrapper invisible to layout —
        .rp-mealprep behaves exactly as it always has there. On desktop it
        becomes a real sidebar stack: Meal Prep, Fitness+, Start Your
-       Journey, Daily Inspiration, Motivational Books, Music Library —
-       so signed-in members see more of the brand, not just the reel. -->
+       Journey, Approved Marketplace, Daily Inspiration, Music Library,
+       Motivational Books — so signed-in members see more of the brand,
+       not just the reel. -->
   <div class="rp-side-panels" id="rpSidePanels">
     <div class="rp-mealprep" id="rpMealPrep">
       <div class="rp-mealprep-banner">
@@ -1266,10 +1267,10 @@
       <div class="rp-panel-empty">Log a workout, jot how you felt, and watch a real record build — right inside your account.</div>
       <a class="rp-panel-link" href="journey.html">Start Your Journey →</a>
     </div>
-    <div class="rp-panel rp-panel-quote" id="rpQuotePanel"></div>
     <div class="rp-panel rp-panel-gear" id="rpGearPanel"></div>
-    <div class="rp-panel rp-panel-books" id="rpBooksPanel"></div>
+    <div class="rp-panel rp-panel-quote" id="rpQuotePanel"></div>
     <div class="rp-panel rp-panel-music" id="rpMusicPanel"></div>
+    <div class="rp-panel rp-panel-books" id="rpBooksPanel"></div>
   </div>
 
   <div class="rp-filters" id="rpFilters"></div>
@@ -2555,7 +2556,7 @@
         escapeHtml(g.name) + '</div>' + (g.price ? '<div class="rp-mini-sub">' + escapeHtml(g.price) + '</div>' : '') + '</div></div>';
     }).join("");
     panel.innerHTML =
-      '<div class="rp-panel-head"><span class="rp-panel-icon">🛒</span><span class="rp-panel-title">Approved Gear</span></div>' +
+      '<div class="rp-panel-head"><span class="rp-panel-icon">🛒</span><span class="rp-panel-title">Approved Marketplace</span></div>' +
       (rows || '<div class="rp-panel-empty">Real Amazon picks Ken actually buys — new ones added often.</div>') +
       '<a class="rp-panel-link" href="gear.html">Browse the picks →</a>';
   }
