@@ -13,27 +13,17 @@
 
 <!-- Decorative only — Ken's ask (Sept 2026): this page felt empty and flat,
      and he wants it to feel like a fun, colorful place made for music and
-     artists. This is a pure CSS/SVG "stage lighting" backdrop (glows,
-     a bar-style waveform strip, floating notes, a few handwritten-style
-     captions) so nothing here needs an image asset yet. It's fixed behind
-     everything, aria-hidden, and pointer-events:none so it never gets in
-     the way of real content or clicks. Ken mocked up a photographic
-     concert-scene version of this — once he sends that image file, it can
-     drop in here as a background-image and this CSS backdrop steps aside. -->
+     artists. Ken supplied the actual background photo (musicians/DJ/vinyl,
+     with an empty dark center built in for content to sit over), so this
+     is that image plus a couple of handwritten-style captions in the
+     margins. It's fixed behind everything, aria-hidden, and
+     pointer-events:none so it never gets in the way of real content or
+     clicks. -->
 <div class="ml-bg" aria-hidden="true">
-  <div class="ml-bg-glow ml-bg-glow-1"></div>
-  <div class="ml-bg-glow ml-bg-glow-2"></div>
-  <div class="ml-bg-glow ml-bg-glow-3"></div>
-  <div class="ml-bg-glow ml-bg-glow-4"></div>
-  <span class="ml-note" style="left:4%; top:14%; font-size:34px; transform:rotate(-12deg);">♪</span>
-  <span class="ml-note" style="left:9%; top:34%; font-size:22px; transform:rotate(8deg);">♫</span>
-  <span class="ml-note" style="right:6%; top:20%; font-size:30px; transform:rotate(10deg);">♫</span>
-  <span class="ml-note" style="right:11%; top:46%; font-size:20px; transform:rotate(-6deg);">♪</span>
   <span class="ml-caption" style="left:2.5%; top:16%;">Beats Build<br>Better Days</span>
   <span class="ml-caption" style="right:2.5%; top:12%; text-align:right;">Music Inspires<br>Movement</span>
   <span class="ml-caption" style="left:2%; top:58%;">Different Artists.<br>Same Higher Purpose.</span>
   <span class="ml-caption" style="right:2%; top:56%; text-align:right;">Support<br>Real&nbsp;Artists</span>
-  <div class="ml-bg-wave" aria-hidden="true"></div>
 </div>
 
 <header class="app-nav">
@@ -124,41 +114,38 @@
       grid-template-columns: minmax(0, 1fr) 300px;
       grid-template-areas: "main side";
       column-gap: 24px;
-      align-items: start;
+      /* Ken's ask (Sept 2026): the two boxes need to match — same height,
+         lined up left to right — not one taller than the other. Stretch
+         makes both columns match whichever is naturally taller, and the
+         wallet's own content centers inside that height instead of sitting
+         at the top with dead space below it (see #walletCard below). */
+      align-items: stretch;
     }
-    .ml-main { grid-area: main; }
+    .ml-main { grid-area: main; display: flex; }
+    .ml-main > .card { width: 100%; display: flex; flex-direction: column; }
     .ml-side {
       grid-area: side;
       position: sticky;
       top: 24px;
+      display: flex;
     }
+    .ml-side > .card { width: 100%; display: flex; flex-direction: column; justify-content: center; }
   }
 
-  /* ---- Decorative backdrop (see the comment on .ml-bg's markup above) --- */
+  /* ---- Decorative backdrop (see the comment on .ml-bg's markup above) ---
+     Ken's own background photo, fixed behind everything and dimmed a touch
+     at the very top/bottom so the nav bar and the tagline row underneath
+     stay easy to read against it. The photo's own center is already dark
+     and empty by design, which is exactly where the real cards sit. */
   .ml-bg {
     position: fixed;
     inset: 0;
     z-index: 0;
     overflow: hidden;
     pointer-events: none;
-    background: #07060a;
-  }
-  .ml-bg-glow {
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(70px);
-    opacity: 0.5;
-  }
-  .ml-bg-glow-1 { width: 480px; height: 480px; left: -120px; top: -140px; background: radial-gradient(circle, var(--accent), transparent 70%); }
-  .ml-bg-glow-2 { width: 420px; height: 420px; right: -100px; top: 10%; background: radial-gradient(circle, var(--pink-2), transparent 70%); }
-  .ml-bg-glow-3 { width: 460px; height: 460px; left: 8%; bottom: -180px; background: radial-gradient(circle, #6d4fff, transparent 70%); }
-  .ml-bg-glow-4 { width: 380px; height: 380px; right: 10%; bottom: -140px; background: radial-gradient(circle, #17c3b2, transparent 70%); }
-
-  .ml-note {
-    position: absolute;
-    color: var(--accent-2);
-    opacity: 0.28;
-    display: none;
+    background:
+      linear-gradient(to bottom, rgba(4,3,6,0.55) 0%, rgba(4,3,6,0.15) 16%, rgba(4,3,6,0.15) 78%, rgba(4,3,6,0.65) 100%),
+      #07060a url('assets/music-library-bg.jpg') center center / cover no-repeat;
   }
   .ml-caption {
     position: absolute;
@@ -166,34 +153,12 @@
     font-family: 'Caveat', cursive;
     font-size: 26px;
     line-height: 1.15;
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.6);
+    text-shadow: 0 2px 10px rgba(0,0,0,0.6);
     max-width: 190px;
   }
   @media (min-width: 1180px) {
-    .ml-note, .ml-caption { display: block; }
-  }
-  @media (prefers-reduced-motion: no-preference) {
-    .ml-bg-glow { animation: mlDrift 16s ease-in-out infinite alternate; }
-    .ml-bg-glow-2 { animation-delay: -4s; }
-    .ml-bg-glow-3 { animation-delay: -9s; }
-    .ml-bg-glow-4 { animation-delay: -13s; }
-  }
-  @keyframes mlDrift {
-    from { transform: translate(0, 0) scale(1); }
-    to { transform: translate(24px, -18px) scale(1.06); }
-  }
-  .ml-bg-wave {
-    position: absolute;
-    left: 0; right: 0; bottom: 0;
-    height: 90px;
-    opacity: 0.35;
-    background-image: repeating-linear-gradient(
-      90deg,
-      var(--accent) 0 3px,
-      transparent 3px 14px
-    );
-    -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
-            mask-image: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+    .ml-caption { display: block; }
   }
 
   /* ---- Stat row ----------------------------------------------------------- */
@@ -211,6 +176,17 @@
   .ml-stat span { display: block; font-size: 12px; color: var(--faint-invert); }
 
   /* ---- Browse Tracks header + button -------------------------------------- */
+  /* Now that there's a busy photo behind the page instead of a soft glow,
+     the two cards need to read as solid panels sitting on top of it rather
+     than letting it show through — otherwise text over the photo gets hard
+     to read. A touch of blur behind them keeps the photo visible without
+     competing with the content. */
+  .ml-shell .card {
+    background: rgba(6, 5, 9, 0.86);
+    -webkit-backdrop-filter: blur(6px);
+            backdrop-filter: blur(6px);
+  }
+
   .ml-tracks-head {
     display: flex;
     align-items: flex-start;
@@ -271,6 +247,14 @@
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .track-table-chevron { flex: none; font-size: 18px; color: var(--faint-invert); }
+
+  @media (min-width: 900px) {
+    /* Keeps the card's own height sane (and matched to the wallet's,
+       via stretch above) once the library actually has a lot of tracks
+       in it — the list scrolls inside the card instead of the card
+       growing forever down the page. */
+    .track-table { max-height: 420px; overflow-y: auto; }
+  }
 
   /* ---- Bottom tagline ----------------------------------------------------- */
   .ml-tagline {
