@@ -111,6 +111,7 @@
   var currentUser = null;
   var myZip = "";
   var myWakeTime = "";
+  var myIntent = "";
 
   // Ken's call: don't show real member cards here yet — with only a handful
   // of test accounts, a visible "matches" grid looks thin/awkward. Show
@@ -147,23 +148,29 @@
     return signed ? signed.signedUrl : "";
   }
 
-  // A simple, transparent match score: same ZIP and same wake-up time both count,
-  // so "great matches" (both) naturally sort to the top, followed by a one-factor
-  // match, followed by everyone else — rather than hiding people with no match yet,
-  // which would leave the page empty while the community is still small.
+  // A simple, transparent match score: same ZIP and same wake-up time count most
+  // heavily, and sharing the same "what are you looking for" preference adds a
+  // smaller boost on top — so "great matches" naturally sort to the top, followed
+  // by a one-factor match, followed by everyone else — rather than hiding people
+  // with no match yet, which would leave the page empty while the community is
+  // still small. relationship_intent is optional, so it only ever adds to the
+  // score — never subtracts or excludes someone who left it blank.
   function matchScoreFor(member) {
     var score = 0;
     if (myZip && member.zip_code === myZip) score += 2;
     if (myWakeTime && member.wake_time_category === myWakeTime) score += 1;
+    if (myIntent && member.relationship_intent === myIntent) score += 1;
     return score;
   }
 
   function matchBadgeFor(member) {
     var sameZip = !!myZip && member.zip_code === myZip;
     var sameWake = !!myWakeTime && member.wake_time_category === myWakeTime;
+    var sameIntent = !!myIntent && member.relationship_intent === myIntent;
     if (sameZip && sameWake) return '<span class="match-badge great">💘 Great match</span>';
     if (sameZip) return '<span class="match-badge zip">📍 Same ZIP code</span>';
     if (sameWake) return '<span class="match-badge wake">🌞 Same wake-up time</span>';
+    if (sameIntent) return '<span class="match-badge intent">❤️ Looking for the same thing</span>';
     return "";
   }
 
@@ -173,11 +180,12 @@
 
     var { data: mine } = await window.sb
       .from("profiles")
-      .select("zip_code, wake_time_category")
+      .select("zip_code, wake_time_category, relationship_intent")
       .eq("id", currentUser.id)
       .maybeSingle();
     myZip = (mine && mine.zip_code) || "";
     myWakeTime = (mine && mine.wake_time_category) || "";
+    myIntent = (mine && mine.relationship_intent) || "";
 
     if (!myZip || !myWakeTime) {
       msg.textContent = "Add your ZIP code and wake-up time on My Profile to see your best matches highlighted here.";
@@ -186,7 +194,7 @@
 
     var { data, error } = await window.sb
       .from("profiles")
-      .select("id, display_name, bio, zip_code, wake_time_category")
+      .select("id, display_name, bio, zip_code, wake_time_category, relationship_intent")
       .neq("id", currentUser.id);
 
     if (error) {
@@ -214,9 +222,11 @@
         : '<div class="thumb-initial">' + initial + '</div>';
 
       var wakeLabel = wakeTimeLabel(member.wake_time_category);
+      var intentLabel = relationshipIntentLabel(member.relationship_intent);
       var subParts = [];
       if (member.zip_code) subParts.push("ZIP " + escapeHtml(member.zip_code));
       if (wakeLabel) subParts.push(escapeHtml(wakeLabel));
+      if (intentLabel) subParts.push(escapeHtml(intentLabel));
 
       var card = document.createElement("div");
       card.className = "feed-card";

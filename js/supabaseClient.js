@@ -96,6 +96,31 @@ function buildWakeTimeOptionsHtml(placeholderLabel) {
   return html;
 }
 
+/* Optional "what are you looking for" preference used by Fitness+ matching. Kept in one
+   place, same pattern as WAKE_TIME_OPTIONS above, so the profile page's <select> and any
+   displayed label stay in sync with the values allowed by the database check constraint. */
+window.RELATIONSHIP_INTENT_OPTIONS = [
+  { value: "long_term", label: "Long-term relationship" },
+  { value: "dating", label: "Dating" },
+  { value: "open_to_connection", label: "Open to connection" }
+];
+
+function relationshipIntentLabel(value) {
+  var match = window.RELATIONSHIP_INTENT_OPTIONS.filter(function (o) { return o.value === value; })[0];
+  return match ? match.label : "";
+}
+
+/* Builds <option> markup for a relationship-intent <select>. Pass a placeholderLabel to
+   include a blank first option (e.g. "Prefer not to say" — this field is optional, unlike
+   ZIP code and wake-up time); omit it to list only the three real options. */
+function buildRelationshipIntentOptionsHtml(placeholderLabel) {
+  var html = placeholderLabel ? '<option value="">' + placeholderLabel + '</option>' : "";
+  window.RELATIONSHIP_INTENT_OPTIONS.forEach(function (o) {
+    html += '<option value="' + o.value + '">' + o.label + '</option>';
+  });
+  return html;
+}
+
 async function signOut() {
   if (!window.sb) return;
   await window.sb.auth.signOut();

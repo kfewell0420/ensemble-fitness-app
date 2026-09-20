@@ -69,6 +69,11 @@
         <select id="wakeTimeCategory" name="wakeTimeCategory" required></select>
         <span style="font-size:12px; color:var(--faint-invert);">Helps match you with members on Find Members whose schedule fits yours.</span>
       </div>
+      <div class="field">
+        <label for="relationshipIntent">What are you looking for? (optional)</label>
+        <select id="relationshipIntent" name="relationshipIntent"></select>
+        <span style="font-size:12px; color:var(--faint-invert);">Only shown to help match you on Fitness+ — leave blank if you'd rather not say.</span>
+      </div>
       <button type="submit" class="btn btn-primary" id="saveProfileBtn">Save Profile</button>
     </form>
   </div>
@@ -598,10 +603,11 @@
 
   async function loadProfile() {
     document.getElementById("wakeTimeCategory").innerHTML = buildWakeTimeOptionsHtml("Choose one…");
+    document.getElementById("relationshipIntent").innerHTML = buildRelationshipIntentOptionsHtml("Prefer not to say");
 
     var { data, error } = await window.sb
       .from("profiles")
-      .select("display_name, bio, zip_code, wake_time_category, is_artist")
+      .select("display_name, bio, zip_code, wake_time_category, relationship_intent, is_artist")
       .eq("id", currentUser.id)
       .maybeSingle();
     if (data && data.is_artist) {
@@ -613,6 +619,7 @@
       document.getElementById("bio").value = data.bio || "";
       document.getElementById("zipCode").value = data.zip_code || "";
       document.getElementById("wakeTimeCategory").value = data.wake_time_category || "";
+      document.getElementById("relationshipIntent").value = data.relationship_intent || "";
       document.getElementById("avatarCircle").textContent =
         (data.display_name || currentUser.email || "?").trim().charAt(0).toUpperCase();
 
@@ -621,6 +628,7 @@
       var glanceParts = [];
       if (data.wake_time_category) glanceParts.push("🌞 " + wakeTimeLabel(data.wake_time_category));
       if (data.zip_code) glanceParts.push("📍 ZIP " + data.zip_code);
+      if (data.relationship_intent) glanceParts.push("❤️ " + relationshipIntentLabel(data.relationship_intent));
       var glanceEl = document.getElementById("profileGlance");
       if (glanceParts.length) {
         glanceEl.textContent = glanceParts.join("  ·  ");
@@ -865,6 +873,8 @@
       return;
     }
 
+    var relationshipIntentValue = document.getElementById("relationshipIntent").value;
+
     var btn = document.getElementById("saveProfileBtn");
     btn.disabled = true;
     btn.textContent = "Saving…";
@@ -874,7 +884,8 @@
       display_name: document.getElementById("displayName").value.trim(),
       bio: document.getElementById("bio").value.trim(),
       zip_code: zipCodeValue,
-      wake_time_category: wakeTimeValue
+      wake_time_category: wakeTimeValue,
+      relationship_intent: relationshipIntentValue || null
     });
 
     btn.disabled = false;
@@ -889,11 +900,12 @@
         (document.getElementById("avatarCircle").textContent =
           document.getElementById("displayName").value.trim().charAt(0).toUpperCase() || "?");
 
-      // Refresh the at-a-glance readout immediately so a changed wake-up time or ZIP
-      // shows right away, without needing a page reload.
+      // Refresh the at-a-glance readout immediately so a changed wake-up time, ZIP, or
+      // relationship preference shows right away, without needing a page reload.
       var glanceParts = [];
       if (wakeTimeValue) glanceParts.push("🌞 " + wakeTimeLabel(wakeTimeValue));
       if (zipCodeValue) glanceParts.push("📍 ZIP " + zipCodeValue);
+      if (relationshipIntentValue) glanceParts.push("❤️ " + relationshipIntentLabel(relationshipIntentValue));
       var glanceEl = document.getElementById("profileGlance");
       glanceEl.textContent = glanceParts.join("  ·  ");
       glanceEl.style.display = glanceParts.length ? "block" : "none";

@@ -1442,6 +1442,7 @@ img { max-width: 100%; display: block; }
 .match-badge.great { background: linear-gradient(135deg, var(--pink-2), var(--pink)); }
 .match-badge.zip { background: var(--green-tint); color: var(--green); }
 .match-badge.wake { background: var(--amber-tint); color: var(--amber); }
+.match-badge.intent { background: var(--pink-tint); color: var(--pink-2); }
 
 .spinner {
   width: 16px;
