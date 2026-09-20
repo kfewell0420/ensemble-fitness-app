@@ -1700,6 +1700,20 @@ img { max-width: 100%; display: block; }
    every signed-in page. See sql/notifications.sql for what creates these
    rows (reactions, comments, follows, messages).
    ========================================================================== */
+.efit-home-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted-invert);
+  font-size: 17px;
+  line-height: 1;
+  padding: 4px;
+  margin-right: 2px;
+  text-decoration: none;
+  border-radius: var(--radius-pill);
+}
+.efit-home-link:hover { color: #fff; }
+
 .efit-notif-wrap {
   position: relative;
   display: inline-flex;

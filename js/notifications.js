@@ -67,6 +67,28 @@
     return "feed.html";
   }
 
+  function buildHomeLink() {
+    var nav = document.querySelector(".app-nav");
+    var links = nav ? nav.querySelector(".app-nav-links") : null;
+    if (!nav || !links || document.getElementById("efitHomeLink")) return null;
+
+    // No point linking home from the home feed itself.
+    if (/(^|\/)feed\.html(\?|#|$)/.test(window.location.pathname)) return null;
+
+    var homeLink = document.createElement("a");
+    homeLink.href = "feed.html";
+    homeLink.id = "efitHomeLink";
+    homeLink.className = "efit-home-link";
+    homeLink.title = "Home";
+    homeLink.setAttribute("aria-label", "Home");
+    homeLink.textContent = "🏠";
+
+    // Placed right before the bell so it reads as a small pair of icons
+    // together, per Ken's request to put it "over near the bell".
+    links.appendChild(homeLink);
+    return homeLink;
+  }
+
   function buildBell() {
     var nav = document.querySelector(".app-nav");
     var links = nav ? nav.querySelector(".app-nav-links") : null;
@@ -228,6 +250,7 @@
     if (!userId) return; // signed out — nothing to show yet
 
     currentUserId = userId;
+    buildHomeLink();
     var wrap = buildBell();
     if (!wrap) return;
 
