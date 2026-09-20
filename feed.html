@@ -1037,8 +1037,21 @@
       order: 3;
       flex-direction: row;
       align-items: center;
-      gap: 16px;
+      gap: 12px;
       padding: 10px 14px 2px;
+    }
+    /* Desktop grid card is much narrower than a full phone screen, so the
+       46px mobile reaction circles (sized for a thumb reaching across a
+       full-bleed video) read as oversized here — Ken's call, ~35% smaller,
+       closer to how Instagram/TikTok keep desktop reaction icons quiet
+       rather than the main visual weight of the card. */
+    .rp-action-emoji {
+      width: 30px;
+      height: 30px;
+      font-size: 14px;
+    }
+    .rp-action-count {
+      font-size: 11px;
     }
     .rp-overlay-bottom {
       position: static;
