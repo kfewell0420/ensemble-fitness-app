@@ -431,9 +431,7 @@
     row.innerHTML =
       '<span class="track-table-art">🎵</span>' +
       '<span class="track-table-main">' +
-        '<span class="track-table-title">' + escapeHtml(track.title) +
-          (track.is_independent_artist ? ' <span class="track-royalty-badge" title="This artist is not signed to a label or publisher — they keep 100% of any future royalties on this track.">100% Royalties</span>' : '') +
-        '</span>' +
+        '<span class="track-table-title">' + escapeHtml(track.title) + '</span>' +
         '<span class="track-table-tagline">' + escapeHtml(subtitle) + '</span>' +
       '</span>' +
       (track.duration_seconds ? '<span class="track-table-duration">' + formatTrackDuration(track.duration_seconds) + '</span>' : '') +
