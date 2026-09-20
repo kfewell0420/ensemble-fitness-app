@@ -669,23 +669,50 @@
     min-height: 14px;
   }
 
-  .rp-comments-panel {
+  /* Comments modal — fixed over the whole viewport, completely decoupled
+     from any card's box, so opening it (on any post, with any number of
+     comments) never changes that card's height or reflows the grid below
+     it. Mobile: a bottom sheet, like the old inline panel looked, just no
+     longer living inside the card. Desktop: a centered two-pane modal
+     (media + comments), matching Instagram's own post-detail view — see
+     the @media override further down. */
+  .rp-comments-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .rp-comments-modal[hidden] { display: none; }
+  .rp-comments-modal-backdrop {
     position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    max-height: 62%;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+  }
+  .rp-comments-modal-box {
+    position: relative;
+    width: 100%;
+    max-width: 480px;
+    max-height: 78vh;
     background: var(--navy-900);
     border-top-left-radius: 20px;
     border-top-right-radius: 20px;
-    transform: translateY(105%);
-    transition: transform 0.25s ease;
+    box-shadow: 0 -20px 40px rgba(0,0,0,0.4);
     display: flex;
     flex-direction: column;
-    z-index: 10;
-    box-shadow: 0 -20px 40px rgba(0,0,0,0.4);
+    overflow: hidden;
   }
-  .rp-comments-panel.open { transform: translateY(0); }
+  /* Media pane is desktop-only — see below. On mobile it's not rendered
+     visually at all, matching how Instagram's own phone app shows a
+     comments-only sheet, not a split view (there's no room for both). */
+  .rp-comments-modal-media { display: none; }
+  .rp-comments-modal-panel {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    flex: 1;
+  }
   .rp-comments-header {
     display: flex;
     align-items: center;
@@ -1129,17 +1156,34 @@
       background: none;
       padding: 4px 14px 14px;
     }
-    .rp-comments-panel {
-      position: static;
-      order: 5;
-      display: none;
-      transform: none;
-      max-height: 300px;
-      border-radius: 0 0 16px 16px;
-      box-shadow: none;
-      border-top: 1px solid rgba(255,255,255,0.08);
+    /* Comments modal, desktop: centered two-pane view instead of a bottom
+       sheet — media on the left, comments on the right, matching
+       Instagram's own post-detail modal. */
+    .rp-comments-modal { align-items: center; }
+    .rp-comments-modal-box {
+      max-width: 900px;
+      max-height: 82vh;
+      flex-direction: row;
+      border-radius: 16px;
     }
-    .rp-comments-panel.open { display: flex; }
+    .rp-comments-modal-media {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: 1 1 55%;
+      background: #000;
+      overflow: hidden;
+    }
+    .rp-comments-modal-media img,
+    .rp-comments-modal-media video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .rp-comments-modal-panel {
+      flex: 1 1 45%;
+      min-width: 320px;
+    }
 
     /* Bug fix: every child of .rp-mp-modal is position:absolute, so with
        `right` unset here the box had no in-flow content to size itself
@@ -1254,6 +1298,26 @@
   <button type="button" class="rp-mp-modal-close" id="rpMpModalClose">✕</button>
   <div class="rp-mp-modal-media" id="rpMpModalMedia"></div>
   <div class="rp-mp-modal-meta" id="rpMpModalMeta"></div>
+</div>
+
+<!-- Comments open here now, in one shared overlay, instead of expanding
+     inline inside each card — a card used to grow by its own comment
+     count (20 comments = a much taller card than its grid neighbor), which
+     is exactly what Ken flagged after comparing to Instagram: opening
+     comments there pops a fixed modal instead of pushing the page down.
+     See openCommentsModal/closeCommentsModal. -->
+<div class="rp-comments-modal" id="rpCommentsModal" hidden>
+  <div class="rp-comments-modal-backdrop" id="rpCommentsBackdrop"></div>
+  <div class="rp-comments-modal-box">
+    <div class="rp-comments-modal-media" id="rpCommentsModalMedia"></div>
+    <div class="rp-comments-modal-panel">
+      <div class="rp-comments-header">
+        <span id="rpCommentsHeaderText">Comments</span>
+        <button type="button" class="rp-comments-close" id="rpCommentsClose">✕</button>
+      </div>
+      <div class="rp-comments-list" id="rpCommentsList"></div>
+    </div>
+  </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -1704,8 +1768,7 @@
       '<div class="rp-overlay-bottom">' +
         (item.caption ? '<div class="rp-caption">' + escapeHtml(item.caption) + '</div>' : "") +
       '</div>' +
-      '<div class="rp-actions" id="rpActions-' + item.id + '"></div>' +
-      '<div class="rp-comments-panel" id="rpComments-' + item.id + '"></div>';
+      '<div class="rp-actions" id="rpActions-' + item.id + '"></div>';
 
     if (item.kind === "video") {
       var videoEl = el.querySelector("video");
@@ -1928,7 +1991,7 @@
       '<span class="rp-action-icon">' + COMMENT_ICON + '</span><span class="rp-action-count"></span></button>';
 
     var commentBtn = container.querySelector(".rp-comment-btn");
-    commentBtn.addEventListener("click", function () { toggleCommentsPanel(item); });
+    commentBtn.addEventListener("click", function () { openCommentsModal(item); });
 
     var [{ data: reactions }, { count: commentCount }] = await Promise.all([
       window.sb.from("media_reactions").select("user_id, reaction_type").eq("media_id", item.id),
@@ -2035,21 +2098,48 @@
     }
   }
 
-  function toggleCommentsPanel(item) {
-    var panel = document.getElementById("rpComments-" + item.id);
-    var isOpen = panel.classList.contains("open");
-    document.querySelectorAll(".rp-comments-panel.open").forEach(function (p) { p.classList.remove("open"); });
-    if (!isOpen) {
-      panel.classList.add("open");
-      loadComments(item, panel);
-    }
+  // Comments open in one shared modal (fixed over the whole page) instead
+  // of expanding inline inside the card that was clicked. The old inline
+  // panel grew the card by however many comments it had — 20 comments
+  // meant a card 20-comments-tall, throwing off its neighbor in the
+  // 2-column grid — which is exactly what Ken flagged after comparing to
+  // Instagram's own comments modal, where the underlying feed never
+  // moves. This one modal is reused for whichever post was tapped; only
+  // its content changes.
+  function openCommentsModal(item) {
+    var modal = document.getElementById("rpCommentsModal");
+    var headerText = document.getElementById("rpCommentsHeaderText");
+    var mediaEl = document.getElementById("rpCommentsModalMedia");
+    var panel = modal.querySelector(".rp-comments-modal-panel");
+
+    headerText.textContent = (item.name || "A member") + "'s post";
+    // The media pane is desktop-only (see CSS) — built either way since
+    // it's cheap and the signed URL is already sitting on `item`.
+    mediaEl.innerHTML = item.kind === "video"
+      ? '<video src="' + item.url + '" controls loop muted playsinline></video>'
+      : '<img src="' + item.url + '" alt="" />';
+
+    modal.hidden = false;
+    loadComments(item, panel);
   }
 
+  function closeCommentsModal() {
+    document.getElementById("rpCommentsModal").hidden = true;
+  }
+
+  document.getElementById("rpCommentsClose").addEventListener("click", closeCommentsModal);
+  document.getElementById("rpCommentsBackdrop").addEventListener("click", closeCommentsModal);
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && !document.getElementById("rpCommentsModal").hidden) closeCommentsModal();
+  });
+
   async function loadComments(item, panel) {
-    panel.innerHTML =
-      '<div class="rp-comments-header"><span>Comments</span><button type="button" class="rp-comments-close">✕</button></div>' +
-      '<div class="rp-comments-list">Loading…</div>';
-    panel.querySelector(".rp-comments-close").addEventListener("click", function () { panel.classList.remove("open"); });
+    var listEl = panel.querySelector(".rp-comments-list");
+    listEl.innerHTML = "Loading…";
+    // Reopening for a different post while an input row from the last one
+    // is still attached would otherwise stack a second input row below it.
+    var oldInputRow = panel.querySelector(".rp-comment-input-row");
+    if (oldInputRow) oldInputRow.remove();
 
     var { data: comments } = await window.sb
       .from("media_comments")
