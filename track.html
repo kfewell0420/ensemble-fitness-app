@@ -56,6 +56,7 @@
   .tp-title { font-size: 24px; margin: 0 0 4px; color: #fff; }
   .tp-artist { font-size: 15px; color: var(--muted-invert); }
   .tp-audio { width: 100%; height: 42px; margin: 4px 0 22px; }
+  .tp-tagline { font-size: 15px; font-style: italic; color: var(--accent-2); margin: 0 0 12px; }
   .tp-bio { font-size: 14px; line-height: 1.6; margin: 0 0 8px; }
   .tp-link { display: inline-block; font-size: 13px; color: var(--accent-2); margin-bottom: 18px; word-break: break-all; }
   .tp-wallet-row {
@@ -80,6 +81,12 @@
     });
   }
   function formatCents(cents) { return "$" + (cents / 100).toFixed(2); }
+  function formatDuration(seconds) {
+    if (seconds === null || seconds === undefined || !isFinite(seconds)) return "";
+    var m = Math.floor(seconds / 60);
+    var s = Math.round(seconds % 60);
+    return m + ":" + (s < 10 ? "0" : "") + s;
+  }
   function showMsg(el, text, kind) { el.textContent = text; el.className = "form-msg show " + kind; }
   function hideMsg(el) { el.className = "form-msg"; }
 
@@ -215,9 +222,10 @@
           '<h2 class="tp-title">' + escapeHtml(track.title) +
             (track.is_independent_artist ? ' <span class="track-royalty-badge" title="This artist is not signed to a label or publisher — they keep 100% of any future royalties on this track.">100% Royalties</span>' : '') +
           '</h2>' +
-          '<div class="tp-artist">by ' + escapeHtml(track.artist_name) + '</div>' +
+          '<div class="tp-artist">by ' + escapeHtml(track.artist_name) + (track.duration_seconds ? ' · ' + formatDuration(track.duration_seconds) : '') + '</div>' +
         '</div>' +
       '</div>' +
+      (track.tagline ? '<p class="tp-tagline">“' + escapeHtml(track.tagline) + '”</p>' : '') +
       (track.artist_bio ? '<p class="tp-bio">' + escapeHtml(track.artist_bio) + '</p>' : '') +
       (track.artist_link ? '<a href="' + escapeHtml(track.artist_link) + '" target="_blank" rel="noopener" class="tp-link">' + escapeHtml(track.artist_link) + '</a>' : '') +
       '<audio controls preload="none" class="tp-audio" id="tpAudio"></audio>' +
@@ -279,7 +287,7 @@
 
     var { data, error } = await window.sb
       .from("tracks")
-      .select("id, title, artist_name, artist_bio, artist_link, storage_path, is_independent_artist")
+      .select("id, title, artist_name, artist_bio, artist_link, tagline, duration_seconds, storage_path, is_independent_artist")
       .eq("id", id)
       .eq("is_active", true)
       .maybeSingle();

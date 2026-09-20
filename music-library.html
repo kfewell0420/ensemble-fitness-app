@@ -241,10 +241,16 @@
     font-weight: 700; font-size: 14.5px; color: #fff;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
-  .track-table-artist {
+  .track-table-tagline {
     display: block;
-    font-size: 12.5px; color: var(--muted-invert); margin-top: 2px;
+    font-size: 12.5px; font-style: italic; color: var(--muted-invert); margin-top: 2px;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .track-table-duration {
+    flex: none;
+    font-size: 12.5px;
+    color: var(--faint-invert);
+    font-variant-numeric: tabular-nums;
   }
   .track-table-chevron { flex: none; font-size: 18px; color: var(--faint-invert); }
 
@@ -387,7 +393,7 @@
 
     var { data, error } = await window.sb
       .from("tracks")
-      .select("id, title, artist_name, is_independent_artist")
+      .select("id, title, artist_name, tagline, duration_seconds, is_independent_artist")
       .eq("is_active", true)
       .order("title", { ascending: true });
 
@@ -406,18 +412,31 @@
     });
   }
 
+  function formatTrackDuration(seconds) {
+    if (seconds === null || seconds === undefined || !isFinite(seconds)) return "";
+    var m = Math.floor(seconds / 60);
+    var s = Math.round(seconds % 60);
+    return m + ":" + (s < 10 ? "0" : "") + s;
+  }
+
   function buildTrackRow(track) {
+    // Ken's ask: keep this list light, iTunes-style but with less on it —
+    // a tagline (short and motivating) in place of the artist's name, and
+    // the track length. The artist's name, bio, and link still live on
+    // the track's own full page (track.html) for anyone who wants them.
     var row = document.createElement("a");
     row.className = "track-table-row";
     row.href = "track.html?id=" + encodeURIComponent(track.id);
+    var subtitle = track.tagline || ("by " + track.artist_name);
     row.innerHTML =
       '<span class="track-table-art">🎵</span>' +
       '<span class="track-table-main">' +
         '<span class="track-table-title">' + escapeHtml(track.title) +
           (track.is_independent_artist ? ' <span class="track-royalty-badge" title="This artist is not signed to a label or publisher — they keep 100% of any future royalties on this track.">100% Royalties</span>' : '') +
         '</span>' +
-        '<span class="track-table-artist">by ' + escapeHtml(track.artist_name) + '</span>' +
+        '<span class="track-table-tagline">' + escapeHtml(subtitle) + '</span>' +
       '</span>' +
+      (track.duration_seconds ? '<span class="track-table-duration">' + formatTrackDuration(track.duration_seconds) + '</span>' : '') +
       '<span class="track-table-chevron">›</span>';
     return row;
   }

@@ -274,6 +274,10 @@
           <input type="text" id="trackArtistLink" placeholder="Instagram, website, Spotify, etc." maxlength="240" />
         </div>
         <div class="field">
+          <label for="trackTagline">Tagline (optional — short &amp; motivating, shown in the track list)</label>
+          <input type="text" id="trackTagline" placeholder="e.g. Turn this up when the workout gets hard" maxlength="140" />
+        </div>
+        <div class="field">
           <label for="trackFile">Audio file (MP3, M4A, or WAV)</label>
           <input type="file" id="trackFile" accept="audio/*" />
         </div>
@@ -973,6 +977,8 @@
         if (artistName === null || !artistName.trim()) return;
         var artistEmail = prompt("Artist email (so we can send them a bank-linking setup link for payouts):", "");
         if (artistEmail === null || !artistEmail.trim()) return;
+        var tagline = prompt("Tagline (optional, short & motivating — shown in the track list instead of the artist name):", "");
+        if (tagline === null) return;
         var isIndependentArtist = confirm("Is this artist independent — not signed to a label or publisher for this track?\n\nOK = yes, show the \"100% Royalties\" badge.\nCancel = no badge.");
 
         var originalLabel = btn.textContent;
@@ -984,6 +990,7 @@
           var resp = await fetch(signedSrc);
           if (!resp.ok) throw new Error("Couldn't read that audio file — please try again.");
           var blob = await resp.blob();
+          var durationSeconds = await getAudioDurationSeconds(blob);
           var ext = sourcePath.indexOf(".") > -1 ? sourcePath.split(".").pop().toLowerCase() : "mp3";
           var newPath = crypto.randomUUID() + "-" + title.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 40) + "." + ext;
 
@@ -998,6 +1005,8 @@
             title: title.trim(),
             artist_name: artistName.trim(),
             artist_email: artistEmail.trim(),
+            tagline: tagline.trim() || null,
+            duration_seconds: durationSeconds,
             storage_path: newPath,
             is_active: true,
             is_independent_artist: isIndependentArtist
@@ -1256,11 +1265,44 @@
     return div.innerHTML;
   }
 
+  function formatTrackDuration(seconds) {
+    if (seconds === null || seconds === undefined || !isFinite(seconds)) return "";
+    var m = Math.floor(seconds / 60);
+    var s = Math.round(seconds % 60);
+    return m + ":" + (s < 10 ? "0" : "") + s;
+  }
+
+  // Reads a track's length straight off the audio file/blob itself, so
+  // nobody has to type it in by hand — used both when adding a track
+  // through the form below and through "Add to Music Library" on a Voice
+  // Update. Resolves null (never rejects) if the browser can't read it,
+  // since a missing length shouldn't block adding the track.
+  function getAudioDurationSeconds(fileOrBlob) {
+    return new Promise(function (resolve) {
+      try {
+        var objectUrl = URL.createObjectURL(fileOrBlob);
+        var probe = new Audio();
+        probe.preload = "metadata";
+        var finish = function (seconds) {
+          URL.revokeObjectURL(objectUrl);
+          resolve(seconds);
+        };
+        probe.addEventListener("loadedmetadata", function () {
+          finish(isFinite(probe.duration) ? Math.round(probe.duration) : null);
+        });
+        probe.addEventListener("error", function () { finish(null); });
+        probe.src = objectUrl;
+      } catch (e) {
+        resolve(null);
+      }
+    });
+  }
+
   async function loadTracks() {
     var el = document.getElementById("trackList");
     var { data, error } = await window.sb
       .from("tracks")
-      .select("id, title, artist_name, artist_email, artist_bio, artist_link, storage_path, is_active, is_independent_artist, created_at, tip_count, tip_total_cents")
+      .select("id, title, artist_name, artist_email, artist_bio, artist_link, tagline, duration_seconds, storage_path, is_active, is_independent_artist, created_at, tip_count, tip_total_cents")
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -1286,8 +1328,9 @@
         '<div class="review-thumb"><div class="audio-card"><span class="audio-ico">🎵</span><audio src="' + url + '" controls></audio></div></div>' +
         '<div class="review-meta">' +
           '<strong>' + escapeHtmlAdmin(item.title) + '</strong>' +
-          '<span>' + escapeHtmlAdmin(item.artist_name) + (item.is_active ? '' : ' · inactive') + '</span>' +
+          '<span>' + escapeHtmlAdmin(item.artist_name) + (item.duration_seconds ? ' · ' + formatTrackDuration(item.duration_seconds) : '') + (item.is_active ? '' : ' · inactive') + '</span>' +
           (item.is_independent_artist ? '<div style="margin-top:4px;"><span style="font-size:11px; font-weight:700; color:var(--accent-2); background:rgba(219,31,82,0.14); padding:2px 8px; border-radius:999px;">100% Royalties</span></div>' : '') +
+          (item.tagline ? '<div style="font-size:13px; color:var(--accent-2); font-style:italic; margin-top:4px;">“' + escapeHtmlAdmin(item.tagline) + '”</div>' : '') +
           (item.artist_bio ? '<div style="font-size:13px; color:var(--muted-invert); margin-top:4px;">' + escapeHtmlAdmin(item.artist_bio) + '</div>' : '') +
           (item.artist_link ? '<div style="font-size:12.5px; margin-top:2px;"><a href="' + escapeHtmlAdmin(item.artist_link) + '" target="_blank" rel="noopener" style="color:var(--accent-2);">' + escapeHtmlAdmin(item.artist_link) + '</a></div>' : '') +
           (item.artist_email ? '<div style="margin-top:4px;">' + payoutBadgeHtml(item.artist_email, statuses) + '</div>' : '') +
@@ -1324,6 +1367,7 @@
     var artistEmail = document.getElementById("trackArtistEmail").value.trim();
     var artistBio = document.getElementById("trackArtistBio").value.trim();
     var artistLink = document.getElementById("trackArtistLink").value.trim();
+    var tagline = document.getElementById("trackTagline").value.trim();
     var isIndependentArtist = document.getElementById("trackIndependentArtist").checked;
     var file = document.getElementById("trackFile").files[0];
 
@@ -1339,6 +1383,7 @@
     try {
       var ext = file.name.indexOf(".") > -1 ? file.name.split(".").pop().toLowerCase() : "mp3";
       var path = crypto.randomUUID() + "-" + title.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 40) + "." + ext;
+      var durationSeconds = await getAudioDurationSeconds(file);
 
       var { error: uploadError } = await window.sb.storage.from("tracks").upload(path, file, {
         cacheControl: "3600",
@@ -1352,6 +1397,8 @@
         artist_email: artistEmail,
         artist_bio: artistBio || null,
         artist_link: artistLink || null,
+        tagline: tagline || null,
+        duration_seconds: durationSeconds,
         storage_path: path,
         is_active: true,
         is_independent_artist: isIndependentArtist
@@ -1367,6 +1414,7 @@
       document.getElementById("trackArtistEmail").value = "";
       document.getElementById("trackArtistBio").value = "";
       document.getElementById("trackArtistLink").value = "";
+      document.getElementById("trackTagline").value = "";
       document.getElementById("trackFile").value = "";
       document.getElementById("trackIndependentArtist").checked = false;
       await loadTracks();
