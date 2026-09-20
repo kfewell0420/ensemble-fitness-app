@@ -66,13 +66,14 @@
      label Instagram-style Stories rows never bother with. */
   .rp-mealprep-banner {
     margin: 0 14px 10px;
-    padding: 10px 14px;
+    padding: 10px 14px 10px 12px;
     border-radius: 14px;
-    background: linear-gradient(120deg, var(--accent-dark), var(--accent) 55%, var(--accent-2));
+    background: var(--navy-800);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-left: 3px solid var(--accent-2);
     display: flex;
     align-items: center;
     gap: 9px;
-    box-shadow: 0 4px 14px rgba(219,31,82,0.35);
   }
   .rp-mealprep-banner-icon { font-size: 18px; line-height: 1; }
   .rp-mealprep-banner-text {
@@ -81,7 +82,7 @@
     font-weight: 800;
     letter-spacing: 0.03em;
     text-transform: uppercase;
-    color: #fff;
+    color: var(--accent-2);
   }
   .rp-mealprep-banner-sub {
     margin-left: auto;
@@ -101,9 +102,12 @@
   .rp-mealprep-track::-webkit-scrollbar { display: none; }
   /* Circular "story" bubbles, like the row Instagram uses for Stories —
      a common cross-app idiom (TikTok, Snapchat, and most social apps do
-     some version of it), not something unique to copy. Ours uses our own
-     brand colors for the ring and our own square-crop-then-circle-mask
-     treatment rather than duplicating any one app's exact art. */
+     some version of it), not something unique to copy. Kept as a plain
+     neutral ring rather than a colored gradient (Ken: too much of the
+     screen was reading as the same reddish-pink) — these are just photo
+     frames, not a "new/unseen" signal, so color here wouldn't mean
+     anything. Color is saved for things that actually need to draw the
+     eye: reactions, primary buttons, live indicators. */
   .rp-mealprep-card {
     flex: 0 0 auto;
     width: 74px;
@@ -123,10 +127,7 @@
     height: 74px;
     border-radius: 50%;
     padding: 3px;
-    /* Brand gradient (accent-dark → accent → accent-2) instead of the
-       generic orange/pink/purple every Stories-style ring defaults to —
-       ties the strip back to Ensemble Fitness's own palette. */
-    background: linear-gradient(135deg, var(--accent-dark), var(--accent) 50%, var(--accent-2));
+    background: rgba(255,255,255,0.22);
   }
   .rp-mealprep-card {
     animation: rpPopIn 0.35s ease backwards;
@@ -237,10 +238,12 @@
     white-space: nowrap;
     transition: transform 0.12s ease;
   }
+  /* Selected state reads via contrast (dark-on-white), not another pink
+     fill — the emoji already carries whatever color a chip needs. */
   .rp-filter-chip.active {
-    color: #fff;
+    color: #0b0f1a;
     border-color: transparent;
-    background: linear-gradient(135deg, var(--accent-dark), var(--accent) 55%, var(--accent-2));
+    background: #fff;
     transform: translateY(-1px);
   }
 
@@ -407,8 +410,11 @@
     white-space: nowrap;
     text-shadow: none;
   }
+  /* Was its own pink-gradient fill — now matches the plain neutral badge
+     next to it (location, etc.) so the workout-type emoji is what
+     supplies the color, not the whole pill. */
   .rp-context-badge.rp-badge-type {
-    background: linear-gradient(135deg, var(--accent-dark), var(--accent-2));
+    background: rgba(255,255,255,0.16);
   }
   .rp-follow-btn {
     flex: 0 0 auto;
@@ -531,7 +537,7 @@
     font-size: 10.5px;
     font-weight: 600;
     color: #fff;
-    background: linear-gradient(135deg, var(--accent-dark), var(--accent-2));
+    background: rgba(255,255,255,0.16);
     border-radius: 999px;
     padding: 3px 9px;
     white-space: nowrap;
