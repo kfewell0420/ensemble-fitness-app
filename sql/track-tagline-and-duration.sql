@@ -1,6 +1,11 @@
 -- =============================================================================
 -- Track tagline + duration
 -- =============================================================================
+-- SUPERSEDED: sql/track-self-upload.sql now includes everything in this file
+-- (plus a couple more columns) and is safe to run even if this file was never
+-- run. If you haven't run either yet, just run track-self-upload.sql instead
+-- of this one. This file is kept only for history.
+-- =============================================================================
 -- Ken's ask (Sept 2026): the Music Library's track list was showing title +
 -- artist name + a "100% Royalties" badge — he wants it lighter than that: a
 -- short, motivating one-line tagline about the track instead of the artist's

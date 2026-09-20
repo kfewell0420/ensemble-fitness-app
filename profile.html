@@ -185,8 +185,8 @@
 
   <div class="card" id="uploadCard">
     <div class="eyebrow">Upload</div>
-    <h2>Add a photo, video, or voice update</h2>
-    <p class="card-sub">New uploads are reviewed before they're visible to anyone but you — usually within a day or two. Recorded a voice memo about your day or your journey? Upload that too. Uploading a video? You'll also get the option to record a voiceover explaining what's happening — it plays automatically over the video instead of its original sound.</p>
+    <h2>Add a photo, video, or song</h2>
+    <p class="card-sub">Photos and videos are reviewed before they're visible to anyone but you — usually within a day or two. Uploading an audio file? That's a song for the Music Library — give it a title and it publishes right away under your name, no waiting. Uploading a video? You'll also get the option to record a voiceover explaining what's happening — it plays automatically over the video instead of its original sound.</p>
 
     <div class="form-msg" id="uploadMsg"></div>
 
@@ -262,7 +262,12 @@
       </select>
       <p class="card-sub" style="margin-top:6px; font-size:12px;">Required for photos and videos — this is what powers the filters on the Community feed. Not needed for a profile photo or a voice/music upload.</p>
     </div>
-    <div class="field">
+    <div class="field" id="songTitleField" style="display:none;">
+      <label for="songTitle">Song title</label>
+      <input type="text" id="songTitle" name="songTitle" placeholder="e.g. Morning Light" maxlength="120" />
+      <span class="field-hint">Your song publishes to the Music Library right away under your display name — no waiting on approval. Our team reviews new songs regularly to make sure they fit the community's motivational vibe.</span>
+    </div>
+    <div class="field" id="captionField">
       <label for="caption">Caption (optional)</label>
       <input type="text" id="caption" name="caption" placeholder="Say something about this one" maxlength="120" />
     </div>
@@ -347,6 +352,23 @@
     if (file.type.indexOf("video") === 0) return "video";
     if (file.type.indexOf("audio") === 0) return "audio";
     return "photo";
+  }
+
+  // Reads an audio file's length client-side (no server processing needed)
+  // so a self-uploaded song gets its duration shown in the Music Library
+  // automatically, same technique used in admin.html.
+  function getAudioDurationSeconds(fileOrBlob) {
+    return new Promise(function (resolve) {
+      try {
+        var objectUrl = URL.createObjectURL(fileOrBlob);
+        var probe = new Audio();
+        probe.preload = "metadata";
+        var finish = function (seconds) { URL.revokeObjectURL(objectUrl); resolve(seconds); };
+        probe.addEventListener("loadedmetadata", function () { finish(isFinite(probe.duration) ? Math.round(probe.duration) : null); });
+        probe.addEventListener("error", function () { finish(null); });
+        probe.src = objectUrl;
+      } catch (e) { resolve(null); }
+    });
   }
 
   async function init() {
@@ -1262,6 +1284,7 @@
       // or voice recording can never become the profile headshot, no matter
       // what someone checks, so hide the option entirely for those.
       var isPhoto = fileKind(selectedFile) === "photo";
+      var isAudio = fileKind(selectedFile) === "audio";
       profilePhotoField.style.display = isPhoto ? "flex" : "none";
       if (!isPhoto) document.getElementById("isProfilePhoto").checked = false;
       // Product tagging only makes sense for a photo (someone actually
@@ -1269,12 +1292,19 @@
       // as the profile-photo checkbox above.
       productTagField.style.display = isPhoto ? "block" : "none";
       if (!isPhoto) document.getElementById("productTag").value = "";
+      // Audio gets a "Song title" field instead of the generic caption —
+      // that title is what publishes straight to the Music Library.
+      document.getElementById("songTitleField").style.display = isAudio ? "block" : "none";
+      document.getElementById("captionField").style.display = isAudio ? "none" : "block";
+      if (!isAudio) document.getElementById("songTitle").value = "";
     } else {
       dropzoneLabel.textContent = "Click to choose a photo, video, or voice recording";
       uploadBtn.disabled = true;
       uploadBtn.textContent = "Choose a file first";
       profilePhotoField.style.display = "flex";
       productTagField.style.display = "none";
+      document.getElementById("songTitleField").style.display = "none";
+      document.getElementById("captionField").style.display = "block";
     }
     updateNarrationVisibility();
     updateMusicVisibility();
@@ -1320,9 +1350,66 @@
       workoutTypeField.focus();
       return;
     }
+    var songTitleField = document.getElementById("songTitle");
+    if (precheckKind === "audio" && !songTitleField.value.trim()) {
+      showMsg(msg, "Please give your song a title.", "error");
+      songTitleField.focus();
+      return;
+    }
 
     uploadBtn.disabled = true;
     uploadBtn.textContent = "Uploading…";
+
+    // A song publishes straight to the Music Library — no separate admin
+    // step, no admin ever typing in a title/artist name/email they'd have
+    // no way of knowing. The artist provides the title themselves, and
+    // their name + email come straight from their own account. Ken (or
+    // any admin) reviews the library whenever he gets a chance and can
+    // pull anything that doesn't fit — see loadTracks()'s Deactivate
+    // handler in admin.html for the friendly note that sends.
+    if (precheckKind === "audio") {
+      try {
+        var songTitle = songTitleField.value.trim();
+        var ext = getExt(selectedFile.name);
+        var trackPath = currentUser.id + "/" + crypto.randomUUID() + "." + ext;
+
+        var { error: trackUploadError } = await window.sb.storage.from("tracks").upload(trackPath, selectedFile, {
+          cacheControl: "3600",
+          upsert: false,
+          contentType: selectedFile.type || "audio/mpeg"
+        });
+        if (trackUploadError) throw trackUploadError;
+
+        var durationSeconds = await getAudioDurationSeconds(selectedFile);
+        var artistName = document.getElementById("displayName").value.trim() || "Ensemble Fitness Artist";
+
+        var { error: trackInsertError } = await window.sb.from("tracks").insert({
+          title: songTitle,
+          artist_name: artistName,
+          artist_email: currentUser.email || null,
+          duration_seconds: durationSeconds,
+          storage_path: trackPath,
+          is_active: true,
+          is_independent_artist: true,
+          submitted_by: currentUser.id
+        });
+        if (trackInsertError) throw trackInsertError;
+
+        showMsg(msg, "🎉 \"" + songTitle + "\" is live in the Music Library now! Our team reviews new songs regularly to make sure they fit the community's motivational vibe — you're all set for now.", "success");
+        fileInput.value = "";
+        selectedFile = null;
+        dropzoneLabel.textContent = "Click to choose a photo, video, or voice recording";
+        songTitleField.value = "";
+        document.getElementById("songTitleField").style.display = "none";
+        document.getElementById("captionField").style.display = "block";
+        uploadBtn.textContent = "Choose a file first";
+      } catch (err) {
+        showMsg(msg, err.message || "Upload failed. Please try again.", "error");
+        uploadBtn.disabled = false;
+        uploadBtn.textContent = "Upload";
+      }
+      return;
+    }
 
     try {
       var ext = getExt(selectedFile.name);
@@ -1412,19 +1499,17 @@
         trim_start: trimStartValue,
         trim_end: trimEndValue
       };
-      // Audio used to publish instantly with no review — Ken wants every
-      // song/voice clip screened before it's public now, so it's left
-      // unset here and falls through to the table's normal "pending"
-      // default, same as photos and videos. Only a profile photo still
-      // skips review (nobody's avatar should sit "pending" for a day).
+      // Audio never reaches this generic path any more — it returns early
+      // above, straight into the Music Library. This is only photo/video
+      // now, which still go in as "pending" for the usual approval step;
+      // only a profile photo skips review (nobody's avatar should sit
+      // "pending" for a day).
       if (kind === "photo" && isProfilePhotoChecked) insertRow.status = "approved";
 
       var { error: insertError } = await window.sb.from("media").insert(insertRow);
       if (insertError) throw insertError;
 
-      showMsg(msg, kind === "audio"
-        ? "Posted! Your voice update is live now."
-        : kind === "photo" && isProfilePhotoChecked
+      showMsg(msg, kind === "photo" && isProfilePhotoChecked
         ? "Profile photo updated and live now!"
         : narrationPath
         ? "Uploaded with your voiceover attached! It'll show as \"Pending\" below until it's reviewed."

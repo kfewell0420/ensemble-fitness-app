@@ -240,7 +240,7 @@
 
       <div class="eyebrow" style="margin-top:36px;">Voice Updates</div>
       <h2 style="font-size:18px;">Recent voice updates</h2>
-      <p class="card-sub" style="margin-bottom:24px;">A new voice/audio upload first shows up in Pending Review above, same as photos and videos — approve or reject it there. Once approved, it lands in this list, where you can listen back, remove anything that shouldn't stay up, or turn it into a real playable Music Library track with one click.</p>
+      <p class="card-sub" style="margin-bottom:24px;">Older audio uploads land here for a one-time manual conversion into the Music Library. Going forward, when someone uploads a song from their Profile page, it publishes straight to the Music Library below automatically — nothing to do here for those. This list is just for cleaning up anything from before that changed.</p>
       <div class="card">
         <div id="voiceQueue">
           <div class="empty-state">Loading…</div>
@@ -249,7 +249,7 @@
 
       <div class="eyebrow" style="margin-top:36px;">Music Library</div>
       <h2 style="font-size:18px;">Tracks members can add to their videos</h2>
-      <p class="card-sub" style="margin-bottom:24px;">Add a track from an unsigned artist here and it instantly shows up as a choice in every member's upload screen, right alongside recording their own voiceover. "Deactivate" hides a track from that picker without breaking videos that already used it.</p>
+      <p class="card-sub" style="margin-bottom:24px;">When an artist uploads a song from their own Profile page, it lands here automatically — already live in the Music Library, no typing required from you. Check in on this list whenever you get a chance and listen through anything new; "Deactivate" pulls a track from the picker without breaking videos that already used it. Deactivating a self-submitted track sends that artist a friendly note letting them know. You can also add a track yourself below.</p>
 
       <div class="card" style="margin-bottom:20px;">
         <div class="form-msg" id="trackMsg"></div>
@@ -1302,7 +1302,7 @@
     var el = document.getElementById("trackList");
     var { data, error } = await window.sb
       .from("tracks")
-      .select("id, title, artist_name, artist_email, artist_bio, artist_link, tagline, duration_seconds, storage_path, is_active, is_independent_artist, created_at, tip_count, tip_total_cents")
+      .select("id, title, artist_name, artist_email, artist_bio, artist_link, tagline, duration_seconds, storage_path, is_active, is_independent_artist, submitted_by, created_at, tip_count, tip_total_cents")
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -1329,6 +1329,7 @@
         '<div class="review-meta">' +
           '<strong>' + escapeHtmlAdmin(item.title) + '</strong>' +
           '<span>' + escapeHtmlAdmin(item.artist_name) + (item.duration_seconds ? ' · ' + formatTrackDuration(item.duration_seconds) : '') + (item.is_active ? '' : ' · inactive') + '</span>' +
+          (item.submitted_by ? '<div style="margin-top:4px;"><span style="font-size:11px; font-weight:700; color:#7ec8ff; background:rgba(126,200,255,0.14); padding:2px 8px; border-radius:999px;">Self-submitted</span></div>' : '') +
           (item.is_independent_artist ? '<div style="margin-top:4px;"><span style="font-size:11px; font-weight:700; color:var(--accent-2); background:rgba(219,31,82,0.14); padding:2px 8px; border-radius:999px;">100% Royalties</span></div>' : '') +
           (item.tagline ? '<div style="font-size:13px; color:var(--accent-2); font-style:italic; margin-top:4px;">“' + escapeHtmlAdmin(item.tagline) + '”</div>' : '') +
           (item.artist_bio ? '<div style="font-size:13px; color:var(--muted-invert); margin-top:4px;">' + escapeHtmlAdmin(item.artist_bio) + '</div>' : '') +
@@ -1340,7 +1341,7 @@
             : '') +
         '</div>' +
         '<div class="review-actions">' +
-          '<button class="btn btn-ghost btn-sm toggle-track-btn" data-id="' + item.id + '" data-active="' + item.is_active + '">' + (item.is_active ? "Deactivate" : "Reactivate") + '</button>' +
+          '<button class="btn btn-ghost btn-sm toggle-track-btn" data-id="' + item.id + '" data-active="' + item.is_active + '" data-submitted-by="' + (item.submitted_by || "") + '" data-title="' + escapeHtmlAdmin(item.title).replace(/"/g, "&quot;") + '" data-artist-name="' + escapeHtmlAdmin(item.artist_name).replace(/"/g, "&quot;") + '">' + (item.is_active ? "Deactivate" : "Reactivate") + '</button>' +
         '</div>';
       el.appendChild(row);
     }
@@ -1349,9 +1350,41 @@
 
     el.querySelectorAll(".toggle-track-btn").forEach(function (btn) {
       btn.addEventListener("click", async function () {
-        btn.disabled = true;
         var isActive = btn.getAttribute("data-active") === "true";
+        var submittedBy = btn.getAttribute("data-submitted-by");
+        var title = btn.getAttribute("data-title");
+        var artistName = btn.getAttribute("data-artist-name");
+
+        // Only deactivating (pulling it from the library) a self-submitted
+        // track ever needs a note — reactivating, or toggling a track Ken
+        // added himself through the form below, doesn't involve telling an
+        // artist anything.
+        var noteBody = null;
+        if (isActive && submittedBy) {
+          var extra = prompt(
+            "This track was uploaded directly by " + artistName + ". We'll send them a quick, friendly note that it's been removed from the Music Library. Add anything specific you'd like included (optional), or just click OK to send our default message:",
+            ""
+          );
+          if (extra === null) return; // admin backed out — don't deactivate or message anyone
+          noteBody = "Hey! Thanks so much for sharing \"" + title + "\" with the Ensemble Fitness community. After a listen, we don't think it's quite the right fit for our motivational vibe right now, so we've taken it down from the Music Library." +
+            (extra.trim() ? " " + extra.trim() : "") +
+            " No hard feelings at all — we'd love for you to upload something new anytime!";
+          if (noteBody.length > 500) noteBody = noteBody.slice(0, 497) + "...";
+        }
+
+        btn.disabled = true;
         await window.sb.from("tracks").update({ is_active: !isActive }).eq("id", btn.getAttribute("data-id"));
+
+        if (noteBody) {
+          try {
+            await window.sb.from("messages").insert({
+              sender_id: currentUser.id,
+              recipient_id: submittedBy,
+              body: noteBody
+            });
+          } catch (e) { /* track is deactivated either way — the note is best-effort */ }
+        }
+
         await loadTracks();
       });
     });
