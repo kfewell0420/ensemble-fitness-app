@@ -3,150 +3,215 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Members — See Who's Already Active | Ensemble Fitness</title>
-<meta name="description" content="Browse the Ensemble Fitness community — real people, real activities, near you. See who's active now and what they're into." />
-<link rel="canonical" href="https://ensemblefitness.com/members.html" />
-<meta property="og:type" content="website" />
-<meta property="og:site_name" content="Ensemble Fitness" />
-<meta property="og:title" content="Members — See Who's Already Active" />
-<meta property="og:description" content="Browse the Ensemble Fitness community — real people, real activities, near you." />
-<meta property="og:url" content="https://ensemblefitness.com/members.html" />
-<meta name="twitter:card" content="summary" />
-<link rel="icon" type="image/png" href="assets/favicon.png" />
+<title>Find Members — Ensemble Fitness</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=40" />
+<link rel="stylesheet" href="css/app.css?v=2" />
 </head>
 <body>
 
-<!-- ============ NAV ============ -->
-<header class="nav">
-  <div class="container">
-    <a href="index.html" class="brand"><img src="assets/logo.png" alt="Ensemble Fitness logo" />Ensemble Fitness</a>
-    <nav class="nav-links">
-      <a href="index.html#how-it-works">How It Works</a>
-      <a href="fitness-journey.html">Fitness <span class="journeys-wrap">Journeys<span class="journeys-badge" style="display:none;"></span></span></a>
-      <a href="healthy-meal-prep.html">Healthy Meal Prep</a>
-      <a href="marketplace.html">Marketplace</a>
-      <a href="members.html" style="color:#fff;">Members</a>
-      <a href="fitness-plus.html">❤️ Fitness+</a>
-      <a href="index.html#safety">Safety</a>
-      <a href="index.html#faq">FAQ</a>
-    </nav>
-    <div class="nav-cta">
-      <a href="https://app.ensemblefitness.com/login.html" class="btn btn-ghost-dark btn-sm nav-signin">Sign In</a>
-      <a href="index.html#waitlist" class="btn btn-primary btn-sm"><span class="full">Become A </span>Member</a>
-      <button class="nav-toggle" id="menuToggle" aria-label="Open menu">☰</button>
-    </div>
-  </div>
+<header class="app-nav">
+  <a href="feed.html" class="app-brand">
+    <span class="app-brand-mark"><img src="assets/logo.png" alt="Ensemble Fitness" /></span>Ensemble Fitness
+  </a>
+  <nav class="app-nav-links">
+    <a href="feed.html">Community</a>
+    <a href="journey.html">My Journey</a>
+    <a href="members.html" style="color:#fff;">Members</a>
+    <a href="fitness-plus.html">Fitness+</a>
+    <a href="music-library.html">Music</a>
+    <a href="quote-library.html">Quotes</a>
+    <a href="profile.html">My Profile</a>
+    <a href="admin.html" id="adminLink" style="display:none;">Queue</a>
+    <a href="#" id="signOutLink">Sign Out</a>
+  </nav>
 </header>
 
-<div class="mobile-menu" id="mobileMenu">
-  <div class="mobile-menu-top">
-    <a href="index.html" class="brand"><img src="assets/logo.png" alt="" />Ensemble Fitness</a>
-    <button class="mobile-close" id="menuClose" aria-label="Close menu">✕</button>
+<div class="app-shell">
+
+  <div class="eyebrow">Community</div>
+  <h2 style="margin-bottom:6px;">Find Members Near You</h2>
+  <p class="card-sub" style="margin-bottom:24px;">Search by ZIP code to find other Ensemble Fitness members in your area — optionally narrow it down to members who naturally wake up around the same time as you.</p>
+
+  <div class="card">
+    <div class="form-msg" id="searchMsg"></div>
+    <div style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap;">
+      <div class="field" style="flex:1; min-width:160px; margin-bottom:0;">
+        <label for="zipSearch">ZIP code</label>
+        <input type="text" id="zipSearch" inputmode="numeric" pattern="[0-9]{5}" maxlength="5" placeholder="e.g. 75201" autocomplete="postal-code" />
+      </div>
+      <div class="field" style="flex:1; min-width:200px; margin-bottom:0;">
+        <label for="wakeTimeFilter">Wake-up time</label>
+        <select id="wakeTimeFilter"></select>
+      </div>
+      <button type="button" class="btn btn-primary" id="searchBtn">Search</button>
+    </div>
   </div>
-  <a href="index.html#how-it-works">How It Works</a>
-  <a href="fitness-journey.html">Fitness <span class="journeys-wrap">Journeys<span class="journeys-badge" style="display:none;"></span></span></a>
-  <a href="healthy-meal-prep.html">Healthy Meal Prep</a>
-  <a href="marketplace.html">Marketplace</a>
-  <a href="members.html">Members</a>
-  <a href="fitness-plus.html">❤️ Fitness+</a>
-  <a href="index.html#safety">Safety</a>
-  <a href="index.html#faq">FAQ</a>
-  <a href="index.html#contact">Contact</a>
-  <a href="https://app.ensemblefitness.com/login.html">Sign In</a>
-  <a href="index.html#waitlist" class="btn btn-primary">Become A Member</a>
+
+  <div class="card">
+    <div id="memberResults">
+      <div class="empty-state">Enter a ZIP code above to see members near you.</div>
+    </div>
+  </div>
+
 </div>
 
-<!-- ============ HERO ============ -->
-<section class="hero" id="top" style="padding-bottom:56px;">
-  <div class="container" style="display:block;">
-    <div class="hero-copy" style="max-width:680px;">
-      <div class="eyebrow on-dark">Community</div>
-      <h1 style="font-size:clamp(34px,4.6vw,52px);">Meet the people<br />already <span>moving.</span></h1>
-      <p class="lede">A look at real members of the Ensemble Fitness community — who's active right now, and what they're into.</p>
-    </div>
-  </div>
-</section>
-
-<!-- ============ MEMBERS GRID ============ -->
-<section class="section" id="members-directory">
-  <div class="container">
-    <div class="member-filter-bar" id="memberFilterBar">
-      <button type="button" class="member-filter-chip active" data-filter="all">All Members</button>
-      <button type="button" class="member-filter-chip" data-filter="active">Active Now</button>
-    </div>
-    <div class="member-grid" id="memberGrid">
-      <!-- Member cards are rendered by js/members.js from the same community
-           roster used elsewhere on the site. This keeps identities (name,
-           avatar color, activity) consistent between the homepage feed and
-           this directory until real member profiles replace the demo data. -->
-    </div>
-  </div>
-</section>
-
-<!-- ============ CTA ============ -->
-<section class="section alt">
-  <div class="container" style="text-align:center;">
-    <div class="section-head center">
-      <div class="eyebrow">Join them</div>
-      <h2>Your next workout partner is already here.</h2>
-      <p>Create your profile, set what you're into, and start showing up in the feed just like everyone above.</p>
-    </div>
-    <a href="index.html#waitlist" class="btn btn-primary">Join The Community</a>
-  </div>
-</section>
-
-<!-- ============ FOOTER ============ -->
-<footer class="footer">
-  <div class="container">
-    <div class="footer-top">
-      <div class="footer-brand">
-        <a href="index.html" class="brand"><img src="assets/logo.png" alt="" />Ensemble Fitness</a>
-        <p>Where active people meet. Find a fitness partner, see who's active nearby, and let real connection happen from there.</p>
-      </div>
-      <div class="footer-col">
-        <h5>Product</h5>
-        <a href="index.html#how-it-works">How It Works</a>
-        <a href="fitness-journey.html">Fitness Journeys</a>
-        <a href="healthy-meal-prep.html">Healthy Meal Prep</a>
-        <a href="index.html#feed">Feed</a>
-        <a href="members.html">Members</a>
-        <a href="index.html#pillars">What You Get</a>
-        <a href="marketplace.html">Fit Marketplace</a>
-        <a href="approved-gear.html">Approved Gear</a>
-        <a href="books.html">Ensemble Reads</a>
-        <a href="submit-music.html">Submit Your Music</a>
-        <a href="share-your-journey.html">Share Your Journey</a>
-        <a href="fitness-plus.html">Ensemble Fitness+</a>
-      </div>
-      <div class="footer-col">
-        <h5>Company</h5>
-        <a href="index.html#story">Our Mission</a>
-        <a href="index.html#safety">Safety</a>
-        <a href="index.html#faq">FAQ</a>
-        <a href="index.html#contact">Contact</a>
-      </div>
-      <div class="footer-col">
-        <h5>Legal</h5>
-        <a href="privacy.html">Privacy Policy</a>
-        <a href="terms.html">Terms of Service</a>
-        <a href="community-guidelines.html">Community Guidelines</a>
-      </div>
-    </div>
-    <div class="footer-bottom">
-      <span>© 2026 Ensemble Fitness. All rights reserved.</span>
-      <span>Shown members are illustrative of the community we're building — not yet a live, public directory.</span>
-    </div>
-    <div class="footer-disclaimer">Ensemble Fitness is currently in pre-launch development. "Ensemble Fitness" is a working product name pending trademark screening. The people shown on this page are sample profiles used to preview the Members experience before real, opted-in member directories launch.</div>
-  </div>
-</footer>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/journeys-nav-badge.js?v=4"></script>
-<script src="js/members.js?v=18"></script>
-<script src="js/main.js?v=24"></script>
+<script src="js/config.js"></script>
+<script src="js/shared-session.js"></script>
+<script src="js/supabaseClient.js"></script>
+<script src="js/notifications.js"></script>
+<script src="js/moderation.js"></script>
+<script>
+  var currentUser = null;
+  var currentUserWakeTime = "";
+
+  function showMsg(el, text, kind) {
+    el.textContent = text;
+    el.className = "form-msg show " + kind;
+  }
+  function hideMsg(el) { el.className = "form-msg"; }
+
+  function escapeHtml(str) {
+    var div = document.createElement("div");
+    div.textContent = str || "";
+    return div.innerHTML;
+  }
+
+  async function avatarUrlFor(userId) {
+    var { data } = await window.sb
+      .from("media")
+      .select("storage_path")
+      .eq("user_id", userId)
+      .eq("is_profile_photo", true)
+      .eq("status", "approved")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!data) return "";
+    var { data: signed } = await window.sb.storage.from("media").createSignedUrl(data.storage_path, 3600);
+    return signed ? signed.signedUrl : "";
+  }
+
+  async function runSearch() {
+    var msg = document.getElementById("searchMsg");
+    var results = document.getElementById("memberResults");
+    hideMsg(msg);
+
+    var zip = document.getElementById("zipSearch").value.trim();
+    if (!/^[0-9]{5}$/.test(zip)) {
+      showMsg(msg, "Please enter a valid 5-digit ZIP code.", "error");
+      return;
+    }
+
+    var wakeFilter = document.getElementById("wakeTimeFilter").value;
+
+    results.innerHTML = '<div class="empty-state">Searching…</div>';
+
+    var query = window.sb
+      .from("profiles")
+      .select("id, display_name, bio, zip_code, wake_time_category")
+      .eq("zip_code", zip)
+      .neq("id", currentUser.id);
+
+    if (wakeFilter) query = query.eq("wake_time_category", wakeFilter);
+
+    var { data, error } = await query.order("display_name", { ascending: true });
+
+    if (error) {
+      results.innerHTML = '<div class="empty-state">Couldn\'t load results. Please try again.</div>';
+      return;
+    }
+
+    // Blocked members never show up in search results.
+    data = filterOutBlocked(data || [], "id");
+
+    if (!data || data.length === 0) {
+      results.innerHTML = '<div class="empty-state">No members found in ZIP ' + escapeHtml(zip) + (wakeFilter ? " with that wake-up time" : "") + ' yet. Try a nearby ZIP code or a different wake-up time, or check back later as more members join.</div>';
+      return;
+    }
+
+    results.innerHTML = "";
+    for (var i = 0; i < data.length; i++) {
+      var member = data[i];
+      var row = document.createElement("div");
+      row.className = "member-row member-row-clickable";
+      row.setAttribute("role", "button");
+      row.setAttribute("tabindex", "0");
+      row.setAttribute("aria-label", "View " + (member.display_name || "member") + "'s profile");
+
+      var avatarUrl = await avatarUrlFor(member.id);
+      var initial = (member.display_name || "?").trim().charAt(0).toUpperCase() || "?";
+      var avatarInner = avatarUrl ? '<img src="' + avatarUrl + '" alt="' + escapeHtml(member.display_name || "Member") + '" />' : initial;
+
+      var wakeLabel = wakeTimeLabel(member.wake_time_category);
+      var sameWakeTime = !!currentUserWakeTime && member.wake_time_category === currentUserWakeTime;
+
+      row.innerHTML =
+        '<div class="avatar-circle">' + avatarInner + '</div>' +
+        '<div class="member-row-meta">' +
+          '<strong>' + escapeHtml(member.display_name || "A member") + '</strong>' +
+          (member.bio ? '<p>' + escapeHtml(member.bio) + '</p>' : '') +
+          '<span>ZIP ' + escapeHtml(member.zip_code) + (wakeLabel ? ' · ' + escapeHtml(wakeLabel) : '') + '</span>' +
+          (sameWakeTime ? '<span style="display:block; color:var(--accent-2); font-weight:700; margin-top:3px;">🌞 Same wake-up time as you</span>' : '') +
+        '</div>';
+
+      (function (memberId) {
+        row.addEventListener("click", function () {
+          window.location.href = "member.html?id=" + encodeURIComponent(memberId);
+        });
+        row.addEventListener("keydown", function (e) {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            window.location.href = "member.html?id=" + encodeURIComponent(memberId);
+          }
+        });
+      })(member.id);
+
+      results.appendChild(row);
+    }
+  }
+
+  document.getElementById("searchBtn").addEventListener("click", runSearch);
+  document.getElementById("zipSearch").addEventListener("keydown", function (e) {
+    if (e.key === "Enter") runSearch();
+  });
+  document.getElementById("wakeTimeFilter").addEventListener("keydown", function (e) {
+    if (e.key === "Enter") runSearch();
+  });
+
+  document.getElementById("signOutLink").addEventListener("click", function (e) {
+    e.preventDefault();
+    signOut();
+  });
+
+  (async function init() {
+    currentUser = await requireAuth();
+    if (!currentUser) return;
+    setModerationUser(currentUser.id);
+    await loadBlockedIds();
+    if (await isCurrentUserAdmin()) {
+      document.getElementById("adminLink").style.display = "inline";
+    }
+
+    document.getElementById("wakeTimeFilter").innerHTML = buildWakeTimeOptionsHtml("Any");
+
+    // Prefill with the member's own ZIP code (if they've set one) and search right away.
+    var { data } = await window.sb
+      .from("profiles")
+      .select("zip_code, wake_time_category")
+      .eq("id", currentUser.id)
+      .maybeSingle();
+    if (data) {
+      currentUserWakeTime = data.wake_time_category || "";
+      if (data.zip_code) {
+        document.getElementById("zipSearch").value = data.zip_code;
+        await runSearch();
+      }
+    }
+  })();
+</script>
+
 </body>
 </html>
