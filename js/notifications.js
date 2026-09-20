@@ -81,7 +81,16 @@
     homeLink.className = "efit-home-link";
     homeLink.title = "Home";
     homeLink.setAttribute("aria-label", "Home");
-    homeLink.textContent = "🏠";
+    // An inline SVG rather than an emoji glyph — renders identically on every
+    // browser/OS instead of depending on that system having a house emoji in
+    // its font stack.
+    homeLink.innerHTML =
+      '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" ' +
+      'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<path d="M3 11.5 12 4l9 7.5"></path>' +
+      '<path d="M5.5 9.8V20h13V9.8"></path>' +
+      '<path d="M9.5 20v-6h5v6"></path>' +
+      "</svg>";
 
     // Placed right before the bell so it reads as a small pair of icons
     // together, per Ken's request to put it "over near the bell".
