@@ -3,203 +3,263 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Ensemble Fitness+ — Find Live, Active Members Near You</title>
-<meta name="description" content="Ensemble Fitness+ finds your next workout partner or match using real, live location — who's active near you right now — plus expanded filters and visibility. Free tier included." />
-<link rel="canonical" href="https://ensemblefitness.com/fitness-plus.html" />
-<meta property="og:type" content="website" />
-<meta property="og:site_name" content="Ensemble Fitness" />
-<meta property="og:title" content="Ensemble Fitness+ — Find Live, Active Members Near You" />
-<meta property="og:description" content="Geography-based matching that shows you who's actually active nearby right now — not just a static profile." />
-<meta property="og:url" content="https://ensemblefitness.com/fitness-plus.html" />
-<meta name="twitter:card" content="summary" />
-<link rel="icon" type="image/png" href="assets/favicon.png" />
+<title>Fitness Plus — Ensemble Fitness</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=40" />
+<link rel="stylesheet" href="css/app.css?v=2" />
 </head>
 <body>
 
-<!-- ============ NAV ============ -->
-<header class="nav">
-  <div class="container">
-    <a href="index.html" class="brand"><img src="assets/logo.png" alt="Ensemble Fitness logo" />Ensemble Fitness</a>
-    <nav class="nav-links">
-      <a href="index.html#how-it-works">How It Works</a>
-      <a href="fitness-journey.html">Fitness <span class="journeys-wrap">Journeys<span class="journeys-badge" style="display:none;"></span></span></a>
-      <a href="healthy-meal-prep.html">Healthy Meal Prep</a>
-      <a href="marketplace.html">Marketplace</a>
-      <a href="members.html">Members</a>
-      <a href="fitness-plus.html" style="color:#fff;">❤️ Fitness+</a>
-      <a href="index.html#safety">Safety</a>
-      <a href="index.html#faq">FAQ</a>
-    </nav>
-    <div class="nav-cta">
-      <a href="https://app.ensemblefitness.com/login.html" class="btn btn-ghost-dark btn-sm nav-signin">Sign In</a>
-      <a href="index.html#waitlist" class="btn btn-primary btn-sm"><span class="full">Become A </span>Member</a>
-      <button class="nav-toggle" id="menuToggle" aria-label="Open menu">☰</button>
-    </div>
-  </div>
+<header class="app-nav">
+  <a href="feed.html" class="app-brand">
+    <span class="app-brand-mark"><img src="assets/logo.png" alt="Ensemble Fitness" /></span>Ensemble Fitness
+  </a>
+  <nav class="app-nav-links">
+    <a href="feed.html">Community</a>
+    <a href="journey.html">My Journey</a>
+    <a href="members.html">Members</a>
+    <a href="fitness-plus.html" style="color:#fff;">Fitness+</a>
+    <a href="music-library.html">Music</a>
+    <a href="quote-library.html">Quotes</a>
+    <a href="profile.html">My Profile</a>
+    <a href="admin.html" id="adminLink" style="display:none;">Queue</a>
+    <a href="#" id="signOutLink">Sign Out</a>
+  </nav>
 </header>
 
-<div class="mobile-menu" id="mobileMenu">
-  <div class="mobile-menu-top">
-    <a href="index.html" class="brand"><img src="assets/logo.png" alt="" />Ensemble Fitness</a>
-    <button class="mobile-close" id="menuClose" aria-label="Close menu">✕</button>
+<div class="app-shell">
+
+  <div class="eyebrow">Fitness+</div>
+  <h2 style="margin-bottom:6px;">Find Your Person</h2>
+  <p class="card-sub" style="margin-bottom:24px;">Dating, without the pressure — matched on your ZIP code and the time you naturally wake up, so you start with someone whose life actually fits yours.</p>
+
+  <div class="fp-upgrade-card">
+    <div class="fp-upgrade-eyebrow">❤️ ENSEMBLE FITNESS+ · FOUNDING RATE</div>
+    <h3 class="fp-upgrade-title">Find Someone Who Wants to Do Life Together.</h3>
+    <p class="fp-upgrade-copy">Fitness Plus is about more than finding a date. It's about finding someone who shares your desire to live healthier, happier, and together. Because the best relationships begin when there's a natural connection. Why do it alone?</p>
+    <ul class="fp-upgrade-list">
+      <li>Expanded search radius &amp; travel mode</li>
+      <li>See who's interested in you</li>
+      <li>Advanced compatibility filters</li>
+      <li>Advanced schedule matching</li>
+      <li>Enhanced dating visibility</li>
+    </ul>
+    <div class="fp-upgrade-price"><span>$14.99</span>/month — locked in for charter members</div>
+    <div class="fp-upgrade-actions">
+      <a href="https://buy.stripe.com/cNi5kC8kw7bE7GB2MM1oI00" target="_blank" rel="noopener" class="btn btn-primary btn-block">Get the Founding Rate</a>
+      <a href="https://ensemblefitness.com/fitness-plus.html" target="_blank" rel="noopener" class="fp-upgrade-link">Read the full Fitness+ story →</a>
+    </div>
   </div>
-  <a href="index.html#how-it-works">How It Works</a>
-  <a href="fitness-journey.html">Fitness <span class="journeys-wrap">Journeys<span class="journeys-badge" style="display:none;"></span></span></a>
-  <a href="healthy-meal-prep.html">Healthy Meal Prep</a>
-  <a href="marketplace.html">Marketplace</a>
-  <a href="members.html">Members</a>
-  <a href="fitness-plus.html">❤️ Fitness+</a>
-  <a href="index.html#safety">Safety</a>
-  <a href="index.html#faq">FAQ</a>
-  <a href="index.html#contact">Contact</a>
-  <a href="https://app.ensemblefitness.com/login.html">Sign In</a>
-  <a href="index.html#waitlist" class="btn btn-primary">Become A Member</a>
+
+  <h3 style="margin:28px 0 4px;">Your matches</h3>
+  <p class="card-sub" style="margin-bottom:16px;">This fills in automatically as members join — everyone here will be matched by ZIP code and wake-up time.</p>
+
+  <div class="form-msg" id="fpMsg"></div>
+
+  <div id="fpResults" class="fp-match-grid">
+    <div class="empty-state">Loading…</div>
+  </div>
+
 </div>
 
-<!-- ============ HERO ============ -->
-<!-- Kept short on purpose, and the price is one section away, not several
-     screens down — nobody should have to scroll to find out what this costs. -->
-<section class="hero fp-hero" id="top" style="padding:28px 0 24px;">
-  <div class="container" style="display:block;">
-    <div class="hero-copy" style="max-width:960px;">
-      <div class="eyebrow on-dark">❤️ Ensemble Fitness+</div>
-      <h1 style="font-size:clamp(22px,2.6vw,32px); margin-bottom:22px;"><span>Find Someone</span> Who Wants to Do Life Together.</h1>
-      <p class="lede-sub" style="max-width:640px; margin-bottom:22px;">Fitness Plus is about more than finding a date. It's about finding someone who shares your desire to live healthier, happier, and together. Because the best relationships begin when there's a natural connection.</p>
-      <p class="lede" style="max-width:640px; margin-bottom:0; font-size:18px; font-weight:800; color:#fff;">Why do it alone?</p>
-    </div>
-  </div>
-</section>
+<style>
+  .fp-upgrade-card {
+    background: linear-gradient(165deg, #2a0f18, #170a10);
+    border: 1px solid rgba(255, 61, 104, 0.3);
+    border-radius: 18px;
+    padding: 22px 24px;
+    margin-bottom: 8px;
+  }
+  .fp-upgrade-eyebrow {
+    font-size: 11.5px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    color: #ff6f91;
+    margin-bottom: 10px;
+  }
+  .fp-upgrade-title { font-size: 20px; margin: 0 0 10px; color: #fff; }
+  .fp-upgrade-copy { font-size: 14px; color: var(--muted-invert); line-height: 1.5; margin: 0 0 14px; }
+  .fp-upgrade-list { margin: 0 0 16px; padding-left: 20px; color: #fff; font-size: 13.5px; line-height: 1.9; }
+  .fp-upgrade-price { font-size: 15px; color: #fff; margin-bottom: 16px; }
+  .fp-upgrade-price span { font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 26px; margin-right: 4px; }
+  .fp-upgrade-actions { display: flex; flex-direction: column; gap: 10px; max-width: 340px; }
+  .fp-upgrade-link { font-size: 13px; color: var(--faint-invert); text-align: center; text-decoration: underline; }
 
-<!-- ============ PRICING ============ -->
-<section class="section fp-pricing" id="pricing" style="padding:24px 0 64px;">
-  <div class="container">
-    <div class="pricing-grid">
-      <div class="price-card">
-        <h3>Free</h3>
-        <div class="price">$0</div>
-        <div class="price-note">Everything you need to find a partner and get moving.</div>
-        <ul class="price-list">
-          <li><span class="chk"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span>Verified profile &amp; core discovery</li>
-          <li><span class="chk"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span>Find a Fitness Partner search</li>
-          <li><span class="chk"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span>Active Now check-ins</li>
-          <li><span class="chk"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span>Messaging with your connections</li>
-          <li><span class="chk"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span>Block, report &amp; safety tools</li>
-        </ul>
-        <a href="index.html#waitlist" class="btn btn-ghost-light btn-block">Become A Member</a>
-      </div>
-      <div class="price-card highlight">
-        <span class="price-tag">Founding rate</span>
-        <h3>Fitness+ ❤️ Dating</h3>
-        <div class="price">$14.99<span>/month</span></div>
-        <div class="price-note">Working launch price — locked in for charter members.</div>
-        <p class="price-bio">This is where casual becomes real. Wider reach, more visibility, and a genuine shot at meeting people who are just as active as you are — right now, right nearby. Join as a charter member and this rate is yours for good.</p>
-        <ul class="price-list">
-          <li><span class="chk"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span>Expanded search radius &amp; travel mode</li>
-          <li><span class="chk"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span>See who's interested in you</li>
-          <li><span class="chk"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span>Advanced compatibility filters</li>
-          <li><span class="chk"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span>Advanced schedule matching</li>
-          <li><span class="chk"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span>Enhanced dating visibility</li>
-        </ul>
-        <a href="https://buy.stripe.com/cNi5kC8kw7bE7GB2MM1oI00" target="_blank" rel="noopener" class="btn btn-primary btn-block">Get the Founding Rate</a>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ============ HOW GEO-MATCHING WORKS ============ -->
-<section class="section alt" id="geo-matching">
-  <div class="container">
-    <div class="section-head center" style="max-width:820px; margin-bottom:32px;">
-      <div class="eyebrow">How it works</div>
-      <h2>Matching based on where you actually are.</h2>
-      <p>No cold, static swiping through people three states away. Ensemble Fitness+ is built around real geography and real activity.</p>
-    </div>
-    <div class="pillars-grid">
-      <div class="pillar-card">
-        <div class="ico ico-orange"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 6-9 12-9 12s-9-6-9-12a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg></div>
-        <h4>Live proximity</h4>
-        <p>See members currently near you, ranked by distance, not just by profile popularity — updated as people check in throughout the day.</p>
-      </div>
-      <div class="pillar-card">
-        <div class="ico ico-pink"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 3"></path></svg></div>
-        <h4>"Active Now" signal</h4>
-        <p>A simple check-in tells the community you're free right now — heading to the gym, going for a run, or open to meeting up.</p>
-      </div>
-      <div class="pillar-card">
-        <div class="ico ico-orange"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path></svg></div>
-        <h4>Dating, without the pressure</h4>
-        <p>Matches grow out of shared activity first. A workout partner today can become something more when the connection is real — on your terms.</p>
-      </div>
-      <div class="pillar-card">
-        <div class="ico ico-pink"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></div>
-        <h4>Expanded reach</h4>
-        <p>Fitness+ widens your radius and adds travel mode, so members visiting a new city can still find their people the moment they land.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ============ CTA ============ -->
-<section class="section alt">
-  <div class="container" style="text-align:center;">
-    <div class="section-head center">
-      <div class="eyebrow">Togetherness, close by</div>
-      <h2>Your next connection could be half a mile away.</h2>
-      <p>Join the community and be ready the moment Ensemble Fitness+ goes live in your area.</p>
-    </div>
-    <a href="index.html#waitlist" class="btn btn-primary">Join The Community</a>
-  </div>
-</section>
-
-<!-- ============ FOOTER ============ -->
-<footer class="footer">
-  <div class="container">
-    <div class="footer-top">
-      <div class="footer-brand">
-        <a href="index.html" class="brand"><img src="assets/logo.png" alt="" />Ensemble Fitness</a>
-        <p>Where active people meet. Find a fitness partner, see who's active nearby, and let real connection happen from there.</p>
-      </div>
-      <div class="footer-col">
-        <h5>Product</h5>
-        <a href="index.html#how-it-works">How It Works</a>
-        <a href="fitness-journey.html">Fitness Journeys</a>
-        <a href="healthy-meal-prep.html">Healthy Meal Prep</a>
-        <a href="marketplace.html">Fit Marketplace</a>
-        <a href="approved-gear.html">Approved Gear</a>
-        <a href="books.html">Ensemble Reads</a>
-        <a href="submit-music.html">Submit Your Music</a>
-        <a href="share-your-journey.html">Share Your Journey</a>
-        <a href="members.html">Members</a>
-        <a href="fitness-plus.html">Ensemble Fitness+</a>
-      </div>
-      <div class="footer-col">
-        <h5>Company</h5>
-        <a href="index.html#story">Our Mission</a>
-        <a href="index.html#safety">Safety</a>
-        <a href="index.html#faq">FAQ</a>
-        <a href="index.html#contact">Contact</a>
-      </div>
-      <div class="footer-col">
-        <h5>Legal</h5>
-        <a href="privacy.html">Privacy Policy</a>
-        <a href="terms.html">Terms of Service</a>
-        <a href="community-guidelines.html">Community Guidelines</a>
-      </div>
-    </div>
-    <div class="footer-bottom">
-      <span>© 2026 Ensemble Fitness. All rights reserved.</span>
-      <span>Charter member pricing shown above is a working launch price, subject to change before general availability.</span>
-    </div>
-    <div class="footer-disclaimer">Ensemble Fitness is currently in pre-launch development. "Ensemble Fitness" is a working product name pending trademark screening. Live-location matching activates once you enable location sharing in the app and is only ever shown to other members, never sold to third parties.</div>
-  </div>
-</footer>
+  /* Dense enough for 4-5 tiles per row on a phone, scaling to many more
+     across a wide screen — built for a community that could grow to
+     thousands of members, not just a handful of test cards. */
+  .fp-match-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(68px, 1fr));
+    gap: 8px;
+  }
+  .fp-match-placeholder {
+    aspect-ratio: 4 / 5;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.045);
+    border: 1px dashed rgba(255, 255, 255, 0.14);
+  }
+</style>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/journeys-nav-badge.js?v=4"></script>
-<script src="js/main.js?v=24"></script>
+<script src="js/config.js"></script>
+<script src="js/shared-session.js"></script>
+<script src="js/supabaseClient.js"></script>
+<script src="js/notifications.js"></script>
+<script>
+  var currentUser = null;
+  var myZip = "";
+  var myWakeTime = "";
+  var myIntent = "";
+
+  // Ken's call: don't show real member cards here yet — with only a handful
+  // of test accounts, a visible "matches" grid looks thin/awkward. Show
+  // blank placeholder tiles instead (dense grid, built for thousands of
+  // members down the road) until there's a real critical mass to display.
+  // Flip this to true when it's time to go live with real matches — the
+  // actual query/rendering logic below is untouched and ready to go.
+  var SHOW_REAL_MATCHES = false;
+  var PLACEHOLDER_TILE_COUNT = 15;
+
+  function renderPlaceholderMatches() {
+    var results = document.getElementById("fpResults");
+    results.innerHTML = new Array(PLACEHOLDER_TILE_COUNT + 1).join('<div class="fp-match-placeholder"></div>');
+  }
+
+  function escapeHtml(str) {
+    var div = document.createElement("div");
+    div.textContent = str || "";
+    return div.innerHTML;
+  }
+
+  async function avatarUrlFor(userId) {
+    var { data } = await window.sb
+      .from("media")
+      .select("storage_path")
+      .eq("user_id", userId)
+      .eq("is_profile_photo", true)
+      .eq("status", "approved")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!data) return "";
+    var { data: signed } = await window.sb.storage.from("media").createSignedUrl(data.storage_path, 3600);
+    return signed ? signed.signedUrl : "";
+  }
+
+  // A simple, transparent match score: same ZIP and same wake-up time count most
+  // heavily, and sharing the same "what are you looking for" preference adds a
+  // smaller boost on top — so "great matches" naturally sort to the top, followed
+  // by a one-factor match, followed by everyone else — rather than hiding people
+  // with no match yet, which would leave the page empty while the community is
+  // still small. relationship_intent is optional, so it only ever adds to the
+  // score — never subtracts or excludes someone who left it blank.
+  function matchScoreFor(member) {
+    var score = 0;
+    if (myZip && member.zip_code === myZip) score += 2;
+    if (myWakeTime && member.wake_time_category === myWakeTime) score += 1;
+    if (myIntent && member.relationship_intent === myIntent) score += 1;
+    return score;
+  }
+
+  function matchBadgeFor(member) {
+    var sameZip = !!myZip && member.zip_code === myZip;
+    var sameWake = !!myWakeTime && member.wake_time_category === myWakeTime;
+    var sameIntent = !!myIntent && member.relationship_intent === myIntent;
+    if (sameZip && sameWake) return '<span class="match-badge great">💘 Great match</span>';
+    if (sameZip) return '<span class="match-badge zip">📍 Same ZIP code</span>';
+    if (sameWake) return '<span class="match-badge wake">🌞 Same wake-up time</span>';
+    if (sameIntent) return '<span class="match-badge intent">❤️ Looking for the same thing</span>';
+    return "";
+  }
+
+  async function loadMatches() {
+    var results = document.getElementById("fpResults");
+    var msg = document.getElementById("fpMsg");
+
+    var { data: mine } = await window.sb
+      .from("profiles")
+      .select("zip_code, wake_time_category, relationship_intent")
+      .eq("id", currentUser.id)
+      .maybeSingle();
+    myZip = (mine && mine.zip_code) || "";
+    myWakeTime = (mine && mine.wake_time_category) || "";
+    myIntent = (mine && mine.relationship_intent) || "";
+
+    if (!myZip || !myWakeTime) {
+      msg.textContent = "Add your ZIP code and wake-up time on My Profile to see your best matches highlighted here.";
+      msg.className = "form-msg show error";
+    }
+
+    var { data, error } = await window.sb
+      .from("profiles")
+      .select("id, display_name, bio, zip_code, wake_time_category, relationship_intent")
+      .neq("id", currentUser.id);
+
+    if (error) {
+      results.innerHTML = '<div class="empty-state">Couldn\'t load matches. Please try again.</div>';
+      return;
+    }
+    if (!data || data.length === 0) {
+      results.innerHTML = '<div class="empty-state">No other members yet — check back as more people join Ensemble Fitness.</div>';
+      return;
+    }
+
+    data.sort(function (a, b) {
+      var diff = matchScoreFor(b) - matchScoreFor(a);
+      if (diff !== 0) return diff;
+      return (a.display_name || "").localeCompare(b.display_name || "");
+    });
+
+    results.innerHTML = "";
+    for (var i = 0; i < data.length; i++) {
+      var member = data[i];
+      var avatarUrl = await avatarUrlFor(member.id);
+      var initial = (member.display_name || "?").trim().charAt(0).toUpperCase() || "?";
+      var thumbInner = avatarUrl
+        ? '<img src="' + avatarUrl + '" alt="' + escapeHtml(member.display_name || "Member") + '" />'
+        : '<div class="thumb-initial">' + initial + '</div>';
+
+      var wakeLabel = wakeTimeLabel(member.wake_time_category);
+      var intentLabel = relationshipIntentLabel(member.relationship_intent);
+      var subParts = [];
+      if (member.zip_code) subParts.push("ZIP " + escapeHtml(member.zip_code));
+      if (wakeLabel) subParts.push(escapeHtml(wakeLabel));
+      if (intentLabel) subParts.push(escapeHtml(intentLabel));
+
+      var card = document.createElement("div");
+      card.className = "feed-card";
+      card.innerHTML =
+        '<div class="feed-card-thumb">' + thumbInner + matchBadgeFor(member) + '</div>' +
+        '<div class="feed-card-meta">' +
+          '<div class="feed-card-name">' + escapeHtml(member.display_name || "A member") + '</div>' +
+          (subParts.length ? '<div class="feed-card-sub">' + subParts.join(" · ") + '</div>' : '') +
+          (member.bio ? '<p class="feed-card-caption">' + escapeHtml(member.bio) + '</p>' : '') +
+        '</div>';
+
+      results.appendChild(card);
+    }
+  }
+
+  document.getElementById("signOutLink").addEventListener("click", function (e) {
+    e.preventDefault();
+    signOut();
+  });
+
+  (async function init() {
+    currentUser = await requireAuth();
+    if (!currentUser) return;
+    if (await isCurrentUserAdmin()) {
+      document.getElementById("adminLink").style.display = "inline";
+    }
+    if (SHOW_REAL_MATCHES) {
+      await loadMatches();
+    } else {
+      renderPlaceholderMatches();
+    }
+  })();
+</script>
+
 </body>
 </html>
