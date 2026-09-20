@@ -289,6 +289,20 @@
   .rp-new-pill[hidden] { display: none; }
   .rp-reel::-webkit-scrollbar { display: none; }
 
+  /* List mode — used only for the "Journeys" filter. At scale (Ken: could
+     be hundreds or thousands of entries a day) forcing one text post per
+     full screen, swipe-to-advance, doesn't hold up the way it does for
+     photos/videos. Journeys instead scroll as an ordinary stacked list of
+     compact cards, same idea as the marketing site's own Fitness Journeys
+     panel. Journal posts mixed into the "All" reel (alongside photos/
+     videos) keep the full-bleed .rp-slide treatment below, since that's a
+     small minority of a reel that's otherwise full-bleed media. */
+  .rp-reel.rp-reel-list {
+    scroll-snap-type: none;
+    overflow-y: auto;
+    padding: 14px 0 8px;
+  }
+
   .rp-slide {
     position: relative;
     height: 100%;
@@ -495,6 +509,97 @@
     padding: 9px 14px;
     border-radius: 999px;
   }
+
+  /* Compact journey card — the "Journeys" filter's list-mode item. Plain
+     document flow (not the absolute-positioned overlay system the
+     full-bleed .rp-slide uses), so it stacks normally and scrolls like a
+     regular feed of any length. */
+  .rp-slide.rp-slide-compact {
+    position: static;
+    height: auto;
+    margin: 0 14px 12px;
+    padding: 14px 14px 12px;
+    background: var(--navy-900);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px;
+    scroll-snap-align: none;
+    scroll-snap-stop: normal;
+    overflow: visible;
+  }
+  .rp-jc-header {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 10px;
+  }
+  .rp-jc-avatar {
+    flex: 0 0 auto;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 700;
+    font-size: 13px;
+  }
+  .rp-jc-headertext { flex: 1 1 auto; min-width: 0; }
+  .rp-jc-name {
+    color: #fff;
+    font-weight: 700;
+    font-size: 13.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .rp-jc-time { color: var(--faint-invert); font-size: 11px; margin-top: 1px; }
+  .rp-jc-tag {
+    flex: 0 0 auto;
+    font-size: 10.5px;
+    font-weight: 600;
+    color: #fff;
+    background: linear-gradient(135deg, var(--accent-dark), var(--accent-2));
+    border-radius: 999px;
+    padding: 3px 9px;
+    white-space: nowrap;
+  }
+  .rp-jc-quote {
+    color: rgba(255,255,255,0.95);
+    font-family: 'Poppins', 'Inter', sans-serif;
+    font-size: 14.5px;
+    font-weight: 500;
+    line-height: 1.45;
+  }
+  .rp-jc-link {
+    display: inline-block;
+    margin-top: 10px;
+    color: #fff;
+    background: var(--accent-2);
+    font-size: 12.5px;
+    font-weight: 700;
+    text-decoration: none;
+    padding: 8px 13px;
+    border-radius: 999px;
+  }
+  /* Reactions row, laid out inline instead of the full-bleed slide's
+     vertical floating column. */
+  .rp-slide-compact .rp-actions {
+    position: static;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 10px;
+    margin: 2px 0 12px;
+    z-index: auto;
+  }
+  .rp-slide-compact .rp-action-btn { flex-direction: row; gap: 5px; }
+  .rp-slide-compact .rp-action-emoji {
+    width: 28px;
+    height: 28px;
+    font-size: 13px;
+    background: rgba(255,255,255,0.08);
+  }
+  .rp-slide-compact .rp-action-count { font-size: 12px; }
 
   /* One-time highlight on a post that just arrived live while someone was
      already sitting on the feed (Ken's "Instagram/TikTok, see it pop up"
@@ -1153,6 +1258,7 @@
   function resetReel() {
     var reel = document.getElementById("rpReel");
     var sentinel = document.getElementById("rpSentinel");
+    reel.classList.toggle("rp-reel-list", activeFilter === "Journeys");
     reel.querySelectorAll(".rp-slide, .rp-empty-reel").forEach(function (el) { el.remove(); });
     loadedItems = [];
     offset = 0;
@@ -1514,8 +1620,37 @@
     return el;
   }
 
+  // List-mode variant of a journey post, used only for the "Journeys"
+  // filter (see .rp-reel-list / .rp-slide-compact above). Plain stacked
+  // card instead of a full-height swipe slide, so the tab scales to
+  // however many entries a day come in without turning into hundreds of
+  // individual full-screen swipes.
+  function buildJournalCard(item) {
+    var el = document.createElement("div");
+    el.className = "rp-slide rp-slide-compact";
+    el.setAttribute("data-real-id", item.id);
+    var initial = (item.name || "?").trim().charAt(0).toUpperCase();
+    el.innerHTML =
+      '<div class="rp-jc-header">' +
+        '<div class="rp-jc-avatar" style="background:' + avatarColor(item.user_id || item.id) + '">' + escapeHtml(initial) + '</div>' +
+        '<div class="rp-jc-headertext">' +
+          '<div class="rp-jc-name">' + escapeHtml(item.name) + '</div>' +
+          '<div class="rp-jc-time">' + escapeHtml(timeAgo(item.created_at)) + '</div>' +
+        '</div>' +
+        '<span class="rp-jc-tag">📓 Journey</span>' +
+      '</div>' +
+      '<div class="rp-jc-quote">' + escapeHtml(item.caption) + '</div>' +
+      '<div class="rp-actions rp-journal-actions"></div>' +
+      '<a class="rp-jc-link" href="https://ensemblefitness.com/fitness-journey.html#journey-' + encodeURIComponent(item.id) + '" target="_blank" rel="noopener">Read &amp; reply on Fitness Journeys →</a>';
+    renderStoryReactions(item, el.querySelector(".rp-journal-actions"));
+    return el;
+  }
+
   function buildAnySlide(item) {
-    return item.kind === "journal" ? buildJournalSlide(item) : buildSlide(item);
+    if (item.kind === "journal") {
+      return activeFilter === "Journeys" ? buildJournalCard(item) : buildJournalSlide(item);
+    }
+    return buildSlide(item);
   }
 
   function wireSlideHeader(item, el) {
