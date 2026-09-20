@@ -1171,6 +1171,17 @@
     { type: "heart", emoji: "❤️" }
   ];
 
+  // Journey (community_questions) posts use their own reactions table —
+  // story_reactions — shared with the marketing site's Fitness Journeys
+  // page and homepage widget, so a cheer given here or there shows up in
+  // both places. The allowed values there are clap/heart/thumbs_up (see
+  // sql/schema.sql section 6c), not the same set as media reactions above.
+  var STORY_REACTIONS = [
+    { type: "clap", emoji: "👏" },
+    { type: "heart", emoji: "❤️" },
+    { type: "thumbs_up", emoji: "👍" }
+  ];
+
   function escapeHtml(str) {
     return String(str == null ? "" : str).replace(/[&<>"']/g, function (c) {
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
@@ -1476,10 +1487,11 @@
   }
 
   // A journey has no photo/video and isn't a row in the "media" table, so
-  // it skips follow/report/block/react/comment entirely (those are all
-  // wired to media-specific tables) and just shows who wrote it, when, and
-  // the story itself, with a link back to read the full thing (and reply)
-  // on ensemblefitness.com where the rest of that feature already lives.
+  // it skips follow/comment entirely (those stay wired to media-specific
+  // tables) — but it DOES get real reactions (clap/heart/thumbs up), backed
+  // by the same story_reactions table the marketing site uses, so a member
+  // can cheer someone on right here without leaving the app. Replying with
+  // words still happens on ensemblefitness.com, via the link below.
   function buildJournalSlide(item) {
     var el = document.createElement("div");
     el.className = "rp-slide";
@@ -1494,9 +1506,11 @@
           '<div class="rp-context-badges"><span class="rp-context-badge rp-badge-type">📓 Journey</span></div>' +
         '</div>' +
       '</div>' +
+      '<div class="rp-actions rp-journal-actions"></div>' +
       '<div class="rp-overlay-bottom">' +
         '<a class="rp-journal-link" href="https://ensemblefitness.com/fitness-journey.html#journey-' + encodeURIComponent(item.id) + '" target="_blank" rel="noopener">Read &amp; reply on Fitness Journeys →</a>' +
       '</div>';
+    renderStoryReactions(item, el.querySelector(".rp-journal-actions"));
     return el;
   }
 
@@ -1712,6 +1726,48 @@
       btn.classList.add("active");
       countEl.textContent = current + 1;
       await window.sb.from("media_reactions").insert({ media_id: mediaId, user_id: currentUserId, reaction_type: type });
+    }
+  }
+
+  async function renderStoryReactions(item, container) {
+    if (!container) return;
+    container.innerHTML = STORY_REACTIONS.map(function (r) {
+      return '<button type="button" class="rp-action-btn" data-reaction="' + r.type + '">' +
+        '<span class="rp-action-emoji">' + r.emoji + '</span><span class="rp-action-count"></span></button>';
+    }).join("");
+
+    var { data: reactions } = await window.sb.from("story_reactions").select("user_id, reaction").eq("question_id", item.id);
+
+    var counts = { clap: 0, heart: 0, thumbs_up: 0 };
+    var mine = {};
+    (reactions || []).forEach(function (r) {
+      if (counts[r.reaction] !== undefined) counts[r.reaction]++;
+      if (currentUserId && r.user_id === currentUserId) mine[r.reaction] = true;
+    });
+
+    STORY_REACTIONS.forEach(function (r) {
+      var btn = container.querySelector('[data-reaction="' + r.type + '"]');
+      if (!btn) return;
+      btn.classList.toggle("active", !!mine[r.type]);
+      btn.querySelector(".rp-action-count").textContent = counts[r.type] || "";
+      btn.addEventListener("click", function () { toggleStoryReaction(item.id, r.type, btn); });
+    });
+  }
+
+  async function toggleStoryReaction(questionId, type, btn) {
+    if (!currentUserId) return;
+    var isActive = btn.classList.contains("active");
+    var countEl = btn.querySelector(".rp-action-count");
+    var current = parseInt(countEl.textContent || "0", 10) || 0;
+    if (isActive) {
+      btn.classList.remove("active");
+      countEl.textContent = (current - 1) > 0 ? current - 1 : "";
+      await window.sb.from("story_reactions").delete()
+        .eq("question_id", questionId).eq("user_id", currentUserId).eq("reaction", type);
+    } else {
+      btn.classList.add("active");
+      countEl.textContent = current + 1;
+      await window.sb.from("story_reactions").insert({ question_id: questionId, user_id: currentUserId, reaction: type });
     }
   }
 
