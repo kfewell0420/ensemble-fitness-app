@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Track — Ensemble Fitness</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/app.css?v=2" />
+</head>
+<body>
+
+<header class="app-nav">
+  <a href="feed.html" class="app-brand">
+    <span class="app-brand-mark"><img src="assets/logo.png" alt="Ensemble Fitness" /></span>Ensemble Fitness
+  </a>
+  <nav class="app-nav-links">
+    <a href="feed.html">Community</a>
+    <a href="journey.html">My Journey</a>
+    <a href="members.html">Members</a>
+    <a href="fitness-plus.html">Fitness+</a>
+    <a href="gear.html">Gear</a>
+    <a href="music-library.html">Music</a>
+    <a href="quote-library.html">Quotes</a>
+    <a href="profile.html">My Profile</a>
+    <a href="admin.html" id="adminLink" style="display:none;">Queue</a>
+    <a href="#" id="signOutLink">Sign Out</a>
+  </nav>
+</header>
+
+<div class="app-shell">
+
+  <a href="music-library.html" style="display:inline-block; margin-bottom:18px; font-size:13.5px; color:var(--faint-invert); font-weight:700;">&larr; Back to Music Library</a>
+
+  <div class="card" id="trackCard">
+    <div class="empty-state">Loading…</div>
+  </div>
+
+</div>
+
+<style>
+  /* "Full track layout" per Ken's ask — a single-track page in the spirit of
+     an iTunes/Apple Music song view: big art, title/artist up top, the
+     player front and center, then support-the-artist below. Reuses the
+     exact tip/wallet logic that used to live inline in the Browse Tracks
+     row on music-library.html — clicking a row there now lands here
+     instead of cramming a player + tip buttons into every row. */
+  .tp-head { display: flex; gap: 20px; align-items: center; margin-bottom: 22px; flex-wrap: wrap; }
+  .tp-art {
+    width: 96px; height: 96px; border-radius: 20px; flex: none;
+    background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 40px; box-shadow: 0 10px 24px rgba(255,90,31,0.25);
+  }
+  .tp-title { font-size: 24px; margin: 0 0 4px; color: #fff; }
+  .tp-artist { font-size: 15px; color: var(--muted-invert); }
+  .tp-audio { width: 100%; height: 42px; margin: 4px 0 22px; }
+  .tp-bio { font-size: 14px; line-height: 1.6; margin: 0 0 8px; }
+  .tp-link { display: inline-block; font-size: 13px; color: var(--accent-2); margin-bottom: 18px; word-break: break-all; }
+  .tp-wallet-row {
+    display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+    border-top: 1px solid rgba(255,255,255,0.08); padding-top: 18px; margin-top: 6px;
+  }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/shared-session.js"></script>
+<script src="js/supabaseClient.js"></script>
+<script src="js/notifications.js"></script>
+<script>
+  var SITE_FUNCTIONS_BASE = "https://ensemblefitness.com/.netlify/functions";
+  var currentUser = null;
+  var track = null;
+
+  function escapeHtml(s) {
+    return String(s || "").replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+  function formatCents(cents) { return "$" + (cents / 100).toFixed(2); }
+  function showMsg(el, text, kind) { el.textContent = text; el.className = "form-msg show " + kind; }
+  function hideMsg(el) { el.className = "form-msg"; }
+
+  async function authHeader() {
+    var { data } = await window.sb.auth.getSession();
+    return "Bearer " + data.session.access_token;
+  }
+
+  function trackIdFromUrl() {
+    return new URLSearchParams(window.location.search).get("id");
+  }
+
+  async function loadWalletBalance() {
+    try {
+      var res = await fetch(SITE_FUNCTIONS_BASE + "/wallet-balance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: await authHeader() },
+        body: JSON.stringify({})
+      });
+      var out = await res.json();
+      if (res.ok) return out.balance_cents || 0;
+    } catch (e) {}
+    return 0;
+  }
+
+  function setActiveAmount(amountsEl, activeBtn) {
+    amountsEl.querySelectorAll(".tip-amount-btn").forEach(function (b) { b.classList.remove("active"); });
+    activeBtn.classList.add("active");
+  }
+  function resetToNone(amountsEl) {
+    var noneBtn = amountsEl.querySelector('.tip-amount-btn[data-amount-cents="0"]');
+    if (noneBtn) setActiveAmount(amountsEl, noneBtn);
+  }
+
+  var TOPUP_PRESETS_CENTS = [100, 200, 500, 1000];
+  function pickTopupAmount(amountCents) {
+    for (var i = 0; i < TOPUP_PRESETS_CENTS.length; i++) {
+      if (TOPUP_PRESETS_CENTS[i] >= amountCents) return TOPUP_PRESETS_CENTS[i];
+    }
+    return TOPUP_PRESETS_CENTS[TOPUP_PRESETS_CENTS.length - 1];
+  }
+
+  async function startTipTopup(amountCents) {
+    var statusEl = document.querySelector(".tip-status");
+    statusEl.textContent = "One quick Stripe step to add funds — you'll come right back and this tip will finish automatically.";
+    statusEl.className = "tip-status show";
+    var topupCents = pickTopupAmount(amountCents);
+    try {
+      sessionStorage.setItem("efPendingTip", JSON.stringify({ track_id: track.id, amount_cents: amountCents, return_to: "track.html?id=" + encodeURIComponent(track.id) }));
+    } catch (e) {}
+    try {
+      var res = await fetch(SITE_FUNCTIONS_BASE + "/wallet-topup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: await authHeader() },
+        body: JSON.stringify({ amount_cents: topupCents })
+      });
+      var out = await res.json();
+      if (!res.ok || !out.url) throw new Error(out.error || "Couldn't start checkout.");
+      window.location.href = out.url;
+    } catch (err) {
+      try { sessionStorage.removeItem("efPendingTip"); } catch (e) {}
+      statusEl.textContent = err.message || "Couldn't start checkout — please try again.";
+      statusEl.className = "tip-status show error";
+      document.querySelectorAll(".tip-amount-btn").forEach(function (b) { b.disabled = false; });
+      resetToNone(document.querySelector(".tip-amounts"));
+    }
+  }
+
+  async function sendTip(amountCents, opts) {
+    opts = opts || {};
+    var statusEl = document.querySelector(".tip-status");
+    var amountsEl = document.querySelector(".tip-amounts");
+    var buttons = amountsEl.querySelectorAll(".tip-amount-btn");
+    buttons.forEach(function (b) { b.disabled = true; });
+    statusEl.textContent = opts.resuming ? "Finishing your tip…" : "Sending…";
+    statusEl.className = "tip-status show";
+
+    try {
+      var res = await fetch(SITE_FUNCTIONS_BASE + "/tip-track", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: await authHeader() },
+        body: JSON.stringify({ track_id: track.id, amount_cents: amountCents })
+      });
+      var out = await res.json();
+
+      if (!res.ok) {
+        if (out.insufficient_funds && !opts.noRedirect) return startTipTopup(amountCents);
+        if (out.insufficient_funds && opts.resuming && opts.retriesLeft > 0) {
+          await new Promise(function (r) { setTimeout(r, 1200); });
+          return sendTip(amountCents, { resuming: true, retriesLeft: opts.retriesLeft - 1, noRedirect: true });
+        }
+        statusEl.textContent = out.insufficient_funds
+          ? "Your funds were added — tap the amount again to send your tip."
+          : (out.error || "Something went wrong — please try again.");
+        statusEl.className = "tip-status show error";
+        buttons.forEach(function (b) { b.disabled = false; });
+        resetToNone(amountsEl);
+        return;
+      }
+
+      statusEl.textContent = "💛 Thanks for supporting " + out.artist_name + "!";
+      statusEl.className = "tip-status show success";
+      var balEl = document.getElementById("tpWalletBalance");
+      if (balEl) balEl.textContent = formatCents(out.balance_cents || 0);
+      buttons.forEach(function (b) { b.disabled = false; });
+    } catch (err) {
+      statusEl.textContent = "Something went wrong — please try again.";
+      statusEl.className = "tip-status show error";
+      buttons.forEach(function (b) { b.disabled = false; });
+      resetToNone(amountsEl);
+    }
+  }
+
+  async function resumePendingTipIfAny() {
+    var raw;
+    try { raw = sessionStorage.getItem("efPendingTip"); } catch (e) { raw = null; }
+    if (!raw) return;
+    var pending;
+    try { pending = JSON.parse(raw); } catch (e) { return; }
+    if (!pending || pending.track_id !== track.id) return;
+    try { sessionStorage.removeItem("efPendingTip"); } catch (e) {}
+    var btn = document.querySelector('.tip-amount-btn[data-amount-cents="' + pending.amount_cents + '"]');
+    if (btn) setActiveAmount(document.querySelector(".tip-amounts"), btn);
+    await sendTip(pending.amount_cents, { resuming: true, retriesLeft: 5, noRedirect: true });
+  }
+
+  function renderTrack() {
+    var card = document.getElementById("trackCard");
+    card.innerHTML =
+      '<div class="tp-head">' +
+        '<div class="tp-art">🎵</div>' +
+        '<div>' +
+          '<h2 class="tp-title">' + escapeHtml(track.title) +
+            (track.is_independent_artist ? ' <span class="track-royalty-badge" title="This artist is not signed to a label or publisher — they keep 100% of any future royalties on this track.">100% Royalties</span>' : '') +
+          '</h2>' +
+          '<div class="tp-artist">by ' + escapeHtml(track.artist_name) + '</div>' +
+        '</div>' +
+      '</div>' +
+      (track.artist_bio ? '<p class="tp-bio">' + escapeHtml(track.artist_bio) + '</p>' : '') +
+      (track.artist_link ? '<a href="' + escapeHtml(track.artist_link) + '" target="_blank" rel="noopener" class="tp-link">' + escapeHtml(track.artist_link) + '</a>' : '') +
+      '<audio controls preload="none" class="tp-audio" id="tpAudio"></audio>' +
+      '<div class="tp-wallet-row">' +
+        '<span style="font-size:13px; color:var(--faint-invert);">Your wallet:</span>' +
+        '<strong id="tpWalletBalance" style="font-family:\'Poppins\',sans-serif;">$0.00</strong>' +
+      '</div>' +
+      '<div class="tip-area" style="margin-top:14px;">' +
+        '<div class="tip-label">💛 Tip ' + escapeHtml(track.artist_name) + '</div>' +
+        '<div class="tip-amounts">' +
+          '<button type="button" class="tip-amount-btn tip-none active" data-amount-cents="0">None</button>' +
+          '<button type="button" class="tip-amount-btn" data-amount-cents="50">50¢</button>' +
+          '<button type="button" class="tip-amount-btn" data-amount-cents="100">$1</button>' +
+          '<button type="button" class="tip-amount-btn" data-amount-cents="200">$2</button>' +
+        '</div>' +
+        '<div class="tip-status"></div>' +
+      '</div>';
+
+    var audio = document.getElementById("tpAudio");
+    var signedUrlLoaded = false;
+    audio.addEventListener("play", async function () {
+      if (signedUrlLoaded) return;
+      audio.pause();
+      var { data: signed } = await window.sb.storage.from("tracks").createSignedUrl(track.storage_path, 3600);
+      if (signed) {
+        signedUrlLoaded = true;
+        audio.src = signed.signedUrl;
+        audio.play();
+      }
+    });
+
+    var amountsEl = document.querySelector(".tip-amounts");
+    amountsEl.querySelectorAll(".tip-amount-btn").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var cents = parseInt(btn.getAttribute("data-amount-cents"), 10);
+        setActiveAmount(amountsEl, btn);
+        if (cents === 0) {
+          var statusEl = document.querySelector(".tip-status");
+          statusEl.textContent = "";
+          statusEl.className = "tip-status";
+          return;
+        }
+        sendTip(cents);
+      });
+    });
+  }
+
+  async function init() {
+    currentUser = await requireAuth();
+    if (!currentUser) return;
+    if (await isCurrentUserAdmin()) document.getElementById("adminLink").style.display = "inline";
+
+    var id = trackIdFromUrl();
+    var card = document.getElementById("trackCard");
+    if (!id) {
+      card.innerHTML = '<div class="empty-state">No track specified.</div>';
+      return;
+    }
+
+    var { data, error } = await window.sb
+      .from("tracks")
+      .select("id, title, artist_name, artist_bio, artist_link, storage_path, is_independent_artist")
+      .eq("id", id)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    if (error || !data) {
+      card.innerHTML = '<div class="empty-state">Couldn\'t find that track — it may have been taken down. <a href="music-library.html" style="color:var(--accent-2);">Back to Music Library</a></div>';
+      return;
+    }
+
+    track = data;
+    renderTrack();
+
+    var balance = await loadWalletBalance();
+    document.getElementById("tpWalletBalance").textContent = formatCents(balance);
+
+    await resumePendingTipIfAny();
+  }
+
+  document.getElementById("signOutLink").addEventListener("click", function (e) {
+    e.preventDefault();
+    signOut();
+  });
+
+  init();
+</script>
+
+</body>
+</html>

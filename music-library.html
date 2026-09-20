@@ -6,10 +6,35 @@
 <title>Music Library — Ensemble Fitness</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&family=Caveat:wght@600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/app.css?v=2" />
 </head>
 <body>
+
+<!-- Decorative only — Ken's ask (Sept 2026): this page felt empty and flat,
+     and he wants it to feel like a fun, colorful place made for music and
+     artists. This is a pure CSS/SVG "stage lighting" backdrop (glows,
+     a bar-style waveform strip, floating notes, a few handwritten-style
+     captions) so nothing here needs an image asset yet. It's fixed behind
+     everything, aria-hidden, and pointer-events:none so it never gets in
+     the way of real content or clicks. Ken mocked up a photographic
+     concert-scene version of this — once he sends that image file, it can
+     drop in here as a background-image and this CSS backdrop steps aside. -->
+<div class="ml-bg" aria-hidden="true">
+  <div class="ml-bg-glow ml-bg-glow-1"></div>
+  <div class="ml-bg-glow ml-bg-glow-2"></div>
+  <div class="ml-bg-glow ml-bg-glow-3"></div>
+  <div class="ml-bg-glow ml-bg-glow-4"></div>
+  <span class="ml-note" style="left:4%; top:14%; font-size:34px; transform:rotate(-12deg);">♪</span>
+  <span class="ml-note" style="left:9%; top:34%; font-size:22px; transform:rotate(8deg);">♫</span>
+  <span class="ml-note" style="right:6%; top:20%; font-size:30px; transform:rotate(10deg);">♫</span>
+  <span class="ml-note" style="right:11%; top:46%; font-size:20px; transform:rotate(-6deg);">♪</span>
+  <span class="ml-caption" style="left:2.5%; top:16%;">Beats Build<br>Better Days</span>
+  <span class="ml-caption" style="right:2.5%; top:12%; text-align:right;">Music Inspires<br>Movement</span>
+  <span class="ml-caption" style="left:2%; top:58%;">Different Artists.<br>Same Higher Purpose.</span>
+  <span class="ml-caption" style="right:2%; top:56%; text-align:right;">Support<br>Real&nbsp;Artists</span>
+  <div class="ml-bg-wave" aria-hidden="true"></div>
+</div>
 
 <header class="app-nav">
   <a href="feed.html" class="app-brand">
@@ -29,11 +54,17 @@
   </nav>
 </header>
 
-<div class="app-shell">
+<div class="app-shell" style="position:relative; z-index:1;">
 
   <div class="eyebrow">Music Library</div>
   <h2 style="margin-bottom:6px;">Real tracks from independent artists.</h2>
-  <p class="card-sub" style="margin-bottom:24px;">Every track here is free to use in your workout videos. If one moves you, you're welcome to leave the artist a little support — totally optional, and 100% of it goes to them.</p>
+  <p class="card-sub" style="margin-bottom:18px;">Every track here is free to use in your workout videos. If one moves you, you're welcome to leave the artist a little support — totally optional, and 100% of it goes to them.</p>
+
+  <div class="ml-stats">
+    <div class="ml-stat"><span class="ml-stat-ico">🎧</span><div><strong>Workout Ready</strong><span>High-energy tracks</span></div></div>
+    <div class="ml-stat"><span class="ml-stat-ico">❤️</span><div><strong>Real Artists</strong><span>Support independent talent</span></div></div>
+    <div class="ml-stat"><span class="ml-stat-ico">🎶</span><div><strong>All Genres</strong><span>Hip-Hop · Pop · EDM · R&amp;B · Rock · More</span></div></div>
+  </div>
 
   <div class="ml-shell">
 
@@ -56,16 +87,23 @@
 
     <div class="ml-main">
       <div class="card" id="tracksCard">
-        <div class="eyebrow">Browse Tracks</div>
-        <h2 style="font-size:18px;">Listen &amp; pick your next workout track</h2>
-        <p class="card-sub">These are the same tracks you can choose from when uploading a workout video on your Profile page.</p>
-        <div id="tracksList">
+        <div class="ml-tracks-head">
+          <div>
+            <div class="eyebrow" style="margin-bottom:2px;">Browse Tracks</div>
+            <h2 style="font-size:18px; margin-bottom:4px;">Listen &amp; pick your next workout track</h2>
+            <p class="card-sub" style="margin-bottom:0;">Tap any track below for the full page — player, artist story, and tipping. These are the same tracks you can choose from when uploading a workout video on your Profile page.</p>
+          </div>
+          <button type="button" class="btn btn-primary btn-sm" id="refreshTracksBtn" style="flex:none; white-space:nowrap;">🔍 Browse Tracks</button>
+        </div>
+        <div class="track-table" id="tracksList">
           <div class="empty-state">Loading…</div>
         </div>
       </div>
     </div>
 
   </div>
+
+  <div class="ml-tagline"><span>Move</span><span>Create</span><span>Inspire</span><span>Together</span></div>
 
 </div>
 
@@ -95,6 +133,160 @@
       top: 24px;
     }
   }
+
+  /* ---- Decorative backdrop (see the comment on .ml-bg's markup above) --- */
+  .ml-bg {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+    background: #07060a;
+  }
+  .ml-bg-glow {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(70px);
+    opacity: 0.5;
+  }
+  .ml-bg-glow-1 { width: 480px; height: 480px; left: -120px; top: -140px; background: radial-gradient(circle, var(--accent), transparent 70%); }
+  .ml-bg-glow-2 { width: 420px; height: 420px; right: -100px; top: 10%; background: radial-gradient(circle, var(--pink-2), transparent 70%); }
+  .ml-bg-glow-3 { width: 460px; height: 460px; left: 8%; bottom: -180px; background: radial-gradient(circle, #6d4fff, transparent 70%); }
+  .ml-bg-glow-4 { width: 380px; height: 380px; right: 10%; bottom: -140px; background: radial-gradient(circle, #17c3b2, transparent 70%); }
+
+  .ml-note {
+    position: absolute;
+    color: var(--accent-2);
+    opacity: 0.28;
+    display: none;
+  }
+  .ml-caption {
+    position: absolute;
+    display: none;
+    font-family: 'Caveat', cursive;
+    font-size: 26px;
+    line-height: 1.15;
+    color: rgba(255, 255, 255, 0.5);
+    max-width: 190px;
+  }
+  @media (min-width: 1180px) {
+    .ml-note, .ml-caption { display: block; }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .ml-bg-glow { animation: mlDrift 16s ease-in-out infinite alternate; }
+    .ml-bg-glow-2 { animation-delay: -4s; }
+    .ml-bg-glow-3 { animation-delay: -9s; }
+    .ml-bg-glow-4 { animation-delay: -13s; }
+  }
+  @keyframes mlDrift {
+    from { transform: translate(0, 0) scale(1); }
+    to { transform: translate(24px, -18px) scale(1.06); }
+  }
+  .ml-bg-wave {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 90px;
+    opacity: 0.35;
+    background-image: repeating-linear-gradient(
+      90deg,
+      var(--accent) 0 3px,
+      transparent 3px 14px
+    );
+    -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+            mask-image: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+  }
+
+  /* ---- Stat row ----------------------------------------------------------- */
+  .ml-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px 32px;
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .ml-stat { display: flex; align-items: center; gap: 10px; }
+  .ml-stat-ico { font-size: 20px; }
+  .ml-stat strong { display: block; font-size: 13.5px; color: #fff; }
+  .ml-stat span { display: block; font-size: 12px; color: var(--faint-invert); }
+
+  /* ---- Browse Tracks header + button -------------------------------------- */
+  .ml-tracks-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+  }
+
+  /* ---- Track list, iTunes-style: a compact, clickable row per track —
+     art, title + artist, a chevron — built to stay readable at any width,
+     from a handful of tracks to a very long library. Title and artist
+     stack instead of sitting in two fixed side-by-side columns: this app's
+     whole shell tops out at 720px wide (see --container in app.css), and
+     once the wallet sidebar takes its share of that, a real two-column
+     table doesn't leave enough room for a title to stay readable — this
+     keeps every row legible at any width instead of squeezing text into a
+     sliver. */
+  .track-table-head {
+    padding: 0 4px 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--faint-invert);
+  }
+
+  .track-table-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 4px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    text-decoration: none;
+    color: inherit;
+  }
+  .track-table-row:last-child { border-bottom: none; }
+  .track-table-row:hover, .track-table-row:focus-visible { background: rgba(255, 255, 255, 0.035); border-radius: 10px; outline: none; }
+
+  .track-table-art {
+    flex: none;
+    width: 38px; height: 38px;
+    border-radius: 9px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+  .track-table-main { flex: 1; min-width: 0; }
+  .track-table-title {
+    display: block;
+    font-weight: 700; font-size: 14.5px; color: #fff;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .track-table-artist {
+    display: block;
+    font-size: 12.5px; color: var(--muted-invert); margin-top: 2px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .track-table-chevron { flex: none; font-size: 18px; color: var(--faint-invert); }
+
+  /* ---- Bottom tagline ----------------------------------------------------- */
+  .ml-tagline {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px 18px;
+    margin: 36px 0 8px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--faint-invert);
+  }
+  .ml-tagline span:not(:last-child)::after { content: "·"; margin-left: 18px; color: var(--accent-2); }
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -104,7 +296,6 @@
 <script src="js/notifications.js"></script>
 <script>
   var SITE_FUNCTIONS_BASE = "https://ensemblefitness.com/.netlify/functions";
-  var TIP_AMOUNTS_CENTS = [50, 100, 200];
   var currentUser = null;
 
   function showMsg(el, text, kind) {
@@ -139,7 +330,6 @@
     handleTopupRedirect();
     await loadWallet();
     await loadTracks();
-    await resumePendingTip();
   }
 
   // ---- Wallet -------------------------------------------------------------
@@ -148,16 +338,10 @@
     var params = new URLSearchParams(window.location.search);
     var topup = params.get("topup");
     if (!topup) return;
-    var hasPendingTip = false;
-    try { hasPendingTip = !!sessionStorage.getItem("efPendingTip"); } catch (e) {}
     var msg = document.getElementById("walletMsg");
     if (topup === "success") {
-      // If a tip is waiting to auto-finish, resumePendingTip() below shows
-      // its own "💛 Thanks for supporting..." message right on the track —
-      // no need for a separate generic banner too.
-      if (!hasPendingTip) showMsg(msg, "Funds added — thanks! Your balance below is updated.", "success");
+      showMsg(msg, "Funds added — thanks! Your balance below is updated.", "success");
     } else if (topup === "cancelled") {
-      try { sessionStorage.removeItem("efPendingTip"); } catch (e) {}
       showMsg(msg, "No worries — nothing was charged.", "error");
     }
     // Clean the URL so refreshing the page doesn't keep re-showing this.
@@ -176,7 +360,7 @@
         document.getElementById("walletBalance").textContent = formatCents(out.balance_cents || 0);
       }
     } catch (err) {
-      // Balance just won't show — the add-funds/tip buttons still work and will
+      // Balance just won't show — the add-funds buttons still work and will
       // surface any real problem then.
     }
   }
@@ -206,14 +390,20 @@
   });
 
   // ---- Tracks ---------------------------------------------------------------
-
-  var tracksById = {};
+  // Ken's ask: each track is now a row in a compact, iTunes-style list —
+  // clicking anywhere on a row opens the full track page (track.html),
+  // where the big player, artist bio/link, and tipping actually live. That
+  // keeps this list light no matter how many tracks get added — a handful
+  // or a thousand — since nothing here loads an audio file until you
+  // actually open a track.
 
   async function loadTracks() {
     var list = document.getElementById("tracksList");
+    list.innerHTML = '<div class="empty-state">Loading…</div>';
+
     var { data, error } = await window.sb
       .from("tracks")
-      .select("id, title, artist_name, artist_bio, artist_link, storage_path, is_independent_artist, tip_count, tip_total_cents")
+      .select("id, title, artist_name, is_independent_artist")
       .eq("is_active", true)
       .order("title", { ascending: true });
 
@@ -226,190 +416,31 @@
       return;
     }
 
-    list.innerHTML = "";
+    list.innerHTML = '<div class="track-table-head">' + data.length + ' track' + (data.length === 1 ? "" : "s") + '</div>';
     data.forEach(function (track) {
-      tracksById[track.id] = track;
       list.appendChild(buildTrackRow(track));
     });
   }
 
   function buildTrackRow(track) {
-    var row = document.createElement("div");
-    row.className = "track-row";
+    var row = document.createElement("a");
+    row.className = "track-table-row";
+    row.href = "track.html?id=" + encodeURIComponent(track.id);
     row.innerHTML =
-      '<div class="track-row-head">' +
-        '<div>' +
-          '<div class="track-title">' + escapeHtml(track.title) +
-            (track.is_independent_artist ? ' <span class="track-royalty-badge" title="This artist is not signed to a label or publisher — they keep 100% of any future royalties on this track.">100% Royalties</span>' : '') +
-          '</div>' +
-          '<div class="track-artist">by ' + escapeHtml(track.artist_name) + '</div>' +
-        '</div>' +
-      '</div>' +
-      (track.artist_bio ? '<p class="track-bio">' + escapeHtml(track.artist_bio) + '</p>' : '') +
-      (track.artist_link
-        ? '<a href="' + escapeHtml(track.artist_link) + '" target="_blank" rel="noopener" class="track-link">' + escapeHtml(track.artist_link) + '</a>'
-        : '') +
-      '<audio controls preload="none" class="track-audio" data-track-id="' + track.id + '"></audio>' +
-      '<div class="tip-area" data-track-id="' + track.id + '">' +
-        '<div class="tip-label">💛 Tip the artist</div>' +
-        '<div class="tip-amounts">' +
-          '<button type="button" class="tip-amount-btn tip-none active" data-amount-cents="0">None</button>' +
-          '<button type="button" class="tip-amount-btn" data-amount-cents="50">50¢</button>' +
-          '<button type="button" class="tip-amount-btn" data-amount-cents="100">$1</button>' +
-          '<button type="button" class="tip-amount-btn" data-amount-cents="200">$2</button>' +
-        '</div>' +
-        '<div class="tip-status"></div>' +
-      '</div>';
-    row.setAttribute("data-track-id", track.id);
-
-    var audio = row.querySelector(".track-audio");
-    var signedUrlLoaded = false;
-    audio.addEventListener("play", async function () {
-      if (signedUrlLoaded) return;
-      audio.pause();
-      var { data: signed } = await window.sb.storage.from("tracks").createSignedUrl(track.storage_path, 3600);
-      if (signed) {
-        signedUrlLoaded = true;
-        audio.src = signed.signedUrl;
-        audio.play();
-      }
-    });
-
-    var amountsEl = row.querySelector(".tip-amounts");
-    amountsEl.querySelectorAll(".tip-amount-btn").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        var cents = parseInt(btn.getAttribute("data-amount-cents"), 10);
-        setActiveAmount(amountsEl, btn);
-        if (cents === 0) {
-          var statusEl = row.querySelector(".tip-status");
-          statusEl.textContent = "";
-          statusEl.className = "tip-status";
-          return;
-        }
-        sendTip(track, cents, row);
-      });
-    });
-
+      '<span class="track-table-art">🎵</span>' +
+      '<span class="track-table-main">' +
+        '<span class="track-table-title">' + escapeHtml(track.title) +
+          (track.is_independent_artist ? ' <span class="track-royalty-badge" title="This artist is not signed to a label or publisher — they keep 100% of any future royalties on this track.">100% Royalties</span>' : '') +
+        '</span>' +
+        '<span class="track-table-artist">by ' + escapeHtml(track.artist_name) + '</span>' +
+      '</span>' +
+      '<span class="track-table-chevron">›</span>';
     return row;
   }
 
-  function setActiveAmount(amountsEl, activeBtn) {
-    amountsEl.querySelectorAll(".tip-amount-btn").forEach(function (b) { b.classList.remove("active"); });
-    activeBtn.classList.add("active");
-  }
-
-  function resetToNone(amountsEl) {
-    var noneBtn = amountsEl.querySelector('.tip-amount-btn[data-amount-cents="0"]');
-    if (noneBtn) setActiveAmount(amountsEl, noneBtn);
-  }
-
-  // Smallest top-up preset that alone covers this tip, regardless of
-  // whatever's already in the wallet — so one Stripe trip is guaranteed to
-  // be enough to finish the tip the member just asked for.
-  var TOPUP_PRESETS_CENTS = [100, 200, 500, 1000];
-  function pickTopupAmount(amountCents) {
-    for (var i = 0; i < TOPUP_PRESETS_CENTS.length; i++) {
-      if (TOPUP_PRESETS_CENTS[i] >= amountCents) return TOPUP_PRESETS_CENTS[i];
-    }
-    return TOPUP_PRESETS_CENTS[TOPUP_PRESETS_CENTS.length - 1];
-  }
-
-  // Tips are small on purpose, and Stripe's per-charge fee would eat a big
-  // chunk of 50¢ if we charged a card every single tap. So the wallet still
-  // exists under the hood — but a member never has to think about it: if
-  // they don't have enough balance, we send them to Stripe (Apple Pay /
-  // Google Pay show up there automatically) and finish the tip for them the
-  // moment they land back, with no extra click.
-  async function startTipTopup(track, amountCents, row) {
-    var statusEl = row.querySelector(".tip-status");
-    statusEl.textContent = "One quick Stripe step to add funds — you'll come right back and this tip will finish automatically.";
-    statusEl.className = "tip-status show";
-    var topupCents = pickTopupAmount(amountCents);
-    try {
-      sessionStorage.setItem("efPendingTip", JSON.stringify({ track_id: track.id, amount_cents: amountCents }));
-    } catch (e) { /* private-browsing storage can throw — tip just won't auto-resume, not fatal */ }
-    try {
-      var res = await fetch(SITE_FUNCTIONS_BASE + "/wallet-topup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: await authHeader() },
-        body: JSON.stringify({ amount_cents: topupCents })
-      });
-      var out = await res.json();
-      if (!res.ok || !out.url) throw new Error(out.error || "Couldn't start checkout.");
-      window.location.href = out.url;
-    } catch (err) {
-      try { sessionStorage.removeItem("efPendingTip"); } catch (e) {}
-      statusEl.textContent = err.message || "Couldn't start checkout — please try again.";
-      statusEl.className = "tip-status show error";
-      row.querySelectorAll(".tip-amount-btn").forEach(function (b) { b.disabled = false; });
-      resetToNone(row.querySelector(".tip-amounts"));
-    }
-  }
-
-  async function sendTip(track, amountCents, row, opts) {
-    opts = opts || {};
-    var statusEl = row.querySelector(".tip-status");
-    var amountsEl = row.querySelector(".tip-amounts");
-    var buttons = amountsEl.querySelectorAll(".tip-amount-btn");
-    buttons.forEach(function (b) { b.disabled = true; });
-    statusEl.textContent = opts.resuming ? "Finishing your tip…" : "Sending…";
-    statusEl.className = "tip-status show";
-
-    try {
-      var res = await fetch(SITE_FUNCTIONS_BASE + "/tip-track", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: await authHeader() },
-        body: JSON.stringify({ track_id: track.id, amount_cents: amountCents })
-      });
-      var out = await res.json();
-
-      if (!res.ok) {
-        if (out.insufficient_funds && !opts.noRedirect) {
-          return startTipTopup(track, amountCents, row);
-        }
-        if (out.insufficient_funds && opts.resuming && opts.retriesLeft > 0) {
-          // Stripe's webhook may not have credited the balance yet — give it
-          // a moment and try again rather than telling the member to redo it.
-          await new Promise(function (r) { setTimeout(r, 1200); });
-          return sendTip(track, amountCents, row, { resuming: true, retriesLeft: opts.retriesLeft - 1, noRedirect: true });
-        }
-        statusEl.textContent = out.insufficient_funds
-          ? "Your funds were added — tap the amount again to send your tip."
-          : (out.error || "Something went wrong — please try again.");
-        statusEl.className = "tip-status show error";
-        buttons.forEach(function (b) { b.disabled = false; });
-        resetToNone(amountsEl);
-        return;
-      }
-
-      statusEl.textContent = "💛 Thanks for supporting " + out.artist_name + "!";
-      statusEl.className = "tip-status show success";
-      document.getElementById("walletBalance").textContent = formatCents(out.balance_cents || 0);
-    } catch (err) {
-      statusEl.textContent = "Something went wrong — please try again.";
-      statusEl.className = "tip-status show error";
-      buttons.forEach(function (b) { b.disabled = false; });
-      resetToNone(amountsEl);
-    }
-  }
-
-  async function resumePendingTip() {
-    var raw;
-    try { raw = sessionStorage.getItem("efPendingTip"); } catch (e) { raw = null; }
-    if (!raw) return;
-    try { sessionStorage.removeItem("efPendingTip"); } catch (e) {}
-    var pending;
-    try { pending = JSON.parse(raw); } catch (e) { return; }
-    var track = tracksById[pending.track_id];
-    var row = document.querySelector('.track-row[data-track-id="' + pending.track_id + '"]');
-    if (!track || !row) return;
-
-    row.scrollIntoView({ behavior: "smooth", block: "center" });
-    var btn = row.querySelector('.tip-amount-btn[data-amount-cents="' + pending.amount_cents + '"]');
-    if (btn) setActiveAmount(row.querySelector(".tip-amounts"), btn);
-
-    await sendTip(track, pending.amount_cents, row, { resuming: true, retriesLeft: 5, noRedirect: true });
-  }
+  document.getElementById("refreshTracksBtn").addEventListener("click", function () {
+    loadTracks();
+  });
 
   document.getElementById("signOutLink").addEventListener("click", function (e) {
     e.preventDefault();

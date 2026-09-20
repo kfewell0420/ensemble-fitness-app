@@ -958,6 +958,7 @@
           (item.caption ? '<div style="font-size:13px; color:var(--muted-invert); margin-top:4px;">“' + item.caption + '”</div>' : '') +
         '</div>' +
         '<div class="review-actions">' +
+          '<a class="btn btn-ghost btn-sm" href="' + url + '" download title="Save this audio file so you can re-upload it as a real Music Library track below">Download</a>' +
           '<button class="btn btn-ghost btn-sm delete-voice-btn" data-id="' + item.id + '" data-path="' + item.storage_path + '">Remove</button>' +
         '</div>';
       el.appendChild(row);
