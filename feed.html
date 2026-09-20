@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css" />
+<link rel="stylesheet" href="css/app.css?v=2" />
 <style>
   /* ============================================================
      The app's real home screen: a horizontal "Meal Prep" strip up
@@ -815,6 +815,7 @@
      ================================================================== */
   @media (min-width: 900px) {
     html, body { background: #0a0a0c; }
+    #rpAppNav { display: none; }
 
     /* Fixed left icon rail — the tab bar, rotated from a mobile bottom
        bar into a vertical left-side icon column. */
@@ -1094,6 +1095,22 @@
 <body>
 
 <div class="rp-shell">
+  <!-- Mobile-only brand header — every other signed-in app page (My
+       Journey, Members, Profile, ...) has this same logo, and tapping it
+       goes back to the feed (the app's actual "home"), matching the
+       marketing site's own logo-returns-home behavior. The feed itself
+       had no header at all before, which is exactly the inconsistency
+       Ken flagged. Placed inside .rp-shell (not above it) since the shell
+       is a fixed, full-viewport phone frame on mobile — anything outside
+       it gets painted over, not pushed down. Hidden at desktop widths
+       below since the wide dashboard already has its own "Welcome back"
+       header and a Home icon in the left rail. -->
+  <header class="app-nav" id="rpAppNav">
+    <a href="feed.html" class="app-brand">
+      <span class="app-brand-mark"><img src="assets/logo.png" alt="Ensemble Fitness" /></span>Ensemble Fitness
+    </a>
+  </header>
+
   <!-- Desktop-only — hidden entirely on the phone-frame layout below. A
        bold, brand-energy header like the marketing homepage's hero,
        instead of the plain minimal top of the mobile app. -->
@@ -1429,7 +1446,7 @@
     var wrap = document.getElementById("rpMealPrep");
     var track = document.getElementById("rpMealPrepTrack");
     var bannerSub = document.getElementById("rpMealPrepBannerSub");
-    if (bannerSub) bannerSub.textContent = usingIllustrativeMealPrep ? "Preview" : "Community picks";
+    if (bannerSub) bannerSub.textContent = usingIllustrativeMealPrep ? "Examples" : "Community picks";
     if (!mealPrepItems.length) {
       var mpMsg = lastFetchError
         ? "Couldn't load Meal Prep posts — " + escapeHtml(lastFetchError.message || String(lastFetchError))

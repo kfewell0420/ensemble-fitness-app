@@ -9,10 +9,20 @@
   --navy-700: #1c2740;
   --navy-600: #2a3652;
 
-  --accent: #db1f52;
-  --accent-2: #ff3d68;
-  --accent-dark: #a81440;
-  --accent-tint: rgba(219, 31, 82, 0.12);
+  /* Matches the marketing site's actual tokens now (this file's header
+     comment always claimed to, but these had drifted to pink/red while
+     the site's real primary brand color is orange) — Ken: the homepage
+     is the reference, orange throughout, pink reserved for Fitness+/
+     dating only. */
+  --accent: #ff5a1f;
+  --accent-2: #ff7a3d;
+  --accent-dark: #c2410c;
+  --accent-tint: rgba(255, 90, 31, 0.12);
+
+  /* Dating/Fitness+ only — matches the site's --pink/--pink-2. */
+  --pink: #db1f52;
+  --pink-2: #ff3d68;
+  --pink-tint: rgba(219, 31, 82, 0.14);
 
   --green: #1fae6e;
   --green-tint: rgba(31, 174, 110, 0.14);
@@ -337,9 +347,11 @@ img { max-width: 100%; display: block; }
   font-family: inherit;
   white-space: nowrap;
 }
+/* Selected state reads via contrast, not another accent-colored fill —
+   consistent with feed.html's filter chips. */
 .category-chip.active {
-  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
-  color: #fff;
+  background: #fff;
+  color: var(--navy-900);
   border-color: transparent;
 }
 
@@ -392,7 +404,7 @@ img { max-width: 100%; display: block; }
   width: 68px;
   height: 68px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent), var(--navy-800));
+  background: linear-gradient(135deg, var(--navy-600), var(--navy-900));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -447,7 +459,7 @@ img { max-width: 100%; display: block; }
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent), var(--navy-800));
+  background: linear-gradient(135deg, var(--navy-600), var(--navy-900));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -919,7 +931,7 @@ img { max-width: 100%; display: block; }
   align-items: center;
   justify-content: center;
   font-size: 34px;
-  background: linear-gradient(150deg, var(--accent-dark), var(--navy-900));
+  background: linear-gradient(150deg, var(--navy-700), var(--navy-950));
 }
 
 .feed-tile-media { position: relative; width: 100%; height: 100%; }
@@ -1327,7 +1339,7 @@ img { max-width: 100%; display: block; }
   align-items: center;
   justify-content: center;
   font-size: 20px;
-  background: linear-gradient(150deg, var(--accent-dark), var(--navy-900));
+  background: linear-gradient(150deg, var(--navy-700), var(--navy-950));
 }
 
 .review-row {
@@ -1400,7 +1412,7 @@ img { max-width: 100%; display: block; }
   font-weight: 800;
   font-size: 42px;
   color: #fff;
-  background: linear-gradient(135deg, var(--accent), var(--navy-800));
+  background: linear-gradient(135deg, var(--navy-600), var(--navy-900));
 }
 
 .match-badge {
@@ -1415,7 +1427,9 @@ img { max-width: 100%; display: block; }
   color: #fff;
   white-space: nowrap;
 }
-.match-badge.great { background: linear-gradient(135deg, var(--accent), var(--accent-dark)); }
+/* Dating/Fitness+ match quality badge — stays pink, matching the
+   homepage's dating section, not the site-wide orange accent. */
+.match-badge.great { background: linear-gradient(135deg, var(--pink-2), var(--pink)); }
 .match-badge.zip { background: var(--green-tint); color: var(--green); }
 .match-badge.wake { background: var(--amber-tint); color: var(--amber); }
 
