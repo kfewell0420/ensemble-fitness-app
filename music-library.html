@@ -35,31 +35,67 @@
   <h2 style="margin-bottom:6px;">Real tracks from independent artists.</h2>
   <p class="card-sub" style="margin-bottom:24px;">Every track here is free to use in your workout videos. If one moves you, you're welcome to leave the artist a little support — totally optional, and 100% of it goes to them.</p>
 
-  <div class="card" id="walletCard">
-    <div class="eyebrow">Your Wallet</div>
-    <div style="display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;">
-      <div style="font-family:'Poppins',sans-serif; font-weight:800; font-size:32px;" id="walletBalance">$0.00</div>
-      <span style="font-size:13px; color:var(--faint-invert);">available to support artists</span>
-    </div>
-    <div class="form-msg" id="walletMsg"></div>
-    <div id="topupChoices" style="display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;">
-      <button type="button" class="btn btn-ghost btn-sm topup-btn" data-amount-cents="100">Add $1</button>
-      <button type="button" class="btn btn-ghost btn-sm topup-btn" data-amount-cents="200">Add $2</button>
-      <button type="button" class="btn btn-ghost btn-sm topup-btn" data-amount-cents="500">Add $5</button>
-      <button type="button" class="btn btn-ghost btn-sm topup-btn" data-amount-cents="1000">Add $10</button>
-    </div>
-  </div>
+  <div class="ml-shell">
 
-  <div class="card" id="tracksCard">
-    <div class="eyebrow">Browse Tracks</div>
-    <h2 style="font-size:18px;">Listen &amp; pick your next workout track</h2>
-    <p class="card-sub">These are the same tracks you can choose from when uploading a workout video on your Profile page.</p>
-    <div id="tracksList">
-      <div class="empty-state">Loading…</div>
+    <div class="ml-side">
+      <div class="card" id="walletCard">
+        <div class="eyebrow">Your Wallet</div>
+        <div style="display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;">
+          <div style="font-family:'Poppins',sans-serif; font-weight:800; font-size:32px;" id="walletBalance">$0.00</div>
+          <span style="font-size:13px; color:var(--faint-invert);">available to support artists</span>
+        </div>
+        <div class="form-msg" id="walletMsg"></div>
+        <div id="topupChoices" style="display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;">
+          <button type="button" class="btn btn-ghost btn-sm topup-btn" data-amount-cents="100">Add $1</button>
+          <button type="button" class="btn btn-ghost btn-sm topup-btn" data-amount-cents="200">Add $2</button>
+          <button type="button" class="btn btn-ghost btn-sm topup-btn" data-amount-cents="500">Add $5</button>
+          <button type="button" class="btn btn-ghost btn-sm topup-btn" data-amount-cents="1000">Add $10</button>
+        </div>
+      </div>
     </div>
+
+    <div class="ml-main">
+      <div class="card" id="tracksCard">
+        <div class="eyebrow">Browse Tracks</div>
+        <h2 style="font-size:18px;">Listen &amp; pick your next workout track</h2>
+        <p class="card-sub">These are the same tracks you can choose from when uploading a workout video on your Profile page.</p>
+        <div id="tracksList">
+          <div class="empty-state">Loading…</div>
+        </div>
+      </div>
+    </div>
+
   </div>
 
 </div>
+
+<style>
+  /* Ken's ask (Sept 2026): on wide screens the wallet moves to a vertical
+     side column — the same idea as the Gear/cart card on the feed
+     sidebar — instead of sitting on top of the track list. Tracks become
+     the wide, middle column so the list can run to hundreds of tracks,
+     all the way down the page, without feeling cramped under a card.
+     This uses the same 900px breakpoint feed.html already switches its
+     own rail/sidebar layout at, so the two pages feel consistent.
+     Grid-template-areas (not DOM order) place the wallet on the side —
+     the markup keeps Wallet before Tracks so phones still show Wallet
+     first, then Tracks below, exactly like before. */
+  @media (min-width: 900px) {
+    .ml-shell {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 300px;
+      grid-template-areas: "main side";
+      column-gap: 24px;
+      align-items: start;
+    }
+    .ml-main { grid-area: main; }
+    .ml-side {
+      grid-area: side;
+      position: sticky;
+      top: 24px;
+    }
+  }
+</style>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/config.js"></script>
