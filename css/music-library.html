@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Music Library — Ensemble Fitness</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&family=Caveat:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/app.css?v=2" />
+</head>
+<body>
+
+<!-- Decorative only — Ken's ask (Sept 2026): this page felt empty and flat,
+     and he wants it to feel like a fun, colorful place made for music and
+     artists. Ken supplied the actual background photo (musicians/DJ/vinyl,
+     with an empty dark center built in for content to sit over), so this
+     is that image plus a couple of handwritten-style captions in the
+     margins. It's fixed behind everything, aria-hidden, and
+     pointer-events:none so it never gets in the way of real content or
+     clicks. -->
+<!-- Sept 2026: the background photo itself now has its captions baked
+     right into the artwork (Music Moves Us, Good Music Brighter Workouts,
+     Different Artists Same Higher Purpose, Create Play Inspire Together,
+     More Than Music A Stronger You, plus the Move/Create/Inspire/Together
+     + Music Fuels A Stronger You line at the bottom) — so the separate
+     handwritten-style .ml-caption spans that used to carry that same
+     messaging as an HTML overlay were removed to avoid doubling up on
+     the same words. -->
+<div class="ml-bg" aria-hidden="true"></div>
+
+<header class="app-nav">
+  <a href="feed.html" class="app-brand">
+    <span class="app-brand-mark"><img src="assets/logo.png" alt="Ensemble Fitness" /></span>Ensemble Fitness
+  </a>
+  <nav class="app-nav-links">
+    <a href="feed.html">Community</a>
+    <a href="journey.html">My Journey</a>
+    <a href="members.html">Members</a>
+    <a href="fitness-plus.html">Fitness+</a>
+    <a href="gear.html">Gear</a>
+    <a href="music-library.html" style="color:#fff;">Music</a>
+    <a href="quote-library.html">Quotes</a>
+    <a href="profile.html">My Profile</a>
+    <a href="admin.html" id="adminLink" style="display:none;">Queue</a>
+    <a href="#" id="signOutLink">Sign Out</a>
+  </nav>
+</header>
+
+<div class="app-shell" style="position:relative; z-index:1;">
+
+  <!-- Ken's designer mocked up a wider (non-square) background photo with
+       this whole header sitting on a clean white card instead of directly
+       on the photo (see ml-hero-card below) — that sidesteps the black/
+       orange contrast back-and-forth entirely, since dark text on a solid
+       white card is never going to fight with whatever's in the photo
+       behind it. -->
+  <div class="ml-hero-card">
+    <div class="eyebrow">Music Library</div>
+    <h2 style="margin-bottom:6px; color:#15121c;">Real tracks from independent artists.</h2>
+    <p class="card-sub" style="margin-bottom:18px; color:#4b4756; font-size:13.5px;">Every track here is free to use in your workout videos. If one moves you, you're welcome to leave the artist a little support — totally optional, and 100% of it goes to them.</p>
+
+    <div class="ml-stats">
+      <div class="ml-stat"><span class="ml-stat-ico" style="color:var(--accent-2);"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 14v-2a9 9 0 0 1 18 0v2"></path><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3v3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3v3z"></path></svg></span><div><strong>Workout Ready</strong><span>High-energy tracks</span></div></div>
+      <div class="ml-stat"><span class="ml-stat-ico">❤️</span><div><strong>Real Artists</strong><span>Support independent talent</span></div></div>
+      <div class="ml-stat"><span class="ml-stat-ico" style="color:#15121c;"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg></span><div><strong>All Genres</strong><span>Hip-Hop · Pop · EDM · R&amp;B · Rock · More</span></div></div>
+    </div>
+  </div>
+
+  <div class="ml-shell">
+
+    <div class="ml-side">
+      <div class="card" id="walletCard">
+        <div class="eyebrow">Your Wallet</div>
+        <div style="display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;">
+          <div style="font-family:'Poppins',sans-serif; font-weight:800; font-size:32px;" id="walletBalance">$0.00</div>
+          <span style="font-size:13px; color:var(--faint-invert);">available to support artists</span>
+        </div>
+        <div class="form-msg" id="walletMsg"></div>
+        <div id="topupChoices" style="display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;">
+          <button type="button" class="btn btn-ghost btn-sm topup-btn" data-amount-cents="100">Add $1</button>
+          <button type="button" class="btn btn-ghost btn-sm topup-btn" data-amount-cents="200">Add $2</button>
+          <button type="button" class="btn btn-ghost btn-sm topup-btn" data-amount-cents="500">Add $5</button>
+          <button type="button" class="btn btn-ghost btn-sm topup-btn" data-amount-cents="1000">Add $10</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="ml-main">
+      <div class="card" id="tracksCard">
+        <div class="ml-tracks-head">
+          <div>
+            <div class="eyebrow" style="margin-bottom:2px;">Browse Tracks</div>
+            <h2 style="font-size:18px; margin-bottom:4px;">Listen &amp; pick your next workout track</h2>
+            <p class="card-sub" style="margin-bottom:0;">Tap any track below for the full page — player, artist story, and tipping. These are the same tracks you can choose from when uploading a workout video on your Profile page.</p>
+          </div>
+          <button type="button" class="btn btn-primary btn-sm" id="refreshTracksBtn" style="flex:none; white-space:nowrap;">🔍 Browse Tracks</button>
+        </div>
+        <div class="track-table" id="tracksList">
+          <div class="empty-state">Loading…</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- The "Move / Create / Inspire / Together" row used to live here as
+       its own HTML element — now that the background photo has that exact
+       line (plus "Music Fuels A Stronger You") baked into the artwork at
+       the bottom of the page, this element was removed so it doesn't
+       print the same words a second time on top of the photo. -->
+
+</div>
+
+<style>
+  /* Ken's ask (Sept 2026): on wide screens the wallet moves to a vertical
+     side column — the same idea as the Gear/cart card on the feed
+     sidebar — instead of sitting on top of the track list. Tracks become
+     the wide, middle column so the list can run to hundreds of tracks,
+     all the way down the page, without feeling cramped under a card.
+     This uses the same 900px breakpoint feed.html already switches its
+     own rail/sidebar layout at, so the two pages feel consistent.
+     Grid-template-areas (not DOM order) place the wallet on the side —
+     the markup keeps Wallet before Tracks so phones still show Wallet
+     first, then Tracks below, exactly like before. */
+  @media (min-width: 900px) {
+    .ml-shell {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 300px;
+      grid-template-areas: "main side";
+      column-gap: 24px;
+      /* Ken's ask (Sept 2026): the two boxes need to match — same height,
+         lined up left to right — not one taller than the other. Stretch
+         makes both columns match whichever is naturally taller, and the
+         wallet's own content centers inside that height instead of sitting
+         at the top with dead space below it (see #walletCard below). */
+      align-items: stretch;
+    }
+    .ml-main { grid-area: main; display: flex; }
+    .ml-main > .card { width: 100%; display: flex; flex-direction: column; }
+    .ml-side {
+      grid-area: side;
+      position: sticky;
+      top: 24px;
+      display: flex;
+    }
+    .ml-side > .card { width: 100%; display: flex; flex-direction: column; justify-content: center; }
+  }
+
+  /* ---- Decorative backdrop (see the comment on .ml-bg's markup above) ---
+     Ken's own background photo, fixed behind everything and dimmed a touch
+     at the very top/bottom so the nav bar and the tagline row underneath
+     stay easy to read against it. Swapped Sept 2026 for a brighter, more
+     energetic photo (Ken's daughter's note: the old one read too dark for
+     the site's vibe) — the overlay is lightened to match, just enough to
+     keep the white nav text and captions readable against the new photo's
+     lighter background. The cards further down the page keep their own
+     solid backing, unaffected by this.
+     Position is back to "center center" on purpose (tried anchoring to the
+     bottom for a round so the "Move / Create / Inspire / Together" line
+     would stay in frame, but that pushed the crop up over the rapper and
+     the violinist — Ken's call was that showing all six artists for the
+     diversity matters more than that one line, until there's a wider/
+     taller version of the photo that doesn't force that trade-off at all). */
+  .ml-bg {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+    background:
+      linear-gradient(to bottom, rgba(4,3,6,0.4) 0%, rgba(4,3,6,0.08) 16%, rgba(4,3,6,0.08) 78%, rgba(4,3,6,0.4) 100%),
+      #07060a url('assets/music-library-bg.jpg') center center / cover no-repeat;
+  }
+  .ml-caption {
+    position: absolute;
+    display: none;
+    font-family: 'Caveat', cursive;
+    font-size: 26px;
+    line-height: 1.15;
+    color: rgba(255, 255, 255, 0.6);
+    text-shadow: 0 2px 10px rgba(0,0,0,0.6);
+    max-width: 190px;
+  }
+  @media (min-width: 1180px) {
+    .ml-caption { display: block; }
+  }
+
+  /* ---- Hero card ------------------------------------------------------------
+     Sept 2026, v3: Ken's designer mocked up the new wider background photo
+     with the "Music Library" header sitting on its own solid white card
+     instead of straight on the photo. That ends the whole black-vs-orange
+     back-and-forth for good — dark text on solid white never has to fight
+     whatever's behind it in the photo, on any part of the image, on any
+     screen. A touch of blur + transparency keeps it feeling like part of
+     the same design as the two dark cards below rather than a flat sticker. */
+  .ml-hero-card {
+    background: rgba(255, 255, 255, 0.92);
+    -webkit-backdrop-filter: blur(6px);
+            backdrop-filter: blur(6px);
+    border-radius: var(--radius-lg);
+    padding: 24px 28px;
+    margin-bottom: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+  }
+
+  /* ---- Stat row ----------------------------------------------------------- */
+  .ml-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px 32px;
+    padding-top: 4px;
+    border-top: 1px solid rgba(21, 18, 28, 0.1);
+  }
+  .ml-stat { display: flex; align-items: center; gap: 10px; }
+  .ml-stat-ico { font-size: 20px; color: #15121c; }
+  .ml-stat strong { display: block; font-size: 13.5px; color: #15121c; }
+  .ml-stat span { display: block; font-size: 12px; color: #6b6577; }
+  .ml-stat-ico svg { display: block; }
+
+  /* ---- Browse Tracks header + button -------------------------------------- */
+  /* Now that there's a busy photo behind the page instead of a soft glow,
+     the two cards need to read as solid panels sitting on top of it rather
+     than letting it show through — otherwise text over the photo gets hard
+     to read. A touch of blur behind them keeps the photo visible without
+     competing with the content. */
+  /* Ken's ask (Sept 2026): these two boxes were running tall enough to sit
+     right over the "Move / Create / Inspire / Together" line at the bottom
+     of the photo — tightened the padding and cut the margin these cards
+     would otherwise pick up from the global .card style so they take up
+     less vertical room (paired with the background-position change above,
+     which also helps by keeping that line anchored near the bottom of the
+     screen instead of getting cropped off). */
+  .ml-shell .card {
+    background: rgba(6, 5, 9, 0.86);
+    -webkit-backdrop-filter: blur(6px);
+            backdrop-filter: blur(6px);
+    padding: 20px 22px;
+    margin-bottom: 0;
+  }
+
+  .ml-tracks-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+  }
+
+  /* ---- Track list, iTunes-style: a compact, clickable row per track —
+     art, title + artist, a chevron — built to stay readable at any width,
+     from a handful of tracks to a very long library. Title and artist
+     stack instead of sitting in two fixed side-by-side columns: this app's
+     whole shell tops out at 720px wide (see --container in app.css), and
+     once the wallet sidebar takes its share of that, a real two-column
+     table doesn't leave enough room for a title to stay readable — this
+     keeps every row legible at any width instead of squeezing text into a
+     sliver. */
+  .track-table-head {
+    padding: 0 4px 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--faint-invert);
+  }
+
+  .track-table-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 4px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    text-decoration: none;
+    color: inherit;
+  }
+  .track-table-row:last-child { border-bottom: none; }
+  .track-table-row:hover, .track-table-row:focus-visible { background: rgba(255, 255, 255, 0.035); border-radius: 10px; outline: none; }
+
+  .track-table-art {
+    flex: none;
+    width: 38px; height: 38px;
+    border-radius: 9px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+  .track-table-main { flex: 1; min-width: 0; }
+  .track-table-title {
+    display: block;
+    font-weight: 700; font-size: 14.5px; color: #fff;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .track-table-tagline {
+    display: block;
+    font-size: 12.5px; font-style: italic; color: var(--muted-invert); margin-top: 2px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .track-table-duration {
+    flex: none;
+    font-size: 12.5px;
+    color: var(--faint-invert);
+    font-variant-numeric: tabular-nums;
+  }
+  .track-table-chevron { flex: none; font-size: 18px; color: var(--faint-invert); }
+
+  @media (min-width: 900px) {
+    /* Keeps the card's own height sane (and matched to the wallet's,
+       via stretch above) once the library actually has a lot of tracks
+       in it — the list scrolls inside the card instead of the card
+       growing forever down the page. */
+    .track-table { max-height: 420px; overflow-y: auto; }
+  }
+
+  /* ---- Bottom tagline ----------------------------------------------------- */
+  .ml-tagline {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px 18px;
+    margin: 36px 0 8px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--faint-invert);
+  }
+  .ml-tagline span:not(:last-child)::after { content: "·"; margin-left: 18px; color: var(--accent-2); }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/shared-session.js"></script>
+<script src="js/supabaseClient.js"></script>
+<script src="js/notifications.js"></script>
+<script>
+  var SITE_FUNCTIONS_BASE = "https://ensemblefitness.com/.netlify/functions";
+  var currentUser = null;
+
+  function showMsg(el, text, kind) {
+    el.textContent = text;
+    el.className = "form-msg show " + kind;
+  }
+  function hideMsg(el) { el.className = "form-msg"; }
+
+  function formatCents(cents) {
+    return "$" + (cents / 100).toFixed(2);
+  }
+
+  function escapeHtml(s) {
+    return String(s || "").replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  async function authHeader() {
+    var { data } = await window.sb.auth.getSession();
+    return "Bearer " + data.session.access_token;
+  }
+
+  async function init() {
+    currentUser = await requireAuth();
+    if (!currentUser) return;
+
+    if (await isCurrentUserAdmin()) {
+      document.getElementById("adminLink").style.display = "inline";
+    }
+
+    handleTopupRedirect();
+    await loadWallet();
+    await loadTracks();
+  }
+
+  // ---- Wallet -------------------------------------------------------------
+
+  function handleTopupRedirect() {
+    var params = new URLSearchParams(window.location.search);
+    var topup = params.get("topup");
+    if (!topup) return;
+    var msg = document.getElementById("walletMsg");
+    if (topup === "success") {
+      showMsg(msg, "Funds added — thanks! Your balance below is updated.", "success");
+    } else if (topup === "cancelled") {
+      showMsg(msg, "No worries — nothing was charged.", "error");
+    }
+    // Clean the URL so refreshing the page doesn't keep re-showing this.
+    window.history.replaceState({}, "", "music-library.html");
+  }
+
+  async function loadWallet() {
+    try {
+      var res = await fetch(SITE_FUNCTIONS_BASE + "/wallet-balance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: await authHeader() },
+        body: JSON.stringify({})
+      });
+      var out = await res.json();
+      if (res.ok) {
+        document.getElementById("walletBalance").textContent = formatCents(out.balance_cents || 0);
+      }
+    } catch (err) {
+      // Balance just won't show — the add-funds buttons still work and will
+      // surface any real problem then.
+    }
+  }
+
+  document.querySelectorAll(".topup-btn").forEach(function (btn) {
+    btn.addEventListener("click", async function () {
+      var msg = document.getElementById("walletMsg");
+      hideMsg(msg);
+      var original = btn.textContent;
+      document.querySelectorAll(".topup-btn").forEach(function (b) { b.disabled = true; });
+      btn.textContent = "Taking you to Stripe…";
+      try {
+        var res = await fetch(SITE_FUNCTIONS_BASE + "/wallet-topup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: await authHeader() },
+          body: JSON.stringify({ amount_cents: parseInt(btn.getAttribute("data-amount-cents"), 10) })
+        });
+        var out = await res.json();
+        if (!res.ok || !out.url) throw new Error(out.error || "Couldn't start checkout.");
+        window.location.href = out.url;
+      } catch (err) {
+        showMsg(msg, err.message || "Something went wrong — please try again.", "error");
+        document.querySelectorAll(".topup-btn").forEach(function (b) { b.disabled = false; });
+        btn.textContent = original;
+      }
+    });
+  });
+
+  // ---- Tracks ---------------------------------------------------------------
+  // Ken's ask: each track is now a row in a compact, iTunes-style list —
+  // clicking anywhere on a row opens the full track page (track.html),
+  // where the big player, artist bio/link, and tipping actually live. That
+  // keeps this list light no matter how many tracks get added — a handful
+  // or a thousand — since nothing here loads an audio file until you
+  // actually open a track.
+
+  async function loadTracks() {
+    var list = document.getElementById("tracksList");
+    list.innerHTML = '<div class="empty-state">Loading…</div>';
+
+    var { data, error } = await window.sb
+      .from("tracks")
+      .select("id, title, artist_name, tagline, duration_seconds, is_independent_artist")
+      .eq("is_active", true)
+      .order("title", { ascending: true });
+
+    if (error) {
+      list.innerHTML = '<div class="empty-state">Couldn\'t load the Music Library right now — please refresh.</div>';
+      return;
+    }
+    if (!data || data.length === 0) {
+      list.innerHTML = '<div class="empty-state">No tracks yet — check back soon.</div>';
+      return;
+    }
+
+    list.innerHTML = '<div class="track-table-head">' + data.length + ' track' + (data.length === 1 ? "" : "s") + '</div>';
+    data.forEach(function (track) {
+      list.appendChild(buildTrackRow(track));
+    });
+  }
+
+  function formatTrackDuration(seconds) {
+    if (seconds === null || seconds === undefined || !isFinite(seconds)) return "";
+    var m = Math.floor(seconds / 60);
+    var s = Math.round(seconds % 60);
+    return m + ":" + (s < 10 ? "0" : "") + s;
+  }
+
+  function buildTrackRow(track) {
+    // Ken's ask: keep this list light, iTunes-style but with less on it —
+    // a tagline (short and motivating) in place of the artist's name, and
+    // the track length. The artist's name, bio, and link still live on
+    // the track's own full page (track.html) for anyone who wants them.
+    var row = document.createElement("a");
+    row.className = "track-table-row";
+    row.href = "track.html?id=" + encodeURIComponent(track.id);
+    var subtitle = track.tagline || ("by " + track.artist_name);
+    row.innerHTML =
+      '<span class="track-table-art">🎵</span>' +
+      '<span class="track-table-main">' +
+        '<span class="track-table-title">' + escapeHtml(track.title) + '</span>' +
+        '<span class="track-table-tagline">' + escapeHtml(subtitle) + '</span>' +
+      '</span>' +
+      (track.duration_seconds ? '<span class="track-table-duration">' + formatTrackDuration(track.duration_seconds) + '</span>' : '') +
+      '<span class="track-table-chevron">›</span>';
+    return row;
+  }
+
+  document.getElementById("refreshTracksBtn").addEventListener("click", function () {
+    loadTracks();
+  });
+
+  document.getElementById("signOutLink").addEventListener("click", function (e) {
+    e.preventDefault();
+    signOut();
+  });
+
+  init();
+</script>
+</body>
+</html>
