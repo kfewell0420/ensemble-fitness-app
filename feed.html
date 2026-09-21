@@ -215,6 +215,7 @@
      something Instagram's Reels tab never offers. */
   .rp-filters {
     display: flex;
+    align-items: center; /* belt-and-suspenders: never let a chip stretch to fill the row's height, whatever else sits in that grid row */
     gap: 8px;
     overflow-x: auto;
     padding: 10px 14px;
@@ -906,10 +907,19 @@
       transform: none;
       display: grid;
       grid-template-columns: minmax(0, 1fr) 320px;
+      /* "filters" spans its own full-width row rather than sharing a row
+         with "side": when it shared row 2 with the sidebar column (which
+         spanned rows 2-3), CSS Grid stretched that shared row to match
+         the sidebar's full stacked height, and the filter chips (a flex
+         row with default align-items:stretch) stretched to fill it —
+         turning the small pill buttons into page-tall vertical capsules.
+         Ken flagged this (Sept 2026). Giving filters its own row removes
+         the shared track entirely, so its height is only ever as tall as
+         the chips themselves. */
       grid-template-areas:
-        "header header"
-        "filters side"
-        "reel   side";
+        "header  header"
+        "filters filters"
+        "reel    side";
       column-gap: 28px;
       width: 100%;
       max-width: 1280px;
