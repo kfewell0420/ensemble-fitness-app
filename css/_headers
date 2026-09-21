@@ -1,0 +1,13 @@
+# Netlify reads this file automatically on every deploy (including a
+# manual zip upload) and applies these response headers.
+#
+# Why this exists: every round of fixes gets deployed as a fresh zip, but
+# without this, browsers and Netlify's CDN are free to keep serving an
+# OLD cached copy of a page for a while after a new one goes live — so a
+# member can click something and see old, already-fixed behavior simply
+# because their browser hasn't fetched the new version yet. This forces
+# every page load to check with the server first (a fast "still current?"
+# check, not a full re-download when nothing changed), so everyone always
+# gets what's actually live.
+/*
+  Cache-Control: public, max-age=0, must-revalidate

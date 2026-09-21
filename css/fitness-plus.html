@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Fitness Plus — Ensemble Fitness</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/app.css?v=2" />
+</head>
+<body>
+
+<header class="app-nav">
+  <a href="feed.html" class="app-brand">
+    <span class="app-brand-mark"><img src="assets/logo.png" alt="Ensemble Fitness" /></span>Ensemble Fitness
+  </a>
+  <nav class="app-nav-links">
+    <a href="feed.html">Community</a>
+    <a href="journey.html">My Journey</a>
+    <a href="members.html">Members</a>
+    <a href="fitness-plus.html" style="color:#fff;">Fitness+</a>
+    <a href="gear.html">Gear</a>
+    <a href="music-library.html">Music</a>
+    <a href="quote-library.html">Quotes</a>
+    <a href="profile.html">My Profile</a>
+    <a href="admin.html" id="adminLink" style="display:none;">Queue</a>
+    <a href="#" id="signOutLink">Sign Out</a>
+  </nav>
+</header>
+
+<div class="app-shell">
+
+  <div class="eyebrow">Fitness+</div>
+  <h2 style="margin-bottom:6px;">Find Your Person</h2>
+  <p class="card-sub" style="margin-bottom:24px;">Dating, without the pressure — matched on your ZIP code and the time you naturally wake up, so you start with someone whose life actually fits yours.</p>
+
+  <div class="fp-upgrade-card">
+    <div class="fp-upgrade-eyebrow">❤️ ENSEMBLE FITNESS+ · FOUNDING RATE</div>
+    <h3 class="fp-upgrade-title">Find Someone Who Wants to Do Life Together.</h3>
+    <p class="fp-upgrade-copy">Fitness Plus is about more than finding a date. It's about finding someone who shares your desire to live healthier, happier, and together. Because the best relationships begin when there's a natural connection. Why do it alone?</p>
+    <ul class="fp-upgrade-list">
+      <li>Expanded search radius &amp; travel mode</li>
+      <li>See who's interested in you</li>
+      <li>Advanced compatibility filters</li>
+      <li>Advanced schedule matching</li>
+      <li>Enhanced dating visibility</li>
+    </ul>
+    <div class="fp-upgrade-price"><span>$14.99</span>/month — locked in for charter members</div>
+    <div class="fp-upgrade-actions">
+      <a href="https://buy.stripe.com/cNi5kC8kw7bE7GB2MM1oI00" target="_blank" rel="noopener" class="btn btn-primary btn-block">Get the Founding Rate</a>
+      <a href="https://ensemblefitness.com/fitness-plus.html" target="_blank" rel="noopener" class="fp-upgrade-link">Read the full Fitness+ story →</a>
+    </div>
+  </div>
+
+  <h3 style="margin:28px 0 4px;">Your matches</h3>
+  <p class="card-sub" style="margin-bottom:16px;">This fills in automatically as members join — everyone here will be matched by ZIP code and wake-up time.</p>
+
+  <div class="form-msg" id="fpMsg"></div>
+
+  <div id="fpResults" class="fp-match-grid">
+    <div class="empty-state">Loading…</div>
+  </div>
+
+</div>
+
+<style>
+  .fp-upgrade-card {
+    background: linear-gradient(165deg, #2a0f18, #170a10);
+    border: 1px solid rgba(255, 61, 104, 0.3);
+    border-radius: 18px;
+    padding: 22px 24px;
+    margin-bottom: 8px;
+  }
+  .fp-upgrade-eyebrow {
+    font-size: 11.5px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    color: #ff6f91;
+    margin-bottom: 10px;
+  }
+  .fp-upgrade-title { font-size: 20px; margin: 0 0 10px; color: #fff; }
+  .fp-upgrade-copy { font-size: 14px; color: var(--muted-invert); line-height: 1.5; margin: 0 0 14px; }
+  .fp-upgrade-list { margin: 0 0 16px; padding-left: 20px; color: #fff; font-size: 13.5px; line-height: 1.9; }
+  .fp-upgrade-price { font-size: 15px; color: #fff; margin-bottom: 16px; }
+  .fp-upgrade-price span { font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 26px; margin-right: 4px; }
+  .fp-upgrade-actions { display: flex; flex-direction: column; gap: 10px; max-width: 340px; }
+  .fp-upgrade-link { font-size: 13px; color: var(--faint-invert); text-align: center; text-decoration: underline; }
+
+  /* Dense enough for 4-5 tiles per row on a phone, scaling to many more
+     across a wide screen — built for a community that could grow to
+     thousands of members, not just a handful of test cards. */
+  .fp-match-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(68px, 1fr));
+    gap: 8px;
+  }
+  .fp-match-placeholder {
+    aspect-ratio: 4 / 5;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.045);
+    border: 1px dashed rgba(255, 255, 255, 0.14);
+  }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/shared-session.js"></script>
+<script src="js/supabaseClient.js"></script>
+<script src="js/notifications.js"></script>
+<script>
+  var currentUser = null;
+  var myZip = "";
+  var myWakeTime = "";
+  var myIntent = "";
+
+  // Ken's call: don't show real member cards here yet — with only a handful
+  // of test accounts, a visible "matches" grid looks thin/awkward. Show
+  // blank placeholder tiles instead (dense grid, built for thousands of
+  // members down the road) until there's a real critical mass to display.
+  // Flip this to true when it's time to go live with real matches — the
+  // actual query/rendering logic below is untouched and ready to go.
+  var SHOW_REAL_MATCHES = false;
+  var PLACEHOLDER_TILE_COUNT = 15;
+
+  function renderPlaceholderMatches() {
+    var results = document.getElementById("fpResults");
+    results.innerHTML = new Array(PLACEHOLDER_TILE_COUNT + 1).join('<div class="fp-match-placeholder"></div>');
+  }
+
+  function escapeHtml(str) {
+    var div = document.createElement("div");
+    div.textContent = str || "";
+    return div.innerHTML;
+  }
+
+  async function avatarUrlFor(userId) {
+    var { data } = await window.sb
+      .from("media")
+      .select("storage_path")
+      .eq("user_id", userId)
+      .eq("is_profile_photo", true)
+      .eq("status", "approved")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!data) return "";
+    var { data: signed } = await window.sb.storage.from("media").createSignedUrl(data.storage_path, 3600);
+    return signed ? signed.signedUrl : "";
+  }
+
+  // A simple, transparent match score: same ZIP and same wake-up time count most
+  // heavily, and sharing the same "what are you looking for" preference adds a
+  // smaller boost on top — so "great matches" naturally sort to the top, followed
+  // by a one-factor match, followed by everyone else — rather than hiding people
+  // with no match yet, which would leave the page empty while the community is
+  // still small. relationship_intent is optional, so it only ever adds to the
+  // score — never subtracts or excludes someone who left it blank.
+  function matchScoreFor(member) {
+    var score = 0;
+    if (myZip && member.zip_code === myZip) score += 2;
+    if (myWakeTime && member.wake_time_category === myWakeTime) score += 1;
+    if (myIntent && member.relationship_intent === myIntent) score += 1;
+    return score;
+  }
+
+  function matchBadgeFor(member) {
+    var sameZip = !!myZip && member.zip_code === myZip;
+    var sameWake = !!myWakeTime && member.wake_time_category === myWakeTime;
+    var sameIntent = !!myIntent && member.relationship_intent === myIntent;
+    if (sameZip && sameWake) return '<span class="match-badge great">💘 Great match</span>';
+    if (sameZip) return '<span class="match-badge zip">📍 Same ZIP code</span>';
+    if (sameWake) return '<span class="match-badge wake">🌞 Same wake-up time</span>';
+    if (sameIntent) return '<span class="match-badge intent">❤️ Looking for the same thing</span>';
+    return "";
+  }
+
+  async function loadMatches() {
+    var results = document.getElementById("fpResults");
+    var msg = document.getElementById("fpMsg");
+
+    var { data: mine } = await window.sb
+      .from("profiles")
+      .select("zip_code, wake_time_category, relationship_intent")
+      .eq("id", currentUser.id)
+      .maybeSingle();
+    myZip = (mine && mine.zip_code) || "";
+    myWakeTime = (mine && mine.wake_time_category) || "";
+    myIntent = (mine && mine.relationship_intent) || "";
+
+    if (!myZip || !myWakeTime) {
+      msg.textContent = "Add your ZIP code and wake-up time on My Profile to see your best matches highlighted here.";
+      msg.className = "form-msg show error";
+    }
+
+    var { data, error } = await window.sb
+      .from("profiles")
+      .select("id, display_name, bio, zip_code, wake_time_category, relationship_intent")
+      .neq("id", currentUser.id);
+
+    if (error) {
+      results.innerHTML = '<div class="empty-state">Couldn\'t load matches. Please try again.</div>';
+      return;
+    }
+    if (!data || data.length === 0) {
+      results.innerHTML = '<div class="empty-state">No other members yet — check back as more people join Ensemble Fitness.</div>';
+      return;
+    }
+
+    data.sort(function (a, b) {
+      var diff = matchScoreFor(b) - matchScoreFor(a);
+      if (diff !== 0) return diff;
+      return (a.display_name || "").localeCompare(b.display_name || "");
+    });
+
+    results.innerHTML = "";
+    for (var i = 0; i < data.length; i++) {
+      var member = data[i];
+      var avatarUrl = await avatarUrlFor(member.id);
+      var initial = (member.display_name || "?").trim().charAt(0).toUpperCase() || "?";
+      var thumbInner = avatarUrl
+        ? '<img src="' + avatarUrl + '" alt="' + escapeHtml(member.display_name || "Member") + '" />'
+        : '<div class="thumb-initial">' + initial + '</div>';
+
+      var wakeLabel = wakeTimeLabel(member.wake_time_category);
+      var intentLabel = relationshipIntentLabel(member.relationship_intent);
+      var subParts = [];
+      if (member.zip_code) subParts.push("ZIP " + escapeHtml(member.zip_code));
+      if (wakeLabel) subParts.push(escapeHtml(wakeLabel));
+      if (intentLabel) subParts.push(escapeHtml(intentLabel));
+
+      var card = document.createElement("div");
+      card.className = "feed-card";
+      card.innerHTML =
+        '<div class="feed-card-thumb">' + thumbInner + matchBadgeFor(member) + '</div>' +
+        '<div class="feed-card-meta">' +
+          '<div class="feed-card-name">' + escapeHtml(member.display_name || "A member") + '</div>' +
+          (subParts.length ? '<div class="feed-card-sub">' + subParts.join(" · ") + '</div>' : '') +
+          (member.bio ? '<p class="feed-card-caption">' + escapeHtml(member.bio) + '</p>' : '') +
+        '</div>';
+
+      results.appendChild(card);
+    }
+  }
+
+  document.getElementById("signOutLink").addEventListener("click", function (e) {
+    e.preventDefault();
+    signOut();
+  });
+
+  (async function init() {
+    currentUser = await requireAuth();
+    if (!currentUser) return;
+    if (await isCurrentUserAdmin()) {
+      document.getElementById("adminLink").style.display = "inline";
+    }
+    if (SHOW_REAL_MATCHES) {
+      await loadMatches();
+    } else {
+      renderPlaceholderMatches();
+    }
+  })();
+</script>
+
+</body>
+</html>
