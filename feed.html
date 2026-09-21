@@ -871,7 +871,11 @@
     max-height: 170px;
     background: #000;
   }
-  .rp-mp-modal-media img, .rp-mp-modal-media video { width: 100%; height: 100%; object-fit: cover; display: block; }
+  /* object-position: top — a center crop was cutting the top of people's
+     heads off in this shorter photo box (Ken: "get the rest of his head
+     in the frame"). Anchoring to the top keeps the head in frame and
+     crops from the bottom instead, without growing the box at all. */
+  .rp-mp-modal-media img, .rp-mp-modal-media video { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
   .rp-mp-modal-close {
     position: absolute;
     top: 10px;
@@ -1686,8 +1690,13 @@
     // Dumbbell rather than a literal flexed-bicep glyph — reads instantly
     // as "workout" and fits an Ensemble Fitness reaction better than the
     // stock 💪 emoji ever did.
+    // A flexed bicep (fist + forearm curling into a rounded muscle bulge,
+    // with a pinched "waist" between the two so it reads as two connected
+    // muscle masses) — replaces an earlier dumbbell icon that Ken flagged
+    // twice as not reading as "muscle" ("There is no muscle... take away
+    // the dumbbell. That's supposed to be a muscle symbol").
     muscle: {
-      outline: '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="1" y="9.3" width="3" height="5.4" rx="1"/><rect x="20" y="9.3" width="3" height="5.4" rx="1"/><rect x="4.7" y="7.2" width="3" height="9.6" rx="1"/><rect x="16.3" y="7.2" width="3" height="9.6" rx="1"/><rect x="7.7" y="10.8" width="8.6" height="2.4" rx="1"/></svg>'
+      outline: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M1.8 20.8c-.9-1.6-.9-3.6.1-5.2l2.3-3.7c.6-1 1.7-1.6 2.9-1.5.9-2.1 2.4-3.9 4.4-4.9l2.1-1.1c2.3-1.2 5.1-.8 6.9 1.1 2.2 2.3 2.1 6-.3 8.1-1.1 1-2.6 1.4-4 1.1l-2.5-.5c-1.2-.2-2.4.3-3.1 1.3l-2.6 3.6c-1 1.4-2.7 2-4.3 1.6-.8-.2-1.4-.6-1.9-1z"/></svg>'
     },
     // A real 5-point star, not a sparkle burst — Ken: bright yellow, an
     // actual star reads better and "people gravitate towards that."
