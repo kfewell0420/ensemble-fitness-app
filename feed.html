@@ -560,6 +560,12 @@
     text-decoration: none;
     padding: 8px 13px;
     border-radius: 999px;
+    /* Was an <a target="_blank"> to the marketing site; now a <button>
+       that opens the in-app reply modal (see openJourneyReplyModal), so
+       it needs the anchor's border/cursor reset by hand. */
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
   }
   /* Reactions row, laid out inline instead of the full-bleed slide's
      vertical floating column. This is the Journeys/list layout — the one
@@ -720,6 +726,15 @@
      visually at all, matching how Instagram's own phone app shows a
      comments-only sheet, not a split view (there's no room for both). */
   .rp-comments-modal-media { display: none; }
+  /* Journeys have no photo/video to show, so the reply modal (see
+     openJourneyReplyModal) reuses this same shell with the media pane
+     forced off and the text panel taking the full width — including on
+     the desktop split-view layout below, where .rp-comments-modal-media
+     otherwise switches to display:flex. Higher specificity here wins
+     regardless of source order, at both breakpoints. */
+  .rp-comments-modal-box.rp-no-media .rp-comments-modal-media { display: none !important; }
+  .rp-comments-modal-box.rp-no-media .rp-comments-modal-panel { flex: 1 1 100%; }
+  .rp-comments-modal-box.rp-no-media { max-width: 480px; }
   .rp-comments-modal-panel {
     display: flex;
     flex-direction: column;
@@ -2285,8 +2300,10 @@
       '</div>' +
       '<div class="rp-jc-quote">' + escapeHtml(item.caption) + '</div>' +
       '<div class="rp-actions rp-journal-actions"></div>' +
-      '<a class="rp-jc-link" href="' + journeyReplyUrl(item) + '" target="_blank" rel="noopener">Read &amp; reply on Fitness Journeys →</a>';
+      '<button type="button" class="rp-jc-link" data-action="journey-reply">Read &amp; reply →</button>';
     renderStoryReactions(item, el.querySelector(".rp-journal-actions"));
+    var replyBtn = el.querySelector('[data-action="journey-reply"]');
+    if (replyBtn) replyBtn.addEventListener("click", function () { openJourneyReplyModal(item); });
     return el;
   }
 
@@ -2508,25 +2525,24 @@
     }
   }
 
-  // Journeys don't have their own in-app comment panel — replies to a
-  // journey are the same story_replies rows the marketing site's Fitness
-  // Journeys page shows and writes to, so "commenting" here means sending
-  // the member there rather than opening a second, separate reply box in
-  // the app. This just gives that same destination a normal comment icon
-  // + live count, matching the look of the media post's 4th icon, instead
-  // of the reply count being invisible until you click through.
-  function journeyReplyUrl(item) {
-    return "https://ensemblefitness.com/fitness-journey.html#journey-" + encodeURIComponent(item.id);
-  }
-
+  // Journey replies used to send members out to the marketing site's
+  // Fitness Journeys page (the same story_replies rows, just viewed and
+  // written there instead of here) — but Ken reported that navigating out
+  // like this was logging members out of the app. Replies now open in an
+  // in-app modal instead (see openJourneyReplyModal below), reusing the
+  // same shared comments-modal shell as media posts, so nobody ever
+  // leaves the app to reply to a journey.
   async function renderStoryReactions(item, container) {
     if (!container) return;
     container.innerHTML = STORY_REACTIONS.map(function (r) {
       return '<button type="button" class="rp-action-btn" data-reaction="' + r.type + '">' +
         '<span class="rp-action-icon">' + reactionIconMarkup(r.type, false) + '</span><span class="rp-action-count"></span></button>';
     }).join("") +
-      '<a class="rp-action-btn rp-comment-btn" href="' + journeyReplyUrl(item) + '" target="_blank" rel="noopener">' +
-      '<span class="rp-action-icon">' + COMMENT_ICON + '</span><span class="rp-action-count"></span></a>';
+      '<button type="button" class="rp-action-btn rp-comment-btn" data-action="comments">' +
+      '<span class="rp-action-icon">' + COMMENT_ICON + '</span><span class="rp-action-count"></span></button>';
+
+    var commentBtn = container.querySelector(".rp-comment-btn");
+    commentBtn.addEventListener("click", function () { openJourneyReplyModal(item); });
 
     var [{ data: reactions }, { count: replyCount }] = await Promise.all([
       window.sb.from("story_reactions").select("user_id, reaction").eq("question_id", item.id),
@@ -2582,8 +2598,10 @@
     var modal = document.getElementById("rpCommentsModal");
     var headerText = document.getElementById("rpCommentsHeaderText");
     var mediaEl = document.getElementById("rpCommentsModalMedia");
+    var box = modal.querySelector(".rp-comments-modal-box");
     var panel = modal.querySelector(".rp-comments-modal-panel");
 
+    box.classList.remove("rp-no-media"); // in case the last thing shown here was a journey reply
     headerText.textContent = (item.name || "A member") + "'s post";
     // The media pane is desktop-only (see CSS) — built either way since
     // it's cheap and the signed URL is already sitting on `item`.
@@ -2654,6 +2672,76 @@
     await window.sb.from("media_comments").insert({ media_id: item.id, user_id: currentUserId, body: body });
     loadComments(item, panel);
     var countEl = document.querySelector("#rpActions-" + item.id + " .rp-comment-btn .rp-action-count");
+    if (countEl) countEl.textContent = (parseInt(countEl.textContent || "0", 10) || 0) + 1;
+  }
+
+  // In-app replacement for the old "Read & reply on Fitness Journeys →"
+  // link and comment icon (both used to open journeyReplyUrl(item) in a
+  // new tab). Reuses the same #rpCommentsModal shell as media comments,
+  // just with the media pane hidden (journeys have no photo/video) and
+  // wired to story_replies/story_reactions instead of media_comments.
+  function openJourneyReplyModal(item) {
+    var modal = document.getElementById("rpCommentsModal");
+    var headerText = document.getElementById("rpCommentsHeaderText");
+    var mediaEl = document.getElementById("rpCommentsModalMedia");
+    var box = modal.querySelector(".rp-comments-modal-box");
+    var panel = modal.querySelector(".rp-comments-modal-panel");
+
+    box.classList.add("rp-no-media");
+    mediaEl.innerHTML = "";
+    headerText.textContent = (item.name || "A member") + "'s journey";
+
+    modal.hidden = false;
+    loadJourneyReplies(item, panel);
+  }
+
+  async function loadJourneyReplies(item, panel) {
+    var listEl = panel.querySelector(".rp-comments-list");
+    listEl.innerHTML = "Loading…";
+    var oldInputRow = panel.querySelector(".rp-comment-input-row");
+    if (oldInputRow) oldInputRow.remove();
+
+    var { data: replies } = await window.sb
+      .from("story_replies")
+      .select("id, user_id, reply_text, created_at, profiles(display_name)")
+      .eq("question_id", item.id)
+      .order("created_at", { ascending: true });
+    var visible = filterOutBlocked(replies || []);
+
+    var listHtml = visible.length
+      ? visible.map(function (c) {
+          var name = (c.profiles && c.profiles.display_name) || "A member";
+          return '<div class="rp-comment-item"><span class="rp-comment-name">' + escapeHtml(name) + '</span>' +
+            '<span class="rp-comment-time">' + timeAgo(c.created_at) + '</span>' +
+            '<div class="rp-comment-body">' + escapeHtml(c.reply_text) + '</div></div>';
+        }).join("")
+      : '<div class="rp-comment-empty">Be the first to reply.</div>';
+
+    listEl = panel.querySelector(".rp-comments-list");
+    listEl.innerHTML = listHtml;
+
+    if (currentUserId) {
+      var inputRow = document.createElement("div");
+      inputRow.className = "rp-comment-input-row";
+      inputRow.innerHTML =
+        '<input type="text" class="rp-comment-input" maxlength="500" placeholder="Add a reply…" />' +
+        '<button type="button" class="rp-comment-send">Post</button>';
+      panel.appendChild(inputRow);
+      inputRow.querySelector(".rp-comment-send").addEventListener("click", function () { postJourneyReply(item, panel); });
+      inputRow.querySelector(".rp-comment-input").addEventListener("keydown", function (e) {
+        if (e.key === "Enter") postJourneyReply(item, panel);
+      });
+    }
+  }
+
+  async function postJourneyReply(item, panel) {
+    var input = panel.querySelector(".rp-comment-input");
+    var body = input.value.trim();
+    if (!body) return;
+    input.value = "";
+    await window.sb.from("story_replies").insert({ question_id: item.id, user_id: currentUserId, reply_text: body });
+    loadJourneyReplies(item, panel);
+    var countEl = document.querySelector('[data-real-id="' + item.id + '"] .rp-comment-btn .rp-action-count');
     if (countEl) countEl.textContent = (parseInt(countEl.textContent || "0", 10) || 0) + 1;
   }
 
