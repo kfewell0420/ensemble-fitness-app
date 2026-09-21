@@ -248,6 +248,13 @@
     margin-bottom: 14px;
   }
 
+  /* The shared .empty-state class' normal 30px top/bottom padding is meant
+     for a big standalone empty page section, not a compact card — tightened
+     just here so "Loading…" / "No tracks yet" / an error still shows (so
+     the button visibly does something), without reopening a big gap
+     between it and the button above. */
+  .track-table .empty-state { padding: 6px 4px 2px; font-size: 13px; text-align: left; }
+
   /* ---- Track list, iTunes-style: a compact, clickable row per track —
      art, title + artist, a chevron — built to stay readable at any width,
      from a handful of tracks to a very long library. Title and artist
@@ -442,13 +449,14 @@
   async function loadTracks() {
     var list = document.getElementById("tracksList");
     // Ken's ask (Sept 2026): the box needs to end right at the orange
-    // "Browse Tracks" button, no leftover air below it. A loading/error/
-    // empty message used to print there, which kept the card open a couple
-    // extra lines even with nothing useful to say — now those states just
-    // leave the list empty (zero height, nothing to see) so the card is as
-    // short as it can be until there are real tracks to show. Once tracks
-    // exist, they render below same as always.
-    list.innerHTML = "";
+    // "Browse Tracks" button, no big empty block below it — but cutting the
+    // loading/error/empty text entirely (an earlier pass at this) went too
+    // far the other way: with nothing printed at all, clicking the button
+    // with no tracks yet looked exactly like a broken button ("goes
+    // nowhere"). Compromise: a single compact line (see the tightened
+    // .track-table .empty-state rule below), so the button visibly does
+    // something, without reopening a big gap under it.
+    list.innerHTML = '<div class="empty-state">Loading…</div>';
 
     var { data, error } = await window.sb
       .from("tracks")
@@ -457,11 +465,11 @@
       .order("title", { ascending: true });
 
     if (error) {
-      list.innerHTML = "";
+      list.innerHTML = '<div class="empty-state">Couldn\'t load the Music Library right now — please refresh.</div>';
       return;
     }
     if (!data || data.length === 0) {
-      list.innerHTML = "";
+      list.innerHTML = '<div class="empty-state">No tracks yet — check back soon.</div>';
       return;
     }
 

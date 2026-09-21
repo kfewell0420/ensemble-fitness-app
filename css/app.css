@@ -90,7 +90,7 @@ img { max-width: 100%; display: block; }
 .app-nav {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   padding: 18px 24px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
@@ -129,6 +129,12 @@ img { max-width: 100%; display: block; }
   font-size: 13.5px;
   font-weight: 600;
   color: var(--muted-invert);
+  /* .app-nav switched from justify-content:space-between to flex-start so
+     the home/bell group (see .efit-nav-utility) can sit right next to the
+     logo on the left — this margin keeps the page's own links pinned to
+     the far right, exactly where space-between used to put them, so
+     nothing shifts on any page that doesn't have that group. */
+  margin-left: auto;
 }
 
 .app-nav-links a:hover { color: #fff; }
@@ -1696,10 +1702,25 @@ img { max-width: 100%; display: block; }
 }
 
 /* ==========================================================================
-   Notification bell — injected into .app-nav by js/notifications.js on
-   every signed-in page. See sql/notifications.sql for what creates these
-   rows (reactions, comments, follows, messages).
-   ========================================================================== */
+   Home icon + notification bell — injected into .app-nav by
+   js/notifications.js on every signed-in page. See sql/notifications.sql
+   for what creates the notification rows (reactions, comments, follows,
+   messages).
+   Ken's ask (Sept 2026): these two used to land at the far right end of
+   the page's own nav links, which put them hard against the top-right
+   corner — on a page with a busy photo behind the nav (Music Library) they
+   read as cramped and easy to miss. Grouped into one .efit-nav-utility
+   wrapper, placed right next to the logo on the left instead (see
+   .app-nav-links' margin-left:auto above, which keeps the page's own links
+   over on the right exactly like before), with a couple px of extra top
+   margin so they sit a little lower than dead-flush with the top edge. */
+.efit-nav-utility {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 14px;
+  margin-top: 3px;
+}
 .efit-home-link {
   display: inline-flex;
   align-items: center;
@@ -1707,7 +1728,6 @@ img { max-width: 100%; display: block; }
   color: #fff;
   background: rgba(0, 0, 0, 0.4);
   padding: 6px;
-  margin-right: 4px;
   text-decoration: none;
   border-radius: var(--radius-pill);
   filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.5));
@@ -1722,14 +1742,21 @@ img { max-width: 100%; display: block; }
 
 .efit-notif-bell {
   position: relative;
-  background: none;
+  /* Matches the home icon's dark circle (Ken's ask, Sept 2026) so the two
+     read as one paired set rather than the bell floating unbacked next to
+     a solid icon — also gives the bell the same contrast boost against a
+     busy photo background that the home icon already had. */
+  background: rgba(0, 0, 0, 0.4);
   border: none;
-  color: var(--muted-invert);
-  font-size: 17px;
+  border-radius: var(--radius-pill);
+  color: #fff;
+  font-size: 16px;
   line-height: 1;
   cursor: pointer;
-  padding: 4px;
+  padding: 7px;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.5));
 }
+.efit-notif-bell:hover { background: rgba(0, 0, 0, 0.6); }
 .efit-notif-bell:hover { color: #fff; }
 
 .efit-notif-badge {

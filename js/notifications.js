@@ -67,10 +67,35 @@
     return "feed.html";
   }
 
-  function buildHomeLink() {
+  // Ken's ask (Sept 2026): home + bell used to append into .app-nav-links,
+  // which put them at the far right end of the page's own nav links — on a
+  // page with a busy photo behind the nav (Music Library) that read as
+  // cramped into the top-right corner and easy to miss. This shared group
+  // sits right next to the logo on the left instead (see the .app-nav /
+  // .app-nav-links CSS change in app.css that keeps the page's own links
+  // pinned to the right so nothing else shifts).
+  function getUtilityGroup() {
     var nav = document.querySelector(".app-nav");
-    var links = nav ? nav.querySelector(".app-nav-links") : null;
-    if (!nav || !links || document.getElementById("efitHomeLink")) return null;
+    if (!nav) return null;
+    var group = document.getElementById("efitNavUtility");
+    if (group) return group;
+    group = document.createElement("div");
+    group.className = "efit-nav-utility";
+    group.id = "efitNavUtility";
+    var brand = nav.querySelector(".app-brand");
+    if (brand && brand.nextSibling) {
+      nav.insertBefore(group, brand.nextSibling);
+    } else if (brand) {
+      nav.appendChild(group);
+    } else {
+      nav.insertBefore(group, nav.firstChild);
+    }
+    return group;
+  }
+
+  function buildHomeLink() {
+    var group = getUtilityGroup();
+    if (!group || document.getElementById("efitHomeLink")) return null;
 
     // No point linking home from the home feed itself.
     if (/(^|\/)feed\.html(\?|#|$)/.test(window.location.pathname)) return null;
@@ -94,14 +119,13 @@
 
     // Placed right before the bell so it reads as a small pair of icons
     // together, per Ken's request to put it "over near the bell".
-    links.appendChild(homeLink);
+    group.appendChild(homeLink);
     return homeLink;
   }
 
   function buildBell() {
-    var nav = document.querySelector(".app-nav");
-    var links = nav ? nav.querySelector(".app-nav-links") : null;
-    if (!nav || !links || document.getElementById("efitNotifWrap")) return null;
+    var group = getUtilityGroup();
+    if (!group || document.getElementById("efitNotifWrap")) return null;
 
     var wrap = document.createElement("div");
     wrap.className = "efit-notif-wrap";
@@ -113,11 +137,7 @@
       "</button>" +
       '<div class="efit-notif-panel" id="efitNotifPanel" hidden role="menu"></div>';
 
-    // Sits right after the page's own nav links, before "Sign Out" would be
-    // reached visually since it's appended last in that same flex row —
-    // consistent placement across every page regardless of how many links
-    // that particular page has.
-    links.appendChild(wrap);
+    group.appendChild(wrap);
     return wrap;
   }
 
