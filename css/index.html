@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ensemble Fitness — Member Area</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/app.css?v=2" />
+</head>
+<body>
+
+<header class="app-nav">
+  <a href="https://ensemblefitness.com" class="app-brand">
+    <span class="app-brand-mark"><img src="assets/logo.png" alt="Ensemble Fitness" /></span>Ensemble Fitness
+  </a>
+</header>
+
+<div class="app-shell narrow" style="text-align:center; padding-top:80px;">
+  <p>Loading your account…</p>
+  <noscript>
+    <p>JavaScript is required. <a href="login.html" style="color:var(--accent-2); font-weight:700;">Continue to sign in →</a></p>
+  </noscript>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/shared-session.js"></script>
+<script src="js/supabaseClient.js"></script>
+<script src="js/notifications.js"></script>
+<script>
+  // Entry point: send signed-in members straight to the Latest Workouts feed
+  // (the app's "home" — what's actually going on) rather than their own
+  // profile, so opening the app feels like opening Instagram or TikTok:
+  // you're in and looking at activity, not your own settings. Everyone else
+  // goes to sign in.
+  (async function () {
+    if (!window.sb) {
+      // Supabase didn't load or isn't configured — supabaseClient.js already
+      // shows a banner explaining why. Fall back to the sign-in page.
+      window.location.href = "login.html";
+      return;
+    }
+    var { data } = await window.sb.auth.getSession();
+    window.location.href = data.session ? "feed.html" : "login.html";
+  })();
+</script>
+
+</body>
+</html>
