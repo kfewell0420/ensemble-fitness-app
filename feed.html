@@ -583,6 +583,7 @@
     color: rgba(255,255,255,0.85);
   }
   .rp-slide-compact .rp-action-icon svg { width: 100%; height: 100%; }
+  .rp-slide-compact .rp-action-icon { font-size: 20px; }
   .rp-slide-compact .rp-action-btn.active .rp-action-icon {
     background: none;
     border: none;
@@ -651,10 +652,14 @@
     transition: transform 0.12s ease, background 0.12s ease, color 0.12s ease;
   }
   /* Vector icons render in a color we set directly (currentColor), so
-     unlike the old plain-emoji version there's no OS-fixed hue to clash
-     with this fill — this just needs to read as "selected" against the
-     dark scrim. */
+     unlike the plain-emoji muscle reaction there's no OS-fixed hue to
+     clash with this fill — this just needs to read as "selected" against
+     the dark scrim. */
   .rp-action-icon svg { width: 22px; height: 22px; }
+  /* The muscle reaction's icon is the native 💪 emoji (see REACTION_ICONS),
+     which always renders in its own fixed color — sizing it via font-size
+     since width/height (above) only affects the svg-based icons. */
+  .rp-action-icon { font-size: 26px; line-height: 1; }
   .rp-action-btn.active .rp-action-icon {
     background: var(--accent-dark);
     border: 1.5px solid rgba(255,255,255,0.4);
@@ -662,6 +667,13 @@
   }
   .rp-action-btn.active[data-reaction="heart"] .rp-action-icon {
     background: var(--red);
+  }
+  /* Emoji keep their own fixed color, so a solid accent-color fill behind
+     the muscle icon on select would clash — a ring instead of a fill
+     still reads clearly as "selected" without fighting the emoji's hue. */
+  .rp-action-btn.active[data-reaction="muscle"] .rp-action-icon {
+    background: rgba(20,22,28,0.55);
+    border: 1.5px solid var(--accent-dark);
   }
   .rp-action-count {
     font-size: 11.5px;
@@ -863,19 +875,19 @@
     border-radius: 16px;
     box-shadow: 0 20px 50px rgba(0,0,0,0.35);
   }
+  /* The source photos (assets/mealprep/*.jpg) are perfect 480x480 squares —
+     face in the top third, the plate of food in the bottom third. Any short,
+     wide crop box can only ever show one or the other. Showing the photo at
+     its native square aspect ratio (sized off the card's own width) is the
+     only way to keep both the person AND the meal in frame, no cropping. */
   .rp-mp-modal-media {
     position: relative;
     width: 100%;
-    height: 14vh;
-    min-height: 78px;
-    max-height: 140px;
+    aspect-ratio: 1 / 1;
+    max-height: 46vh;
     background: #000;
   }
-  /* object-position: top — a center crop was cutting the top of people's
-     heads off in this shorter photo box (Ken: "get the rest of his head
-     in the frame"). Anchoring to the top keeps the head in frame and
-     crops from the bottom instead, without growing the box at all. */
-  .rp-mp-modal-media img, .rp-mp-modal-media video { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
+  .rp-mp-modal-media img, .rp-mp-modal-media video { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
   .rp-mp-modal-close {
     position: absolute;
     top: 10px;
@@ -892,7 +904,7 @@
   .rp-mp-modal-body {
     position: relative;
     background: #fff;
-    padding: 9px 14px calc(env(safe-area-inset-bottom, 0px) + 9px);
+    padding: 8px 14px calc(env(safe-area-inset-bottom, 0px) + 8px);
     color: #17181c;
   }
   .rp-mp-eyebrow {
@@ -964,8 +976,12 @@
     background: none;
     color: #33343a;
     backdrop-filter: none;
+    font-size: 16px;
   }
   .rp-mp-reaction .rp-action-icon svg { width: 17px; height: 17px; }
+  /* The muscle pill's active state already uses a light tint (below, via
+     the shared .rp-mp-reaction.active rule) rather than a solid color
+     fill, so the emoji's own fixed color never clashes here. */
   .rp-mp-reaction.active { border-color: var(--accent-2); background: #fff4ed; }
   .rp-mp-reaction.active .rp-action-icon { color: var(--accent-2); }
   .rp-mp-reaction[data-reaction="heart"].active .rp-action-icon { color: var(--red); }
@@ -1280,6 +1296,10 @@
       color: rgba(255,255,255,0.85);
     }
     .rp-action-icon svg { width: 100%; height: 100%; }
+    .rp-action-icon,
+    .rp-slide-compact .rp-action-icon {
+      font-size: 20px;
+    }
     .rp-action-btn.active .rp-action-icon,
     .rp-slide-compact .rp-action-btn.active .rp-action-icon {
       background: none;
@@ -1679,24 +1699,32 @@
   // Instagram's own heart-fills-in-when-liked behavior; muscle/clap/comment
   // are simple constant glyphs whose color changes with state instead.
   var REACTION_ICONS = {
+    // Replaced the old hand-built outline (3 separate paths that didn't
+    // quite meet up — looked "messy"/uneven under any zoom, per Ken) with
+    // a single well-formed path (same one used for both states, just
+    // toggling fill vs. stroke) so the linework is actually clean.
     thumbs_up: {
-      outline: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 21V10.5"/><path d="M2.5 12.5V19a2 2 0 0 0 2 2H7"/><path d="M22 12.5V18a2 2 0 0 1-2 2h-8.7a2 2 0 0 1-1.94-1.52l-1.2-4.7A2 2 0 0 1 10.06 11H14V6a2 2 0 0 1 2-2c.86 0 1.6.58 1.8 1.4L19 10h1a2 2 0 0 1 2 2.5Z"/></svg>',
-      active: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 21V10.5H4.5a2 2 0 0 0-2 2V19a2 2 0 0 0 2 2H7Z"/><path d="M9 21h9.3a2 2 0 0 0 1.94-1.52l1.66-6.7A2 2 0 0 0 20 10.4h-5V5.9A2.4 2.4 0 0 0 12.6 3.5a1 1 0 0 0-.94.66L9 10.7Z"/></svg>'
+      outline: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>',
+      active: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>'
     },
     heart: {
       outline: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.2s-7.05-4.4-9.4-8.55C1.1 9.1 1.85 5.7 4.6 4.3c2.15-1.1 4.7-.5 6.15 1.35L12 7.05l1.25-1.4c1.45-1.85 4-2.45 6.15-1.35 2.75 1.4 3.5 4.8 2 7.35C19.05 15.8 12 20.2 12 20.2Z"/></svg>',
       active: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 20.2s-7.05-4.4-9.4-8.55C1.1 9.1 1.85 5.7 4.6 4.3c2.15-1.1 4.7-.5 6.15 1.35L12 7.05l1.25-1.4c1.45-1.85 4-2.45 6.15-1.35 2.75 1.4 3.5 4.8 2 7.35C19.05 15.8 12 20.2 12 20.2Z"/></svg>'
     },
-    // Dumbbell rather than a literal flexed-bicep glyph — reads instantly
-    // as "workout" and fits an Ensemble Fitness reaction better than the
-    // stock 💪 emoji ever did.
-    // A flexed bicep (fist + forearm curling into a rounded muscle bulge,
-    // with a pinched "waist" between the two so it reads as two connected
-    // muscle masses) — replaces an earlier dumbbell icon that Ken flagged
-    // twice as not reading as "muscle" ("There is no muscle... take away
-    // the dumbbell. That's supposed to be a muscle symbol").
+    // A hand-drawn "flexed bicep" silhouette (fist + forearm + bulge, or
+    // circle/rect combinations) was tried several times and always read as
+    // an unrecognizable blob at the ~17px this actually renders at — fine
+    // in a big 60px test swatch, meaningless at real size (Ken: "not
+    // clean"). A dumbbell before that wasn't a muscle at all. The native
+    // 💪 emoji is the one thing that's instantly, unambiguously readable
+    // at tiny sizes — it's professionally drawn and hinted for exactly
+    // this. It renders in its own fixed color rather than currentColor
+    // (see the .rp-action-btn.active[data-reaction="muscle"] overrides
+    // below, which swap the old solid accent-color fill for a ring so
+    // that fixed color never sits on top of a clashing solid background).
     muscle: {
-      outline: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M1.8 20.8c-.9-1.6-.9-3.6.1-5.2l2.3-3.7c.6-1 1.7-1.6 2.9-1.5.9-2.1 2.4-3.9 4.4-4.9l2.1-1.1c2.3-1.2 5.1-.8 6.9 1.1 2.2 2.3 2.1 6-.3 8.1-1.1 1-2.6 1.4-4 1.1l-2.5-.5c-1.2-.2-2.4.3-3.1 1.3l-2.6 3.6c-1 1.4-2.7 2-4.3 1.6-.8-.2-1.4-.6-1.9-1z"/></svg>'
+      outline: '💪',
+      active: '💪'
     },
     // A real 5-point star, not a sparkle burst — Ken: bright yellow, an
     // actual star reads better and "people gravitate towards that."
