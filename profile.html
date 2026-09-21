@@ -257,7 +257,7 @@
         <option value="Biking">Biking</option>
         <option value="Running">Running</option>
         <option value="Swimming">Swimming</option>
-        <option value="Meal Prep">Meal Prep</option>
+        <option value="Meal Prep">Healthy Meal Prep</option>
         <option value="Other">Other</option>
       </select>
       <p class="card-sub" style="margin-top:6px; font-size:12px;">Required for photos and videos — this is what powers the filters on the Community feed. Not needed for a profile photo or a voice/music upload.</p>
@@ -268,8 +268,14 @@
       <span class="field-hint">Your song publishes to the Music Library right away under your display name — no waiting on approval. Our team reviews new songs regularly to make sure they fit the community's motivational vibe.</span>
     </div>
     <div class="field" id="captionField">
-      <label for="caption">Caption (optional)</label>
-      <input type="text" id="caption" name="caption" placeholder="Say something about this one" maxlength="120" />
+      <label for="caption" id="captionLabel">Caption (optional)</label>
+      <textarea id="caption" name="caption" placeholder="Say something about this one" maxlength="120" rows="2"></textarea>
+      <span class="field-hint" id="captionHint" style="display:none;">Healthy Meal Prep posts get their own full-page profile — prep time, ingredients, your tips, whatever makes it yours. Write the whole thing here; there's room for it.</span>
+    </div>
+    <div class="field" id="signatureField" style="display:none;">
+      <label for="signature">Sign your name (optional)</label>
+      <input type="text" id="signature" name="signature" placeholder="e.g. Marcus" maxlength="40" />
+      <span class="field-hint">Shown in script under your write-up, like a signed recipe card — a little personal touch, totally optional.</span>
     </div>
     <div class="field">
       <label for="location">Location (optional)</label>
@@ -568,6 +574,7 @@
       }
       if (!matched) workoutTypeSelect.value = "Other";
     }
+    if (typeof updateCategoryFieldVisibility === "function") updateCategoryFieldVisibility();
     var uploadCard = document.getElementById("uploadCard");
     if (uploadCard) {
       uploadCard.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -1272,6 +1279,27 @@
   musicPreviewAudio.addEventListener("ended", function () {
     previewMusicBtn.textContent = "▶ Preview";
   });
+
+  // Healthy Meal Prep gets its own longer write-up + an optional signature
+  // (Ken's ask, Sept 2026) — everything else keeps the plain short caption.
+  // The <textarea> underneath is shared with every category (just a taller
+  // box + a longer cap when Meal Prep is picked), so no other JS here that
+  // reads caption.value needs to change.
+  var captionField = document.getElementById("caption");
+  var captionLabel = document.getElementById("captionLabel");
+  var captionHint = document.getElementById("captionHint");
+  var signatureField = document.getElementById("signatureField");
+  function updateCategoryFieldVisibility() {
+    var isMealPrep = workoutTypeSelect.value === "Meal Prep";
+    signatureField.style.display = isMealPrep ? "block" : "none";
+    captionHint.style.display = isMealPrep ? "block" : "none";
+    captionLabel.textContent = isMealPrep ? "Your Healthy Meal Prep write-up" : "Caption (optional)";
+    captionField.maxLength = isMealPrep ? 600 : 120;
+    captionField.rows = isMealPrep ? 6 : 2;
+  }
+  var workoutTypeSelect = document.getElementById("workoutType");
+  workoutTypeSelect.addEventListener("change", updateCategoryFieldVisibility);
+  updateCategoryFieldVisibility();
   // -------------------------------------------------------------------------
 
   fileInput.addEventListener("change", function () {
@@ -1493,6 +1521,7 @@
         music_track_id: musicTrackValue,
         caption: document.getElementById("caption").value.trim() || null,
         workout_type: document.getElementById("workoutType").value.trim() || null,
+        signature: document.getElementById("signature").value.trim() || null,
         location: document.getElementById("location").value.trim() || null,
         product_tag: kind === "photo" ? (document.getElementById("productTag").value.trim() || null) : null,
         is_profile_photo: isProfilePhotoChecked,
@@ -1521,6 +1550,7 @@
       dropzoneLabel.textContent = "Click to choose a photo, video, or voice recording";
       document.getElementById("caption").value = "";
       document.getElementById("workoutType").value = "";
+      document.getElementById("signature").value = "";
       document.getElementById("location").value = "";
       document.getElementById("productTag").value = "";
       document.getElementById("isProfilePhoto").checked = false;
@@ -1530,6 +1560,7 @@
       updateNarrationVisibility();
       updateMusicVisibility();
       updateTrimVisibility();
+      updateCategoryFieldVisibility();
       await loadMyMedia();
     } catch (err) {
       showMsg(msg, err.message || "Upload failed. Please try again.", "error");

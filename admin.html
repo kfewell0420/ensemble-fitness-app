@@ -495,7 +495,7 @@
         '<div class="review-thumb">' + thumbInner + '</div>' +
         '<div class="review-meta">' +
           '<strong>' + name + (item.is_profile_photo ? " · wants as profile photo" : "") + '</strong>' +
-          '<span>' + item.kind + (item.workout_type ? " · " + item.workout_type : "") + (item.location ? " · " + item.location : "") + (narrationUrl ? " · 🎙️ has voiceover" : "") + (musicUrl ? " · 🎵 " + item.tracks.title + " — " + item.tracks.artist_name : "") + ' · ' + timeAgo(item.created_at) + '</span>' +
+          '<span>' + item.kind + (item.workout_type ? " · " + categoryLabel(item.workout_type) : "") + (item.location ? " · " + item.location : "") + (narrationUrl ? " · 🎙️ has voiceover" : "") + (musicUrl ? " · 🎵 " + item.tracks.title + " — " + item.tracks.artist_name : "") + ' · ' + timeAgo(item.created_at) + '</span>' +
           (item.caption ? '<div style="font-size:13px; color:var(--muted-invert); margin-top:4px;">“' + item.caption + '”</div>' : '') +
           (item.product_tag ? '<div style="font-size:12px; color:var(--accent); font-weight:700; margin-top:4px;">🏷️ Tagged product: ' + item.product_tag + ' — approving this makes it eligible to show on Fit Marketplace</div>' : '') +
           (hasTrim ? '<div style="font-size:12px; color:var(--accent-2); font-weight:700; margin-top:4px;">✂️ Trimmed to ' + formatSeconds(item.trim_start) + '–' + formatSeconds(item.trim_end) + ' (shown here in full for review; the trim applies once it\'s live)</div>' : '') +
@@ -958,7 +958,7 @@
         '<div class="review-thumb"><div class="audio-card"><span class="audio-ico">🎙️</span><audio src="' + url + '" controls></audio></div></div>' +
         '<div class="review-meta">' +
           '<strong>' + name + '</strong>' +
-          '<span>' + (item.workout_type ? item.workout_type + " · " : "") + timeAgo(item.created_at) + '</span>' +
+          '<span>' + (item.workout_type ? categoryLabel(item.workout_type) + " · " : "") + timeAgo(item.created_at) + '</span>' +
           (item.caption ? '<div style="font-size:13px; color:var(--muted-invert); margin-top:4px;">“' + item.caption + '”</div>' : '') +
         '</div>' +
         '<div class="review-actions" style="flex-wrap:wrap;">' +
@@ -1089,10 +1089,15 @@
   // fix a post's category inline, since older approved posts predate the
   // category requirement and members other than the poster can't tag them.
   var ADMIN_CATEGORY_OPTIONS = ["Working Out", "Walking", "Hiking", "Biking", "Running", "Swimming", "Meal Prep", "Other"];
+  // Stored value stays "Meal Prep" (every .eq("workout_type","Meal Prep")
+  // filter on the member side keeps working with no migration) — this only
+  // swaps the on-screen text to match the public marketing site's "Healthy
+  // Meal Prep" naming (Ken's ask, Sept 2026).
+  function categoryLabel(c) { return c === "Meal Prep" ? "Healthy Meal Prep" : c; }
   function categorySelectHtml(item) {
     var optionsHtml = '<option value="">No category</option>' +
       ADMIN_CATEGORY_OPTIONS.map(function (c) {
-        return '<option value="' + c + '"' + (item.workout_type === c ? " selected" : "") + '>' + c + '</option>';
+        return '<option value="' + c + '"' + (item.workout_type === c ? " selected" : "") + '>' + categoryLabel(c) + '</option>';
       }).join("");
     // Untagged posts are invisible to every filter chip on the Community
     // feed except "All" — flagged here so they don't get lost in a list
@@ -1164,7 +1169,7 @@
         '</div>' +
         '<div class="review-meta">' +
           '<strong>' + name + '</strong>' +
-          '<span>' + (item.workout_type ? item.workout_type + " · " : "") + (item.location ? item.location + " · " : "") + timeAgo(item.created_at) + (musicUrl ? ' · 🎵 ' + item.tracks.title + ' — ' + item.tracks.artist_name : '') + '</span>' +
+          '<span>' + (item.workout_type ? categoryLabel(item.workout_type) + " · " : "") + (item.location ? item.location + " · " : "") + timeAgo(item.created_at) + (musicUrl ? ' · 🎵 ' + item.tracks.title + ' — ' + item.tracks.artist_name : '') + '</span>' +
           (item.caption ? '<div style="font-size:13px; color:var(--muted-invert); margin-top:4px;">“' + item.caption + '”</div>' : '') +
         '</div>' +
         '<div class="review-actions">' +
@@ -1230,7 +1235,7 @@
         '<div class="review-thumb"><img src="' + url + '" alt="Feed photo" /></div>' +
         '<div class="review-meta">' +
           '<strong>' + name + '</strong>' +
-          '<span>' + (item.workout_type ? item.workout_type + " · " : "") + (item.location ? item.location + " · " : "") + timeAgo(item.created_at) + '</span>' +
+          '<span>' + (item.workout_type ? categoryLabel(item.workout_type) + " · " : "") + (item.location ? item.location + " · " : "") + timeAgo(item.created_at) + '</span>' +
           (item.caption ? '<div style="font-size:13px; color:var(--muted-invert); margin-top:4px;">“' + item.caption + '”</div>' : '') +
         '</div>' +
         '<div class="review-actions">' +

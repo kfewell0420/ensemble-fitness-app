@@ -6,7 +6,7 @@
 <title>Community — Ensemble Fitness</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&family=Dancing+Script:wght@600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/app.css?v=2" />
 <style>
   /* ============================================================
@@ -822,21 +822,38 @@
     font-size: 15px;
   }
 
-  /* ---- Meal-prep single-item viewer (tap a strip card) --------- */
+  /* ---- Healthy Meal Prep profile viewer (tap a strip card) ------
+     A real profile page, not a story-style photo-with-text-overlay: a
+     photo up top, then a scrollable card below with the full write-up
+     (prep time, ingredients, tips — whatever the member wrote) and an
+     optional signature in script, matching the "Healthy Meal Prep
+     Profile" treatment on the public marketing site (Ken's ask, Sept
+     2026). Used to be just a full-bleed photo with a couple lines of
+     caption overlaid at the bottom — fine for a one-line caption, not
+     for an actual recipe write-up. */
   .rp-mp-modal {
     position: fixed;
     inset: 0;
     max-width: 480px;
     margin: 0 auto;
-    background: #000;
+    background: var(--navy-900);
     z-index: 50;
-    display: flex;
-    align-items: center;
-    justify-content: center;
   }
   .rp-mp-modal[hidden] { display: none; }
-  .rp-mp-modal-media { position: absolute; inset: 0; }
-  .rp-mp-modal-media img, .rp-mp-modal-media video { width: 100%; height: 100%; object-fit: cover; }
+  .rp-mp-modal-scroll {
+    height: 100%;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .rp-mp-modal-media {
+    position: relative;
+    width: 100%;
+    height: 42vh;
+    min-height: 240px;
+    max-height: 420px;
+    background: #000;
+  }
+  .rp-mp-modal-media img, .rp-mp-modal-media video { width: 100%; height: 100%; object-fit: cover; display: block; }
   .rp-mp-modal-close {
     position: absolute;
     top: calc(env(safe-area-inset-top, 0px) + 14px);
@@ -850,14 +867,48 @@
     font-size: 16px;
     cursor: pointer;
   }
-  .rp-mp-modal-meta {
-    position: absolute;
-    left: 16px;
-    right: 16px;
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 24px);
+  .rp-mp-modal-body {
+    position: relative;
+    margin-top: -20px;
+    background: var(--navy-900);
+    border-radius: 20px 20px 0 0;
+    padding: 22px 20px calc(env(safe-area-inset-bottom, 0px) + 36px);
     color: #fff;
-    z-index: 5;
-    text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+  }
+  .rp-mp-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'Poppins', 'Inter', sans-serif;
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent-2);
+    margin-bottom: 8px;
+  }
+  .rp-mp-name { font-family: 'Poppins', 'Inter', sans-serif; font-weight: 800; font-size: 20px; margin-bottom: 2px; }
+  .rp-mp-sub { font-size: 12.5px; color: var(--faint-invert); margin-bottom: 16px; }
+  .rp-mp-caption {
+    font-size: 14.5px;
+    line-height: 1.65;
+    color: rgba(255,255,255,0.92);
+    white-space: pre-wrap; /* preserves the paragraph breaks in a longer write-up */
+  }
+  .rp-mp-signature {
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .rp-mp-signature-label { font-size: 12px; color: var(--faint-invert); }
+  .rp-mp-signature-name {
+    font-family: 'Dancing Script', cursive;
+    font-size: 28px;
+    font-weight: 700;
+    color: #fff;
   }
 
   /* ==================================================================
@@ -1195,13 +1246,14 @@
       min-width: 320px;
     }
 
-    /* Bug fix: every child of .rp-mp-modal is position:absolute, so with
-       `right` unset here the box had no in-flow content to size itself
-       against and collapsed to 0 width — the modal's black backdrop
-       never painted and its text, boxed into 0px, wrapped one word per
-       line ("a blank page with some words floating over whatever was
-       behind it," per Ken). An explicit width alongside max-width fixes
-       the sizing regardless of the (all-absolute) children. */
+    /* Bug fix (still applies even now that the body scrolls in normal
+       flow instead of every child being position:absolute): .rp-mp-modal
+       itself is position:fixed, so with `right` unset here it had no
+       in-flow content to size itself against and collapsed to 0 width —
+       the modal's backdrop never painted and its text, boxed into 0px,
+       wrapped one word per line ("a blank page with some words floating
+       over whatever was behind it," per Ken). An explicit width alongside
+       max-width fixes the sizing on desktop regardless. */
     .rp-mp-modal {
       left: 50%;
       right: auto;
@@ -1266,7 +1318,7 @@
     <div class="rp-mealprep" id="rpMealPrep">
       <div class="rp-mealprep-banner">
         <span class="rp-mealprep-banner-icon">🍱</span>
-        <span class="rp-mealprep-banner-text">Meal Prep</span>
+        <span class="rp-mealprep-banner-text">Healthy Meal Prep</span>
         <span class="rp-mealprep-banner-sub" id="rpMealPrepBannerSub">Community picks</span>
       </div>
       <div class="rp-mealprep-track" id="rpMealPrepTrack"></div>
@@ -1324,8 +1376,10 @@
 
 <div class="rp-mp-modal" id="rpMpModal" hidden>
   <button type="button" class="rp-mp-modal-close" id="rpMpModalClose">✕</button>
-  <div class="rp-mp-modal-media" id="rpMpModalMedia"></div>
-  <div class="rp-mp-modal-meta" id="rpMpModalMeta"></div>
+  <div class="rp-mp-modal-scroll" id="rpMpModalScroll">
+    <div class="rp-mp-modal-media" id="rpMpModalMedia"></div>
+    <div class="rp-mp-modal-body" id="rpMpModalMeta"></div>
+  </div>
 </div>
 
 <!-- Comments open here now, in one shared overlay, instead of expanding
@@ -1396,13 +1450,19 @@
   };
   var activeFilter = "All";
 
+  // The stored category value stays "Meal Prep" everywhere (so old rows and
+  // every .eq("workout_type", "Meal Prep") filter above keep working with no
+  // migration) — this only swaps the on-screen text to match the public
+  // marketing site's "Healthy Meal Prep" naming (Ken's ask, Sept 2026).
+  function categoryLabel(c) { return c === "Meal Prep" ? "Healthy Meal Prep" : c; }
+
   // Illustrative placeholders — the same six "not live posts yet" examples
   // already used on the public Healthy Meal Prep page on the marketing
   // site (assets/mealprep/*.jpg), reused here so the strip has real-looking
   // photos to preview/perfect the layout with until members' own posts are
   // tagged "Meal Prep". Swapped out automatically the moment a real one exists.
   var ILLUSTRATIVE_MEAL_PREP = [
-    { name: "Marcus", file: "mealprep-marcus.jpg", caption: "Down 15 lbs eating this three or four times a week. Small changes add up." },
+    { name: "Marcus", file: "mealprep-marcus.jpg", caption: "Prep time: 25 minutes\n\nGrilled chicken breast, steamed green beans, and a scoop of rice — nothing fancy.\n\nI season the chicken the night before so it actually has flavor by the time I cook it.\n\nSteam the beans for exactly 6 minutes so they still have some bite.\n\nI make four of these every Sunday and just reheat through the week.\n\nCosts me about $9 a plate, which beats takeout by a mile.\n\nFifteen pounds down and I still eat this three or four times a week.", signature: "Marcus" },
     { name: "Denise", file: "mealprep-denise.jpg", caption: "This salad became my go-to lunch. My skin and energy have never been better." },
     { name: "Priya", file: "mealprep-priya.jpg", caption: "Post-workout fuel that actually tastes good — I've had this every morning for six months." },
     { name: "James", file: "mealprep-james.jpg", caption: "Eating right isn't always easy, but swapping breakfast for this made mornings so much simpler." },
@@ -1542,7 +1602,7 @@
   async function fetchBatch(mealPrepOnly, limit, fromOffset, filterType) {
     var query = window.sb
       .from("media")
-      .select("id, user_id, kind, storage_path, poster_path, caption, workout_type, location, created_at, profiles!media_user_id_fkey(display_name)")
+      .select("id, user_id, kind, storage_path, poster_path, caption, workout_type, location, signature, created_at, profiles!media_user_id_fkey(display_name)")
       .eq("status", "approved")
       .in("kind", ["video", "photo"]);
     // NOTE: plain .neq("workout_type", "Meal Prep") silently drops every row
@@ -1574,7 +1634,7 @@
   async function fetchNewMediaSince(sinceIso, filterType) {
     var query = window.sb
       .from("media")
-      .select("id, user_id, kind, storage_path, poster_path, caption, workout_type, location, created_at, profiles!media_user_id_fkey(display_name)")
+      .select("id, user_id, kind, storage_path, poster_path, caption, workout_type, location, signature, created_at, profiles!media_user_id_fkey(display_name)")
       .eq("status", "approved")
       .in("kind", ["video", "photo"]);
     if (filterType && filterType !== "All") {
@@ -1650,6 +1710,7 @@
         workout_type: raw.workout_type || "",
         location: raw.location || "",
         caption: raw.caption || "",
+        signature: raw.signature || "",
         storage_path: raw.storage_path || "",
         poster_path: raw.poster_path || ""
       };
@@ -1666,8 +1727,8 @@
     if (bannerSub) bannerSub.textContent = usingIllustrativeMealPrep ? "Examples" : "Community picks";
     if (!mealPrepItems.length) {
       var mpMsg = lastFetchError
-        ? "Couldn't load Meal Prep posts — " + escapeHtml(lastFetchError.message || String(lastFetchError))
-        : "No approved meal prep posts yet.";
+        ? "Couldn't load Healthy Meal Prep posts — " + escapeHtml(lastFetchError.message || String(lastFetchError))
+        : "No approved Healthy Meal Prep posts yet.";
       wrap.querySelector(".rp-mealprep-banner").insertAdjacentHTML(
         "afterend",
         '<div class="rp-mealprep-empty">' + mpMsg + '</div>'
@@ -1696,19 +1757,34 @@
     });
   }
 
+  // Full profile view, not a story-style photo-with-overlay — a member's
+  // whole write-up (prep time, ingredients, tips, whatever they wrote)
+  // needs real reading room, not a couple of lines squeezed over a photo.
+  // Mirrors the "Healthy Meal Prep Profile" treatment on the public
+  // marketing site, including the optional signed-name touch (Ken's ask,
+  // Sept 2026).
   function openMealPrepModal(item) {
     var modal = document.getElementById("rpMpModal");
     var media = document.getElementById("rpMpModalMedia");
-    var meta = document.getElementById("rpMpModalMeta");
+    var body = document.getElementById("rpMpModalMeta");
+    var scroll = document.getElementById("rpMpModalScroll");
     media.innerHTML = item.kind === "video"
       ? '<video src="' + item.url + '"' + (item.posterUrl ? ' poster="' + item.posterUrl + '"' : '') + ' autoplay loop muted playsinline></video>'
-      : '<img src="' + item.url + '" alt="Meal prep" />';
+      : '<img src="' + item.url + '" alt="Healthy Meal Prep" />';
     var sub = [timeAgo(item.created_at)];
     if (item.location) sub.push(item.location);
-    meta.innerHTML =
-      '<div class="rp-name">' + escapeHtml(item.name) + '</div>' +
-      '<div class="rp-sub">' + sub.map(escapeHtml).join(" · ") + '</div>' +
-      (item.caption ? '<div class="rp-caption">' + escapeHtml(item.caption) + '</div>' : "");
+    body.innerHTML =
+      '<div class="rp-mp-eyebrow">🍱 Healthy Meal Prep</div>' +
+      '<div class="rp-mp-name">' + escapeHtml(item.name) + '</div>' +
+      '<div class="rp-mp-sub">' + sub.map(escapeHtml).join(" · ") + '</div>' +
+      (item.caption ? '<div class="rp-mp-caption">' + escapeHtml(item.caption) + '</div>' : "") +
+      (item.signature ?
+        '<div class="rp-mp-signature">' +
+          '<span class="rp-mp-signature-label">Signed,</span>' +
+          '<span class="rp-mp-signature-name">' + escapeHtml(item.signature) + '</span>' +
+        '</div>'
+        : "");
+    if (scroll) scroll.scrollTop = 0;
     modal.hidden = false;
   }
 
@@ -1908,7 +1984,7 @@
   function injectEditPostModal() {
     if (document.getElementById("rpEditPostOverlay")) return;
     var optionsHtml = '<option value="">Choose a category…</option>' +
-      EDIT_CATEGORY_OPTIONS.map(function (c) { return '<option value="' + c + '">' + c + '</option>'; }).join("");
+      EDIT_CATEGORY_OPTIONS.map(function (c) { return '<option value="' + c + '">' + escapeHtml(categoryLabel(c)) + '</option>'; }).join("");
     var wrap = document.createElement("div");
     wrap.innerHTML =
       '<div class="simple-modal-overlay" id="rpEditPostOverlay">' +
@@ -2289,8 +2365,8 @@
         var reelMsg = lastFetchError
           ? "Couldn't load the feed — " + escapeHtml(lastFetchError.message || String(lastFetchError))
           : (activeFilter !== "All"
-              ? "No approved " + escapeHtml(activeFilter) + " posts yet."
-              : "Nothing approved yet outside Meal Prep — once videos or photos are shared, they'll scroll here.");
+              ? "No approved " + escapeHtml(categoryLabel(activeFilter)) + " posts yet."
+              : "Nothing approved yet outside Healthy Meal Prep — once videos or photos are shared, they'll scroll here.");
         showEmptyReelMessage(reelMsg);
       }
       return;
@@ -2305,7 +2381,7 @@
   async function fetchNewMealPrepPosts() {
     var query = window.sb
       .from("media")
-      .select("id, user_id, kind, storage_path, poster_path, caption, workout_type, location, created_at, profiles!media_user_id_fkey(display_name)")
+      .select("id, user_id, kind, storage_path, poster_path, caption, workout_type, location, signature, created_at, profiles!media_user_id_fkey(display_name)")
       .eq("status", "approved")
       .in("kind", ["video", "photo"])
       .eq("workout_type", "Meal Prep")
@@ -2444,7 +2520,8 @@
           created_at: new Date().toISOString(),
           workout_type: "Meal Prep",
           location: "",
-          caption: it.caption
+          caption: it.caption,
+          signature: it.signature || ""
         };
       });
     }
