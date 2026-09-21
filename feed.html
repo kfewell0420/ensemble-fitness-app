@@ -1995,27 +1995,50 @@
     }
   }
 
-  // Illustrative examples aren't real media rows, so there's nothing to
-  // attach a live reaction to — these just display the same static
-  // counts shown on the public marketing site's version of each card,
-  // plus a comment-count pill (tapping it still jumps to the canned
-  // comments below, for the same four-icon look as a real post).
+  // Illustrative examples aren't real media rows, so there's no
+  // media_reactions/media_comments row to write to — but Ken's ask was
+  // for these buttons to actually respond when tapped rather than sit
+  // there inert, so each item carries its own small in-memory "mine" map
+  // (item._illustrativeMine) that a click toggles right here, entirely
+  // client-side. It won't sync to other visitors or survive a refresh —
+  // there's genuinely nowhere real to persist it to — but it counts up,
+  // highlights, and feels alive instead of dead on click. The moment a
+  // real member posts a Meal Prep, mealPrepItems swaps these out for the
+  // real thing (renderMealPrepReactions), which already fully persists.
+  function toggleIllustrativeReaction(item, type, btn) {
+    if (!item._illustrativeMine) item._illustrativeMine = {};
+    var nowActive = !item._illustrativeMine[type];
+    item._illustrativeMine[type] = nowActive;
+    if (!item.illustrativeReactions) item.illustrativeReactions = { thumbs_up: 0, muscle: 0, heart: 0 };
+    var current = item.illustrativeReactions[type] || 0;
+    item.illustrativeReactions[type] = Math.max(0, current + (nowActive ? 1 : -1));
+    btn.classList.toggle("active", nowActive);
+    setReactionIcon(btn, type, nowActive);
+    var countEl = btn.querySelector(".rp-action-count");
+    if (countEl) countEl.textContent = item.illustrativeReactions[type];
+  }
+
   function renderIllustrativeMealPrepReactions(item, container) {
     var counts = item.illustrativeReactions || { thumbs_up: 0, muscle: 0, heart: 0 };
+    var mine = item._illustrativeMine || {};
     var commentCount = (item.illustrativeComments || []).length;
     container.innerHTML = REACTIONS.map(function (r) {
-      return '<span class="rp-mp-reaction static" data-reaction="' + r.type + '">' +
-        '<span class="rp-action-icon">' + reactionIconMarkup(r.type, false) + '</span><span class="rp-action-count">' + (counts[r.type] || 0) + '</span></span>';
+      return '<button type="button" class="rp-mp-reaction' + (mine[r.type] ? ' active' : '') + '" data-reaction="' + r.type + '">' +
+        '<span class="rp-action-icon">' + reactionIconMarkup(r.type, !!mine[r.type]) + '</span><span class="rp-action-count">' + (counts[r.type] || 0) + '</span></button>';
     }).join("") +
       '<button type="button" class="rp-mp-reaction" data-action="comments">' +
       '<span class="rp-action-icon">' + COMMENT_ICON + '</span><span class="rp-action-count">' + commentCount + '</span></button>';
+    REACTIONS.forEach(function (r) {
+      var btn = container.querySelector('[data-reaction="' + r.type + '"]');
+      if (btn) btn.addEventListener("click", function () { toggleIllustrativeReaction(item, r.type, btn); });
+    });
     var commentBtn = container.querySelector('[data-action="comments"]');
     if (commentBtn) commentBtn.addEventListener("click", focusMealPrepComments);
   }
 
-  // Same treatment for comments — canned examples matching the marketing
-  // site's cards, read-only (no add-comment box, since there's no real
-  // media row for a comment to belong to).
+  // Same in-memory approach for comments — typing one and hitting Post
+  // appends it to item.illustrativeComments (client-side only, same
+  // caveat as the reactions above) and updates the count pill above.
   function renderIllustrativeMealPrepComments(item, container) {
     var listEl = container.querySelector(".rp-comments-list");
     var oldInputRow = container.querySelector(".rp-comment-input-row");
@@ -2029,8 +2052,34 @@
             '<div class="rp-comment-body">' + escapeHtml(c.body) + '</div></div>';
         }).join("")
       : '<div class="rp-comment-empty">Be the first to comment.</div>';
+
+    var inputRow = document.createElement("div");
+    inputRow.className = "rp-comment-input-row";
+    inputRow.innerHTML =
+      '<input type="text" class="rp-comment-input" maxlength="300" placeholder="Add a comment…" />' +
+      '<button type="button" class="rp-comment-send">Post</button>';
+    container.appendChild(inputRow);
+    function postIllustrativeComment() {
+      var input = inputRow.querySelector(".rp-comment-input");
+      var body = input.value.trim();
+      if (!body) return;
+      if (!item.illustrativeComments) item.illustrativeComments = [];
+      item.illustrativeComments.push({ name: "You", body: body });
+      input.value = "";
+      renderIllustrativeMealPrepComments(item, container);
+      var reactionsWrap = document.getElementById("rpMpReactions");
+      if (reactionsWrap) {
+        var commentBtn = reactionsWrap.querySelector('[data-action="comments"] .rp-action-count');
+        if (commentBtn) commentBtn.textContent = item.illustrativeComments.length;
+      }
+    }
+    inputRow.querySelector(".rp-comment-send").addEventListener("click", postIllustrativeComment);
+    inputRow.querySelector(".rp-comment-input").addEventListener("keydown", function (e) {
+      if (e.key === "Enter") postIllustrativeComment();
+    });
+
     container.insertAdjacentHTML("beforeend",
-      '<div class="rp-mp-preview-note">Example post — real reactions and comments go live once members start posting their own.</div>');
+      '<div class="rp-mp-preview-note">Example post — reactions and comments here stay on your device; once members start posting their own, this card is replaced by the real thing.</div>');
   }
 
   // Full profile view, not a story-style photo-with-overlay — a member's
