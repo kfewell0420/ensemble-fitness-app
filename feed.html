@@ -825,32 +825,43 @@
   /* ---- Healthy Meal Prep profile viewer (tap a strip card) ------
      Matches the public marketing site's Healthy Meal Prep card — white
      write-up card, name + age, prep time, paragraphs with hairline
-     dividers, a cursive signature, real thumbs-up/muscle/heart
+     dividers, a cursive signature, real thumbs-up/muscle/heart/comment
      reactions, an inline comment thread, and a "swipe up for the next
      meal" pager — reusing the same media_reactions/media_comments
      tables and renderActions-style logic used elsewhere in the app.
 
      Sized deliberately small/dense throughout (photo, type, spacing) so
-     the ENTIRE card — photo through the comment box — fits in one
-     screen with nothing to scroll past (Ken, Sept 2026: "when people
-     pull up a page, they don't have to scroll underneath it to see all
-     the content... let's shrink it down so it's all viewable with one
-     click"). .rp-mp-modal-scroll keeps overflow-y:auto only as a safety
-     net for an unusually short window or a post that picks up a lot of
-     comments over time — normal case, nothing to scroll. */
+     the whole card — photo through the comment box — reads in one
+     screen with nothing to scroll past (Ken, Sept 2026). On top of that,
+     the modal is a CENTERED CARD sized to its own content, not a
+     full-bleed page — the dark backdrop fills whatever screen space the
+     card doesn't need, instead of the card itself stretching edge to
+     edge and leaving a slab of blank white space below the content on a
+     tall screen (Ken: "it pulled the bottom of the page up... a lot of
+     dead space down there"). .rp-mp-modal-scroll's max-height/overflow
+     stays only as a safety net for an unusually short window or a post
+     that picks up a lot of comments over time. */
   .rp-mp-modal {
     position: fixed;
     inset: 0;
-    max-width: 480px;
-    margin: 0 auto;
-    background: #fff;
     z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(10, 10, 14, 0.6);
   }
   .rp-mp-modal[hidden] { display: none; }
   .rp-mp-modal-scroll {
-    height: 100%;
+    position: relative;
+    width: 100%;
+    max-width: 420px;
+    max-height: 92vh;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.35);
   }
   .rp-mp-modal-media {
     position: relative;
@@ -863,7 +874,7 @@
   .rp-mp-modal-media img, .rp-mp-modal-media video { width: 100%; height: 100%; object-fit: cover; display: block; }
   .rp-mp-modal-close {
     position: absolute;
-    top: calc(env(safe-area-inset-top, 0px) + 10px);
+    top: 10px;
     right: 10px;
     z-index: 5;
     width: 30px; height: 30px;
@@ -919,10 +930,14 @@
     color: #14151a;
   }
 
-  /* Reaction pills — same thumbs-up/muscle/heart reaction set and icons
-     as the rest of the app (REACTIONS/renderActions/toggleReaction),
-     just re-skinned as light outlined pills to sit on this white card
-     instead of the dark scrim-over-video look used on the reel. */
+  /* Reaction pills — thumbs-up/muscle/heart/comment, the same four-icon
+     row used on every other post in the app (REACTIONS + COMMENT_ICON /
+     renderActions/toggleReaction), just re-skinned as light outlined
+     pills to sit on this white card instead of the dark scrim-over-video
+     look used on the reel. Icons sized at 17px rather than the smaller
+     14px tried earlier — Ken flagged the dumbbell/muscle icon as
+     unreadable ("There is no muscle") once it got too small; legible
+     icons matter more here than shaving a few more pixels. */
   .rp-mp-reactions {
     display: flex;
     gap: 6px;
@@ -936,21 +951,21 @@
     background: #fff;
     border: 1.2px solid #e2e2e6;
     border-radius: 999px;
-    padding: 4px 9px;
+    padding: 5px 10px;
     cursor: pointer;
   }
   .rp-mp-reaction.static { cursor: default; }
   .rp-mp-reaction .rp-action-icon {
-    width: 14px; height: 14px;
+    width: 17px; height: 17px;
     background: none;
     color: #33343a;
     backdrop-filter: none;
   }
-  .rp-mp-reaction .rp-action-icon svg { width: 14px; height: 14px; }
+  .rp-mp-reaction .rp-action-icon svg { width: 17px; height: 17px; }
   .rp-mp-reaction.active { border-color: var(--accent-2); background: #fff4ed; }
   .rp-mp-reaction.active .rp-action-icon { color: var(--accent-2); }
   .rp-mp-reaction[data-reaction="heart"].active .rp-action-icon { color: var(--red); }
-  .rp-mp-reaction .rp-action-count { font-size: 11px; font-weight: 700; color: #33343a; }
+  .rp-mp-reaction .rp-action-count { font-size: 11.5px; font-weight: 700; color: #33343a; }
 
   /* Inline comments — loadComments()/postComment() are reused exactly as
      they are for the rest of the feed (same media_comments table); these
@@ -1321,22 +1336,6 @@
       min-width: 320px;
     }
 
-    /* Bug fix (still applies even now that the body scrolls in normal
-       flow instead of every child being position:absolute): .rp-mp-modal
-       itself is position:fixed, so with `right` unset here it had no
-       in-flow content to size itself against and collapsed to 0 width —
-       the modal's backdrop never painted and its text, boxed into 0px,
-       wrapped one word per line ("a blank page with some words floating
-       over whatever was behind it," per Ken). An explicit width alongside
-       max-width fixes the sizing on desktop regardless. */
-    .rp-mp-modal {
-      left: 50%;
-      right: auto;
-      width: 100%;
-      transform: translateX(-50%);
-      margin: 0;
-    }
-
     /* Below ~1150px, two video columns get cramped next to a 320px
        sidebar — drop to one column and let the sidebar sit under it. */
     @media (max-width: 1150px) {
@@ -1450,8 +1449,8 @@
 </div>
 
 <div class="rp-mp-modal" id="rpMpModal" hidden>
-  <button type="button" class="rp-mp-modal-close" id="rpMpModalClose">✕</button>
   <div class="rp-mp-modal-scroll" id="rpMpModalScroll">
+    <button type="button" class="rp-mp-modal-close" id="rpMpModalClose">✕</button>
     <div class="rp-mp-modal-media" id="rpMpModalMedia"></div>
     <div class="rp-mp-modal-body">
       <div id="rpMpModalMeta"></div>
@@ -1906,17 +1905,38 @@
     return String(caption || "").split(/\n\s*\n/).map(function (p) { return p.trim(); }).filter(Boolean);
   }
 
-  // Real reactions for a real member's Meal Prep post — same
-  // media_reactions table/toggle logic as renderActions() elsewhere in
-  // the app, just re-skinned as light pills (.rp-mp-reaction) instead of
-  // the dark scrim-over-video icon buttons used on the reel.
+  // Jumps down to (and, for a real post, focuses) the inline comment
+  // section instead of opening a separate popup — the 4th icon in the
+  // reaction row (thumbs/muscle/heart/comment) matches the row every
+  // other post in the app already shows, but comments stay inline here.
+  function focusMealPrepComments() {
+    var panel = document.getElementById("rpMpComments");
+    if (!panel) return;
+    panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    var input = panel.querySelector(".rp-comment-input");
+    if (input) input.focus();
+  }
+
+  // Real reactions + comment count for a real member's Meal Prep post —
+  // same media_reactions/media_comments tables and toggle logic as
+  // renderActions() elsewhere in the app, just re-skinned as light pills
+  // (.rp-mp-reaction) instead of the dark scrim-over-video icon buttons
+  // used on the reel. Icons are the app's real thumbs-up/muscle/heart
+  // vector set (REACTIONS/REACTION_ICONS), plus the same comment icon
+  // (COMMENT_ICON) as a 4th pill — Ken's ask: "a thumbs up, a muscle
+  // symbol, a heart, and a comment section" all together in that row.
   async function renderMealPrepReactions(item, container) {
     container.innerHTML = REACTIONS.map(function (r) {
       return '<button type="button" class="rp-mp-reaction" data-reaction="' + r.type + '">' +
         '<span class="rp-action-icon">' + reactionIconMarkup(r.type, false) + '</span><span class="rp-action-count"></span></button>';
-    }).join("");
+    }).join("") +
+      '<button type="button" class="rp-mp-reaction" data-action="comments">' +
+      '<span class="rp-action-icon">' + COMMENT_ICON + '</span><span class="rp-action-count"></span></button>';
 
-    var { data: reactions } = await window.sb.from("media_reactions").select("user_id, reaction_type").eq("media_id", item.id);
+    var [{ data: reactions }, { count: commentCount }] = await Promise.all([
+      window.sb.from("media_reactions").select("user_id, reaction_type").eq("media_id", item.id),
+      window.sb.from("media_comments").select("id", { count: "exact", head: true }).eq("media_id", item.id)
+    ]);
     var counts = { thumbs_up: 0, muscle: 0, heart: 0 };
     var mine = {};
     (reactions || []).forEach(function (r) {
@@ -1931,17 +1951,29 @@
       btn.querySelector(".rp-action-count").textContent = counts[r.type] || 0;
       btn.addEventListener("click", function () { toggleReaction(item.id, r.type, btn); });
     });
+    var commentBtn = container.querySelector('[data-action="comments"]');
+    if (commentBtn) {
+      commentBtn.querySelector(".rp-action-count").textContent = commentCount || 0;
+      commentBtn.addEventListener("click", focusMealPrepComments);
+    }
   }
 
   // Illustrative examples aren't real media rows, so there's nothing to
   // attach a live reaction to — these just display the same static
-  // counts shown on the public marketing site's version of each card.
+  // counts shown on the public marketing site's version of each card,
+  // plus a comment-count pill (tapping it still jumps to the canned
+  // comments below, for the same four-icon look as a real post).
   function renderIllustrativeMealPrepReactions(item, container) {
     var counts = item.illustrativeReactions || { thumbs_up: 0, muscle: 0, heart: 0 };
+    var commentCount = (item.illustrativeComments || []).length;
     container.innerHTML = REACTIONS.map(function (r) {
       return '<span class="rp-mp-reaction static" data-reaction="' + r.type + '">' +
         '<span class="rp-action-icon">' + reactionIconMarkup(r.type, false) + '</span><span class="rp-action-count">' + (counts[r.type] || 0) + '</span></span>';
-    }).join("");
+    }).join("") +
+      '<button type="button" class="rp-mp-reaction" data-action="comments">' +
+      '<span class="rp-action-icon">' + COMMENT_ICON + '</span><span class="rp-action-count">' + commentCount + '</span></button>';
+    var commentBtn = container.querySelector('[data-action="comments"]');
+    if (commentBtn) commentBtn.addEventListener("click", focusMealPrepComments);
   }
 
   // Same treatment for comments — canned examples matching the marketing
@@ -2020,10 +2052,19 @@
     modal.hidden = false;
   }
 
-  document.getElementById("rpMpModalClose").addEventListener("click", function () {
+  function closeMealPrepModal() {
     var modal = document.getElementById("rpMpModal");
     modal.querySelectorAll("video").forEach(function (v) { v.pause(); });
     modal.hidden = true;
+  }
+  document.getElementById("rpMpModalClose").addEventListener("click", closeMealPrepModal);
+  // The modal is now a centered card over a dimmed backdrop rather than a
+  // full-bleed page, so — like the existing comments popup — a click on
+  // the backdrop itself (not the card) closes it. Checking
+  // target===currentTarget is what tells the two apart: a click inside
+  // the card lands on one of its descendants instead.
+  document.getElementById("rpMpModal").addEventListener("click", function (e) {
+    if (e.target === e.currentTarget) closeMealPrepModal();
   });
 
   // "Swipe up for the next meal" — advances through the same strip
