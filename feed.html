@@ -823,16 +823,21 @@
   }
 
   /* ---- Healthy Meal Prep profile viewer (tap a strip card) ------
-     Rebuilt to match the public marketing site's Healthy Meal Prep card
-     exactly — Ken (Sept 2026): "App Ensemble Fitness and Ensemble
-     Fitness should be one and the same... it should be the same
-     layout." That means a white write-up card (not a dark app-style
-     panel), name + age, prep time, paragraphs separated by hairline
+     Matches the public marketing site's Healthy Meal Prep card — white
+     write-up card, name + age, prep time, paragraphs with hairline
      dividers, a cursive signature, real thumbs-up/muscle/heart
-     reactions, an inline comment thread (not a popup), and a "swipe up
-     for the next meal" pager — all reusing the same media_reactions /
-     media_comments tables and renderActions-style logic already used
-     elsewhere in the app, just re-skinned for a white card. */
+     reactions, an inline comment thread, and a "swipe up for the next
+     meal" pager — reusing the same media_reactions/media_comments
+     tables and renderActions-style logic used elsewhere in the app.
+
+     Sized deliberately small/dense throughout (photo, type, spacing) so
+     the ENTIRE card — photo through the comment box — fits in one
+     screen with nothing to scroll past (Ken, Sept 2026: "when people
+     pull up a page, they don't have to scroll underneath it to see all
+     the content... let's shrink it down so it's all viewable with one
+     click"). .rp-mp-modal-scroll keeps overflow-y:auto only as a safety
+     net for an unusually short window or a post that picks up a lot of
+     comments over time — normal case, nothing to scroll. */
   .rp-mp-modal {
     position: fixed;
     inset: 0;
@@ -850,66 +855,66 @@
   .rp-mp-modal-media {
     position: relative;
     width: 100%;
-    height: 46vh;
-    min-height: 260px;
-    max-height: 440px;
+    height: 18vh;
+    min-height: 100px;
+    max-height: 170px;
     background: #000;
   }
   .rp-mp-modal-media img, .rp-mp-modal-media video { width: 100%; height: 100%; object-fit: cover; display: block; }
   .rp-mp-modal-close {
     position: absolute;
-    top: calc(env(safe-area-inset-top, 0px) + 14px);
-    right: 14px;
+    top: calc(env(safe-area-inset-top, 0px) + 10px);
+    right: 10px;
     z-index: 5;
-    width: 34px; height: 34px;
+    width: 30px; height: 30px;
     border-radius: 999px;
     background: rgba(0,0,0,0.5);
     color: #fff;
     border: none;
-    font-size: 16px;
+    font-size: 14px;
     cursor: pointer;
   }
   .rp-mp-modal-body {
     position: relative;
     background: #fff;
-    padding: 22px 20px calc(env(safe-area-inset-bottom, 0px) + 30px);
+    padding: 12px 16px calc(env(safe-area-inset-bottom, 0px) + 12px);
     color: #17181c;
   }
   .rp-mp-eyebrow {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
     font-family: 'Poppins', 'Inter', sans-serif;
-    font-size: 11.5px;
+    font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--accent-2);
-    margin-bottom: 8px;
+    margin-bottom: 3px;
   }
-  .rp-mp-name { font-family: 'Poppins', 'Inter', sans-serif; font-weight: 800; font-size: 21px; color: #14151a; margin-bottom: 2px; }
-  .rp-mp-sub { font-size: 13px; color: #6b7280; margin-bottom: 14px; }
+  .rp-mp-name { font-family: 'Poppins', 'Inter', sans-serif; font-weight: 800; font-size: 17px; color: #14151a; margin-bottom: 1px; }
+  .rp-mp-sub { font-size: 11px; color: #6b7280; margin-bottom: 6px; }
   .rp-mp-caption-para {
-    font-size: 14.5px;
-    line-height: 1.6;
+    font-size: 12px;
+    line-height: 1.28;
     color: #33343a;
-    padding: 13px 0;
+    padding: 4px 0;
     border-bottom: 1px solid #ececec;
     white-space: pre-wrap; /* preserves any line breaks a member typed within one paragraph */
   }
   .rp-mp-caption-para:last-of-type { border-bottom: none; }
   .rp-mp-signature {
-    margin-top: 16px;
-    padding-top: 14px;
+    margin-top: 6px;
+    padding-top: 6px;
     border-top: 1px solid #ececec;
     display: flex;
     align-items: baseline;
-    gap: 8px;
+    gap: 6px;
   }
-  .rp-mp-signature-label { font-size: 12px; color: #6b7280; }
+  .rp-mp-signature-label { font-size: 10.5px; color: #6b7280; }
   .rp-mp-signature-name {
     font-family: 'Dancing Script', cursive;
-    font-size: 28px;
+    font-size: 21px;
     font-weight: 700;
     color: #14151a;
   }
@@ -920,64 +925,65 @@
      instead of the dark scrim-over-video look used on the reel. */
   .rp-mp-reactions {
     display: flex;
-    gap: 8px;
-    margin-top: 16px;
+    gap: 6px;
+    margin-top: 6px;
     flex-wrap: wrap;
   }
   .rp-mp-reaction {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
     background: #fff;
-    border: 1.4px solid #e2e2e6;
+    border: 1.2px solid #e2e2e6;
     border-radius: 999px;
-    padding: 7px 13px;
+    padding: 4px 9px;
     cursor: pointer;
   }
   .rp-mp-reaction.static { cursor: default; }
   .rp-mp-reaction .rp-action-icon {
-    width: 18px; height: 18px;
+    width: 14px; height: 14px;
     background: none;
     color: #33343a;
     backdrop-filter: none;
   }
-  .rp-mp-reaction .rp-action-icon svg { width: 18px; height: 18px; }
+  .rp-mp-reaction .rp-action-icon svg { width: 14px; height: 14px; }
   .rp-mp-reaction.active { border-color: var(--accent-2); background: #fff4ed; }
   .rp-mp-reaction.active .rp-action-icon { color: var(--accent-2); }
   .rp-mp-reaction[data-reaction="heart"].active .rp-action-icon { color: var(--red); }
-  .rp-mp-reaction .rp-action-count { font-size: 13px; font-weight: 700; color: #33343a; }
+  .rp-mp-reaction .rp-action-count { font-size: 11px; font-weight: 700; color: #33343a; }
 
   /* Inline comments — loadComments()/postComment() are reused exactly as
      they are for the rest of the feed (same media_comments table); these
      rules just re-skin the shared .rp-comment-* classes for a white card
      instead of the dark popup modal they were built for. */
-  .rp-mp-comments { margin-top: 18px; padding-top: 14px; border-top: 1px solid #ececec; }
+  .rp-mp-comments { margin-top: 6px; padding-top: 6px; border-top: 1px solid #ececec; }
   .rp-mp-comments .rp-comments-list { padding: 0; }
-  .rp-mp-comments .rp-comment-item { border-bottom: 1px solid #ececec; padding: 10px 0; }
+  .rp-mp-comments .rp-comment-item { border-bottom: 1px solid #ececec; padding: 4px 0; }
   .rp-mp-comments .rp-comment-item:last-child { border-bottom: none; }
-  .rp-mp-comments .rp-comment-name { color: #14151a; font-weight: 700; font-size: 13px; }
-  .rp-mp-comments .rp-comment-time { color: #9a9ba3; }
-  .rp-mp-comments .rp-comment-body { color: #33343a; }
-  .rp-mp-comments .rp-comment-empty { color: #9a9ba3; padding: 6px 0; }
-  .rp-mp-comments .rp-comment-input-row { border-top: none; padding: 12px 0 0; }
-  .rp-mp-comments .rp-comment-input { background: #f2f2f4; color: #17181c; border: 1px solid #e2e2e6; }
+  .rp-mp-comments .rp-comment-name { color: #14151a; font-weight: 700; font-size: 11px; }
+  .rp-mp-comments .rp-comment-time { color: #9a9ba3; font-size: 9.5px; }
+  .rp-mp-comments .rp-comment-body { color: #33343a; font-size: 11.5px; margin-top: 0; }
+  .rp-mp-comments .rp-comment-empty { color: #9a9ba3; font-size: 11.5px; padding: 3px 0; }
+  .rp-mp-comments .rp-comment-input-row { border-top: none; padding: 6px 0 0; }
+  .rp-mp-comments .rp-comment-input { background: #f2f2f4; color: #17181c; border: 1px solid #e2e2e6; font-size: 11.5px; padding: 6px 11px; }
   .rp-mp-comments .rp-comment-input::placeholder { color: #9a9ba3; }
-  .rp-mp-preview-note { font-size: 12px; color: #9a9ba3; margin-top: 12px; text-align: center; }
+  .rp-mp-comments .rp-comment-send { font-size: 11px; padding: 0 12px; }
+  .rp-mp-preview-note { font-size: 10px; color: #9a9ba3; margin-top: 5px; text-align: center; }
 
   .rp-mp-next {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: 5px;
     width: 100%;
-    margin-top: 18px;
+    margin-top: 6px;
     background: none;
     border: none;
     color: #6b7280;
-    font-size: 13px;
+    font-size: 11.5px;
     font-weight: 600;
     cursor: pointer;
-    padding: 12px 0 0;
+    padding: 6px 0 0;
   }
 
   /* ==================================================================
