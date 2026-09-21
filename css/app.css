@@ -1776,9 +1776,14 @@ img { max-width: 100%; display: block; }
 }
 
 .efit-notif-panel {
+  /* Anchored from the LEFT, not the right: the bell now lives near the
+     logo on the left side of the nav (Ken's ask, Sept 2026), so a
+     right-anchored panel would extend further left than the bell itself
+     and bleed off the edge of the screen. Left-anchoring lets it open
+     into the open space to the right instead. */
   position: absolute;
   top: calc(100% + 14px);
-  right: 0;
+  left: 0;
   width: 320px;
   max-width: min(320px, calc(100vw - 32px));
   max-height: 420px;
