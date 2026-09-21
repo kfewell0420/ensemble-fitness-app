@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Member Profile — Ensemble Fitness</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/app.css?v=2" />
+</head>
+<body>
+
+<header class="app-nav">
+  <a href="feed.html" class="app-brand">
+    <span class="app-brand-mark"><img src="assets/logo.png" alt="Ensemble Fitness" /></span>Ensemble Fitness
+  </a>
+  <nav class="app-nav-links">
+    <a href="feed.html">Community</a>
+    <a href="journey.html">My Journey</a>
+    <a href="members.html" style="color:#fff;">Members</a>
+    <a href="fitness-plus.html">Fitness+</a>
+    <a href="gear.html">Gear</a>
+    <a href="music-library.html">Music</a>
+    <a href="quote-library.html">Quotes</a>
+    <a href="profile.html">My Profile</a>
+    <a href="admin.html" id="adminLink" style="display:none;">Queue</a>
+    <a href="#" id="signOutLink">Sign Out</a>
+  </nav>
+</header>
+
+<div class="app-shell">
+
+  <a href="members.html" style="display:inline-block; margin-bottom:18px; font-size:13.5px; color:var(--faint-invert); font-weight:700;">&larr; Back to Find Members</a>
+
+  <div class="card" id="profileCard">
+    <div class="empty-state">Loading…</div>
+  </div>
+
+  <div class="eyebrow" id="mediaEyebrow" style="margin-top:32px; display:none;"></div>
+  <h2 id="mediaHeading" style="margin-bottom:6px; display:none;"></h2>
+
+  <div class="feed-grid" id="mediaGrid"></div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/shared-session.js"></script>
+<script src="js/supabaseClient.js"></script>
+<script src="js/notifications.js"></script>
+<script src="js/social.js"></script>
+<script src="js/moderation.js"></script>
+<script>
+  var currentUserId = null;
+  var followingIds = new Set();
+
+  function escapeHtml(str) {
+    var div = document.createElement("div");
+    div.textContent = str || "";
+    return div.innerHTML;
+  }
+
+  function timeAgo(isoString) {
+    var seconds = Math.floor((Date.now() - new Date(isoString).getTime()) / 1000);
+    if (seconds < 60) return "Posted just now";
+    var minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return "Posted " + minutes + "m ago";
+    var hours = Math.floor(minutes / 60);
+    if (hours < 24) return "Posted " + hours + "h ago";
+    var days = Math.floor(hours / 24);
+    if (days < 30) return "Posted " + days + "d ago";
+    var months = Math.floor(days / 30);
+    return "Posted " + months + "mo ago";
+  }
+
+  function getMemberId() {
+    return new URLSearchParams(window.location.search).get("id");
+  }
+
+  async function loadProfileCard(memberId) {
+    var card = document.getElementById("profileCard");
+
+    var { data: member, error } = await window.sb
+      .from("profiles")
+      .select("id, display_name, bio, zip_code, wake_time_category")
+      .eq("id", memberId)
+      .maybeSingle();
+
+    if (error || !member) {
+      card.innerHTML = '<div class="empty-state">Couldn\'t find that member. They may have deactivated their account.</div>';
+      return null;
+    }
+
+    var { data: avatarRow } = await window.sb
+      .from("media")
+      .select("storage_path")
+      .eq("user_id", memberId)
+      .eq("kind", "photo")
+      .eq("is_profile_photo", true)
+      .eq("status", "approved")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    var avatarInner = (member.display_name || "?").trim().charAt(0).toUpperCase() || "?";
+    if (avatarRow) {
+      var { data: signed } = await window.sb.storage.from("media").createSignedUrl(avatarRow.storage_path, 3600);
+      if (signed) avatarInner = '<img src="' + signed.signedUrl + '" alt="' + escapeHtml(member.display_name || "Member") + '" />';
+    }
+
+    var wakeLabel = wakeTimeLabel(member.wake_time_category);
+
+    var { count: followerCount } = await window.sb
+      .from("follows")
+      .select("follower_id", { count: "exact", head: true })
+      .eq("followee_id", memberId);
+
+    var isOwnProfile = !!currentUserId && memberId === currentUserId;
+
+    card.innerHTML =
+      '<div style="display:flex; gap:18px; align-items:center; flex-wrap:wrap;">' +
+        '<div class="avatar-circle" style="width:84px; height:84px; font-size:26px; margin:0;">' + avatarInner + '</div>' +
+        '<div style="flex:1; min-width:200px;">' +
+          '<h1 style="font-size:22px; margin-bottom:4px;">' + escapeHtml(member.display_name || "A member") + '</h1>' +
+          (member.bio ? '<p style="font-size:14px; color:var(--muted-invert); margin-bottom:6px;">' + escapeHtml(member.bio) + '</p>' : '') +
+          '<span style="font-size:12.5px; color:var(--faint-invert);">' +
+            (member.zip_code ? 'ZIP ' + escapeHtml(member.zip_code) : '') +
+            (wakeLabel ? ' · ' + escapeHtml(wakeLabel) : '') +
+            ' · ' + (followerCount || 0) + (followerCount === 1 ? ' follower' : ' followers') +
+          '</span>' +
+        '</div>' +
+      '</div>' +
+      (isOwnProfile ? '' : '<div class="follow-actions-row" style="justify-content:flex-start; margin-top:16px;" id="memberActions"></div>');
+
+    if (!isOwnProfile) {
+      renderMemberActions(memberId, member);
+    }
+
+    return member;
+  }
+
+  /* Rebuilt any time block state changes, so a blocked member's Follow/
+     Message buttons disappear immediately without a page reload. */
+  function renderMemberActions(memberId, member) {
+    var wrap = document.getElementById("memberActions");
+    if (!wrap) return;
+    var following = followingIds.has(memberId);
+    var blocked = isBlocked(memberId);
+
+    wrap.innerHTML =
+      (blocked ? '<span style="font-size:13px; color:var(--faint-invert); align-self:center;">You have blocked this member.</span>' :
+        '<button type="button" class="btn btn-sm follow-btn' + (following ? ' following' : ' btn-primary') + '" id="memberFollowBtn">' + (following ? 'Following ✓' : 'Follow') + '</button>' +
+        '<button type="button" class="btn btn-ghost btn-sm" id="memberMessageBtn">Message</button>') +
+      '<button type="button" class="btn btn-ghost btn-sm" id="memberReportBtn">Report</button>' +
+      '<button type="button" class="btn btn-sm" id="memberBlockBtn"></button>';
+
+    if (!blocked) {
+      document.getElementById("memberFollowBtn").addEventListener("click", function () {
+        toggleFollow(memberId, this);
+      });
+      document.getElementById("memberMessageBtn").addEventListener("click", function () {
+        openMessageModal(memberId, member.display_name || "this member");
+      });
+    }
+    document.getElementById("memberReportBtn").addEventListener("click", function () {
+      openReportModal({ type: "user", id: memberId, label: member.display_name || "this member" });
+    });
+    wireBlockButton(document.getElementById("memberBlockBtn"), memberId, function (nowBlocked) {
+      renderMemberActions(memberId, member);
+      if (nowBlocked) {
+        document.getElementById("mediaGrid").innerHTML = "";
+        document.getElementById("mediaEyebrow").style.display = "none";
+        document.getElementById("mediaHeading").style.display = "none";
+      } else {
+        loadMemberMedia(memberId);
+      }
+    });
+  }
+
+  async function toggleFollow(userId, btn) {
+    btn.disabled = true;
+    if (followingIds.has(userId)) {
+      var { error } = await window.sb.from("follows").delete().eq("follower_id", currentUserId).eq("followee_id", userId);
+      if (!error) followingIds.delete(userId);
+    } else {
+      var { error } = await window.sb.from("follows").insert({ follower_id: currentUserId, followee_id: userId });
+      if (!error) followingIds.add(userId);
+    }
+    btn.disabled = false;
+    btn.className = "btn btn-sm follow-btn" + (followingIds.has(userId) ? " following" : " btn-primary");
+    btn.textContent = followingIds.has(userId) ? "Following ✓" : "Follow";
+  }
+
+  async function loadMemberMedia(memberId) {
+    var grid = document.getElementById("mediaGrid");
+    var eyebrow = document.getElementById("mediaEyebrow");
+    var heading = document.getElementById("mediaHeading");
+    grid.innerHTML = '<div class="empty-state">Loading…</div>';
+
+    var { data, error } = await window.sb
+      .from("media")
+      .select("id, kind, storage_path, caption, workout_type, location, created_at, narration_path, is_profile_photo, trim_start, trim_end, music_track_id, tracks(storage_path, title, artist_name)")
+      .eq("user_id", memberId)
+      .eq("status", "approved")
+      .order("created_at", { ascending: false });
+
+    // The profile photo itself already shows up in the header above, so
+    // leave it out of the grid below to avoid showing it twice.
+    var items = (data || []).filter(function (item) { return !item.is_profile_photo; });
+
+    eyebrow.style.display = "block";
+    heading.style.display = "block";
+    eyebrow.textContent = "Shared updates";
+    heading.textContent = "Photos & Videos";
+
+    if (error) {
+      grid.innerHTML = '<div class="empty-state">Couldn\'t load their updates. Please refresh.</div>';
+      return;
+    }
+    if (items.length === 0) {
+      grid.innerHTML = '<div class="empty-state">No approved photos or videos yet.</div>';
+      return;
+    }
+
+    grid.innerHTML = "";
+    for (var i = 0; i < items.length; i++) {
+      var item = items[i];
+
+      var { data: signed } = await window.sb.storage.from("media").createSignedUrl(item.storage_path, 3600);
+      var url = signed ? signed.signedUrl : "";
+
+      var narrationUrl = "";
+      if (item.kind === "video" && item.narration_path) {
+        var { data: signedNarration } = await window.sb.storage.from("media").createSignedUrl(item.narration_path, 3600);
+        narrationUrl = signedNarration ? signedNarration.signedUrl : "";
+      }
+
+      var musicUrl = "";
+      if (item.kind === "video" && !narrationUrl && item.music_track_id && item.tracks) {
+        var { data: signedMusic } = await window.sb.storage.from("tracks").createSignedUrl(item.tracks.storage_path, 3600);
+        musicUrl = signedMusic ? signedMusic.signedUrl : "";
+      }
+      var soundUrl = narrationUrl || musicUrl;
+      var soundClass = narrationUrl ? "narration-track" : "music-track";
+
+      // muted only when there's a narration/music track to sync instead
+      // (wireNarrationSync below) — a plain video plays with its own real
+      // sound the moment someone presses play, no separate unmute needed.
+      var mediaEl = item.kind === "video"
+        ? '<video src="' + url + '"' + (soundUrl ? " muted" : "") + ' controls playsinline></video>' + (soundUrl ? '<audio class="' + soundClass + '" src="' + soundUrl + '" preload="auto"></audio>' : '')
+        : item.kind === "audio"
+        ? '<div class="audio-card"><span class="audio-ico">🎙️</span><audio src="' + url + '" controls></audio></div>'
+        : '<img src="' + url + '" alt="Workout photo" />';
+
+      var card = document.createElement("div");
+      card.className = "feed-card";
+
+      var subParts = [timeAgo(item.created_at)];
+      if (item.workout_type) subParts.push(escapeHtml(item.workout_type));
+      if (item.location) subParts.push(escapeHtml(item.location));
+
+      card.innerHTML =
+        '<div class="feed-card-thumb">' + mediaEl +
+          '<span class="kind-badge">' + item.kind + (narrationUrl ? ' 🎙️' : musicUrl ? ' 🎵' : '') + '</span>' +
+        '</div>' +
+        '<div class="feed-card-meta">' +
+          '<div class="feed-card-sub">' + subParts.join(" · ") + (narrationUrl ? ' · 🎙️ narrated' : musicUrl ? ' · 🎵 ' + escapeHtml(item.tracks.title) + ' — ' + escapeHtml(item.tracks.artist_name) : '') + '</div>' +
+          (item.caption ? '<p class="feed-card-caption">' + escapeHtml(item.caption) + '</p>' : "") +
+        '</div>';
+
+      grid.appendChild(card);
+
+      if (soundUrl) {
+        wireNarrationSync(card.querySelector("video"), card.querySelector("audio." + soundClass));
+      }
+      if (item.kind === "video") {
+        wireTrimPlayback(card.querySelector("video"), item.trim_start, item.trim_end);
+      }
+    }
+  }
+
+  document.getElementById("signOutLink").addEventListener("click", function (e) {
+    e.preventDefault();
+    signOut();
+  });
+
+  (async function init() {
+    var user = await requireAuth();
+    if (!user) return;
+    currentUserId = user.id;
+    setMessageSender(currentUserId);
+    setModerationUser(currentUserId);
+    await loadBlockedIds();
+    if (await isCurrentUserAdmin()) {
+      document.getElementById("adminLink").style.display = "inline";
+    }
+
+    var { data: followingRows } = await window.sb.from("follows").select("followee_id").eq("follower_id", currentUserId);
+    followingIds = new Set((followingRows || []).map(function (r) { return r.followee_id; }));
+
+    var memberId = getMemberId();
+    if (!memberId) {
+      document.getElementById("profileCard").innerHTML = '<div class="empty-state">No member selected. Head back to <a href="members.html" style="color:var(--accent-2);">Find Members</a> and pick someone to view.</div>';
+      return;
+    }
+
+    var member = await loadProfileCard(memberId);
+    if (member && !isBlocked(memberId)) {
+      await loadMemberMedia(memberId);
+    }
+  })();
+</script>
+
+</body>
+</html>

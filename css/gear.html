@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Approved Gear — Ensemble Fitness</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/app.css?v=2" />
+</head>
+<body>
+
+<header class="app-nav">
+  <a href="feed.html" class="app-brand">
+    <span class="app-brand-mark"><img src="assets/logo.png" alt="Ensemble Fitness" /></span>Ensemble Fitness
+  </a>
+  <nav class="app-nav-links">
+    <a href="feed.html">Community</a>
+    <a href="journey.html">My Journey</a>
+    <a href="members.html">Members</a>
+    <a href="fitness-plus.html">Fitness+</a>
+    <a href="gear.html" style="color:#fff;">Gear</a>
+    <a href="music-library.html">Music</a>
+    <a href="quote-library.html">Quotes</a>
+    <a href="profile.html">My Profile</a>
+    <a href="admin.html" id="adminLink" style="display:none;">Queue</a>
+    <a href="#" id="signOutLink">Sign Out</a>
+  </nav>
+</header>
+
+<div class="app-shell">
+
+  <div class="eyebrow">Approved Gear</div>
+  <h2 style="margin-bottom:6px;">Gear Ensemble Fitness actually buys.</h2>
+  <p class="card-sub" style="margin-bottom:16px;">Not a generic "top 10 gadgets" list — every pick here is something Ken has personally bought and uses, based on 500&ndash;1,000 real Amazon orders a year.</p>
+
+  <div class="gear-disclosure">
+    <strong>Honest disclosure:</strong> Ensemble Fitness is a participant in the Amazon Associates program. If you buy something through a link here, we may earn a small commission at no extra cost to you. That never changes which products make this list.
+  </div>
+
+  <div class="gear-filters" id="gearFilters"></div>
+
+  <div class="feed-grid" id="gearGrid">
+    <div class="empty-state">Loading picks…</div>
+  </div>
+
+</div>
+
+<style>
+  /* Page-specific extras, same convention as fitness-plus.html's own
+     inline <style> block — kept off the shared app.css since nothing
+     else in the app needs these. */
+  .gear-disclosure {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-left: 3px solid var(--accent-2);
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-size: 13px;
+    color: var(--muted-invert);
+    line-height: 1.5;
+    margin-bottom: 20px;
+  }
+  .gear-filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+  .gear-chip {
+    padding: 8px 16px;
+    border-radius: var(--radius-pill);
+    border: 1px solid rgba(255,255,255,0.16);
+    background: none;
+    color: var(--muted-invert);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .gear-chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .gear-card-cta { display: block; margin: 10px 16px 16px; text-align: center; }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/shared-session.js"></script>
+<script src="js/supabaseClient.js"></script>
+<script src="js/notifications.js"></script>
+<script src="js/moderation.js"></script>
+<script>
+  var currentUser = null;
+  var gearItems = [];
+  var gearCategories = [];
+
+  // Kept in sync by hand with js/approved-gear-picks.js on the marketing
+  // site — same tag, two codebases. Once Ken sends his real Amazon
+  // Associates tag, both files get updated together.
+  var AMAZON_ASSOCIATE_TAG = "REPLACE_WITH_YOUR_AMAZON_ASSOCIATE_TAG";
+
+  function escapeHtml(str) {
+    var div = document.createElement("div");
+    div.textContent = str || "";
+    return div.innerHTML;
+  }
+
+  function categoryKey(label) {
+    return (label || "").trim().toLowerCase().replace(/\s+/g, "-");
+  }
+
+  function withAssociateTag(rawUrl) {
+    try {
+      var u = new URL(rawUrl);
+      if (AMAZON_ASSOCIATE_TAG && AMAZON_ASSOCIATE_TAG.indexOf("REPLACE_WITH") !== 0) {
+        u.searchParams.set("tag", AMAZON_ASSOCIATE_TAG);
+      }
+      return u.toString();
+    } catch (e) {
+      return rawUrl;
+    }
+  }
+
+  function renderFilters() {
+    var wrap = document.getElementById("gearFilters");
+    var html = '<button type="button" class="gear-chip active" data-cat="all">All Picks</button>';
+    gearCategories.forEach(function (c) {
+      html += '<button type="button" class="gear-chip" data-cat="' + escapeHtml(c.key) + '">' + escapeHtml(c.label) + "</button>";
+    });
+    wrap.innerHTML = html;
+    wrap.querySelectorAll(".gear-chip").forEach(function (chip) {
+      chip.addEventListener("click", function () {
+        wrap.querySelectorAll(".gear-chip").forEach(function (c) { c.classList.remove("active"); });
+        chip.classList.add("active");
+        renderGrid(chip.getAttribute("data-cat"));
+      });
+    });
+  }
+
+  function renderGrid(filterKey) {
+    var grid = document.getElementById("gearGrid");
+    var shown = filterKey && filterKey !== "all"
+      ? gearItems.filter(function (item) { return item.categoryKey === filterKey; })
+      : gearItems;
+
+    if (!shown.length) {
+      grid.innerHTML = '<div class="empty-state">No picks in this category yet — check back soon.</div>';
+      return;
+    }
+
+    grid.innerHTML = shown.map(function (item) {
+      var thumb = item.imgUrl
+        ? '<img src="' + escapeHtml(item.imgUrl) + '" alt="' + escapeHtml(item.name) + '" />'
+        : '<div class="thumb-initial">🛒</div>';
+      var link = withAssociateTag(item.amazon_url);
+      return (
+        '<div class="feed-card">' +
+          '<div class="feed-card-thumb">' + thumb + '<span class="kind-badge">' + escapeHtml(item.category) + '</span></div>' +
+          '<div class="feed-card-meta">' +
+            '<div class="feed-card-name">' + escapeHtml(item.name) + '</div>' +
+            (item.price ? '<div class="feed-card-sub">' + escapeHtml(item.price) + '</div>' : '') +
+            (item.note ? '<p class="feed-card-caption">“' + escapeHtml(item.note) + '”</p>' : '') +
+          '</div>' +
+          '<a class="btn btn-primary btn-sm gear-card-cta" href="' + escapeHtml(link) + '" target="_blank" rel="sponsored nofollow noopener">' +
+            (item.price ? "Buy on Amazon" : "View on Amazon") +
+          '</a>' +
+        '</div>'
+      );
+    }).join("");
+  }
+
+  async function loadGear() {
+    var grid = document.getElementById("gearGrid");
+    var { data, error } = await window.sb
+      .from("approved_gear_items")
+      .select("category, name, note, price, amazon_url, image_path")
+      .eq("is_active", true)
+      .order("created_at", { ascending: false });
+
+    if (error || !data || !data.length) {
+      grid.innerHTML = '<div class="empty-state">New picks are on the way — check back soon.</div>';
+      return;
+    }
+
+    var seen = {};
+    gearCategories = [];
+    gearItems = data.map(function (row) {
+      var key = categoryKey(row.category);
+      if (!seen[key]) { seen[key] = true; gearCategories.push({ key: key, label: row.category }); }
+      var imgUrl = row.image_path
+        ? window.SUPABASE_URL + "/storage/v1/object/public/gear-photos/" + row.image_path
+        : "";
+      return {
+        categoryKey: key,
+        category: row.category,
+        name: row.name,
+        note: row.note || "",
+        price: row.price || "",
+        amazon_url: row.amazon_url,
+        imgUrl: imgUrl
+      };
+    });
+
+    renderFilters();
+    renderGrid("all");
+  }
+
+  document.getElementById("signOutLink").addEventListener("click", function (e) {
+    e.preventDefault();
+    signOut();
+  });
+
+  (async function init() {
+    currentUser = await requireAuth();
+    if (!currentUser) return;
+    if (await isCurrentUserAdmin()) {
+      document.getElementById("adminLink").style.display = "inline";
+    }
+    await loadGear();
+  })();
+</script>
+
+</body>
+</html>

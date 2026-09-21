@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sign In — Ensemble Fitness</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/app.css?v=2" />
+</head>
+<body>
+
+<header class="app-nav">
+  <a href="https://ensemblefitness.com" class="app-brand">
+    <span class="app-brand-mark"><img src="assets/logo.png" alt="Ensemble Fitness" /></span>Ensemble Fitness
+  </a>
+</header>
+
+<div class="app-shell narrow">
+  <div class="eyebrow" style="text-align:center;">Member Area</div>
+  <h1 style="text-align:center; font-size:26px;">Welcome to Ensemble Fitness</h1>
+  <p style="text-align:center; margin-bottom:28px;">Sign in to manage your profile and upload photos &amp; videos.</p>
+
+  <div class="card">
+    <div class="tabs">
+      <button class="tab-btn active" id="tabSignIn" type="button">Sign In</button>
+      <button class="tab-btn" id="tabSignUp" type="button">Create Account</button>
+    </div>
+
+    <div class="form-msg" id="formMsg"></div>
+
+    <form id="authForm">
+      <div class="field">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" placeholder="you@example.com" required autocomplete="email" />
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <div class="password-field-wrap">
+          <input type="password" id="password" name="password" placeholder="At least 8 characters" required minlength="8" autocomplete="current-password" />
+          <button type="button" class="password-toggle" id="togglePassword" aria-label="Show password">👁</button>
+        </div>
+        <div id="forgotPasswordRow" style="text-align:right; margin-top:8px;">
+          <a href="#" id="forgotPasswordLink" style="font-size:12.5px; font-weight:700; color:var(--accent-2);">Forgot your password?</a>
+        </div>
+      </div>
+      <div class="field" id="confirmPasswordField" style="display:none;">
+        <label for="confirmPassword">Confirm password</label>
+        <div class="password-field-wrap">
+          <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Re-enter your password" autocomplete="new-password" />
+          <button type="button" class="password-toggle" id="toggleConfirmPassword" aria-label="Show password">👁</button>
+        </div>
+      </div>
+      <div class="field" id="dobField" style="display:none;">
+        <label for="dob">Date of birth</label>
+        <input type="date" id="dob" name="dob" autocomplete="bday" />
+        <span style="font-size:12px; color:var(--faint-invert);">Ensemble Fitness is for adults 18 and up — this is required to create an account.</span>
+      </div>
+      <div class="field" id="zipField" style="display:none;">
+        <label for="zip">ZIP code</label>
+        <input type="text" id="zip" name="zip" placeholder="e.g. 75201" inputmode="numeric" pattern="[0-9]{5}" maxlength="5" autocomplete="postal-code" />
+        <span style="font-size:12px; color:var(--faint-invert);">So other members can find you on Find Members — required to create an account.</span>
+      </div>
+      <div class="field" id="wakeTimeField" style="display:none;">
+        <label for="wakeTime">What time do you naturally wake up?</label>
+        <select id="wakeTime" name="wakeTime"></select>
+        <span style="font-size:12px; color:var(--faint-invert);">Helps match you with members whose schedule fits yours — required to create an account.</span>
+      </div>
+      <div class="field" id="artistField" style="display:none;">
+        <label style="display:flex; align-items:center; gap:8px; font-weight:600;">
+          <input type="checkbox" id="isArtist" style="width:auto;" />
+          I'm an artist (I write books or make music)
+        </label>
+        <div id="artistTypeWrap" style="display:none; margin-top:10px;">
+          <select id="artistType">
+            <option value="book">Author — I write books</option>
+            <option value="music">Musician — I make music</option>
+            <option value="both">Both</option>
+          </select>
+          <span style="font-size:12px; color:var(--faint-invert); display:block; margin-top:6px;">This just flags your profile — you'll set up bank payouts anytime from your Profile page.</span>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block" id="submitBtn">Sign In</button>
+    </form>
+  </div>
+
+  <p style="text-align:center; font-size:12.5px;">
+    By continuing you agree to Ensemble Fitness's
+    <a href="https://ensemblefitness.com/terms.html" style="color:var(--accent-2); font-weight:700;">Terms</a> and
+    <a href="https://ensemblefitness.com/community-guidelines.html" style="color:var(--accent-2); font-weight:700;">Community Guidelines</a>.
+  </p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/shared-session.js"></script>
+<script src="js/supabaseClient.js"></script>
+<script src="js/notifications.js"></script>
+<script>
+  var mode = "signin";
+  var tabSignIn = document.getElementById("tabSignIn");
+  var tabSignUp = document.getElementById("tabSignUp");
+  var submitBtn = document.getElementById("submitBtn");
+  var formMsg = document.getElementById("formMsg");
+  var passwordInput = document.getElementById("password");
+  var confirmPasswordField = document.getElementById("confirmPasswordField");
+  var confirmPasswordInput = document.getElementById("confirmPassword");
+  var togglePassword = document.getElementById("togglePassword");
+  var toggleConfirmPassword = document.getElementById("toggleConfirmPassword");
+  var dobField = document.getElementById("dobField");
+  var dobInput = document.getElementById("dob");
+  var zipField = document.getElementById("zipField");
+  var zipInput = document.getElementById("zip");
+  var wakeTimeField = document.getElementById("wakeTimeField");
+  var wakeTimeInput = document.getElementById("wakeTime");
+  wakeTimeInput.innerHTML = buildWakeTimeOptionsHtml("Choose one…");
+  var artistField = document.getElementById("artistField");
+  var isArtistInput = document.getElementById("isArtist");
+  var artistTypeWrap = document.getElementById("artistTypeWrap");
+  var artistTypeInput = document.getElementById("artistType");
+  isArtistInput.addEventListener("change", function () {
+    artistTypeWrap.style.display = isArtistInput.checked ? "block" : "none";
+  });
+
+  // Nobody can pick a date in the date-picker itself that would make them under 18, or an
+  // unreasonably old date. This is just a UX guardrail — the real enforcement is the explicit
+  // age check on submit below, and the database itself refuses under-18 rows no matter what.
+  (function setDobBounds() {
+    var today = new Date();
+    var maxDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+    var minDate = new Date(today.getFullYear() - 100, today.getMonth(), today.getDate());
+    function iso(d) { return d.toISOString().slice(0, 10); }
+    dobInput.setAttribute("max", iso(maxDate));
+    dobInput.setAttribute("min", iso(minDate));
+  })();
+
+  function calcAge(dobStr) {
+    var dob = new Date(dobStr + "T00:00:00");
+    var today = new Date();
+    var age = today.getFullYear() - dob.getFullYear();
+    var monthDiff = today.getMonth() - dob.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+      age--;
+    }
+    return age;
+  }
+
+  function setMode(next) {
+    mode = next;
+    tabSignIn.classList.toggle("active", mode === "signin");
+    tabSignUp.classList.toggle("active", mode === "signup");
+    submitBtn.textContent = mode === "signin" ? "Sign In" : "Create Account";
+    passwordInput.setAttribute("autocomplete", mode === "signin" ? "current-password" : "new-password");
+    confirmPasswordField.style.display = mode === "signup" ? "block" : "none";
+    confirmPasswordInput.required = mode === "signup";
+    if (mode === "signin") { confirmPasswordInput.value = ""; }
+    document.getElementById("forgotPasswordRow").style.display = mode === "signin" ? "block" : "none";
+    dobField.style.display = mode === "signup" ? "block" : "none";
+    dobInput.required = mode === "signup";
+    zipField.style.display = mode === "signup" ? "block" : "none";
+    zipInput.required = mode === "signup";
+    wakeTimeField.style.display = mode === "signup" ? "block" : "none";
+    wakeTimeInput.required = mode === "signup";
+    artistField.style.display = mode === "signup" ? "block" : "none";
+    if (mode === "signin") { isArtistInput.checked = false; artistTypeWrap.style.display = "none"; }
+    hideMsg();
+  }
+
+  function showMsg(text, kind) {
+    formMsg.textContent = text;
+    formMsg.className = "form-msg show " + kind;
+  }
+  function hideMsg() {
+    formMsg.className = "form-msg";
+  }
+
+  // These two buttons at the top are really a TAB SWITCH (Sign In view vs.
+  // Create Account view), not a submit action — the real submit button is
+  // down at the bottom of the form. But the page also has a "Sign In" tab
+  // sitting right above a form whose own button also says "Sign In", so
+  // naturally people expect either one to actually sign them in. When the
+  // tab someone clicks is already the active one, switching modes is a
+  // no-op — which reads as "this button is dead" (this is very likely what
+  // looked broken before). So in that one case, submit the form for real
+  // instead of doing nothing.
+  tabSignIn.addEventListener("click", function () {
+    if (mode === "signin") { submitBtn.click(); return; }
+    setMode("signin");
+  });
+  tabSignUp.addEventListener("click", function () {
+    if (mode === "signup") { submitBtn.click(); return; }
+    setMode("signup");
+  });
+
+  // Lets someone reveal what they typed so they can check it's spelled
+  // right before submitting, instead of guessing from dots.
+  wirePasswordToggle(togglePassword, passwordInput);
+  wirePasswordToggle(toggleConfirmPassword, confirmPasswordInput);
+
+  // Guards against a hung network request leaving the button stuck on
+  // "Signing in…" forever with no visible error — if Supabase hasn't
+  // responded within 15s, this surfaces a real message instead of leaving
+  // the button looking dead.
+  function withTimeout(promise, ms) {
+    return Promise.race([
+      promise,
+      new Promise(function (_, reject) {
+        setTimeout(function () {
+          reject(new Error("That's taking longer than expected — check your connection and try again."));
+        }, ms);
+      })
+    ]);
+  }
+
+  document.getElementById("authForm").addEventListener("submit", async function (e) {
+    e.preventDefault();
+    hideMsg();
+    var email = document.getElementById("email").value.trim();
+    var password = passwordInput.value;
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = mode === "signin" ? "Signing in…" : "Creating account…";
+
+    try {
+      if (mode === "signup") {
+        if (password !== confirmPasswordInput.value) {
+          throw new Error("Those passwords don't match — please re-enter them so both are the same.");
+        }
+
+        var dobValue = dobInput.value;
+        if (!dobValue) {
+          throw new Error("Date of birth is required.");
+        }
+        if (calcAge(dobValue) < 18) {
+          throw new Error("You must be at least 18 years old to join Ensemble Fitness.");
+        }
+
+        var zipValue = zipInput.value.trim();
+        if (!/^[0-9]{5}$/.test(zipValue)) {
+          throw new Error("Please enter a valid 5-digit ZIP code.");
+        }
+
+        var wakeTimeValue = wakeTimeInput.value;
+        if (!wakeTimeValue) {
+          throw new Error("Please choose the time you naturally wake up.");
+        }
+
+        var { error } = await withTimeout(window.sb.auth.signUp({
+          email: email,
+          password: password,
+          options: {
+            data: {
+              date_of_birth: dobValue,
+              zip_code: zipValue,
+              wake_time_category: wakeTimeValue,
+              is_artist: isArtistInput.checked,
+              artist_type: isArtistInput.checked ? artistTypeInput.value : null
+            }
+          }
+        }), 15000);
+        if (error) throw error;
+        showMsg("Account created! Check your email to confirm, then sign in.", "success");
+        setMode("signin");
+      } else {
+        var { data: signInData, error: signInError } = await withTimeout(
+          window.sb.auth.signInWithPassword({ email: email, password: password }), 15000
+        );
+        if (signInError) throw signInError;
+        // Hands just the two tokens (not the whole session) to the marketing
+        // site via a small cookie — see js/shared-session.js — so a video
+        // reaction/comment/follow on ensemblefitness.com can work for real
+        // instead of just prompting to sign in again. Wrapped defensively:
+        // this is a nice-to-have, and must never be able to block an actual
+        // successful sign-in from completing.
+        try {
+          if (signInData && signInData.session && typeof writeCrossDomainSession === "function") {
+            writeCrossDomainSession(signInData.session);
+          }
+        } catch (handoffErr) {
+          console.error("Cross-domain session handoff failed (non-fatal):", handoffErr);
+        }
+        window.location.href = getRedirectDestination();
+        return;
+      }
+    } catch (err) {
+      showMsg(err.message || "Something went wrong. Please try again.", "error");
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = mode === "signin" ? "Sign In" : "Create Account";
+    }
+  });
+
+  // Lets someone reset their own password (via Supabase Auth's built-in reset email)
+  // instead of an admin having to delete and recreate their account.
+  document.getElementById("forgotPasswordLink").addEventListener("click", async function (e) {
+    e.preventDefault();
+    hideMsg();
+    var emailValue = document.getElementById("email").value.trim();
+    if (!emailValue) {
+      showMsg("Enter your email above first, then click \"Forgot your password?\" again.", "error");
+      document.getElementById("email").focus();
+      return;
+    }
+
+    var link = document.getElementById("forgotPasswordLink");
+    var originalText = link.textContent;
+    link.textContent = "Sending…";
+
+    try {
+      await window.sb.auth.resetPasswordForEmail(emailValue, {
+        redirectTo: window.location.origin + "/reset-password.html"
+      });
+    } catch (err) {
+      // Fall through to the same message either way — never reveal whether an email
+      // is registered, so this can't be used to check who has an account.
+    }
+
+    showMsg("If an account exists for " + emailValue + ", we've sent a link to reset your password. Check your email (and spam folder).", "success");
+    link.textContent = originalText;
+  });
+
+  function getRedirectDestination() {
+    var params = new URLSearchParams(window.location.search);
+    var requested = params.get("redirect");
+
+    // The marketing site (js/shared-session.js's goToMemberSignIn) sends
+    // people here with a FULL absolute URL back to ensemblefitness.com —
+    // e.g. so a video's reaction button can bring someone right back to
+    // that exact video after signing in, instead of just dumping them on
+    // their profile. Only ever honor that if it's genuinely a real
+    // ensemblefitness.com address (any subdomain, https only) — anything
+    // else falls through to the local-page-only handling below, so this
+    // can never be turned into an open redirect to some other site.
+    if (requested) {
+      try {
+        var parsed = new URL(requested);
+        var host = parsed.hostname;
+        if (parsed.protocol === "https:" && (host === "ensemblefitness.com" || host.slice(-18) === ".ensemblefitness.com")) {
+          return requested;
+        }
+      } catch (e) {
+        // Not a valid absolute URL — fall through to the local-page check below.
+      }
+    }
+
+    // Otherwise, only ever send people to a known page in this same app —
+    // never to an arbitrary relative path from the query string, so this
+    // can't be abused as an open redirect either. Any other params (e.g.
+    // ?tag=Meal%20Prep from a deep link) and the hash are carried forward
+    // as-is so a deep link isn't lost across the sign-in detour.
+    //
+    // A plain sign-in with no "redirect" at all (someone just opening the
+    // app and signing in, not arriving via a deep link) used to default to
+    // My Profile — but that's just their own settings, not "what's going
+    // on." Latest Workouts (feed.html) is the actual home/activity feed, so
+    // that's the default now; a deep link (requireAuth() in
+    // supabaseClient.js sets redirect to the specific page someone was
+    // trying to reach, e.g. admin.html) is untouched and still wins.
+    var allowed = ["profile.html", "admin.html", "feed.html", "journey.html"];
+    var page = allowed.indexOf(requested) !== -1 ? requested : "feed.html";
+    params.delete("redirect");
+    var extra = params.toString();
+    return page + (extra ? "?" + extra : "") + window.location.hash;
+  }
+
+  // Lets a link (e.g. from the welcome email) drop someone straight into the
+  // "Create Account" tab instead of the sign-in tab, via ?mode=signup.
+  (function initModeFromQuery() {
+    var params = new URLSearchParams(window.location.search);
+    if (params.get("mode") === "signup") {
+      setMode("signup");
+    }
+  })();
+
+  // profile.html's Danger Zone sends someone here (already signed out) with
+  // ?deleted=1 right after their account is gone, so they get a clear
+  // confirmation instead of landing on a plain sign-in form with no
+  // explanation of what just happened.
+  (function showDeletedBannerIfNeeded() {
+    var params = new URLSearchParams(window.location.search);
+    if (params.get("deleted") === "1") {
+      showMsg("Your account has been permanently deleted.", "success");
+    }
+  })();
+
+  redirectIfSignedIn(getRedirectDestination());
+</script>
+
+</body>
+</html>
