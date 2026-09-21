@@ -823,20 +823,22 @@
   }
 
   /* ---- Healthy Meal Prep profile viewer (tap a strip card) ------
-     A real profile page, not a story-style photo-with-text-overlay: a
-     photo up top, then a scrollable card below with the full write-up
-     (prep time, ingredients, tips — whatever the member wrote) and an
-     optional signature in script, matching the "Healthy Meal Prep
-     Profile" treatment on the public marketing site (Ken's ask, Sept
-     2026). Used to be just a full-bleed photo with a couple lines of
-     caption overlaid at the bottom — fine for a one-line caption, not
-     for an actual recipe write-up. */
+     Rebuilt to match the public marketing site's Healthy Meal Prep card
+     exactly — Ken (Sept 2026): "App Ensemble Fitness and Ensemble
+     Fitness should be one and the same... it should be the same
+     layout." That means a white write-up card (not a dark app-style
+     panel), name + age, prep time, paragraphs separated by hairline
+     dividers, a cursive signature, real thumbs-up/muscle/heart
+     reactions, an inline comment thread (not a popup), and a "swipe up
+     for the next meal" pager — all reusing the same media_reactions /
+     media_comments tables and renderActions-style logic already used
+     elsewhere in the app, just re-skinned for a white card. */
   .rp-mp-modal {
     position: fixed;
     inset: 0;
     max-width: 480px;
     margin: 0 auto;
-    background: var(--navy-900);
+    background: #fff;
     z-index: 50;
   }
   .rp-mp-modal[hidden] { display: none; }
@@ -848,9 +850,9 @@
   .rp-mp-modal-media {
     position: relative;
     width: 100%;
-    height: 42vh;
-    min-height: 240px;
-    max-height: 420px;
+    height: 46vh;
+    min-height: 260px;
+    max-height: 440px;
     background: #000;
   }
   .rp-mp-modal-media img, .rp-mp-modal-media video { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -869,11 +871,9 @@
   }
   .rp-mp-modal-body {
     position: relative;
-    margin-top: -20px;
-    background: var(--navy-900);
-    border-radius: 20px 20px 0 0;
-    padding: 22px 20px calc(env(safe-area-inset-bottom, 0px) + 36px);
-    color: #fff;
+    background: #fff;
+    padding: 22px 20px calc(env(safe-area-inset-bottom, 0px) + 30px);
+    color: #17181c;
   }
   .rp-mp-eyebrow {
     display: inline-flex;
@@ -887,28 +887,97 @@
     color: var(--accent-2);
     margin-bottom: 8px;
   }
-  .rp-mp-name { font-family: 'Poppins', 'Inter', sans-serif; font-weight: 800; font-size: 20px; margin-bottom: 2px; }
-  .rp-mp-sub { font-size: 12.5px; color: var(--faint-invert); margin-bottom: 16px; }
-  .rp-mp-caption {
+  .rp-mp-name { font-family: 'Poppins', 'Inter', sans-serif; font-weight: 800; font-size: 21px; color: #14151a; margin-bottom: 2px; }
+  .rp-mp-sub { font-size: 13px; color: #6b7280; margin-bottom: 14px; }
+  .rp-mp-caption-para {
     font-size: 14.5px;
-    line-height: 1.65;
-    color: rgba(255,255,255,0.92);
-    white-space: pre-wrap; /* preserves the paragraph breaks in a longer write-up */
+    line-height: 1.6;
+    color: #33343a;
+    padding: 13px 0;
+    border-bottom: 1px solid #ececec;
+    white-space: pre-wrap; /* preserves any line breaks a member typed within one paragraph */
   }
+  .rp-mp-caption-para:last-of-type { border-bottom: none; }
   .rp-mp-signature {
-    margin-top: 18px;
+    margin-top: 16px;
     padding-top: 14px;
-    border-top: 1px solid rgba(255,255,255,0.1);
+    border-top: 1px solid #ececec;
     display: flex;
     align-items: baseline;
     gap: 8px;
   }
-  .rp-mp-signature-label { font-size: 12px; color: var(--faint-invert); }
+  .rp-mp-signature-label { font-size: 12px; color: #6b7280; }
   .rp-mp-signature-name {
     font-family: 'Dancing Script', cursive;
     font-size: 28px;
     font-weight: 700;
-    color: #fff;
+    color: #14151a;
+  }
+
+  /* Reaction pills — same thumbs-up/muscle/heart reaction set and icons
+     as the rest of the app (REACTIONS/renderActions/toggleReaction),
+     just re-skinned as light outlined pills to sit on this white card
+     instead of the dark scrim-over-video look used on the reel. */
+  .rp-mp-reactions {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+  }
+  .rp-mp-reaction {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #fff;
+    border: 1.4px solid #e2e2e6;
+    border-radius: 999px;
+    padding: 7px 13px;
+    cursor: pointer;
+  }
+  .rp-mp-reaction.static { cursor: default; }
+  .rp-mp-reaction .rp-action-icon {
+    width: 18px; height: 18px;
+    background: none;
+    color: #33343a;
+    backdrop-filter: none;
+  }
+  .rp-mp-reaction .rp-action-icon svg { width: 18px; height: 18px; }
+  .rp-mp-reaction.active { border-color: var(--accent-2); background: #fff4ed; }
+  .rp-mp-reaction.active .rp-action-icon { color: var(--accent-2); }
+  .rp-mp-reaction[data-reaction="heart"].active .rp-action-icon { color: var(--red); }
+  .rp-mp-reaction .rp-action-count { font-size: 13px; font-weight: 700; color: #33343a; }
+
+  /* Inline comments — loadComments()/postComment() are reused exactly as
+     they are for the rest of the feed (same media_comments table); these
+     rules just re-skin the shared .rp-comment-* classes for a white card
+     instead of the dark popup modal they were built for. */
+  .rp-mp-comments { margin-top: 18px; padding-top: 14px; border-top: 1px solid #ececec; }
+  .rp-mp-comments .rp-comments-list { padding: 0; }
+  .rp-mp-comments .rp-comment-item { border-bottom: 1px solid #ececec; padding: 10px 0; }
+  .rp-mp-comments .rp-comment-item:last-child { border-bottom: none; }
+  .rp-mp-comments .rp-comment-name { color: #14151a; font-weight: 700; font-size: 13px; }
+  .rp-mp-comments .rp-comment-time { color: #9a9ba3; }
+  .rp-mp-comments .rp-comment-body { color: #33343a; }
+  .rp-mp-comments .rp-comment-empty { color: #9a9ba3; padding: 6px 0; }
+  .rp-mp-comments .rp-comment-input-row { border-top: none; padding: 12px 0 0; }
+  .rp-mp-comments .rp-comment-input { background: #f2f2f4; color: #17181c; border: 1px solid #e2e2e6; }
+  .rp-mp-comments .rp-comment-input::placeholder { color: #9a9ba3; }
+  .rp-mp-preview-note { font-size: 12px; color: #9a9ba3; margin-top: 12px; text-align: center; }
+
+  .rp-mp-next {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    margin-top: 18px;
+    background: none;
+    border: none;
+    color: #6b7280;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 12px 0 0;
   }
 
   /* ==================================================================
@@ -1378,7 +1447,12 @@
   <button type="button" class="rp-mp-modal-close" id="rpMpModalClose">✕</button>
   <div class="rp-mp-modal-scroll" id="rpMpModalScroll">
     <div class="rp-mp-modal-media" id="rpMpModalMedia"></div>
-    <div class="rp-mp-modal-body" id="rpMpModalMeta"></div>
+    <div class="rp-mp-modal-body">
+      <div id="rpMpModalMeta"></div>
+      <div class="rp-mp-reactions" id="rpMpReactions"></div>
+      <div class="rp-mp-comments" id="rpMpComments"><div class="rp-comments-list"></div></div>
+      <button type="button" class="rp-mp-next" id="rpMpNext">Swipe up for the next meal <span>⌄</span></button>
+    </div>
   </div>
 </div>
 
@@ -1461,13 +1535,72 @@
   // site (assets/mealprep/*.jpg), reused here so the strip has real-looking
   // photos to preview/perfect the layout with until members' own posts are
   // tagged "Meal Prep". Swapped out automatically the moment a real one exists.
+  // Full write-ups, ages, reaction counts, and canned comments transcribed
+  // directly from the public marketing site's own Healthy Meal Prep cards
+  // (Ken's screenshots, Sept 2026) so the two are word-for-word the same —
+  // his exact complaint was "the wording doesn't even match... something
+  // got lost in the transition." "age" and "reactions"/"comments" are
+  // display-only for these six illustrative examples (there's no real
+  // media row to attach a birthdate or a live reaction to) — see
+  // buildIllustrativeMealPrepReactionsHtml/buildIllustrativeCommentsHtml.
   var ILLUSTRATIVE_MEAL_PREP = [
-    { name: "Marcus", file: "mealprep-marcus.jpg", caption: "Prep time: 25 minutes\n\nGrilled chicken breast, steamed green beans, and a scoop of rice — nothing fancy.\n\nI season the chicken the night before so it actually has flavor by the time I cook it.\n\nSteam the beans for exactly 6 minutes so they still have some bite.\n\nI make four of these every Sunday and just reheat through the week.\n\nCosts me about $9 a plate, which beats takeout by a mile.\n\nFifteen pounds down and I still eat this three or four times a week.", signature: "Marcus" },
-    { name: "Denise", file: "mealprep-denise.jpg", caption: "This salad became my go-to lunch. My skin and energy have never been better." },
-    { name: "Priya", file: "mealprep-priya.jpg", caption: "Post-workout fuel that actually tastes good — I've had this every morning for six months." },
-    { name: "James", file: "mealprep-james.jpg", caption: "Eating right isn't always easy, but swapping breakfast for this made mornings so much simpler." },
-    { name: "Tyler", file: "mealprep-tyler.jpg", caption: "Sunday meal prep keeps me on track all week. No excuses, no drive-thru." },
-    { name: "Angela", file: "mealprep-angela.jpg", caption: "Started with this smoothie every morning. Three months in, I feel like a different person." }
+    {
+      name: "Marcus", age: 44, file: "mealprep-marcus.jpg",
+      caption: "Prep time: 25 minutes\n\nGrilled chicken breast, steamed green beans, and a scoop of rice — nothing fancy.\n\nI season the chicken the night before so it actually has flavor by the time I cook it.\n\nSteam the beans for exactly 6 minutes so they still have some bite.\n\nI make four of these every Sunday and just reheat through the week.\n\nCosts me about $9 a plate, which beats takeout by a mile.\n\nFifteen pounds down and I still eat this three or four times a week.",
+      signature: "Marcus",
+      reactions: { thumbs_up: 24, muscle: 15, heart: 41 },
+      comments: [
+        { name: "Priya", age: 29, body: "That prep-the-night-before trick changed my whole week." },
+        { name: "Tyler", age: 26, body: "9 bucks a plate is unreal. Stealing this." }
+      ]
+    },
+    {
+      name: "Denise", age: 52, file: "mealprep-denise.jpg",
+      caption: "Prep time: 15 minutes\n\nSpring mix, grilled salmon, cherry tomatoes, and a lemon vinaigrette I make in bulk.\n\nI wash and chop all the greens for the week in one sitting on Sunday nights.\n\nThe salmon gets pan-seared just before I eat it — never microwaved, always fresh.\n\nA drizzle of the vinaigrette right before serving keeps everything crisp.\n\nFifteen minutes, start to finish, most days.\n\nMy skin and my energy have both noticed the difference.",
+      signature: "Denise",
+      reactions: { thumbs_up: 19, muscle: 6, heart: 33 },
+      comments: [
+        { name: "Angela", age: 47, body: "Making the vinaigrette in bulk is such a good idea." }
+      ]
+    },
+    {
+      name: "Priya", age: 29, file: "mealprep-priya.jpg",
+      caption: "Prep time: 5 minutes\n\nFrozen mango, spinach, a scoop of protein powder, and oat milk.\n\nI pre-portion the fruit and greens into freezer bags on Sunday so mornings are fast.\n\nBlend for about 45 seconds until it's completely smooth, no chunks.\n\nI add a spoonful of peanut butter when I need the extra fuel.\n\nWhole thing takes five minutes, including cleanup.\n\nI've had a version of this every morning for six months straight.",
+      signature: "Priya",
+      reactions: { thumbs_up: 27, muscle: 20, heart: 38 },
+      comments: [
+        { name: "Marcus", age: 44, body: "Freezer bags on Sunday is the move. Doing this from now on." },
+        { name: "James", age: 38, body: "Adding peanut butter to mine tomorrow morning." }
+      ]
+    },
+    {
+      name: "James", age: 38, file: "mealprep-james.jpg",
+      caption: "Prep time: 10 minutes\n\nTwo eggs, whole wheat toast, and half an avocado.\n\nI boil a batch of eggs on Sunday so all I have to do is toast and slice in the morning.\n\nMash the avocado right on the toast with a little salt and chili flakes.\n\nSome mornings I add a side of berries if I have them.\n\nTakes about ten minutes even on my slowest days.\n\nSwapping my old cereal-and-coffee breakfast for this changed my whole morning.",
+      signature: "James",
+      reactions: { thumbs_up: 14, muscle: 5, heart: 22 },
+      comments: [
+        { name: "Denise", age: 52, body: "Boiling a batch of eggs on Sunday is such a simple win." }
+      ]
+    },
+    {
+      name: "Tyler", age: 26, file: "mealprep-tyler.jpg",
+      caption: "Prep time: 45 minutes (Sunday batch)\n\nTurkey meatballs, roasted broccoli, and sweet potato, split into five containers.\n\nI roast everything on one sheet pan to keep cleanup simple.\n\nMeatballs bake for 20 minutes at 400° while the vegetables roast alongside them.\n\nI portion it all out Sunday night so the whole week is already decided.\n\nForty-five minutes once a week beats scrambling every single night.\n\nNo excuses, no drive-thru — it's already in the fridge.",
+      signature: "Tyler",
+      reactions: { thumbs_up: 21, muscle: 24, heart: 29 },
+      comments: [
+        { name: "Marcus", age: 44, body: "One sheet pan, zero excuses. Love it." },
+        { name: "Priya", age: 29, body: "Five containers ready for the week — goals." }
+      ]
+    },
+    {
+      name: "Angela", age: 47, file: "mealprep-angela.jpg",
+      caption: "Prep time: 5 minutes\n\nFrozen strawberries, banana, spinach, and a scoop of collagen powder.\n\nI keep pre-bagged smoothie packs in the freezer so there's zero morning decision-making.\n\nBlend with almond milk until smooth — about a minute, tops.\n\nSome days I add a spoonful of oats to keep me full longer.\n\nFive minutes and I'm out the door.\n\nThree months of this every morning, and I genuinely feel like a different person.",
+      signature: "Angela",
+      reactions: { thumbs_up: 17, muscle: 8, heart: 35 },
+      comments: [
+        { name: "Denise", age: 52, body: "Pre-bagged smoothie packs are a game changer for mornings." }
+      ]
+    }
   ];
   var usingIllustrativeMealPrep = false;
   // Newest real (non-illustrative) Meal Prep post's created_at, for the
@@ -1719,6 +1852,7 @@
 
   // ---------------- Meal Prep strip ----------------
   var mealPrepItems = [];
+  var currentMealPrepIndex = -1;
 
   function renderMealPrepStrip() {
     var wrap = document.getElementById("rpMealPrep");
@@ -1752,38 +1886,130 @@
     }).join("");
     track.querySelectorAll(".rp-mealprep-card").forEach(function (btn) {
       btn.addEventListener("click", function () {
-        openMealPrepModal(mealPrepItems[Number(btn.dataset.index)]);
+        var idx = Number(btn.dataset.index);
+        openMealPrepModal(mealPrepItems[idx], idx);
       });
     });
   }
 
+  // A member's write-up (prep time, ingredients, tips) split into
+  // paragraphs on blank lines, so each one can get its own hairline
+  // divider — matching the public marketing site's Healthy Meal Prep
+  // card exactly instead of one dense wall of pre-wrapped text.
+  function splitCaptionParagraphs(caption) {
+    return String(caption || "").split(/\n\s*\n/).map(function (p) { return p.trim(); }).filter(Boolean);
+  }
+
+  // Real reactions for a real member's Meal Prep post — same
+  // media_reactions table/toggle logic as renderActions() elsewhere in
+  // the app, just re-skinned as light pills (.rp-mp-reaction) instead of
+  // the dark scrim-over-video icon buttons used on the reel.
+  async function renderMealPrepReactions(item, container) {
+    container.innerHTML = REACTIONS.map(function (r) {
+      return '<button type="button" class="rp-mp-reaction" data-reaction="' + r.type + '">' +
+        '<span class="rp-action-icon">' + reactionIconMarkup(r.type, false) + '</span><span class="rp-action-count"></span></button>';
+    }).join("");
+
+    var { data: reactions } = await window.sb.from("media_reactions").select("user_id, reaction_type").eq("media_id", item.id);
+    var counts = { thumbs_up: 0, muscle: 0, heart: 0 };
+    var mine = {};
+    (reactions || []).forEach(function (r) {
+      if (counts[r.reaction_type] !== undefined) counts[r.reaction_type]++;
+      if (currentUserId && r.user_id === currentUserId) mine[r.reaction_type] = true;
+    });
+    REACTIONS.forEach(function (r) {
+      var btn = container.querySelector('[data-reaction="' + r.type + '"]');
+      if (!btn) return;
+      btn.classList.toggle("active", !!mine[r.type]);
+      setReactionIcon(btn, r.type, !!mine[r.type]);
+      btn.querySelector(".rp-action-count").textContent = counts[r.type] || 0;
+      btn.addEventListener("click", function () { toggleReaction(item.id, r.type, btn); });
+    });
+  }
+
+  // Illustrative examples aren't real media rows, so there's nothing to
+  // attach a live reaction to — these just display the same static
+  // counts shown on the public marketing site's version of each card.
+  function renderIllustrativeMealPrepReactions(item, container) {
+    var counts = item.illustrativeReactions || { thumbs_up: 0, muscle: 0, heart: 0 };
+    container.innerHTML = REACTIONS.map(function (r) {
+      return '<span class="rp-mp-reaction static" data-reaction="' + r.type + '">' +
+        '<span class="rp-action-icon">' + reactionIconMarkup(r.type, false) + '</span><span class="rp-action-count">' + (counts[r.type] || 0) + '</span></span>';
+    }).join("");
+  }
+
+  // Same treatment for comments — canned examples matching the marketing
+  // site's cards, read-only (no add-comment box, since there's no real
+  // media row for a comment to belong to).
+  function renderIllustrativeMealPrepComments(item, container) {
+    var listEl = container.querySelector(".rp-comments-list");
+    var oldInputRow = container.querySelector(".rp-comment-input-row");
+    if (oldInputRow) oldInputRow.remove();
+    var oldNote = container.querySelector(".rp-mp-preview-note");
+    if (oldNote) oldNote.remove();
+    var comments = item.illustrativeComments || [];
+    listEl.innerHTML = comments.length
+      ? comments.map(function (c) {
+          return '<div class="rp-comment-item"><span class="rp-comment-name">' + escapeHtml(c.name) + (c.age ? ", " + escapeHtml(String(c.age)) : "") + '</span>' +
+            '<div class="rp-comment-body">' + escapeHtml(c.body) + '</div></div>';
+        }).join("")
+      : '<div class="rp-comment-empty">Be the first to comment.</div>';
+    container.insertAdjacentHTML("beforeend",
+      '<div class="rp-mp-preview-note">Example post — real reactions and comments go live once members start posting their own.</div>');
+  }
+
   // Full profile view, not a story-style photo-with-overlay — a member's
-  // whole write-up (prep time, ingredients, tips, whatever they wrote)
-  // needs real reading room, not a couple of lines squeezed over a photo.
-  // Mirrors the "Healthy Meal Prep Profile" treatment on the public
-  // marketing site, including the optional signed-name touch (Ken's ask,
-  // Sept 2026).
-  function openMealPrepModal(item) {
+  // whole write-up needs real reading room, real thumbs-up/muscle/heart
+  // reactions, and a real inline comment thread, matching the "Healthy
+  // Meal Prep Profile" treatment on the public marketing site exactly
+  // (Ken's ask, Sept 2026 — "App Ensemble Fitness and Ensemble Fitness
+  // should be one and the same... it should be the same layout").
+  function openMealPrepModal(item, index) {
+    currentMealPrepIndex = (typeof index === "number") ? index : mealPrepItems.indexOf(item);
     var modal = document.getElementById("rpMpModal");
     var media = document.getElementById("rpMpModalMedia");
     var body = document.getElementById("rpMpModalMeta");
+    var reactionsWrap = document.getElementById("rpMpReactions");
+    var commentsWrap = document.getElementById("rpMpComments");
+    var nextBtn = document.getElementById("rpMpNext");
     var scroll = document.getElementById("rpMpModalScroll");
+
     media.innerHTML = item.kind === "video"
       ? '<video src="' + item.url + '"' + (item.posterUrl ? ' poster="' + item.posterUrl + '"' : '') + ' autoplay loop muted playsinline></video>'
       : '<img src="' + item.url + '" alt="Healthy Meal Prep" />';
-    var sub = [timeAgo(item.created_at)];
-    if (item.location) sub.push(item.location);
+
+    // A leading "Prep time: ..." line (every illustrative example, and
+    // any real member who follows the same convention) is shown as the
+    // subtitle right under the name instead of as its own bordered
+    // paragraph — everything after it gets the divider treatment.
+    var paragraphs = splitCaptionParagraphs(item.caption);
+    var prepTimeLine = "";
+    if (paragraphs.length && /^prep time:/i.test(paragraphs[0])) prepTimeLine = paragraphs.shift();
+    var subLine = prepTimeLine || [timeAgo(item.created_at)].concat(item.location ? [item.location] : []).join(" · ");
+
     body.innerHTML =
       '<div class="rp-mp-eyebrow">🍱 Healthy Meal Prep</div>' +
-      '<div class="rp-mp-name">' + escapeHtml(item.name) + '</div>' +
-      '<div class="rp-mp-sub">' + sub.map(escapeHtml).join(" · ") + '</div>' +
-      (item.caption ? '<div class="rp-mp-caption">' + escapeHtml(item.caption) + '</div>' : "") +
+      '<div class="rp-mp-name">' + escapeHtml(item.name) + (item.age ? ", " + escapeHtml(String(item.age)) : "") + '</div>' +
+      (subLine ? '<div class="rp-mp-sub">' + escapeHtml(subLine) + '</div>' : "") +
+      paragraphs.map(function (p) { return '<div class="rp-mp-caption-para">' + escapeHtml(p) + '</div>'; }).join("") +
       (item.signature ?
         '<div class="rp-mp-signature">' +
           '<span class="rp-mp-signature-label">Signed,</span>' +
           '<span class="rp-mp-signature-name">' + escapeHtml(item.signature) + '</span>' +
         '</div>'
         : "");
+
+    if (item.illustrativeReactions) {
+      renderIllustrativeMealPrepReactions(item, reactionsWrap);
+      renderIllustrativeMealPrepComments(item, commentsWrap);
+    } else {
+      renderMealPrepReactions(item, reactionsWrap);
+      var oldNote = commentsWrap.querySelector(".rp-mp-preview-note");
+      if (oldNote) oldNote.remove();
+      loadComments(item, commentsWrap);
+    }
+
+    if (nextBtn) nextBtn.style.display = mealPrepItems.length > 1 ? "flex" : "none";
     if (scroll) scroll.scrollTop = 0;
     modal.hidden = false;
   }
@@ -1792,6 +2018,15 @@
     var modal = document.getElementById("rpMpModal");
     modal.querySelectorAll("video").forEach(function (v) { v.pause(); });
     modal.hidden = true;
+  });
+
+  // "Swipe up for the next meal" — advances through the same strip
+  // without closing and reopening the modal, matching the public
+  // marketing site's own pagination through its Healthy Meal Prep cards.
+  document.getElementById("rpMpNext").addEventListener("click", function () {
+    if (!mealPrepItems.length) return;
+    var next = (currentMealPrepIndex + 1) % mealPrepItems.length;
+    openMealPrepModal(mealPrepItems[next], next);
   });
 
   // ---------------- Vertical reel ----------------
@@ -2521,7 +2756,10 @@
           workout_type: "Meal Prep",
           location: "",
           caption: it.caption,
-          signature: it.signature || ""
+          signature: it.signature || "",
+          age: it.age || null,
+          illustrativeReactions: it.reactions || null,
+          illustrativeComments: it.comments || null
         };
       });
     }
