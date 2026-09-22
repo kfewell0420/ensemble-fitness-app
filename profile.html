@@ -190,7 +190,21 @@
 
     <div class="form-msg" id="uploadMsg"></div>
 
-    <label class="dropzone" id="dropzone" for="fileInput">
+    <!-- The file input is nested inside this label (the standard way to
+         build a custom-styled upload button around a hidden native input —
+         see .dropzone input[type="file"] { display:none } in app.css).
+         That nesting ALONE is enough to make the whole label clickable;
+         adding an explicit for="fileInput" on top of it — pointing right
+         back at the label's own child — is redundant, and on iOS Safari
+         it's a known trigger for the label's click being dispatched to the
+         input TWICE for one tap. Two near-simultaneous requests to present
+         the native photo/file picker sheet make iOS silently drop the
+         second one, so the sheet never visibly opens — exactly what
+         members were hitting ("Choose a file first" stuck forever because
+         they could never actually choose a file). Dropping the redundant
+         for= leaves the nested-input association as the only trigger, so
+         the tap fires once. -->
+    <label class="dropzone" id="dropzone">
       <div class="dropzone-icon">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
       </div>
