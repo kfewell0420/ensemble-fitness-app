@@ -560,6 +560,12 @@
     text-decoration: none;
     padding: 8px 13px;
     border-radius: 999px;
+    /* Was an <a target="_blank"> to the marketing site; now a <button>
+       that opens the in-app reply modal (see openJourneyReplyModal), so
+       it needs the anchor's border/cursor reset by hand. */
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
   }
   /* Reactions row, laid out inline instead of the full-bleed slide's
      vertical floating column. This is the Journeys/list layout — the one
@@ -583,6 +589,7 @@
     color: rgba(255,255,255,0.85);
   }
   .rp-slide-compact .rp-action-icon svg { width: 100%; height: 100%; }
+  .rp-slide-compact .rp-action-icon { font-size: 20px; }
   .rp-slide-compact .rp-action-btn.active .rp-action-icon {
     background: none;
     border: none;
@@ -651,10 +658,14 @@
     transition: transform 0.12s ease, background 0.12s ease, color 0.12s ease;
   }
   /* Vector icons render in a color we set directly (currentColor), so
-     unlike the old plain-emoji version there's no OS-fixed hue to clash
-     with this fill — this just needs to read as "selected" against the
-     dark scrim. */
+     unlike the plain-emoji muscle reaction there's no OS-fixed hue to
+     clash with this fill — this just needs to read as "selected" against
+     the dark scrim. */
   .rp-action-icon svg { width: 22px; height: 22px; }
+  /* The muscle reaction's icon is the native 💪 emoji (see REACTION_ICONS),
+     which always renders in its own fixed color — sizing it via font-size
+     since width/height (above) only affects the svg-based icons. */
+  .rp-action-icon { font-size: 26px; line-height: 1; }
   .rp-action-btn.active .rp-action-icon {
     background: var(--accent-dark);
     border: 1.5px solid rgba(255,255,255,0.4);
@@ -662,6 +673,13 @@
   }
   .rp-action-btn.active[data-reaction="heart"] .rp-action-icon {
     background: var(--red);
+  }
+  /* Emoji keep their own fixed color, so a solid accent-color fill behind
+     the muscle icon on select would clash — a ring instead of a fill
+     still reads clearly as "selected" without fighting the emoji's hue. */
+  .rp-action-btn.active[data-reaction="muscle"] .rp-action-icon {
+    background: rgba(20,22,28,0.55);
+    border: 1.5px solid var(--accent-dark);
   }
   .rp-action-count {
     font-size: 11.5px;
@@ -708,6 +726,15 @@
      visually at all, matching how Instagram's own phone app shows a
      comments-only sheet, not a split view (there's no room for both). */
   .rp-comments-modal-media { display: none; }
+  /* Journeys have no photo/video to show, so the reply modal (see
+     openJourneyReplyModal) reuses this same shell with the media pane
+     forced off and the text panel taking the full width — including on
+     the desktop split-view layout below, where .rp-comments-modal-media
+     otherwise switches to display:flex. Higher specificity here wins
+     regardless of source order, at both breakpoints. */
+  .rp-comments-modal-box.rp-no-media .rp-comments-modal-media { display: none !important; }
+  .rp-comments-modal-box.rp-no-media .rp-comments-modal-panel { flex: 1 1 100%; }
+  .rp-comments-modal-box.rp-no-media { max-width: 480px; }
   .rp-comments-modal-panel {
     display: flex;
     flex-direction: column;
@@ -823,161 +850,190 @@
   }
 
   /* ---- Healthy Meal Prep profile viewer (tap a strip card) ------
-     Rebuilt to match the public marketing site's Healthy Meal Prep card
-     exactly — Ken (Sept 2026): "App Ensemble Fitness and Ensemble
-     Fitness should be one and the same... it should be the same
-     layout." That means a white write-up card (not a dark app-style
-     panel), name + age, prep time, paragraphs separated by hairline
-     dividers, a cursive signature, real thumbs-up/muscle/heart
-     reactions, an inline comment thread (not a popup), and a "swipe up
-     for the next meal" pager — all reusing the same media_reactions /
-     media_comments tables and renderActions-style logic already used
-     elsewhere in the app, just re-skinned for a white card. */
+     Matches the public marketing site's Healthy Meal Prep card — white
+     write-up card, name + age, prep time, paragraphs with hairline
+     dividers, a cursive signature, real thumbs-up/muscle/heart/comment
+     reactions, an inline comment thread, and a "swipe up for the next
+     meal" pager — reusing the same media_reactions/media_comments
+     tables and renderActions-style logic used elsewhere in the app.
+
+     Sized deliberately small/dense throughout (photo, type, spacing) so
+     the whole card — photo through the comment box — reads in one
+     screen with nothing to scroll past (Ken, Sept 2026). On top of that,
+     the modal is a CENTERED CARD sized to its own content, not a
+     full-bleed page — the dark backdrop fills whatever screen space the
+     card doesn't need, instead of the card itself stretching edge to
+     edge and leaving a slab of blank white space below the content on a
+     tall screen (Ken: "it pulled the bottom of the page up... a lot of
+     dead space down there"). .rp-mp-modal-scroll's max-height/overflow
+     stays only as a safety net for an unusually short window or a post
+     that picks up a lot of comments over time. */
   .rp-mp-modal {
     position: fixed;
     inset: 0;
-    max-width: 480px;
-    margin: 0 auto;
-    background: #fff;
     z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(10, 10, 14, 0.6);
   }
   .rp-mp-modal[hidden] { display: none; }
   .rp-mp-modal-scroll {
-    height: 100%;
+    position: relative;
+    width: 100%;
+    max-width: 420px;
+    max-height: 92vh;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.35);
   }
+  /* The source photos (assets/mealprep/*.jpg) are perfect 480x480 squares —
+     face in the top third, the plate of food in the bottom third. Any short,
+     wide crop box can only ever show one or the other. Showing the photo at
+     its native square aspect ratio (sized off the card's own width) is the
+     only way to keep both the person AND the meal in frame, no cropping. */
   .rp-mp-modal-media {
     position: relative;
     width: 100%;
-    height: 46vh;
-    min-height: 260px;
-    max-height: 440px;
+    aspect-ratio: 1 / 1;
+    max-height: 46vh;
     background: #000;
   }
-  .rp-mp-modal-media img, .rp-mp-modal-media video { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .rp-mp-modal-media img, .rp-mp-modal-media video { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
   .rp-mp-modal-close {
     position: absolute;
-    top: calc(env(safe-area-inset-top, 0px) + 14px);
-    right: 14px;
+    top: 10px;
+    right: 10px;
     z-index: 5;
-    width: 34px; height: 34px;
+    width: 30px; height: 30px;
     border-radius: 999px;
     background: rgba(0,0,0,0.5);
     color: #fff;
     border: none;
-    font-size: 16px;
+    font-size: 14px;
     cursor: pointer;
   }
   .rp-mp-modal-body {
     position: relative;
     background: #fff;
-    padding: 22px 20px calc(env(safe-area-inset-bottom, 0px) + 30px);
+    padding: 8px 14px calc(env(safe-area-inset-bottom, 0px) + 8px);
     color: #17181c;
   }
   .rp-mp-eyebrow {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
     font-family: 'Poppins', 'Inter', sans-serif;
-    font-size: 11.5px;
+    font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--accent-2);
-    margin-bottom: 8px;
+    margin-bottom: 2px;
   }
-  .rp-mp-name { font-family: 'Poppins', 'Inter', sans-serif; font-weight: 800; font-size: 21px; color: #14151a; margin-bottom: 2px; }
-  .rp-mp-sub { font-size: 13px; color: #6b7280; margin-bottom: 14px; }
+  .rp-mp-name { font-family: 'Poppins', 'Inter', sans-serif; font-weight: 800; font-size: 16px; color: #14151a; margin-bottom: 1px; }
+  .rp-mp-sub { font-size: 10.5px; color: #6b7280; margin-bottom: 4px; }
   .rp-mp-caption-para {
-    font-size: 14.5px;
-    line-height: 1.6;
+    font-size: 11.5px;
+    line-height: 1.2;
     color: #33343a;
-    padding: 13px 0;
+    padding: 2px 0;
     border-bottom: 1px solid #ececec;
     white-space: pre-wrap; /* preserves any line breaks a member typed within one paragraph */
   }
   .rp-mp-caption-para:last-of-type { border-bottom: none; }
   .rp-mp-signature {
-    margin-top: 16px;
-    padding-top: 14px;
+    margin-top: 4px;
+    padding-top: 4px;
     border-top: 1px solid #ececec;
     display: flex;
     align-items: baseline;
-    gap: 8px;
+    gap: 6px;
   }
-  .rp-mp-signature-label { font-size: 12px; color: #6b7280; }
+  .rp-mp-signature-label { font-size: 10px; color: #6b7280; }
   .rp-mp-signature-name {
     font-family: 'Dancing Script', cursive;
-    font-size: 28px;
+    font-size: 19px;
     font-weight: 700;
     color: #14151a;
   }
 
-  /* Reaction pills — same thumbs-up/muscle/heart reaction set and icons
-     as the rest of the app (REACTIONS/renderActions/toggleReaction),
-     just re-skinned as light outlined pills to sit on this white card
-     instead of the dark scrim-over-video look used on the reel. */
+  /* Reaction pills — thumbs-up/muscle/heart/comment, the same four-icon
+     row used on every other post in the app (REACTIONS + COMMENT_ICON /
+     renderActions/toggleReaction), just re-skinned as light outlined
+     pills to sit on this white card instead of the dark scrim-over-video
+     look used on the reel. Icons sized at 17px rather than the smaller
+     14px tried earlier — Ken flagged the dumbbell/muscle icon as
+     unreadable ("There is no muscle") once it got too small; legible
+     icons matter more here than shaving a few more pixels. */
   .rp-mp-reactions {
     display: flex;
-    gap: 8px;
-    margin-top: 16px;
+    gap: 6px;
+    margin-top: 4px;
     flex-wrap: wrap;
   }
   .rp-mp-reaction {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
     background: #fff;
-    border: 1.4px solid #e2e2e6;
+    border: 1.2px solid #e2e2e6;
     border-radius: 999px;
-    padding: 7px 13px;
+    padding: 4px 9px;
     cursor: pointer;
   }
   .rp-mp-reaction.static { cursor: default; }
   .rp-mp-reaction .rp-action-icon {
-    width: 18px; height: 18px;
+    width: 17px; height: 17px;
     background: none;
     color: #33343a;
     backdrop-filter: none;
+    font-size: 16px;
   }
-  .rp-mp-reaction .rp-action-icon svg { width: 18px; height: 18px; }
+  .rp-mp-reaction .rp-action-icon svg { width: 17px; height: 17px; }
+  /* The muscle pill's active state already uses a light tint (below, via
+     the shared .rp-mp-reaction.active rule) rather than a solid color
+     fill, so the emoji's own fixed color never clashes here. */
   .rp-mp-reaction.active { border-color: var(--accent-2); background: #fff4ed; }
   .rp-mp-reaction.active .rp-action-icon { color: var(--accent-2); }
   .rp-mp-reaction[data-reaction="heart"].active .rp-action-icon { color: var(--red); }
-  .rp-mp-reaction .rp-action-count { font-size: 13px; font-weight: 700; color: #33343a; }
+  .rp-mp-reaction .rp-action-count { font-size: 11.5px; font-weight: 700; color: #33343a; }
 
   /* Inline comments — loadComments()/postComment() are reused exactly as
      they are for the rest of the feed (same media_comments table); these
      rules just re-skin the shared .rp-comment-* classes for a white card
      instead of the dark popup modal they were built for. */
-  .rp-mp-comments { margin-top: 18px; padding-top: 14px; border-top: 1px solid #ececec; }
+  .rp-mp-comments { margin-top: 4px; padding-top: 4px; border-top: 1px solid #ececec; }
   .rp-mp-comments .rp-comments-list { padding: 0; }
-  .rp-mp-comments .rp-comment-item { border-bottom: 1px solid #ececec; padding: 10px 0; }
+  .rp-mp-comments .rp-comment-item { border-bottom: 1px solid #ececec; padding: 3px 0; }
   .rp-mp-comments .rp-comment-item:last-child { border-bottom: none; }
-  .rp-mp-comments .rp-comment-name { color: #14151a; font-weight: 700; font-size: 13px; }
-  .rp-mp-comments .rp-comment-time { color: #9a9ba3; }
-  .rp-mp-comments .rp-comment-body { color: #33343a; }
-  .rp-mp-comments .rp-comment-empty { color: #9a9ba3; padding: 6px 0; }
-  .rp-mp-comments .rp-comment-input-row { border-top: none; padding: 12px 0 0; }
-  .rp-mp-comments .rp-comment-input { background: #f2f2f4; color: #17181c; border: 1px solid #e2e2e6; }
+  .rp-mp-comments .rp-comment-name { color: #14151a; font-weight: 700; font-size: 11px; }
+  .rp-mp-comments .rp-comment-time { color: #9a9ba3; font-size: 9.5px; }
+  .rp-mp-comments .rp-comment-body { color: #33343a; font-size: 11px; margin-top: 0; }
+  .rp-mp-comments .rp-comment-empty { color: #9a9ba3; font-size: 11px; padding: 2px 0; }
+  .rp-mp-comments .rp-comment-input-row { border-top: none; padding: 4px 0 0; }
+  .rp-mp-comments .rp-comment-input { background: #f2f2f4; color: #17181c; border: 1px solid #e2e2e6; font-size: 11px; padding: 5px 10px; }
   .rp-mp-comments .rp-comment-input::placeholder { color: #9a9ba3; }
-  .rp-mp-preview-note { font-size: 12px; color: #9a9ba3; margin-top: 12px; text-align: center; }
+  .rp-mp-comments .rp-comment-send { font-size: 11px; padding: 0 12px; }
+  .rp-mp-preview-note { font-size: 9.5px; color: #9a9ba3; margin-top: 3px; text-align: center; }
 
   .rp-mp-next {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: 5px;
     width: 100%;
-    margin-top: 18px;
+    margin-top: 4px;
     background: none;
     border: none;
     color: #6b7280;
-    font-size: 13px;
+    font-size: 11px;
     font-weight: 600;
     cursor: pointer;
-    padding: 12px 0 0;
+    padding: 4px 0 0;
   }
 
   /* ==================================================================
@@ -1255,6 +1311,10 @@
       color: rgba(255,255,255,0.85);
     }
     .rp-action-icon svg { width: 100%; height: 100%; }
+    .rp-action-icon,
+    .rp-slide-compact .rp-action-icon {
+      font-size: 20px;
+    }
     .rp-action-btn.active .rp-action-icon,
     .rp-slide-compact .rp-action-btn.active .rp-action-icon {
       background: none;
@@ -1313,22 +1373,6 @@
     .rp-comments-modal-panel {
       flex: 1 1 45%;
       min-width: 320px;
-    }
-
-    /* Bug fix (still applies even now that the body scrolls in normal
-       flow instead of every child being position:absolute): .rp-mp-modal
-       itself is position:fixed, so with `right` unset here it had no
-       in-flow content to size itself against and collapsed to 0 width —
-       the modal's backdrop never painted and its text, boxed into 0px,
-       wrapped one word per line ("a blank page with some words floating
-       over whatever was behind it," per Ken). An explicit width alongside
-       max-width fixes the sizing on desktop regardless. */
-    .rp-mp-modal {
-      left: 50%;
-      right: auto;
-      width: 100%;
-      transform: translateX(-50%);
-      margin: 0;
     }
 
     /* Below ~1150px, two video columns get cramped next to a 320px
@@ -1444,8 +1488,8 @@
 </div>
 
 <div class="rp-mp-modal" id="rpMpModal" hidden>
-  <button type="button" class="rp-mp-modal-close" id="rpMpModalClose">✕</button>
   <div class="rp-mp-modal-scroll" id="rpMpModalScroll">
+    <button type="button" class="rp-mp-modal-close" id="rpMpModalClose">✕</button>
     <div class="rp-mp-modal-media" id="rpMpModalMedia"></div>
     <div class="rp-mp-modal-body">
       <div id="rpMpModalMeta"></div>
@@ -1670,19 +1714,32 @@
   // Instagram's own heart-fills-in-when-liked behavior; muscle/clap/comment
   // are simple constant glyphs whose color changes with state instead.
   var REACTION_ICONS = {
+    // Replaced the old hand-built outline (3 separate paths that didn't
+    // quite meet up — looked "messy"/uneven under any zoom, per Ken) with
+    // a single well-formed path (same one used for both states, just
+    // toggling fill vs. stroke) so the linework is actually clean.
     thumbs_up: {
-      outline: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 21V10.5"/><path d="M2.5 12.5V19a2 2 0 0 0 2 2H7"/><path d="M22 12.5V18a2 2 0 0 1-2 2h-8.7a2 2 0 0 1-1.94-1.52l-1.2-4.7A2 2 0 0 1 10.06 11H14V6a2 2 0 0 1 2-2c.86 0 1.6.58 1.8 1.4L19 10h1a2 2 0 0 1 2 2.5Z"/></svg>',
-      active: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 21V10.5H4.5a2 2 0 0 0-2 2V19a2 2 0 0 0 2 2H7Z"/><path d="M9 21h9.3a2 2 0 0 0 1.94-1.52l1.66-6.7A2 2 0 0 0 20 10.4h-5V5.9A2.4 2.4 0 0 0 12.6 3.5a1 1 0 0 0-.94.66L9 10.7Z"/></svg>'
+      outline: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>',
+      active: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>'
     },
     heart: {
       outline: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.2s-7.05-4.4-9.4-8.55C1.1 9.1 1.85 5.7 4.6 4.3c2.15-1.1 4.7-.5 6.15 1.35L12 7.05l1.25-1.4c1.45-1.85 4-2.45 6.15-1.35 2.75 1.4 3.5 4.8 2 7.35C19.05 15.8 12 20.2 12 20.2Z"/></svg>',
       active: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 20.2s-7.05-4.4-9.4-8.55C1.1 9.1 1.85 5.7 4.6 4.3c2.15-1.1 4.7-.5 6.15 1.35L12 7.05l1.25-1.4c1.45-1.85 4-2.45 6.15-1.35 2.75 1.4 3.5 4.8 2 7.35C19.05 15.8 12 20.2 12 20.2Z"/></svg>'
     },
-    // Dumbbell rather than a literal flexed-bicep glyph — reads instantly
-    // as "workout" and fits an Ensemble Fitness reaction better than the
-    // stock 💪 emoji ever did.
+    // A hand-drawn "flexed bicep" silhouette (fist + forearm + bulge, or
+    // circle/rect combinations) was tried several times and always read as
+    // an unrecognizable blob at the ~17px this actually renders at — fine
+    // in a big 60px test swatch, meaningless at real size (Ken: "not
+    // clean"). A dumbbell before that wasn't a muscle at all. The native
+    // 💪 emoji is the one thing that's instantly, unambiguously readable
+    // at tiny sizes — it's professionally drawn and hinted for exactly
+    // this. It renders in its own fixed color rather than currentColor
+    // (see the .rp-action-btn.active[data-reaction="muscle"] overrides
+    // below, which swap the old solid accent-color fill for a ring so
+    // that fixed color never sits on top of a clashing solid background).
     muscle: {
-      outline: '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="1" y="9.3" width="3" height="5.4" rx="1"/><rect x="20" y="9.3" width="3" height="5.4" rx="1"/><rect x="4.7" y="7.2" width="3" height="9.6" rx="1"/><rect x="16.3" y="7.2" width="3" height="9.6" rx="1"/><rect x="7.7" y="10.8" width="8.6" height="2.4" rx="1"/></svg>'
+      outline: '💪',
+      active: '💪'
     },
     // A real 5-point star, not a sparkle burst — Ken: bright yellow, an
     // actual star reads better and "people gravitate towards that."
@@ -1900,17 +1957,38 @@
     return String(caption || "").split(/\n\s*\n/).map(function (p) { return p.trim(); }).filter(Boolean);
   }
 
-  // Real reactions for a real member's Meal Prep post — same
-  // media_reactions table/toggle logic as renderActions() elsewhere in
-  // the app, just re-skinned as light pills (.rp-mp-reaction) instead of
-  // the dark scrim-over-video icon buttons used on the reel.
+  // Jumps down to (and, for a real post, focuses) the inline comment
+  // section instead of opening a separate popup — the 4th icon in the
+  // reaction row (thumbs/muscle/heart/comment) matches the row every
+  // other post in the app already shows, but comments stay inline here.
+  function focusMealPrepComments() {
+    var panel = document.getElementById("rpMpComments");
+    if (!panel) return;
+    panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    var input = panel.querySelector(".rp-comment-input");
+    if (input) input.focus();
+  }
+
+  // Real reactions + comment count for a real member's Meal Prep post —
+  // same media_reactions/media_comments tables and toggle logic as
+  // renderActions() elsewhere in the app, just re-skinned as light pills
+  // (.rp-mp-reaction) instead of the dark scrim-over-video icon buttons
+  // used on the reel. Icons are the app's real thumbs-up/muscle/heart
+  // vector set (REACTIONS/REACTION_ICONS), plus the same comment icon
+  // (COMMENT_ICON) as a 4th pill — Ken's ask: "a thumbs up, a muscle
+  // symbol, a heart, and a comment section" all together in that row.
   async function renderMealPrepReactions(item, container) {
     container.innerHTML = REACTIONS.map(function (r) {
       return '<button type="button" class="rp-mp-reaction" data-reaction="' + r.type + '">' +
         '<span class="rp-action-icon">' + reactionIconMarkup(r.type, false) + '</span><span class="rp-action-count"></span></button>';
-    }).join("");
+    }).join("") +
+      '<button type="button" class="rp-mp-reaction" data-action="comments">' +
+      '<span class="rp-action-icon">' + COMMENT_ICON + '</span><span class="rp-action-count"></span></button>';
 
-    var { data: reactions } = await window.sb.from("media_reactions").select("user_id, reaction_type").eq("media_id", item.id);
+    var [{ data: reactions }, { count: commentCount }] = await Promise.all([
+      window.sb.from("media_reactions").select("user_id, reaction_type").eq("media_id", item.id),
+      window.sb.from("media_comments").select("id", { count: "exact", head: true }).eq("media_id", item.id)
+    ]);
     var counts = { thumbs_up: 0, muscle: 0, heart: 0 };
     var mine = {};
     (reactions || []).forEach(function (r) {
@@ -1925,22 +2003,57 @@
       btn.querySelector(".rp-action-count").textContent = counts[r.type] || 0;
       btn.addEventListener("click", function () { toggleReaction(item.id, r.type, btn); });
     });
+    var commentBtn = container.querySelector('[data-action="comments"]');
+    if (commentBtn) {
+      commentBtn.querySelector(".rp-action-count").textContent = commentCount || 0;
+      commentBtn.addEventListener("click", focusMealPrepComments);
+    }
   }
 
-  // Illustrative examples aren't real media rows, so there's nothing to
-  // attach a live reaction to — these just display the same static
-  // counts shown on the public marketing site's version of each card.
+  // Illustrative examples aren't real media rows, so there's no
+  // media_reactions/media_comments row to write to — but Ken's ask was
+  // for these buttons to actually respond when tapped rather than sit
+  // there inert, so each item carries its own small in-memory "mine" map
+  // (item._illustrativeMine) that a click toggles right here, entirely
+  // client-side. It won't sync to other visitors or survive a refresh —
+  // there's genuinely nowhere real to persist it to — but it counts up,
+  // highlights, and feels alive instead of dead on click. The moment a
+  // real member posts a Meal Prep, mealPrepItems swaps these out for the
+  // real thing (renderMealPrepReactions), which already fully persists.
+  function toggleIllustrativeReaction(item, type, btn) {
+    if (!item._illustrativeMine) item._illustrativeMine = {};
+    var nowActive = !item._illustrativeMine[type];
+    item._illustrativeMine[type] = nowActive;
+    if (!item.illustrativeReactions) item.illustrativeReactions = { thumbs_up: 0, muscle: 0, heart: 0 };
+    var current = item.illustrativeReactions[type] || 0;
+    item.illustrativeReactions[type] = Math.max(0, current + (nowActive ? 1 : -1));
+    btn.classList.toggle("active", nowActive);
+    setReactionIcon(btn, type, nowActive);
+    var countEl = btn.querySelector(".rp-action-count");
+    if (countEl) countEl.textContent = item.illustrativeReactions[type];
+  }
+
   function renderIllustrativeMealPrepReactions(item, container) {
     var counts = item.illustrativeReactions || { thumbs_up: 0, muscle: 0, heart: 0 };
+    var mine = item._illustrativeMine || {};
+    var commentCount = (item.illustrativeComments || []).length;
     container.innerHTML = REACTIONS.map(function (r) {
-      return '<span class="rp-mp-reaction static" data-reaction="' + r.type + '">' +
-        '<span class="rp-action-icon">' + reactionIconMarkup(r.type, false) + '</span><span class="rp-action-count">' + (counts[r.type] || 0) + '</span></span>';
-    }).join("");
+      return '<button type="button" class="rp-mp-reaction' + (mine[r.type] ? ' active' : '') + '" data-reaction="' + r.type + '">' +
+        '<span class="rp-action-icon">' + reactionIconMarkup(r.type, !!mine[r.type]) + '</span><span class="rp-action-count">' + (counts[r.type] || 0) + '</span></button>';
+    }).join("") +
+      '<button type="button" class="rp-mp-reaction" data-action="comments">' +
+      '<span class="rp-action-icon">' + COMMENT_ICON + '</span><span class="rp-action-count">' + commentCount + '</span></button>';
+    REACTIONS.forEach(function (r) {
+      var btn = container.querySelector('[data-reaction="' + r.type + '"]');
+      if (btn) btn.addEventListener("click", function () { toggleIllustrativeReaction(item, r.type, btn); });
+    });
+    var commentBtn = container.querySelector('[data-action="comments"]');
+    if (commentBtn) commentBtn.addEventListener("click", focusMealPrepComments);
   }
 
-  // Same treatment for comments — canned examples matching the marketing
-  // site's cards, read-only (no add-comment box, since there's no real
-  // media row for a comment to belong to).
+  // Same in-memory approach for comments — typing one and hitting Post
+  // appends it to item.illustrativeComments (client-side only, same
+  // caveat as the reactions above) and updates the count pill above.
   function renderIllustrativeMealPrepComments(item, container) {
     var listEl = container.querySelector(".rp-comments-list");
     var oldInputRow = container.querySelector(".rp-comment-input-row");
@@ -1954,8 +2067,34 @@
             '<div class="rp-comment-body">' + escapeHtml(c.body) + '</div></div>';
         }).join("")
       : '<div class="rp-comment-empty">Be the first to comment.</div>';
+
+    var inputRow = document.createElement("div");
+    inputRow.className = "rp-comment-input-row";
+    inputRow.innerHTML =
+      '<input type="text" class="rp-comment-input" maxlength="300" placeholder="Add a comment…" />' +
+      '<button type="button" class="rp-comment-send">Post</button>';
+    container.appendChild(inputRow);
+    function postIllustrativeComment() {
+      var input = inputRow.querySelector(".rp-comment-input");
+      var body = input.value.trim();
+      if (!body) return;
+      if (!item.illustrativeComments) item.illustrativeComments = [];
+      item.illustrativeComments.push({ name: "You", body: body });
+      input.value = "";
+      renderIllustrativeMealPrepComments(item, container);
+      var reactionsWrap = document.getElementById("rpMpReactions");
+      if (reactionsWrap) {
+        var commentBtn = reactionsWrap.querySelector('[data-action="comments"] .rp-action-count');
+        if (commentBtn) commentBtn.textContent = item.illustrativeComments.length;
+      }
+    }
+    inputRow.querySelector(".rp-comment-send").addEventListener("click", postIllustrativeComment);
+    inputRow.querySelector(".rp-comment-input").addEventListener("keydown", function (e) {
+      if (e.key === "Enter") postIllustrativeComment();
+    });
+
     container.insertAdjacentHTML("beforeend",
-      '<div class="rp-mp-preview-note">Example post — real reactions and comments go live once members start posting their own.</div>');
+      '<div class="rp-mp-preview-note">Example post — reactions and comments here stay on your device; once members start posting their own, this card is replaced by the real thing.</div>');
   }
 
   // Full profile view, not a story-style photo-with-overlay — a member's
@@ -2014,10 +2153,19 @@
     modal.hidden = false;
   }
 
-  document.getElementById("rpMpModalClose").addEventListener("click", function () {
+  function closeMealPrepModal() {
     var modal = document.getElementById("rpMpModal");
     modal.querySelectorAll("video").forEach(function (v) { v.pause(); });
     modal.hidden = true;
+  }
+  document.getElementById("rpMpModalClose").addEventListener("click", closeMealPrepModal);
+  // The modal is now a centered card over a dimmed backdrop rather than a
+  // full-bleed page, so — like the existing comments popup — a click on
+  // the backdrop itself (not the card) closes it. Checking
+  // target===currentTarget is what tells the two apart: a click inside
+  // the card lands on one of its descendants instead.
+  document.getElementById("rpMpModal").addEventListener("click", function (e) {
+    if (e.target === e.currentTarget) closeMealPrepModal();
   });
 
   // "Swipe up for the next meal" — advances through the same strip
@@ -2152,8 +2300,10 @@
       '</div>' +
       '<div class="rp-jc-quote">' + escapeHtml(item.caption) + '</div>' +
       '<div class="rp-actions rp-journal-actions"></div>' +
-      '<a class="rp-jc-link" href="' + journeyReplyUrl(item) + '" target="_blank" rel="noopener">Read &amp; reply on Fitness Journeys →</a>';
+      '<button type="button" class="rp-jc-link" data-action="journey-reply">Read &amp; reply →</button>';
     renderStoryReactions(item, el.querySelector(".rp-journal-actions"));
+    var replyBtn = el.querySelector('[data-action="journey-reply"]');
+    if (replyBtn) replyBtn.addEventListener("click", function () { openJourneyReplyModal(item); });
     return el;
   }
 
@@ -2375,25 +2525,24 @@
     }
   }
 
-  // Journeys don't have their own in-app comment panel — replies to a
-  // journey are the same story_replies rows the marketing site's Fitness
-  // Journeys page shows and writes to, so "commenting" here means sending
-  // the member there rather than opening a second, separate reply box in
-  // the app. This just gives that same destination a normal comment icon
-  // + live count, matching the look of the media post's 4th icon, instead
-  // of the reply count being invisible until you click through.
-  function journeyReplyUrl(item) {
-    return "https://ensemblefitness.com/fitness-journey.html#journey-" + encodeURIComponent(item.id);
-  }
-
+  // Journey replies used to send members out to the marketing site's
+  // Fitness Journeys page (the same story_replies rows, just viewed and
+  // written there instead of here) — but Ken reported that navigating out
+  // like this was logging members out of the app. Replies now open in an
+  // in-app modal instead (see openJourneyReplyModal below), reusing the
+  // same shared comments-modal shell as media posts, so nobody ever
+  // leaves the app to reply to a journey.
   async function renderStoryReactions(item, container) {
     if (!container) return;
     container.innerHTML = STORY_REACTIONS.map(function (r) {
       return '<button type="button" class="rp-action-btn" data-reaction="' + r.type + '">' +
         '<span class="rp-action-icon">' + reactionIconMarkup(r.type, false) + '</span><span class="rp-action-count"></span></button>';
     }).join("") +
-      '<a class="rp-action-btn rp-comment-btn" href="' + journeyReplyUrl(item) + '" target="_blank" rel="noopener">' +
-      '<span class="rp-action-icon">' + COMMENT_ICON + '</span><span class="rp-action-count"></span></a>';
+      '<button type="button" class="rp-action-btn rp-comment-btn" data-action="comments">' +
+      '<span class="rp-action-icon">' + COMMENT_ICON + '</span><span class="rp-action-count"></span></button>';
+
+    var commentBtn = container.querySelector(".rp-comment-btn");
+    commentBtn.addEventListener("click", function () { openJourneyReplyModal(item); });
 
     var [{ data: reactions }, { count: replyCount }] = await Promise.all([
       window.sb.from("story_reactions").select("user_id, reaction").eq("question_id", item.id),
@@ -2449,8 +2598,10 @@
     var modal = document.getElementById("rpCommentsModal");
     var headerText = document.getElementById("rpCommentsHeaderText");
     var mediaEl = document.getElementById("rpCommentsModalMedia");
+    var box = modal.querySelector(".rp-comments-modal-box");
     var panel = modal.querySelector(".rp-comments-modal-panel");
 
+    box.classList.remove("rp-no-media"); // in case the last thing shown here was a journey reply
     headerText.textContent = (item.name || "A member") + "'s post";
     // The media pane is desktop-only (see CSS) — built either way since
     // it's cheap and the signed URL is already sitting on `item`.
@@ -2521,6 +2672,76 @@
     await window.sb.from("media_comments").insert({ media_id: item.id, user_id: currentUserId, body: body });
     loadComments(item, panel);
     var countEl = document.querySelector("#rpActions-" + item.id + " .rp-comment-btn .rp-action-count");
+    if (countEl) countEl.textContent = (parseInt(countEl.textContent || "0", 10) || 0) + 1;
+  }
+
+  // In-app replacement for the old "Read & reply on Fitness Journeys →"
+  // link and comment icon (both used to open journeyReplyUrl(item) in a
+  // new tab). Reuses the same #rpCommentsModal shell as media comments,
+  // just with the media pane hidden (journeys have no photo/video) and
+  // wired to story_replies/story_reactions instead of media_comments.
+  function openJourneyReplyModal(item) {
+    var modal = document.getElementById("rpCommentsModal");
+    var headerText = document.getElementById("rpCommentsHeaderText");
+    var mediaEl = document.getElementById("rpCommentsModalMedia");
+    var box = modal.querySelector(".rp-comments-modal-box");
+    var panel = modal.querySelector(".rp-comments-modal-panel");
+
+    box.classList.add("rp-no-media");
+    mediaEl.innerHTML = "";
+    headerText.textContent = (item.name || "A member") + "'s journey";
+
+    modal.hidden = false;
+    loadJourneyReplies(item, panel);
+  }
+
+  async function loadJourneyReplies(item, panel) {
+    var listEl = panel.querySelector(".rp-comments-list");
+    listEl.innerHTML = "Loading…";
+    var oldInputRow = panel.querySelector(".rp-comment-input-row");
+    if (oldInputRow) oldInputRow.remove();
+
+    var { data: replies } = await window.sb
+      .from("story_replies")
+      .select("id, user_id, reply_text, created_at, profiles(display_name)")
+      .eq("question_id", item.id)
+      .order("created_at", { ascending: true });
+    var visible = filterOutBlocked(replies || []);
+
+    var listHtml = visible.length
+      ? visible.map(function (c) {
+          var name = (c.profiles && c.profiles.display_name) || "A member";
+          return '<div class="rp-comment-item"><span class="rp-comment-name">' + escapeHtml(name) + '</span>' +
+            '<span class="rp-comment-time">' + timeAgo(c.created_at) + '</span>' +
+            '<div class="rp-comment-body">' + escapeHtml(c.reply_text) + '</div></div>';
+        }).join("")
+      : '<div class="rp-comment-empty">Be the first to reply.</div>';
+
+    listEl = panel.querySelector(".rp-comments-list");
+    listEl.innerHTML = listHtml;
+
+    if (currentUserId) {
+      var inputRow = document.createElement("div");
+      inputRow.className = "rp-comment-input-row";
+      inputRow.innerHTML =
+        '<input type="text" class="rp-comment-input" maxlength="500" placeholder="Add a reply…" />' +
+        '<button type="button" class="rp-comment-send">Post</button>';
+      panel.appendChild(inputRow);
+      inputRow.querySelector(".rp-comment-send").addEventListener("click", function () { postJourneyReply(item, panel); });
+      inputRow.querySelector(".rp-comment-input").addEventListener("keydown", function (e) {
+        if (e.key === "Enter") postJourneyReply(item, panel);
+      });
+    }
+  }
+
+  async function postJourneyReply(item, panel) {
+    var input = panel.querySelector(".rp-comment-input");
+    var body = input.value.trim();
+    if (!body) return;
+    input.value = "";
+    await window.sb.from("story_replies").insert({ question_id: item.id, user_id: currentUserId, reply_text: body });
+    loadJourneyReplies(item, panel);
+    var countEl = document.querySelector('[data-real-id="' + item.id + '"] .rp-comment-btn .rp-action-count');
     if (countEl) countEl.textContent = (parseInt(countEl.textContent || "0", 10) || 0) + 1;
   }
 
