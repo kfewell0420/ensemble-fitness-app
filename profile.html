@@ -190,7 +190,21 @@
 
     <div class="form-msg" id="uploadMsg"></div>
 
-    <label class="dropzone" id="dropzone" for="fileInput">
+    <!-- The file input is nested inside this label (the standard way to
+         build a custom-styled upload button around a hidden native input —
+         see .dropzone input[type="file"] { display:none } in app.css).
+         That nesting ALONE is enough to make the whole label clickable;
+         adding an explicit for="fileInput" on top of it — pointing right
+         back at the label's own child — is redundant, and on iOS Safari
+         it's a known trigger for the label's click being dispatched to the
+         input TWICE for one tap. Two near-simultaneous requests to present
+         the native photo/file picker sheet make iOS silently drop the
+         second one, so the sheet never visibly opens — exactly what
+         members were hitting ("Choose a file first" stuck forever because
+         they could never actually choose a file). Dropping the redundant
+         for= leaves the nested-input association as the only trigger, so
+         the tap fires once. -->
+    <label class="dropzone" id="dropzone">
       <div class="dropzone-icon">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
       </div>
@@ -291,7 +305,7 @@
       <label for="isProfilePhoto" style="margin:0; font-size:13.5px; color:var(--muted-invert);">Set as profile photo (goes live right away)</label>
     </div>
 
-    <button type="button" class="btn btn-primary btn-block" id="uploadBtn" disabled>Choose a file first</button>
+    <button type="button" class="btn btn-primary btn-block" id="uploadBtn" disabled>↑ Select a file above</button>
   </div>
 
   <div class="card">
@@ -354,9 +368,22 @@
     return parts.length > 1 ? parts.pop().toLowerCase() : "dat";
   }
 
+  // Some file pickers — notably iOS's, for a voice recording pulled in via
+  // the Files app share sheet (Voice Memos exports as .m4a/.caf) — hand
+  // back a File whose .type is empty or unrecognized instead of
+  // "audio/...". Falling straight through to "photo" in that case is what
+  // silently turned an artist's song into a photo post needing a workout
+  // category instead of a song needing a title. Fall back to the file
+  // extension before ever defaulting to "photo".
+  var VIDEO_EXTS = ["mp4", "mov", "m4v", "avi", "webm", "mkv", "3gp", "3gpp"];
+  var AUDIO_EXTS = ["mp3", "wav", "m4a", "aac", "ogg", "oga", "flac", "caf", "aiff", "aif", "wma"];
   function fileKind(file) {
     if (file.type.indexOf("video") === 0) return "video";
     if (file.type.indexOf("audio") === 0) return "audio";
+    if (file.type.indexOf("image") === 0) return "photo";
+    var ext = getExt(file.name);
+    if (VIDEO_EXTS.indexOf(ext) !== -1) return "video";
+    if (AUDIO_EXTS.indexOf(ext) !== -1) return "audio";
     return "photo";
   }
 
@@ -1328,7 +1355,7 @@
     } else {
       dropzoneLabel.textContent = "Click to choose a photo, video, or voice recording";
       uploadBtn.disabled = true;
-      uploadBtn.textContent = "Choose a file first";
+      uploadBtn.textContent = "↑ Select a file above";
       profilePhotoField.style.display = "flex";
       productTagField.style.display = "none";
       document.getElementById("songTitleField").style.display = "none";
@@ -1430,7 +1457,7 @@
         songTitleField.value = "";
         document.getElementById("songTitleField").style.display = "none";
         document.getElementById("captionField").style.display = "block";
-        uploadBtn.textContent = "Choose a file first";
+        uploadBtn.textContent = "↑ Select a file above";
       } catch (err) {
         showMsg(msg, err.message || "Upload failed. Please try again.", "error");
         uploadBtn.disabled = false;
@@ -1556,7 +1583,7 @@
       document.getElementById("isProfilePhoto").checked = false;
       profilePhotoField.style.display = "flex";
       productTagField.style.display = "none";
-      uploadBtn.textContent = "Choose a file first";
+      uploadBtn.textContent = "↑ Select a file above";
       updateNarrationVisibility();
       updateMusicVisibility();
       updateTrimVisibility();
