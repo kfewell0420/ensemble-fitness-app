@@ -3107,6 +3107,14 @@
       '<a class="rp-panel-link" href="gear.html">Browse the picks →</a>';
   }
 
+  // Ken's ask (Sept 2026): this teaser used to sort alphabetically and show
+  // 3 — as the library grows toward the hundreds of tracks it's meant to
+  // hold, that stops being a useful preview (it'd always show the same
+  // early-alphabet tracks) and risks the card feeling like it's trying to
+  // list the whole library instead of just teasing it. Sorting by newest
+  // and capping at 2 keeps this a stable-sized "what just got added" card no
+  // matter how big the library gets — the actual full, scrollable list
+  // lives on music-library.html (see loadTracks() there), which has no cap.
   async function loadMusicPanel() {
     var panel = document.getElementById("rpMusicPanel");
     if (!panel) return;
@@ -3114,8 +3122,8 @@
       .from("tracks")
       .select("title, artist_name")
       .eq("is_active", true)
-      .order("title", { ascending: true })
-      .limit(3);
+      .order("created_at", { ascending: false })
+      .limit(2);
     var rows = (!error && data ? data : []).map(function (t) {
       return '<div class="rp-mini-row"><span class="rp-mini-dot">🎵</span><div><div class="rp-mini-title">' +
         escapeHtml(t.title) + '</div><div class="rp-mini-sub">' + escapeHtml(t.artist_name || "") + '</div></div></div>';
