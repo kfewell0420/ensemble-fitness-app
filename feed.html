@@ -1139,6 +1139,18 @@
       grid-area: side;
     }
     .rp-mealprep { padding: 0; border-bottom: none; background: transparent; }
+    /* The banner (icon + "Healthy Meal Prep" + the "Community picks"/
+       "Examples" sub-label) was designed for the full-width mobile strip,
+       where all three comfortably fit on one line. Squeezed into this
+       ~260-300px sidebar column, there was no room left for the sub-label
+       once the title ran its full length, so the flex row was breaking the
+       TITLE itself across two lines ("HEALTHY MEAL" / "PREP") instead —
+       Ken's report. Keeping the title permanently unbreakable and letting
+       the row wrap means the sub-label is what drops to its own line here
+       when space is tight, never the title. */
+    .rp-mealprep-banner { flex-wrap: wrap; }
+    .rp-mealprep-banner-text { white-space: nowrap; flex-shrink: 0; }
+    .rp-mealprep-banner-sub { margin-left: 0; margin-top: 2px; }
     .rp-mealprep-track { padding: 2px 2px 4px; flex-wrap: wrap; gap: 14px; }
     .rp-mealprep-card { width: 82px; }
     .rp-mealprep-ring { width: 82px; height: 82px; }
@@ -1646,7 +1658,52 @@
       ]
     }
   ];
-  var usingIllustrativeMealPrep = false;
+  // How many cards the Healthy Meal Prep strip always shows, real posts
+  // plus illustrative filler combined — see composeMealPrepStrip below.
+  // Matches ILLUSTRATIVE_MEAL_PREP's own length (6 examples) on purpose.
+  var MEAL_PREP_STRIP_SIZE = 6;
+  // The real (non-illustrative) approved Meal Prep posts fetched so far,
+  // newest first — kept separate from mealPrepItems (the actual rendered
+  // strip) so a live update can recompute the padded/mixed strip without
+  // losing track of how many real posts actually exist.
+  var mealPrepRealItems = [];
+  function buildIllustrativeMealPrepItem(i) {
+    var it = ILLUSTRATIVE_MEAL_PREP[i];
+    return {
+      id: "illustrative-" + i,
+      user_id: "",
+      kind: "photo",
+      url: "assets/mealprep/" + it.file,
+      posterUrl: "",
+      name: it.name,
+      created_at: new Date().toISOString(),
+      workout_type: "Meal Prep",
+      location: "",
+      caption: it.caption,
+      signature: it.signature || "",
+      age: it.age || null,
+      illustrativeReactions: it.reactions || null,
+      illustrativeComments: it.comments || null
+    };
+  }
+  // Ken's ask (Sept 2026): the strip should always host MEAL_PREP_STRIP_SIZE
+  // (6) cards. Real approved posts (newest first) fill as many of those
+  // slots as exist; whatever's left over is padded out with the
+  // illustrative examples, so a member uploading their first real post
+  // bumps ONE illustrative card off the end instead of wiping out all six
+  // at once — which is exactly what happened before this fix: the strip
+  // went from 6 example avatars straight down to just the 1 new real
+  // photo. As more real posts get approved, they keep pushing illustrative
+  // filler off the end one slot at a time until eventually all 6 are real.
+  function composeMealPrepStrip(realItems) {
+    var real = realItems.slice(0, MEAL_PREP_STRIP_SIZE);
+    var fillerNeeded = MEAL_PREP_STRIP_SIZE - real.length;
+    var filler = [];
+    for (var i = 0; i < fillerNeeded && i < ILLUSTRATIVE_MEAL_PREP.length; i++) {
+      filler.push(buildIllustrativeMealPrepItem(i));
+    }
+    return real.concat(filler);
+  }
   // Newest real (non-illustrative) Meal Prep post's created_at, for the
   // live-update check below — stays null while only illustrative
   // placeholders are showing, since those aren't real timestamps to
@@ -1915,7 +1972,7 @@
     var wrap = document.getElementById("rpMealPrep");
     var track = document.getElementById("rpMealPrepTrack");
     var bannerSub = document.getElementById("rpMealPrepBannerSub");
-    if (bannerSub) bannerSub.textContent = usingIllustrativeMealPrep ? "Examples" : "Community picks";
+    if (bannerSub) bannerSub.textContent = mealPrepRealItems.length ? "Community picks" : "Examples";
     if (!mealPrepItems.length) {
       var mpMsg = lastFetchError
         ? "Couldn't load Healthy Meal Prep posts — " + escapeHtml(lastFetchError.message || String(lastFetchError))
@@ -2853,9 +2910,9 @@
     var rows = await fetchNewMealPrepPosts();
     if (!rows.length) return;
     var items = await buildItems(rows);
-    mealPrepItems = usingIllustrativeMealPrep ? items : items.concat(mealPrepItems);
-    usingIllustrativeMealPrep = false;
+    mealPrepRealItems = items.concat(mealPrepRealItems).slice(0, MEAL_PREP_STRIP_SIZE);
     newestMealPrepSeenAt = items[0].created_at;
+    mealPrepItems = composeMealPrepStrip(mealPrepRealItems);
     renderMealPrepStrip();
   }
 
@@ -2960,30 +3017,12 @@
     var { data: followRows } = await window.sb.from("follows").select("followee_id").eq("follower_id", currentUserId);
     followingIds = new Set((followRows || []).map(function (r) { return r.followee_id; }));
 
-    var mealPrepRows = await fetchBatch(true, 20, 0);
-    mealPrepItems = await buildItems(mealPrepRows);
-    usingIllustrativeMealPrep = !mealPrepItems.length && !lastFetchError;
-    if (mealPrepItems.length) newestMealPrepSeenAt = mealPrepItems[0].created_at;
-    if (usingIllustrativeMealPrep) {
-      mealPrepItems = ILLUSTRATIVE_MEAL_PREP.map(function (it, i) {
-        return {
-          id: "illustrative-" + i,
-          user_id: "",
-          kind: "photo",
-          url: "assets/mealprep/" + it.file,
-          posterUrl: "",
-          name: it.name,
-          created_at: new Date().toISOString(),
-          workout_type: "Meal Prep",
-          location: "",
-          caption: it.caption,
-          signature: it.signature || "",
-          age: it.age || null,
-          illustrativeReactions: it.reactions || null,
-          illustrativeComments: it.comments || null
-        };
-      });
-    }
+    var mealPrepRows = await fetchBatch(true, MEAL_PREP_STRIP_SIZE, 0);
+    mealPrepRealItems = await buildItems(mealPrepRows);
+    if (mealPrepRealItems.length) newestMealPrepSeenAt = mealPrepRealItems[0].created_at;
+    // On a genuine fetch error, keep the strip empty so renderMealPrepStrip's
+    // error message shows — don't paper over a real problem with examples.
+    mealPrepItems = lastFetchError ? [] : composeMealPrepStrip(mealPrepRealItems);
     renderMealPrepStrip();
 
     renderFilters();
