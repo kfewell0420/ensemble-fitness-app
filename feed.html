@@ -1841,10 +1841,72 @@
     return days + "d ago";
   }
 
+  // Signed URLs are cached in memory for the lifetime of this page load,
+  // keyed by storage path. They're valid for a full hour, so re-signing a
+  // path this session already has is pure waste — and every live-update
+  // poll (checkForLiveUpdates, checkForNewMealPrep) re-runs buildItems,
+  // which would otherwise re-request a URL for a post that's already on
+  // screen. Refreshing a minute early avoids ever handing out one that
+  // expires moments after use.
+  var SIGNED_URL_TTL_SECONDS = 3600;
+  var signedUrlCache = new Map(); // path -> { url, expiresAt: ms epoch }
+
+  // Ken's ask (Sept 2026): "pictures and videos load slowly" on a mobile
+  // hotspot — a slow/high-latency connection makes ROUND TRIPS expensive,
+  // more than the size of any one response. The old signedUrl() below
+  // fired one createSignedUrl request per file, so a single page of ~8-14
+  // posts (photo + poster for each video) meant 15-25 separate requests,
+  // all before anything could render. createSignedUrls (plural) signs a
+  // whole batch of paths in one request — this resolves every path a
+  // caller asks for, using the cache above for anything already signed and
+  // firing at most one network request for whatever's left.
+  async function resolveSignedUrls(paths) {
+    var result = {};
+    var toFetch = [];
+    paths.forEach(function (p) {
+      if (!p) return;
+      var cached = signedUrlCache.get(p);
+      if (cached && cached.expiresAt > Date.now()) {
+        result[p] = cached.url;
+      } else if (toFetch.indexOf(p) === -1) {
+        toFetch.push(p);
+      }
+    });
+    if (toFetch.length) {
+      var expiresAt = Date.now() + (SIGNED_URL_TTL_SECONDS - 60) * 1000;
+      var bucket = window.sb.storage.from("media");
+      // Defensive fallback: createSignedUrls (plural) is the whole point of
+      // this batching, but if it's ever missing (an unexpectedly old client
+      // build, a proxy/CDN that strips it, etc.) falling back to one
+      // request per path keeps photos and videos loading instead of one
+      // missing method taking down every image on the page.
+      if (typeof bucket.createSignedUrls === "function") {
+        var { data, error } = await bucket.createSignedUrls(toFetch, SIGNED_URL_TTL_SECONDS);
+        (!error && data ? data : []).forEach(function (row) {
+          var url = (!row.error && row.signedUrl) ? row.signedUrl : "";
+          result[row.path] = url;
+          signedUrlCache.set(row.path, { url: url, expiresAt: expiresAt });
+        });
+      } else {
+        await Promise.all(toFetch.map(async function (p) {
+          try {
+            var { data } = await bucket.createSignedUrl(p, SIGNED_URL_TTL_SECONDS);
+            var url = data ? data.signedUrl : "";
+            result[p] = url;
+            signedUrlCache.set(p, { url: url, expiresAt: expiresAt });
+          } catch (e) {
+            result[p] = "";
+          }
+        }));
+      }
+    }
+    return result;
+  }
+
   async function signedUrl(path) {
     if (!path) return "";
-    var { data } = await window.sb.storage.from("media").createSignedUrl(path, 3600);
-    return data ? data.signedUrl : "";
+    var map = await resolveSignedUrls([path]);
+    return map[path] || "";
   }
 
   // mealPrepOnly=true -> the top strip's source; false -> everything else,
@@ -1948,18 +2010,20 @@
   }
 
   async function buildItems(rows) {
-    return Promise.all(rows.map(async function (raw) {
+    var paths = [];
+    rows.forEach(function (raw) {
+      if (raw.storage_path) paths.push(raw.storage_path);
+      if (raw.kind === "video" && raw.poster_path) paths.push(raw.poster_path);
+    });
+    var urlMap = await resolveSignedUrls(paths);
+    return rows.map(function (raw) {
       var wantsPoster = raw.kind === "video" && !!raw.poster_path;
-      var [url, posterUrl] = await Promise.all([
-        signedUrl(raw.storage_path),
-        wantsPoster ? signedUrl(raw.poster_path) : Promise.resolve("")
-      ]);
       return {
         id: raw.id,
         user_id: raw.user_id,
         kind: raw.kind,
-        url: url,
-        posterUrl: posterUrl,
+        url: urlMap[raw.storage_path] || "",
+        posterUrl: wantsPoster ? (urlMap[raw.poster_path] || "") : "",
         name: (raw.profiles && raw.profiles.display_name) || "A member",
         created_at: raw.created_at,
         workout_type: raw.workout_type || "",
@@ -1969,7 +2033,7 @@
         storage_path: raw.storage_path || "",
         poster_path: raw.poster_path || ""
       };
-    }));
+    });
   }
 
   // ---------------- Meal Prep strip ----------------
@@ -2000,7 +2064,7 @@
       var fallback = '<span class="rp-mealprep-fallback" style="background:' + avatarColor(item.user_id) + '">' + escapeHtml(initial) + '</span>';
       var thumb = item.kind === "video"
         ? '<video class="rp-mealprep-media" src="' + item.url + '"' + (item.posterUrl ? ' poster="' + item.posterUrl + '"' : '') + ' muted playsinline preload="metadata" onloadeddata="this.classList.add(\'ready\')"></video><span class="rp-play-badge">▶</span>'
-        : '<img class="rp-mealprep-media" src="' + item.url + '" alt="Meal prep" onload="this.classList.add(\'ready\')" onerror="this.style.display=\'none\'" />';
+        : '<img class="rp-mealprep-media" src="' + item.url + '" alt="Meal prep" loading="lazy" decoding="async" onload="this.classList.add(\'ready\')" onerror="this.style.display=\'none\'" />';
       return '<button type="button" class="rp-mealprep-card" data-index="' + i + '">' +
         '<span class="rp-mealprep-ring"><span class="rp-mealprep-thumb">' + fallback + thumb + '</span></span>' +
         '<span class="rp-mealprep-name">' + escapeHtml(item.name) + '</span>' +
@@ -2272,7 +2336,7 @@
 
     var mediaHtml = item.kind === "video"
       ? '<video src="' + item.url + '"' + (item.posterUrl ? ' poster="' + item.posterUrl + '"' : '') + ' loop muted playsinline preload="metadata"></video>'
-      : '<img src="' + item.url + '" alt="Workout post" />';
+      : '<img src="' + item.url + '" alt="Workout post" loading="lazy" decoding="async" />';
 
     var badgeParts = [];
     if (item.workout_type) {
@@ -3196,7 +3260,7 @@
         ? window.SUPABASE_URL + "/storage/v1/object/public/book-covers/" + b.cover_storage_path
         : "";
       return '<div class="rp-book-card">' +
-        (cover ? '<img src="' + cover + '" alt="" />' : '<div class="rp-book-fallback">📖</div>') +
+        (cover ? '<img src="' + cover + '" alt="" loading="lazy" decoding="async" />' : '<div class="rp-book-fallback">📖</div>') +
         '<div class="rp-book-title">' + escapeHtml(b.title) + '</div></div>';
     }).join("");
     panel.innerHTML =
