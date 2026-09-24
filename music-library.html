@@ -108,6 +108,13 @@
             <span id="refreshStatus" style="font-size:11.5px; color:var(--faint-invert); min-height:14px;"></span>
           </div>
         </div>
+        <!-- Ken's ask (Sept 2026): with the library potentially growing to
+             hundreds or thousands of tracks, a search box is what keeps a
+             plain scrolling list usable — type a few letters of a title or
+             artist and the list narrows to just those rows. -->
+        <div class="track-search-row">
+          <input type="search" id="trackSearchInput" class="track-search-input" placeholder="Search by title or artist…" autocomplete="off">
+        </div>
         <div class="track-table" id="tracksList">
           <div class="empty-state">Loading…</div>
         </div>
@@ -269,6 +276,25 @@
      between it and the button above. */
   .track-table .empty-state { padding: 6px 4px 2px; font-size: 13px; text-align: left; }
 
+  /* ---- Search box ----------------------------------------------------------
+     Ken's ask (Sept 2026): with the library growing well past a couple of
+     tracks, typing a few letters to narrow the list is what keeps a long
+     scrolling list actually usable — the same job the search field does in
+     an iTunes/Apple Music songs view. */
+  .track-search-row { margin-bottom: 10px; }
+  .track-search-input {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: var(--radius-sm);
+    padding: 9px 12px;
+    font-size: 13.5px;
+    color: #fff;
+    font-family: inherit;
+  }
+  .track-search-input::placeholder { color: var(--faint-invert); }
+  .track-search-input:focus { outline: none; border-color: var(--accent); }
+
   /* ---- Track list, iTunes-style: a compact, clickable row per track —
      art, title + artist, a chevron — built to stay readable at any width,
      from a handful of tracks to a very long library. Title and artist
@@ -338,13 +364,33 @@
   }
   .track-table-chevron { flex: none; font-size: 18px; color: var(--faint-invert); }
 
-  @media (min-width: 900px) {
-    /* Keeps the card's own height sane (and matched to the wallet's,
-       via stretch above) once the library actually has a lot of tracks
-       in it — the list scrolls inside the card instead of the card
-       growing forever down the page. */
-    .track-table { max-height: 420px; overflow-y: auto; }
+  /* Ken's ask (Sept 2026): at 2 tracks this didn't matter, but at hundreds
+     or thousands it does — the list now always scrolls inside its own
+     fixed-height box (phones included), so the page itself never grows
+     taller as the library grows. Paired with the search box above, this is
+     the same "seamless at any size" behavior an iTunes/Apple Music songs
+     view has: a capped window you scroll or filter, never an ever-taller
+     page. min() keeps it from feeling cramped on a short phone screen while
+     still capping it well short of the viewport on a tall one. */
+  .track-table { max-height: min(60vh, 480px); overflow-y: auto; }
+
+  /* The header row stays pinned to the top of that scroll box (rather than
+     scrolling away with the rows) so, just like iTunes' own column headers,
+     you always know what you're looking at no matter how far down the list
+     you've scrolled. Background matches the card behind it so rows don't
+     show through as they pass underneath. */
+  .track-table-head {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: #0c0a11;
   }
+
+  /* Light zebra striping — a small touch, but it's what makes a plain list
+     of stacked rows actually read as a dense table at a glance, the way
+     the iTunes reference screenshot does. */
+  .track-table-row:nth-child(even) { background: rgba(255, 255, 255, 0.02); }
+  .track-table-row:nth-child(even):hover, .track-table-row:nth-child(even):focus-visible { background: rgba(255, 255, 255, 0.045); }
 
   /* ---- Bottom tagline ----------------------------------------------------- */
   .ml-tagline {
@@ -475,6 +521,10 @@
                               // button to say what changed, since a refresh
                               // that finds nothing new looks identical to a
                               // broken button otherwise.
+  var allTracks = [];        // the full library, fetched once — search below
+                              // filters this in memory rather than re-querying
+                              // per keystroke.
+  var currentSearchQuery = "";
 
   async function loadTracks() {
     var list = document.getElementById("tracksList");
@@ -498,17 +548,45 @@
       list.innerHTML = '<div class="empty-state">Couldn\'t load the Music Library right now — please refresh.</div>';
       return null;
     }
-    if (!data || data.length === 0) {
+
+    allTracks = data || [];
+    renderTrackList();
+    return allTracks.length;
+  }
+
+  function trackMatchesQuery(track, query) {
+    if (!query) return true;
+    var haystack = (track.title + " " + track.artist_name + " " + (track.tagline || "")).toLowerCase();
+    return haystack.indexOf(query) !== -1;
+  }
+
+  // Re-draws the list from the already-fetched allTracks, applying the
+  // current search box text — called both after a fresh load and on every
+  // keystroke in the search box, with no extra network trip either way.
+  function renderTrackList() {
+    var list = document.getElementById("tracksList");
+
+    if (allTracks.length === 0) {
       list.innerHTML = '<div class="empty-state">No tracks yet — check back soon.</div>';
-      return 0;
+      return;
     }
 
-    list.innerHTML =
-      '<div class="track-table-head"><span>' + data.length + ' track' + (data.length === 1 ? "" : "s") + '</span><span>Time</span></div>';
-    data.forEach(function (track) {
+    var query = currentSearchQuery.trim().toLowerCase();
+    var visible = allTracks.filter(function (t) { return trackMatchesQuery(t, query); });
+
+    if (visible.length === 0) {
+      list.innerHTML = '<div class="empty-state">No tracks match "' + escapeHtml(currentSearchQuery.trim()) + '".</div>';
+      return;
+    }
+
+    var headLabel = query
+      ? visible.length + " of " + allTracks.length + " track" + (allTracks.length === 1 ? "" : "s")
+      : allTracks.length + " track" + (allTracks.length === 1 ? "" : "s");
+
+    list.innerHTML = '<div class="track-table-head"><span>' + headLabel + '</span><span>Time</span></div>';
+    visible.forEach(function (track) {
       list.appendChild(buildTrackRow(track));
     });
-    return data.length;
   }
 
   function formatTrackDuration(seconds) {
@@ -540,6 +618,11 @@
 
   document.getElementById("refreshTracksBtn").addEventListener("click", function () {
     refreshTracks();
+  });
+
+  document.getElementById("trackSearchInput").addEventListener("input", function (e) {
+    currentSearchQuery = e.target.value;
+    renderTrackList();
   });
 
   var refreshStatusTimer = null;
