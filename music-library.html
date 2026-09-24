@@ -92,22 +92,13 @@
             <h2 style="font-size:18px; margin-bottom:4px;">Listen &amp; pick your next workout track</h2>
             <p class="card-sub" style="margin-bottom:0;">Tap any track below for the full page — player, artist story, and tipping. These are the same tracks you can choose from when uploading a workout video on your Profile page.</p>
           </div>
-          <!-- Was labeled "🔍 Browse Tracks" — sitting right under an
-               eyebrow that already says "Browse Tracks", it read as a link
-               to some OTHER, fuller browsing page, when this list right
-               below IS that page (every track, no cap — see loadTracks()).
-               Relabeling to "Refresh" wasn't enough on its own: when there's
-               nothing new to find (the common case), the list looks
-               byte-for-byte identical before and after the click, so it
-               still read as "does nothing" even though the refresh did run.
-               Now the button itself shows the click was received (disables,
-               "Refreshing…") and #refreshStatus reports the outcome either
-               way, so a no-op refresh still visibly confirms itself. -->
-          <div style="flex:none; display:flex; flex-direction:column; align-items:flex-end; gap:4px;">
-            <button type="button" class="btn btn-primary btn-sm" id="refreshTracksBtn" style="white-space:nowrap;">🔄 Refresh</button>
-            <span id="refreshStatus" style="font-size:11.5px; color:var(--faint-invert); min-height:14px;"></span>
-          </div>
         </div>
+        <!-- Ken's ask (Sept 2026): no manual button here at all — a newly
+             approved track should just appear in this list on its own. The
+             page now listens for live changes to the tracks table (see
+             subscribeToTrackChanges below) and quietly reloads the list the
+             moment one is added, the same live-update pattern feed.html
+             already uses for new posts. -->
         <!-- Ken's ask (Sept 2026): with the library potentially growing to
              hundreds or thousands of tracks, a search box is what keeps a
              plain scrolling list usable — type a few letters of a title or
@@ -449,7 +440,8 @@
 
     handleTopupRedirect();
     await loadWallet();
-    lastTrackCount = await loadTracks();
+    await loadTracks();
+    subscribeToTrackChanges();
   }
 
   // ---- Wallet -------------------------------------------------------------
@@ -517,10 +509,6 @@
   // or a thousand — since nothing here loads an audio file until you
   // actually open a track.
 
-  var lastTrackCount = null; // null = haven't loaded yet; used by the Refresh
-                              // button to say what changed, since a refresh
-                              // that finds nothing new looks identical to a
-                              // broken button otherwise.
   var allTracks = [];        // the full library, fetched once — search below
                               // filters this in memory rather than re-querying
                               // per keystroke.
@@ -616,40 +604,31 @@
     return row;
   }
 
-  document.getElementById("refreshTracksBtn").addEventListener("click", function () {
-    refreshTracks();
-  });
-
   document.getElementById("trackSearchInput").addEventListener("input", function (e) {
     currentSearchQuery = e.target.value;
     renderTrackList();
   });
 
-  var refreshStatusTimer = null;
-  async function refreshTracks() {
-    var btn = document.getElementById("refreshTracksBtn");
-    var status = document.getElementById("refreshStatus");
-    clearTimeout(refreshStatusTimer);
-    var priorCount = lastTrackCount;
-    btn.disabled = true;
-    btn.textContent = "Refreshing…";
-    status.textContent = "";
+  // Ken's ask (Sept 2026): no manual refresh button — a track approved
+  // elsewhere should just show up here on its own. Same live-update
+  // approach feed.html already uses for new posts: listen for any change to
+  // the tracks table and quietly reload. A short debounce collapses a burst
+  // of several changes (e.g. approving 5 tracks back to back) into one
+  // reload instead of five. loadTracks() re-renders through the same
+  // renderTrackList() the search box uses, so an in-progress search stays
+  // applied across a live reload instead of resetting.
+  var trackReloadTimer = null;
+  function scheduleTrackReload() {
+    clearTimeout(trackReloadTimer);
+    trackReloadTimer = setTimeout(function () { loadTracks(); }, 500);
+  }
 
-    var newCount = await loadTracks();
-
-    btn.disabled = false;
-    btn.textContent = "🔄 Refresh";
-
-    if (newCount === null) {
-      status.textContent = "Couldn't refresh — try again.";
-    } else if (priorCount === null || newCount <= priorCount) {
-      status.textContent = "✓ Up to date";
-    } else {
-      var added = newCount - priorCount;
-      status.textContent = "✓ Found " + added + " new track" + (added === 1 ? "" : "s") + "!";
-    }
-    lastTrackCount = newCount;
-    refreshStatusTimer = setTimeout(function () { status.textContent = ""; }, 4000);
+  function subscribeToTrackChanges() {
+    if (!window.sb || !window.sb.channel) return;
+    window.sb
+      .channel("music-library-live-changes")
+      .on("postgres_changes", { event: "*", schema: "public", table: "tracks" }, scheduleTrackReload)
+      .subscribe();
   }
 
   document.getElementById("signOutLink").addEventListener("click", function (e) {
