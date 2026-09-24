@@ -92,7 +92,21 @@
             <h2 style="font-size:18px; margin-bottom:4px;">Listen &amp; pick your next workout track</h2>
             <p class="card-sub" style="margin-bottom:0;">Tap any track below for the full page — player, artist story, and tipping. These are the same tracks you can choose from when uploading a workout video on your Profile page.</p>
           </div>
-          <button type="button" class="btn btn-primary btn-sm" id="refreshTracksBtn" style="flex:none; white-space:nowrap;">🔍 Browse Tracks</button>
+          <!-- Was labeled "🔍 Browse Tracks" — sitting right under an
+               eyebrow that already says "Browse Tracks", it read as a link
+               to some OTHER, fuller browsing page, when this list right
+               below IS that page (every track, no cap — see loadTracks()).
+               Relabeling to "Refresh" wasn't enough on its own: when there's
+               nothing new to find (the common case), the list looks
+               byte-for-byte identical before and after the click, so it
+               still read as "does nothing" even though the refresh did run.
+               Now the button itself shows the click was received (disables,
+               "Refreshing…") and #refreshStatus reports the outcome either
+               way, so a no-op refresh still visibly confirms itself. -->
+          <div style="flex:none; display:flex; flex-direction:column; align-items:flex-end; gap:4px;">
+            <button type="button" class="btn btn-primary btn-sm" id="refreshTracksBtn" style="white-space:nowrap;">🔄 Refresh</button>
+            <span id="refreshStatus" style="font-size:11.5px; color:var(--faint-invert); min-height:14px;"></span>
+          </div>
         </div>
         <div class="track-table" id="tracksList">
           <div class="empty-state">Loading…</div>
@@ -264,7 +278,18 @@
      table doesn't leave enough room for a title to stay readable — this
      keeps every row legible at any width instead of squeezing text into a
      sliver. */
+  /* Ken's ask (Sept 2026): this used to be one plain "N tracks" line —
+     reads more like a caption than a list header, so this whole box didn't
+     register as "an actual track list, left to right" the way an iTunes/
+     Apple Music songs view does. A real two-ended header row (count on the
+     left, "Time" on the right, lined up over the rows' own title/duration
+     columns below) makes it unmistakably a track table, without adding any
+     columns this app doesn't actually have data for (no Artist/Album/Genre
+     — see buildTrackRow's tagline-instead-of-artist comment). */
   .track-table-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
     padding: 0 4px 10px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     font-size: 11px;
@@ -378,7 +403,7 @@
 
     handleTopupRedirect();
     await loadWallet();
-    await loadTracks();
+    lastTrackCount = await loadTracks();
   }
 
   // ---- Wallet -------------------------------------------------------------
@@ -446,6 +471,11 @@
   // or a thousand — since nothing here loads an audio file until you
   // actually open a track.
 
+  var lastTrackCount = null; // null = haven't loaded yet; used by the Refresh
+                              // button to say what changed, since a refresh
+                              // that finds nothing new looks identical to a
+                              // broken button otherwise.
+
   async function loadTracks() {
     var list = document.getElementById("tracksList");
     // Ken's ask (Sept 2026): the box needs to end right at the orange
@@ -466,17 +496,19 @@
 
     if (error) {
       list.innerHTML = '<div class="empty-state">Couldn\'t load the Music Library right now — please refresh.</div>';
-      return;
+      return null;
     }
     if (!data || data.length === 0) {
       list.innerHTML = '<div class="empty-state">No tracks yet — check back soon.</div>';
-      return;
+      return 0;
     }
 
-    list.innerHTML = '<div class="track-table-head">' + data.length + ' track' + (data.length === 1 ? "" : "s") + '</div>';
+    list.innerHTML =
+      '<div class="track-table-head"><span>' + data.length + ' track' + (data.length === 1 ? "" : "s") + '</span><span>Time</span></div>';
     data.forEach(function (track) {
       list.appendChild(buildTrackRow(track));
     });
+    return data.length;
   }
 
   function formatTrackDuration(seconds) {
@@ -507,8 +539,35 @@
   }
 
   document.getElementById("refreshTracksBtn").addEventListener("click", function () {
-    loadTracks();
+    refreshTracks();
   });
+
+  var refreshStatusTimer = null;
+  async function refreshTracks() {
+    var btn = document.getElementById("refreshTracksBtn");
+    var status = document.getElementById("refreshStatus");
+    clearTimeout(refreshStatusTimer);
+    var priorCount = lastTrackCount;
+    btn.disabled = true;
+    btn.textContent = "Refreshing…";
+    status.textContent = "";
+
+    var newCount = await loadTracks();
+
+    btn.disabled = false;
+    btn.textContent = "🔄 Refresh";
+
+    if (newCount === null) {
+      status.textContent = "Couldn't refresh — try again.";
+    } else if (priorCount === null || newCount <= priorCount) {
+      status.textContent = "✓ Up to date";
+    } else {
+      var added = newCount - priorCount;
+      status.textContent = "✓ Found " + added + " new track" + (added === 1 ? "" : "s") + "!";
+    }
+    lastTrackCount = newCount;
+    refreshStatusTimer = setTimeout(function () { status.textContent = ""; }, 4000);
+  }
 
   document.getElementById("signOutLink").addEventListener("click", function (e) {
     e.preventDefault();
