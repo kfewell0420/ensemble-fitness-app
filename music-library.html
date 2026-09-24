@@ -90,28 +90,40 @@
           <div>
             <div class="eyebrow" style="margin-bottom:2px;">Browse Tracks</div>
             <h2 style="font-size:18px; margin-bottom:4px;">Listen &amp; pick your next workout track</h2>
-            <p class="card-sub" style="margin-bottom:0;">Tap any track below for the full page — player, artist story, and tipping. These are the same tracks you can choose from when uploading a workout video on your Profile page.</p>
+            <p class="card-sub" style="margin-bottom:16px;">These are the same tracks you can choose from when uploading a workout video on your Profile page — all from independent artists, free to use.</p>
           </div>
         </div>
-        <!-- Ken's ask (Sept 2026): no manual button here at all — a newly
-             approved track should just appear in this list on its own. The
-             page now listens for live changes to the tracks table (see
-             subscribeToTrackChanges below) and quietly reloads the list the
-             moment one is added, the same live-update pattern feed.html
-             already uses for new posts. -->
-        <!-- Ken's ask (Sept 2026): with the library potentially growing to
-             hundreds or thousands of tracks, a search box is what keeps a
-             plain scrolling list usable — type a few letters of a title or
-             artist and the list narrows to just those rows. -->
-        <div class="track-search-row">
-          <input type="search" id="trackSearchInput" class="track-search-input" placeholder="Search by title or artist…" autocomplete="off">
-        </div>
-        <div class="track-table" id="tracksList">
-          <div class="empty-state">Loading…</div>
-        </div>
+        <!-- Ken's ask (Sept 2026): the tracks live in their own "Workout
+             Playlist" popup now rather than sitting inline on the page —
+             tap the button to open it, browse/search there, then close back
+             out to this page. Same search + scrolling list as before, just
+             moved into #playlistModalOverlay below instead of living here. -->
+        <button type="button" class="btn btn-primary" id="openPlaylistBtn">▶ Browse Playlist</button>
       </div>
     </div>
 
+  </div>
+
+  <!-- Ken's ask (Sept 2026): these are unlicensed, independent artists —
+       random names members won't recognize and shouldn't need to. The list
+       itself deliberately shows no artist name (see buildTrackRow below);
+       this is framed as "the workout playlist," not an artist directory.
+       Reuses the app's existing .simple-modal pattern (see profile.html's
+       followers/following popup) so it looks and behaves consistently with
+       every other popup in the app. -->
+  <div class="simple-modal-overlay" id="playlistModalOverlay">
+    <div class="simple-modal" style="max-width:480px;">
+      <button type="button" class="simple-modal-close" id="playlistModalClose" aria-label="Close">&times;</button>
+      <div class="eyebrow" style="margin-bottom:2px;">Workout Playlist</div>
+      <h3 style="margin-bottom:4px;">Tap a track to listen, tip, and use it in a video</h3>
+      <p class="card-sub" style="margin-bottom:16px;">Just two tracks so far — more get added here the moment they're approved.</p>
+      <div class="track-search-row">
+        <input type="search" id="trackSearchInput" class="track-search-input" placeholder="Search by title…" autocomplete="off">
+      </div>
+      <div class="track-table" id="tracksList">
+        <div class="empty-state">Loading…</div>
+      </div>
+    </div>
   </div>
 
   <!-- The "Move / Create / Inspire / Together" row used to live here as
@@ -544,7 +556,10 @@
 
   function trackMatchesQuery(track, query) {
     if (!query) return true;
-    var haystack = (track.title + " " + track.artist_name + " " + (track.tagline || "")).toLowerCase();
+    // Deliberately not matching against artist_name — the playlist doesn't
+    // surface artist names (see buildTrackRow), so searching by one would
+    // find a track by a name the member never actually saw on screen.
+    var haystack = (track.title + " " + (track.tagline || "")).toLowerCase();
     return haystack.indexOf(query) !== -1;
   }
 
@@ -585,19 +600,23 @@
   }
 
   function buildTrackRow(track) {
-    // Ken's ask: keep this list light, iTunes-style but with less on it —
-    // a tagline (short and motivating) in place of the artist's name, and
-    // the track length. The artist's name, bio, and link still live on
-    // the track's own full page (track.html) for anyone who wants them.
+    // Ken's ask (Sept 2026): never show the artist's name here — these are
+    // random, unlicensed independent artists, not names a member would
+    // recognize, so this reads as a workout playlist rather than an artist
+    // directory. A tagline (short and motivating) shows instead when the
+    // artist gave one; otherwise the row just carries the title and time.
+    // The artist's actual name, bio, and link still live on the track's own
+    // full page (track.html) — that's the right place for it, since tipping
+    // there means knowing who you're supporting.
     var row = document.createElement("a");
     row.className = "track-table-row";
     row.href = "track.html?id=" + encodeURIComponent(track.id);
-    var subtitle = track.tagline || ("by " + track.artist_name);
+    var subtitle = track.tagline || "";
     row.innerHTML =
       '<span class="track-table-art">🎵</span>' +
       '<span class="track-table-main">' +
         '<span class="track-table-title">' + escapeHtml(track.title) + '</span>' +
-        '<span class="track-table-tagline">' + escapeHtml(subtitle) + '</span>' +
+        (subtitle ? '<span class="track-table-tagline">' + escapeHtml(subtitle) + '</span>' : '') +
       '</span>' +
       (track.duration_seconds ? '<span class="track-table-duration">' + formatTrackDuration(track.duration_seconds) + '</span>' : '') +
       '<span class="track-table-chevron">›</span>';
@@ -630,6 +649,25 @@
       .on("postgres_changes", { event: "*", schema: "public", table: "tracks" }, scheduleTrackReload)
       .subscribe();
   }
+
+  // ---- Playlist popup ------------------------------------------------------
+  // Same open/close pattern as the app's other popups (e.g. the followers
+  // list on profile.html): toggle a "show" class, close on the X, the
+  // backdrop, or Escape.
+  function openPlaylistModal() {
+    document.getElementById("playlistModalOverlay").classList.add("show");
+  }
+  function closePlaylistModal() {
+    document.getElementById("playlistModalOverlay").classList.remove("show");
+  }
+  document.getElementById("openPlaylistBtn").addEventListener("click", openPlaylistModal);
+  document.getElementById("playlistModalClose").addEventListener("click", closePlaylistModal);
+  document.getElementById("playlistModalOverlay").addEventListener("click", function (e) {
+    if (e.target.id === "playlistModalOverlay") closePlaylistModal();
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") closePlaylistModal();
+  });
 
   document.getElementById("signOutLink").addEventListener("click", function (e) {
     e.preventDefault();
