@@ -1195,6 +1195,14 @@
       color: #fff;
     }
     .rp-panel-empty { font-size: 12.5px; color: var(--faint-invert); padding: 4px 0 8px; }
+    /* A small clarifying caption under a panel's title — e.g. "(Newest
+       uploads)" under Music Library, so it's clear this short list is a
+       teaser, not the whole library. Its own line under the icon+title row
+       rather than crammed onto that row: the row is already tight at this
+       ~260px panel width (see the Healthy Meal Prep banner fix above for
+       what happens when a title has to share its line with more text than
+       fits — same risk here). */
+    .rp-panel-note { font-size: 10.5px; font-weight: 600; color: var(--faint-invert); margin: -6px 0 8px; }
     .rp-panel-link {
       display: inline-block;
       margin-top: 10px;
@@ -3169,6 +3177,7 @@
     }).join("");
     panel.innerHTML =
       '<div class="rp-panel-head"><span class="rp-panel-icon">🎧</span><span class="rp-panel-title">Music Library</span></div>' +
+      '<div class="rp-panel-note">(Newest uploads)</div>' +
       (rows || '<div class="rp-panel-empty">Tracks coming soon.</div>') +
       '<a class="rp-panel-link" href="music-library.html">Open Music Library →</a>';
   }
