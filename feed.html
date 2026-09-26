@@ -226,6 +226,7 @@
   }
   .rp-filters::-webkit-scrollbar { display: none; }
   .rp-filter-chip {
+    position: relative;
     flex: 0 0 auto;
     font-family: 'Poppins', 'Inter', sans-serif;
     font-size: 12px;
@@ -238,6 +239,27 @@
     cursor: pointer;
     white-space: nowrap;
     transition: transform 0.12s ease;
+  }
+  /* Fitness Journeys' "new since your last visit" count — same small
+     orange-circle-on-dark-ring treatment as the marketing site's own nav
+     badge, so it reads as the same notification language in both places. */
+  .rp-filter-badge {
+    position: absolute;
+    top: -7px;
+    right: -6px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: var(--accent);
+    border: 2px solid var(--navy-950);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
   }
   /* Selected state reads via contrast (dark-on-white), not another pink
      fill — the emoji already carries whatever color a chip needs. */
@@ -1591,7 +1613,11 @@
   // every .eq("workout_type", "Meal Prep") filter above keep working with no
   // migration) — this only swaps the on-screen text to match the public
   // marketing site's "Healthy Meal Prep" naming (Ken's ask, Sept 2026).
-  function categoryLabel(c) { return c === "Meal Prep" ? "Healthy Meal Prep" : c; }
+  // "Journeys" gets the same treatment (Ken's ask, Oct 2026): the internal
+  // filter value ("Journeys" — used by data-filter, activeFilter, every
+  // === "Journeys" branch below) is untouched, only the label shown on the
+  // chip now reads "Fitness Journeys" to match the marketing site's nav.
+  function categoryLabel(c) { return c === "Meal Prep" ? "Healthy Meal Prep" : c === "Journeys" ? "Fitness Journeys" : c; }
 
   // Illustrative placeholders — the same six "not live posts yet" examples
   // already used on the public Healthy Meal Prep page on the marketing
@@ -1717,22 +1743,62 @@
   // compare against.
   var newestMealPrepSeenAt = null;
 
+  // Ken's ask (Oct 2026): "Fitness Journeys" stopped being just another
+  // in-feed filter and became its own dedicated page (fitness-journeys.html)
+  // styled to match the marketing site's public page exactly — so this one
+  // chip navigates instead of re-filtering the reel in place. The old
+  // list-mode rendering path (resetReel's rp-reel-list toggle, the
+  // journalOffset/journalReachedEnd branches, fetchJournalBatch, etc.)
+  // stays in the file untouched below, it just never runs anymore since
+  // activeFilter can no longer become "Journeys" from here.
+  var journeysBadgeCount = 0;
+
   function renderFilters() {
     var wrap = document.getElementById("rpFilters");
     wrap.innerHTML = CATEGORY_FILTERS.map(function (label) {
+      var isJourneys = label === "Journeys";
+      var badgeHtml = (isJourneys && journeysBadgeCount > 0)
+        ? '<span class="rp-filter-badge">' + (journeysBadgeCount > 99 ? "99+" : journeysBadgeCount) + '</span>'
+        : "";
       return '<button type="button" class="rp-filter-chip' + (label === activeFilter ? " active" : "") + '" data-filter="' + escapeHtml(label) + '">' +
-        (CATEGORY_ICONS[label] ? CATEGORY_ICONS[label] + " " : "") + escapeHtml(label) +
+        (CATEGORY_ICONS[label] ? CATEGORY_ICONS[label] + " " : "") + escapeHtml(categoryLabel(label)) + badgeHtml +
         '</button>';
     }).join("");
     wrap.querySelectorAll(".rp-filter-chip").forEach(function (btn) {
       btn.addEventListener("click", function () {
         var filter = btn.dataset.filter;
+        if (filter === "Journeys") { window.location.href = "fitness-journeys.html"; return; }
         if (filter === activeFilter) return;
         activeFilter = filter;
         renderFilters();
         resetReel();
       });
     });
+  }
+
+  // Badge shows how many approved journeys posted since this member's last
+  // visit to the Fitness Journeys page — fitness-journeys.html stamps this
+  // same localStorage key with "now" on load, which is what clears it back
+  // to zero. First-ever visit (no stored timestamp yet) stamps "now" rather
+  // than counting the entire existing backlog as "new", so nobody sees a
+  // startling 40+ badge the day this feature ships.
+  function journeysLastSeenKey() { return "ef_journeys_last_seen_" + (currentUserId || "anon"); }
+
+  async function refreshJourneysBadge() {
+    var lastSeen = null;
+    try { lastSeen = localStorage.getItem(journeysLastSeenKey()); } catch (e) {}
+    if (!lastSeen) {
+      try { localStorage.setItem(journeysLastSeenKey(), new Date().toISOString()); } catch (e) {}
+      journeysBadgeCount = 0;
+      return;
+    }
+    var { count } = await window.sb
+      .from("community_questions")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "approved")
+      .gt("created_at", lastSeen);
+    journeysBadgeCount = count || 0;
+    renderFilters();
   }
 
   function resetReel() {
@@ -3132,6 +3198,7 @@
     loadMoreObserver.observe(document.getElementById("rpSentinel"));
     wireNewPill();
     subscribeToLiveFeed();
+    refreshJourneysBadge();
 
     // Desktop-dashboard-only content — skipped entirely on the phone
     // layout so the mobile app makes no extra network calls for panels
