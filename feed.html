@@ -218,7 +218,14 @@
     align-items: center; /* belt-and-suspenders: never let a chip stretch to fill the row's height, whatever else sits in that grid row */
     gap: 8px;
     overflow-x: auto;
-    padding: 10px 14px;
+    /* Extra top padding (was 10px all around) — the Fitness Journeys
+       badge sits at top:-7px on its chip (see .rp-filter-badge), and
+       overflow-x:auto here forces overflow-y to compute to auto too
+       (that's how the overflow-x/-y spec works when only one is set),
+       so anything poking above this row's own top edge got clipped in
+       half. The extra headroom gives the badge somewhere to sit without
+       being cut off. */
+    padding: 16px 14px 10px;
     background: #000;
     border-bottom: 1px solid rgba(255,255,255,0.08);
     scrollbar-width: none;
