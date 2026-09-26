@@ -187,7 +187,24 @@
         return;
       }
 
-      statusEl.textContent = "💛 Thanks for supporting " + out.artist_name + "!";
+      // out.payout_status matters here, not just res.ok — the wallet debit
+      // and the actual Stripe transfer to the artist are two separate
+      // steps server-side (see tip-track.js), and a 200 only ever meant
+      // "the wallet debit worked." Ken's report (Oct 2026): tested a $2
+      // tip, got a "thanks" message, artist never received a cent — because
+      // this used to show the same cheerful success line no matter which
+      // of the three outcomes actually happened. Now it says what really
+      // happened: paid (transfer went through), blocked (artist hasn't
+      // linked a bank yet — safe, will pay out the moment they do), or
+      // unpaid (linked, but the transfer itself failed — admin's already
+      // been emailed about this one, see tip-track.js).
+      if (out.payout_status === "blocked") {
+        statusEl.textContent = "💛 Sent! " + out.artist_name + " hasn't linked a bank account yet, so this is on hold — they'll get paid the moment they finish setup.";
+      } else if (out.payout_status === "unpaid") {
+        statusEl.textContent = "Your tip was recorded, but sending it to " + out.artist_name + " hit a snag on our end — our team's already on it, no need to resend.";
+      } else {
+        statusEl.textContent = "💛 Thanks for supporting " + out.artist_name + "!";
+      }
       statusEl.className = "tip-status show success";
       var balEl = document.getElementById("tpWalletBalance");
       if (balEl) balEl.textContent = formatCents(out.balance_cents || 0);
