@@ -1776,27 +1776,23 @@
     });
   }
 
-  // Badge shows how many approved journeys posted since this member's last
-  // visit to the Fitness Journeys page — fitness-journeys.html stamps this
-  // same localStorage key with "now" on load, which is what clears it back
-  // to zero. First-ever visit (no stored timestamp yet) stamps "now" rather
-  // than counting the entire existing backlog as "new", so nobody sees a
-  // startling 40+ badge the day this feature ships.
-  function journeysLastSeenKey() { return "ef_journeys_last_seen_" + (currentUserId || "anon"); }
-
+  // Badge is simply the total number of approved real journeys — matching
+  // the marketing site's own nav badge, which has no concept of "since a
+  // particular visitor last looked" (it's a public page, no sign-in), so
+  // it's just showing "there are N of these." A first version of this
+  // tried a per-browser "since your last visit" localStorage timestamp
+  // instead, stamped by fitness-journeys.html on load — but that meant the
+  // very first visit to either page (no timestamp saved yet) always
+  // started the count at zero, so the count silently vanished the moment
+  // anyone opened the Fitness Journeys page. Ken: "it's not logging the
+  // two new journals anymore." A plain total sidesteps that class of bug
+  // entirely — same query, same result, on the Home feed chip and on
+  // fitness-journeys.html itself (see its own real-journeys count line).
   async function refreshJourneysBadge() {
-    var lastSeen = null;
-    try { lastSeen = localStorage.getItem(journeysLastSeenKey()); } catch (e) {}
-    if (!lastSeen) {
-      try { localStorage.setItem(journeysLastSeenKey(), new Date().toISOString()); } catch (e) {}
-      journeysBadgeCount = 0;
-      return;
-    }
     var { count } = await window.sb
       .from("community_questions")
       .select("id", { count: "exact", head: true })
-      .eq("status", "approved")
-      .gt("created_at", lastSeen);
+      .eq("status", "approved");
     journeysBadgeCount = count || 0;
     renderFilters();
   }
