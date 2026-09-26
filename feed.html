@@ -248,21 +248,27 @@
     transform: translateY(-1px);
   }
 
-  /* ---- Vertical reel ------------------------------------------ */
+  /* ---- Vertical reel ------------------------------------------
+     Ken's ask (Sept 2026): the reel is now a normal scrolling list of
+     bounded post cards (see .rp-slide below) rather than a full-screen,
+     swipe-snap-per-post reel — so there's no more scroll-snap here, just a
+     plain scrolling column, the same behavior the Journeys-only list mode
+     (below) already used. That old list-mode class is kept as-is (its
+     rules now just restate what's already true here) rather than ripped
+     out, since removing it buys nothing and risks breaking something. */
   .rp-reel {
     flex: 1;
-    overflow-y: scroll;
-    scroll-snap-type: y mandatory;
+    overflow-y: auto;
     scrollbar-width: none;
+    padding: 14px 0 8px;
   }
-  /* This reel is one full-height slide at a time (scroll-snap), so a post
-     that lands live above whatever's currently on screen isn't something
-     you'd otherwise notice - the browser holds your place on the slide
-     you're already watching. This is the "something's new" signal
-     Instagram/X show in exactly this situation - sticky at the top of the
-     reel no matter where you're scrolled to, tap it to jump up to it.
-     Ken: keep it off the person's face/photo entirely (tuck it up by the
-     name, not centered mid-image), keep it small since it's a
+  /* A post that lands live above whatever's currently on screen isn't
+     something you'd otherwise notice - the browser holds your place on
+     whatever you're already looking at. This is the "something's new"
+     signal Instagram/X show in exactly this situation - sticky at the top
+     of the reel no matter where you're scrolled to, tap it to jump up to
+     it. Ken: keep it off the person's face/photo entirely (tuck it up by
+     the name, not centered mid-image), keep it small since it's a
      notification and not a banner, and give it its own color - the site
      already leans heavily pink, so this uses the same orange the
      marketing site's "new" indicators use, to read as a distinct system
@@ -293,29 +299,43 @@
   .rp-new-pill[hidden] { display: none; }
   .rp-reel::-webkit-scrollbar { display: none; }
 
-  /* List mode — used only for the "Journeys" filter. At scale (Ken: could
-     be hundreds or thousands of entries a day) forcing one text post per
-     full screen, swipe-to-advance, doesn't hold up the way it does for
-     photos/videos. Journeys instead scroll as an ordinary stacked list of
-     compact cards, same idea as the marketing site's own Fitness Journeys
-     panel. Journal posts mixed into the "All" reel (alongside photos/
-     videos) keep the full-bleed .rp-slide treatment below, since that's a
-     small minority of a reel that's otherwise full-bleed media. */
+  /* List mode — was a Journeys-only distinction back when photos/videos
+     used a completely different full-bleed swipe layout; now every filter
+     scrolls the same plain way (see .rp-reel above), so this class just
+     restates the same values. Left in place (harmless) rather than
+     ripped out along with the JS that still toggles it. */
   .rp-reel.rp-reel-list {
-    scroll-snap-type: none;
     overflow-y: auto;
     padding: 14px 0 8px;
   }
 
+  /* Ken's ask (Sept 2026): every post — photo/video or Journey — is now the
+     same kind of bounded, rounded card in normal document flow, matching
+     the app's other cards (and what the desktop grid already looked like).
+     No more full-bleed, screen-filling video with everything else
+     floated on top of it as a scrim overlay. */
   .rp-slide {
     position: relative;
-    height: 100%;
-    scroll-snap-align: start;
-    scroll-snap-stop: always;
+    height: auto;
+    margin: 0 14px 14px;
+    background: var(--navy-900);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+  /* The video/photo itself is a bounded box (not the whole screen) — the
+     header still overlays its top edge (see .rp-slide-header, now nested
+     inside .rp-media in the markup so it positions against just this box),
+     but the reaction bar and caption below live in plain document flow
+     under it instead of floating on top. 4:5 matches the aspect the
+     desktop grid already settled on, for the same reason: enough of the
+     video to see what's happening without cropping it into a sliver. */
+  .rp-media {
+    position: relative;
+    aspect-ratio: 4 / 5;
     background: #000;
     overflow: hidden;
   }
-  .rp-media { position: absolute; inset: 0; }
   .rp-media img, .rp-media video {
     width: 100%;
     height: 100%;
@@ -328,7 +348,7 @@
   }
   .rp-mute-hint {
     position: absolute;
-    top: calc(env(safe-area-inset-top, 0px) + 16px);
+    top: 12px;
     left: 50%;
     transform: translateX(-50%);
     background: rgba(0,0,0,0.5);
@@ -343,17 +363,23 @@
 
   /* Per-post header — who posted it, a way to follow them, and a way to
      do everything else (message/report/block) without cluttering the
-     video itself. Functionally similar to what every reels-style app
-     needs, but built with our own colors, spacing and a "•••" menu
-     glyph rather than mirroring any one app's exact icon set. */
+     video itself. Overlays the top edge of the bounded video box (it's a
+     child of .rp-media now, not the safe-area-aware top of the physical
+     screen — this card no longer touches the screen edge, so no more
+     env(safe-area-inset-top) offset is needed here). */
   .rp-slide-header {
     position: absolute;
-    top: calc(env(safe-area-inset-top, 0px) + 12px);
+    top: 12px;
     left: 14px;
     right: 14px;
     z-index: 6;
     display: flex;
-    align-items: center;
+    /* flex-start, not center: headertext can be 1-3 lines (name, sub,
+       optional context badges). Centering the avatar against that whole
+       stacked block made the avatar drift down and the name look like it
+       floated above the row on posts with a badge. Top-aligning keeps the
+       avatar level with the name, which is the normal look. */
+    align-items: flex-start;
     gap: 9px;
   }
   .rp-slide-avatar {
@@ -471,13 +497,13 @@
   .rp-more-menu button:not(:last-child) { border-bottom: 1px solid rgba(255,255,255,0.07); }
   .rp-more-menu button.danger { color: #ff6b6b; }
 
+  /* Ken's ask (Sept 2026): no more dark gradient scrim over the video — the
+     caption now sits in plain flow below the reaction bar, same as it
+     already did on the desktop grid, since the video is a bounded box now
+     rather than a full-bleed background the caption needed a scrim to
+     stay readable against. */
   .rp-overlay-bottom {
-    position: absolute;
-    left: 0;
-    right: 76px;
-    bottom: 0;
-    padding: 60px 16px calc(env(safe-area-inset-bottom, 0px) + 22px);
-    background: linear-gradient(to top, rgba(0,0,0,0.8), rgba(0,0,0,0));
+    padding: 4px 14px 14px;
     color: #fff;
   }
   .rp-name { font-weight: 700; font-size: 15px; margin-bottom: 2px; }
@@ -579,9 +605,24 @@
     justify-content: flex-start;
     gap: 16px;
     margin: 2px 0 12px;
+    padding: 0;
+    border-top: none;
     z-index: auto;
   }
-  .rp-slide-compact .rp-action-btn { flex-direction: row; gap: 6px; }
+  /* The main feed's below-video bar (base .rp-action-btn, further down)
+     added generous padding and a min-height for a comfortable tap target
+     on its 4-across row — explicitly zeroed back out here so Journeys
+     keeps its original tight, quiet-accent sizing instead of picking that
+     up too. Same for `flex`: the main bar's buttons stretch evenly across
+     the full row width (flex: 1 1 0), which would blow out this
+     left-aligned, natural-width row if left in place. */
+  .rp-slide-compact .rp-action-btn {
+    flex: none;
+    flex-direction: row;
+    gap: 6px;
+    padding: 0;
+    min-height: 0;
+  }
   .rp-slide-compact .rp-action-icon {
     width: 22px;
     height: 22px;
@@ -624,69 +665,82 @@
     .rp-slide-new { animation: none; }
   }
 
+  /* Ken's ask (Sept 2026): a compact row of all four actions directly under
+     the video, not a column of large circles floating on top of it — the
+     video was getting visually crowded, and this reads more like a normal
+     social app's reaction row (Instagram, etc.) than a Reels-style overlay.
+     Evenly spaced across the card's width; each button's own padding keeps
+     a real ~44-48px tap target even though the icon drawn inside it is
+     small, per Ken's "don't shrink the actual tap area" instruction. */
   .rp-actions {
-    position: absolute;
-    right: 10px;
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 30px);
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 16px;
-    z-index: 5;
+    align-items: stretch;
+    justify-content: space-around;
+    padding: 4px 6px;
+    border-top: 1px solid rgba(255,255,255,0.08);
   }
   .rp-action-btn {
+    flex: 1 1 0;
     background: none;
     border: none;
     color: #fff;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 3px;
+    justify-content: center;
+    gap: 2px;
     cursor: pointer;
-    padding: 0;
+    padding: 9px 4px;
+    min-height: 44px;
+    border-radius: 10px;
   }
+  .rp-action-btn:active { background: rgba(255,255,255,0.06); }
   .rp-action-icon {
-    width: 46px;
-    height: 46px;
+    width: 30px;
+    height: 30px;
     border-radius: 999px;
-    background: rgba(20,22,28,0.55);
+    background: none;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #fff;
-    backdrop-filter: blur(3px);
-    transition: transform 0.12s ease, background 0.12s ease, color 0.12s ease;
+    color: rgba(255,255,255,0.85);
+    transition: background 0.12s ease, color 0.12s ease;
   }
-  /* Vector icons render in a color we set directly (currentColor), so
-     unlike the plain-emoji muscle reaction there's no OS-fixed hue to
-     clash with this fill — this just needs to read as "selected" against
-     the dark scrim. */
-  .rp-action-icon svg { width: 22px; height: 22px; }
+  .rp-action-icon svg { width: 19px; height: 19px; }
   /* The muscle reaction's icon is the native 💪 emoji (see REACTION_ICONS),
      which always renders in its own fixed color — sizing it via font-size
      since width/height (above) only affects the svg-based icons. */
-  .rp-action-icon { font-size: 26px; line-height: 1; }
-  .rp-action-btn.active .rp-action-icon {
-    background: var(--accent-dark);
-    border: 1.5px solid rgba(255,255,255,0.4);
-    transform: scale(1.08);
-  }
-  .rp-action-btn.active[data-reaction="heart"] .rp-action-icon {
-    background: var(--red);
-  }
-  /* Emoji keep their own fixed color, so a solid accent-color fill behind
-     the muscle icon on select would clash — a ring instead of a fill
-     still reads clearly as "selected" without fighting the emoji's hue. */
-  .rp-action-btn.active[data-reaction="muscle"] .rp-action-icon {
-    background: rgba(20,22,28,0.55);
-    border: 1.5px solid var(--accent-dark);
-  }
+  .rp-action-icon { font-size: 18px; line-height: 1; }
   .rp-action-count {
-    font-size: 11.5px;
+    font-size: 12.5px;
     font-weight: 700;
-    color: rgba(255,255,255,0.9);
-    min-height: 14px;
+    color: inherit;
+    min-height: 15px;
   }
+  /* A small word under the count — Ken's ask, so each icon reads
+     unambiguously at a glance instead of relying on shape alone. Always
+     this same quiet gray, active or not, so the row doesn't get busy —
+     the icon + count are what carry the "you reacted" color below. */
+  .rp-action-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  /* Ken's ask (Sept 2026): each reaction gets its own distinct active
+     color instead of one shared orange — thumbs up turns yellow, the
+     heart turns red, and the muscle (strong) reaction gets a soft green
+     highlight behind it, since the 💪 emoji always renders in its own
+     fixed color and can't be recolored directly the way the vector icons
+     can. Setting `color` on the button itself (rather than just the icon)
+     is what lets the count number pick up the same tint automatically. */
+  .rp-action-btn.active[data-reaction="thumbs_up"] { color: var(--star); }
+  .rp-action-btn.active[data-reaction="thumbs_up"] .rp-action-icon { background: rgba(242, 201, 76, 0.16); }
+  .rp-action-btn.active[data-reaction="heart"] { color: var(--red); }
+  .rp-action-btn.active[data-reaction="heart"] .rp-action-icon { background: rgba(226, 72, 58, 0.16); }
+  .rp-action-btn.active[data-reaction="muscle"] { color: var(--green); }
+  .rp-action-btn.active[data-reaction="muscle"] .rp-action-icon { background: rgba(31, 174, 110, 0.18); }
 
   /* Comments modal — fixed over the whole viewport, completely decoupled
      from any card's box, so opening it (on any post, with any number of
@@ -1139,6 +1193,18 @@
       grid-area: side;
     }
     .rp-mealprep { padding: 0; border-bottom: none; background: transparent; }
+    /* The banner (icon + "Healthy Meal Prep" + the "Community picks"/
+       "Examples" sub-label) was designed for the full-width mobile strip,
+       where all three comfortably fit on one line. Squeezed into this
+       ~260-300px sidebar column, there was no room left for the sub-label
+       once the title ran its full length, so the flex row was breaking the
+       TITLE itself across two lines ("HEALTHY MEAL" / "PREP") instead —
+       Ken's report. Keeping the title permanently unbreakable and letting
+       the row wrap means the sub-label is what drops to its own line here
+       when space is tight, never the title. */
+    .rp-mealprep-banner { flex-wrap: wrap; }
+    .rp-mealprep-banner-text { white-space: nowrap; flex-shrink: 0; }
+    .rp-mealprep-banner-sub { margin-left: 0; margin-top: 2px; }
     .rp-mealprep-track { padding: 2px 2px 4px; flex-wrap: wrap; gap: 14px; }
     .rp-mealprep-card { width: 82px; }
     .rp-mealprep-ring { width: 82px; height: 82px; }
@@ -1183,6 +1249,14 @@
       color: #fff;
     }
     .rp-panel-empty { font-size: 12.5px; color: var(--faint-invert); padding: 4px 0 8px; }
+    /* A small clarifying caption under a panel's title — e.g. "(Newest
+       uploads)" under Music Library, so it's clear this short list is a
+       teaser, not the whole library. Its own line under the icon+title row
+       rather than crammed onto that row: the row is already tight at this
+       ~260px panel width (see the Healthy Meal Prep banner fix above for
+       what happens when a title has to share its line with more text than
+       fits — same risk here). */
+    .rp-panel-note { font-size: 10.5px; font-weight: 600; color: var(--faint-invert); margin: -6px 0 8px; }
     .rp-panel-link {
       display: inline-block;
       margin-top: 10px;
@@ -1242,110 +1316,28 @@
     }
     .rp-sentinel { grid-column: 1 / -1; height: 1px; }
 
-    /* Post card: header → media → action icons → caption → comments,
-       stacked in normal flow via flex "order" rather than overlaid —
-       the DOM order stays exactly what mobile uses, only the visual
-       arrangement changes here. */
-    .rp-slide {
-      display: flex;
-      flex-direction: column;
-      position: static;
-      height: auto;
-      scroll-snap-align: none;
-      background: #0e0e11;
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 16px;
-      overflow: visible;
-      transition: border-color 0.15s ease;
-    }
+    /* Post card: as of Sept 2026 the mobile base rules above already build
+       exactly this "header overlays bounded video, actions row below,
+       plain caption last" card — this used to be a large desktop-only
+       duplicate of that same layout (built before mobile matched it), with
+       its own copy of every icon/color rule and a documented specificity
+       bug from the duplication. Now it's just the handful of things that
+       are genuinely different at this width: cards sit in a grid (gap
+       handles spacing, so the mobile side-margin has to go), and a subtle
+       hover border since a mouse is available here. */
+    .rp-slide { margin: 0; transition: border-color 0.15s ease; }
     .rp-slide:hover { border-color: rgba(255,61,104,0.4); }
-    .rp-media {
-      position: static;
-      order: 2;
-      aspect-ratio: 4 / 5;
-      max-height: none;
-      border-radius: 0;
-      overflow: hidden;
-      background: #000;
-    }
     .rp-mute-hint { display: none; }
-    .rp-slide-header {
-      position: static;
-      order: 1;
-      padding: 12px 14px;
-      text-shadow: none;
-    }
-    .rp-slide-headertext { text-shadow: none; }
-    .rp-actions {
-      position: static;
-      order: 3;
-      flex-direction: row;
-      align-items: center;
-      gap: 12px;
-      padding: 10px 14px 2px;
-    }
-    /* Desktop grid card is much narrower than a full phone screen, so the
-       46px mobile reaction circles (sized for a thumb reaching across a
-       full-bleed video) read as oversized here. Matched to Instagram's own
-       plain-icon treatment per Ken's side-by-side: no filled circle, small
-       vector icon, tight spacing — same rules as the mobile Journeys list
-       (.rp-slide-compact), just applied here too since EVERY card becomes
-       this same card-grid layout at desktop width, not just Journeys.
-       Bug note: `.rp-slide-compact .rp-action-icon` (2 classes) outranks a
-       plain `.rp-action-icon` (1 class) regardless of source order, so a
-       desktop-only rule written as just `.rp-action-icon` silently never
-       applied to Journeys cards on desktop (they carry both classes) — the
-       compound selector below is what actually reaches them. */
-    /* Icon-then-count side by side, not stacked — Ken: "like Instagram,
-       the number count" next to the icon, not underneath it. Journeys
-       cards already do this (.rp-slide-compact sets row-direction
-       unconditionally); this brings the desktop "All" tab grid in line
-       with that same pattern instead of leaving it on the vertical
-       icon-over-count layout the mobile swipe reel uses. */
-    .rp-action-btn { flex-direction: row; gap: 6px; }
-    .rp-action-icon,
-    .rp-slide-compact .rp-action-icon {
-      width: 22px;
-      height: 22px;
-      background: none;
-      color: rgba(255,255,255,0.85);
-    }
+    /* The desktop grid card is narrower than a full phone screen, so the
+       mobile bar's 30px icon target reads oversized here — sized back down
+       to match Journeys' already-established 22px (that rule lives outside
+       any media query and needs no matching change; it's unconditional).
+       No specificity fight this time: this plain `.rp-action-icon`
+       selector only ever matches a non-compact card's icon, since a
+       compact card's icon is always won by the more specific
+       `.rp-slide-compact .rp-action-icon` rule regardless of width. */
+    .rp-action-icon { width: 22px; height: 22px; font-size: 20px; }
     .rp-action-icon svg { width: 100%; height: 100%; }
-    .rp-action-icon,
-    .rp-slide-compact .rp-action-icon {
-      font-size: 20px;
-    }
-    .rp-action-btn.active .rp-action-icon,
-    .rp-slide-compact .rp-action-btn.active .rp-action-icon {
-      background: none;
-      border: none;
-      transform: none;
-      color: var(--accent-2);
-    }
-    /* Explicitly re-zero `background` here too, not just `color` — the
-       mobile/base heart rule sets a solid red circle fill at the same
-       ([data-reaction="heart"]) specificity, so a color-only override
-       left that red circle showing through underneath the (correctly
-       colored) heart icon. */
-    .rp-action-btn.active[data-reaction="heart"] .rp-action-icon,
-    .rp-slide-compact .rp-action-btn.active[data-reaction="heart"] .rp-action-icon {
-      background: none;
-      color: var(--red);
-    }
-    .rp-action-btn.active[data-reaction="clap"] .rp-action-icon,
-    .rp-slide-compact .rp-action-btn.active[data-reaction="clap"] .rp-action-icon {
-      background: none;
-      color: var(--star);
-    }
-    .rp-action-count {
-      font-size: 11px;
-    }
-    .rp-overlay-bottom {
-      position: static;
-      order: 4;
-      background: none;
-      padding: 4px 14px 14px;
-    }
     /* Comments modal, desktop: centered two-pane view instead of a bottom
        sheet — media on the left, comments on the right, matching
        Instagram's own post-detail modal. */
@@ -1646,7 +1638,52 @@
       ]
     }
   ];
-  var usingIllustrativeMealPrep = false;
+  // How many cards the Healthy Meal Prep strip always shows, real posts
+  // plus illustrative filler combined — see composeMealPrepStrip below.
+  // Matches ILLUSTRATIVE_MEAL_PREP's own length (6 examples) on purpose.
+  var MEAL_PREP_STRIP_SIZE = 6;
+  // The real (non-illustrative) approved Meal Prep posts fetched so far,
+  // newest first — kept separate from mealPrepItems (the actual rendered
+  // strip) so a live update can recompute the padded/mixed strip without
+  // losing track of how many real posts actually exist.
+  var mealPrepRealItems = [];
+  function buildIllustrativeMealPrepItem(i) {
+    var it = ILLUSTRATIVE_MEAL_PREP[i];
+    return {
+      id: "illustrative-" + i,
+      user_id: "",
+      kind: "photo",
+      url: "assets/mealprep/" + it.file,
+      posterUrl: "",
+      name: it.name,
+      created_at: new Date().toISOString(),
+      workout_type: "Meal Prep",
+      location: "",
+      caption: it.caption,
+      signature: it.signature || "",
+      age: it.age || null,
+      illustrativeReactions: it.reactions || null,
+      illustrativeComments: it.comments || null
+    };
+  }
+  // Ken's ask (Sept 2026): the strip should always host MEAL_PREP_STRIP_SIZE
+  // (6) cards. Real approved posts (newest first) fill as many of those
+  // slots as exist; whatever's left over is padded out with the
+  // illustrative examples, so a member uploading their first real post
+  // bumps ONE illustrative card off the end instead of wiping out all six
+  // at once — which is exactly what happened before this fix: the strip
+  // went from 6 example avatars straight down to just the 1 new real
+  // photo. As more real posts get approved, they keep pushing illustrative
+  // filler off the end one slot at a time until eventually all 6 are real.
+  function composeMealPrepStrip(realItems) {
+    var real = realItems.slice(0, MEAL_PREP_STRIP_SIZE);
+    var fillerNeeded = MEAL_PREP_STRIP_SIZE - real.length;
+    var filler = [];
+    for (var i = 0; i < fillerNeeded && i < ILLUSTRATIVE_MEAL_PREP.length; i++) {
+      filler.push(buildIllustrativeMealPrepItem(i));
+    }
+    return real.concat(filler);
+  }
   // Newest real (non-illustrative) Meal Prep post's created_at, for the
   // live-update check below — stays null while only illustrative
   // placeholders are showing, since those aren't real timestamps to
@@ -1687,10 +1724,13 @@
     loadMoreReel();
   }
 
+  // Labels are only used by the main feed's below-video action bar (see
+  // renderActions) — Journeys/meal-prep keep their existing plain
+  // icon+count treatment, so this doesn't touch STORY_REACTIONS below.
   var REACTIONS = [
-    { type: "thumbs_up" },
-    { type: "muscle" },
-    { type: "heart" }
+    { type: "thumbs_up", label: "Like" },
+    { type: "muscle", label: "Strong" },
+    { type: "heart", label: "Love" }
   ];
 
   // Journey (community_questions) posts use their own reactions table —
@@ -1776,10 +1816,72 @@
     return days + "d ago";
   }
 
+  // Signed URLs are cached in memory for the lifetime of this page load,
+  // keyed by storage path. They're valid for a full hour, so re-signing a
+  // path this session already has is pure waste — and every live-update
+  // poll (checkForLiveUpdates, checkForNewMealPrep) re-runs buildItems,
+  // which would otherwise re-request a URL for a post that's already on
+  // screen. Refreshing a minute early avoids ever handing out one that
+  // expires moments after use.
+  var SIGNED_URL_TTL_SECONDS = 3600;
+  var signedUrlCache = new Map(); // path -> { url, expiresAt: ms epoch }
+
+  // Ken's ask (Sept 2026): "pictures and videos load slowly" on a mobile
+  // hotspot — a slow/high-latency connection makes ROUND TRIPS expensive,
+  // more than the size of any one response. The old signedUrl() below
+  // fired one createSignedUrl request per file, so a single page of ~8-14
+  // posts (photo + poster for each video) meant 15-25 separate requests,
+  // all before anything could render. createSignedUrls (plural) signs a
+  // whole batch of paths in one request — this resolves every path a
+  // caller asks for, using the cache above for anything already signed and
+  // firing at most one network request for whatever's left.
+  async function resolveSignedUrls(paths) {
+    var result = {};
+    var toFetch = [];
+    paths.forEach(function (p) {
+      if (!p) return;
+      var cached = signedUrlCache.get(p);
+      if (cached && cached.expiresAt > Date.now()) {
+        result[p] = cached.url;
+      } else if (toFetch.indexOf(p) === -1) {
+        toFetch.push(p);
+      }
+    });
+    if (toFetch.length) {
+      var expiresAt = Date.now() + (SIGNED_URL_TTL_SECONDS - 60) * 1000;
+      var bucket = window.sb.storage.from("media");
+      // Defensive fallback: createSignedUrls (plural) is the whole point of
+      // this batching, but if it's ever missing (an unexpectedly old client
+      // build, a proxy/CDN that strips it, etc.) falling back to one
+      // request per path keeps photos and videos loading instead of one
+      // missing method taking down every image on the page.
+      if (typeof bucket.createSignedUrls === "function") {
+        var { data, error } = await bucket.createSignedUrls(toFetch, SIGNED_URL_TTL_SECONDS);
+        (!error && data ? data : []).forEach(function (row) {
+          var url = (!row.error && row.signedUrl) ? row.signedUrl : "";
+          result[row.path] = url;
+          signedUrlCache.set(row.path, { url: url, expiresAt: expiresAt });
+        });
+      } else {
+        await Promise.all(toFetch.map(async function (p) {
+          try {
+            var { data } = await bucket.createSignedUrl(p, SIGNED_URL_TTL_SECONDS);
+            var url = data ? data.signedUrl : "";
+            result[p] = url;
+            signedUrlCache.set(p, { url: url, expiresAt: expiresAt });
+          } catch (e) {
+            result[p] = "";
+          }
+        }));
+      }
+    }
+    return result;
+  }
+
   async function signedUrl(path) {
     if (!path) return "";
-    var { data } = await window.sb.storage.from("media").createSignedUrl(path, 3600);
-    return data ? data.signedUrl : "";
+    var map = await resolveSignedUrls([path]);
+    return map[path] || "";
   }
 
   // mealPrepOnly=true -> the top strip's source; false -> everything else,
@@ -1883,18 +1985,20 @@
   }
 
   async function buildItems(rows) {
-    return Promise.all(rows.map(async function (raw) {
+    var paths = [];
+    rows.forEach(function (raw) {
+      if (raw.storage_path) paths.push(raw.storage_path);
+      if (raw.kind === "video" && raw.poster_path) paths.push(raw.poster_path);
+    });
+    var urlMap = await resolveSignedUrls(paths);
+    return rows.map(function (raw) {
       var wantsPoster = raw.kind === "video" && !!raw.poster_path;
-      var [url, posterUrl] = await Promise.all([
-        signedUrl(raw.storage_path),
-        wantsPoster ? signedUrl(raw.poster_path) : Promise.resolve("")
-      ]);
       return {
         id: raw.id,
         user_id: raw.user_id,
         kind: raw.kind,
-        url: url,
-        posterUrl: posterUrl,
+        url: urlMap[raw.storage_path] || "",
+        posterUrl: wantsPoster ? (urlMap[raw.poster_path] || "") : "",
         name: (raw.profiles && raw.profiles.display_name) || "A member",
         created_at: raw.created_at,
         workout_type: raw.workout_type || "",
@@ -1904,7 +2008,7 @@
         storage_path: raw.storage_path || "",
         poster_path: raw.poster_path || ""
       };
-    }));
+    });
   }
 
   // ---------------- Meal Prep strip ----------------
@@ -1915,7 +2019,7 @@
     var wrap = document.getElementById("rpMealPrep");
     var track = document.getElementById("rpMealPrepTrack");
     var bannerSub = document.getElementById("rpMealPrepBannerSub");
-    if (bannerSub) bannerSub.textContent = usingIllustrativeMealPrep ? "Examples" : "Community picks";
+    if (bannerSub) bannerSub.textContent = mealPrepRealItems.length ? "Community picks" : "Examples";
     if (!mealPrepItems.length) {
       var mpMsg = lastFetchError
         ? "Couldn't load Healthy Meal Prep posts — " + escapeHtml(lastFetchError.message || String(lastFetchError))
@@ -1935,7 +2039,7 @@
       var fallback = '<span class="rp-mealprep-fallback" style="background:' + avatarColor(item.user_id) + '">' + escapeHtml(initial) + '</span>';
       var thumb = item.kind === "video"
         ? '<video class="rp-mealprep-media" src="' + item.url + '"' + (item.posterUrl ? ' poster="' + item.posterUrl + '"' : '') + ' muted playsinline preload="metadata" onloadeddata="this.classList.add(\'ready\')"></video><span class="rp-play-badge">▶</span>'
-        : '<img class="rp-mealprep-media" src="' + item.url + '" alt="Meal prep" onload="this.classList.add(\'ready\')" onerror="this.style.display=\'none\'" />';
+        : '<img class="rp-mealprep-media" src="' + item.url + '" alt="Meal prep" loading="lazy" decoding="async" onload="this.classList.add(\'ready\')" onerror="this.style.display=\'none\'" />';
       return '<button type="button" class="rp-mealprep-card" data-index="' + i + '">' +
         '<span class="rp-mealprep-ring"><span class="rp-mealprep-thumb">' + fallback + thumb + '</span></span>' +
         '<span class="rp-mealprep-name">' + escapeHtml(item.name) + '</span>' +
@@ -2207,7 +2311,7 @@
 
     var mediaHtml = item.kind === "video"
       ? '<video src="' + item.url + '"' + (item.posterUrl ? ' poster="' + item.posterUrl + '"' : '') + ' loop muted playsinline preload="metadata"></video>'
-      : '<img src="' + item.url + '" alt="Workout post" />';
+      : '<img src="' + item.url + '" alt="Workout post" loading="lazy" decoding="async" />';
 
     var badgeParts = [];
     if (item.workout_type) {
@@ -2223,39 +2327,51 @@
     var isFollowing = followingIds.has(item.user_id);
     var initial = (item.name || "?").trim().charAt(0).toUpperCase();
 
+    // Ken's ask (Sept 2026): the reaction row moves out from over the video
+    // into its own plain bar underneath (see .rp-actions below) — the video
+    // is a bounded, natural-shaped box now instead of stretched full-bleed,
+    // same "card" idea the desktop grid already used. The header (avatar,
+    // name, Follow, ••• menu) stays exactly where it was — overlaying the
+    // top of the video — so it's now nested INSIDE .rp-media instead of
+    // being a sibling positioned against the whole (now much taller) card;
+    // same for the mute hint. Caption moves to plain flow below the
+    // actions row, no more dark gradient scrim, matching how it already
+    // reads on desktop.
     el.innerHTML =
-      '<div class="rp-media">' + mediaHtml + '</div>' +
-      (item.kind === "video" ? '<div class="rp-mute-hint">🔇 tap video for sound</div>' : "") +
-      '<div class="rp-slide-header">' +
-        '<div class="rp-slide-avatar" style="background:' + avatarColor(item.user_id) + '">' + escapeHtml(initial) + '</div>' +
-        '<div class="rp-slide-headertext">' +
-          '<div class="rp-slide-header-name">' + escapeHtml(item.name) + '</div>' +
-          '<div class="rp-slide-header-sub">' + escapeHtml(timeAgo(item.created_at)) + '</div>' +
-          (badgeParts.length ? '<div class="rp-context-badges">' + badgeParts.join("") + '</div>' : "") +
-        '</div>' +
-        (isOwnPost ? "" :
-          '<button type="button" class="rp-follow-btn' + (isFollowing ? " following" : "") + '" data-action="follow">' +
-            (isFollowing ? "Following" : "Follow") +
-          '</button>'
-        ) +
-        '<div class="rp-more-wrap">' +
-          '<button type="button" class="rp-more-btn" data-action="more">•••</button>' +
-          '<div class="rp-more-menu" id="rpMore-' + item.id + '">' +
-            (isOwnPost ?
-              '<button type="button" data-action="edit-post">✏️ Edit category &amp; location</button>' +
-              '<button type="button" class="danger" data-action="delete-post">🗑️ Delete post</button>'
-              :
-              '<button type="button" data-action="message">Message ' + escapeHtml(item.name) + '</button>' +
-              '<button type="button" data-action="report">Report post</button>' +
-              '<button type="button" class="danger" data-action="block">' + (isBlocked(item.user_id) ? "Unblock" : "Block") + " " + escapeHtml(item.name) + '</button>'
-            ) +
+      '<div class="rp-media">' +
+        mediaHtml +
+        (item.kind === "video" ? '<div class="rp-mute-hint">🔇 tap video for sound</div>' : "") +
+        '<div class="rp-slide-header">' +
+          '<div class="rp-slide-avatar" style="background:' + avatarColor(item.user_id) + '">' + escapeHtml(initial) + '</div>' +
+          '<div class="rp-slide-headertext">' +
+            '<div class="rp-slide-header-name">' + escapeHtml(item.name) + '</div>' +
+            '<div class="rp-slide-header-sub">' + escapeHtml(timeAgo(item.created_at)) + '</div>' +
+            (badgeParts.length ? '<div class="rp-context-badges">' + badgeParts.join("") + '</div>' : "") +
+          '</div>' +
+          (isOwnPost ? "" :
+            '<button type="button" class="rp-follow-btn' + (isFollowing ? " following" : "") + '" data-action="follow">' +
+              (isFollowing ? "Following" : "Follow") +
+            '</button>'
+          ) +
+          '<div class="rp-more-wrap">' +
+            '<button type="button" class="rp-more-btn" data-action="more">•••</button>' +
+            '<div class="rp-more-menu" id="rpMore-' + item.id + '">' +
+              (isOwnPost ?
+                '<button type="button" data-action="edit-post">✏️ Edit category &amp; location</button>' +
+                '<button type="button" class="danger" data-action="delete-post">🗑️ Delete post</button>'
+                :
+                '<button type="button" data-action="message">Message ' + escapeHtml(item.name) + '</button>' +
+                '<button type="button" data-action="report">Report post</button>' +
+                '<button type="button" class="danger" data-action="block">' + (isBlocked(item.user_id) ? "Unblock" : "Block") + " " + escapeHtml(item.name) + '</button>'
+              ) +
+            '</div>' +
           '</div>' +
         '</div>' +
       '</div>' +
+      '<div class="rp-actions" id="rpActions-' + item.id + '"></div>' +
       '<div class="rp-overlay-bottom">' +
         (item.caption ? '<div class="rp-caption">' + escapeHtml(item.caption) + '</div>' : "") +
-      '</div>' +
-      '<div class="rp-actions" id="rpActions-' + item.id + '"></div>';
+      '</div>';
 
     if (item.kind === "video") {
       var videoEl = el.querySelector("video");
@@ -2474,10 +2590,14 @@
   async function renderActions(item, container) {
     container.innerHTML = REACTIONS.map(function (r) {
       return '<button type="button" class="rp-action-btn" data-reaction="' + r.type + '">' +
-        '<span class="rp-action-icon">' + reactionIconMarkup(r.type, false) + '</span><span class="rp-action-count"></span></button>';
+        '<span class="rp-action-icon">' + reactionIconMarkup(r.type, false) + '</span>' +
+        '<span class="rp-action-count"></span>' +
+        '<span class="rp-action-label">' + r.label + '</span></button>';
     }).join("") +
       '<button type="button" class="rp-action-btn rp-comment-btn" data-action="comments">' +
-      '<span class="rp-action-icon">' + COMMENT_ICON + '</span><span class="rp-action-count"></span></button>';
+      '<span class="rp-action-icon">' + COMMENT_ICON + '</span>' +
+      '<span class="rp-action-count"></span>' +
+      '<span class="rp-action-label">Comment</span></button>';
 
     var commentBtn = container.querySelector(".rp-comment-btn");
     commentBtn.addEventListener("click", function () { openCommentsModal(item); });
@@ -2853,9 +2973,9 @@
     var rows = await fetchNewMealPrepPosts();
     if (!rows.length) return;
     var items = await buildItems(rows);
-    mealPrepItems = usingIllustrativeMealPrep ? items : items.concat(mealPrepItems);
-    usingIllustrativeMealPrep = false;
+    mealPrepRealItems = items.concat(mealPrepRealItems).slice(0, MEAL_PREP_STRIP_SIZE);
     newestMealPrepSeenAt = items[0].created_at;
+    mealPrepItems = composeMealPrepStrip(mealPrepRealItems);
     renderMealPrepStrip();
   }
 
@@ -2960,30 +3080,12 @@
     var { data: followRows } = await window.sb.from("follows").select("followee_id").eq("follower_id", currentUserId);
     followingIds = new Set((followRows || []).map(function (r) { return r.followee_id; }));
 
-    var mealPrepRows = await fetchBatch(true, 20, 0);
-    mealPrepItems = await buildItems(mealPrepRows);
-    usingIllustrativeMealPrep = !mealPrepItems.length && !lastFetchError;
-    if (mealPrepItems.length) newestMealPrepSeenAt = mealPrepItems[0].created_at;
-    if (usingIllustrativeMealPrep) {
-      mealPrepItems = ILLUSTRATIVE_MEAL_PREP.map(function (it, i) {
-        return {
-          id: "illustrative-" + i,
-          user_id: "",
-          kind: "photo",
-          url: "assets/mealprep/" + it.file,
-          posterUrl: "",
-          name: it.name,
-          created_at: new Date().toISOString(),
-          workout_type: "Meal Prep",
-          location: "",
-          caption: it.caption,
-          signature: it.signature || "",
-          age: it.age || null,
-          illustrativeReactions: it.reactions || null,
-          illustrativeComments: it.comments || null
-        };
-      });
-    }
+    var mealPrepRows = await fetchBatch(true, MEAL_PREP_STRIP_SIZE, 0);
+    mealPrepRealItems = await buildItems(mealPrepRows);
+    if (mealPrepRealItems.length) newestMealPrepSeenAt = mealPrepRealItems[0].created_at;
+    // On a genuine fetch error, keep the strip empty so renderMealPrepStrip's
+    // error message shows — don't paper over a real problem with examples.
+    mealPrepItems = lastFetchError ? [] : composeMealPrepStrip(mealPrepRealItems);
     renderMealPrepStrip();
 
     renderFilters();
@@ -3107,6 +3209,14 @@
       '<a class="rp-panel-link" href="gear.html">Browse the picks →</a>';
   }
 
+  // Ken's ask (Sept 2026): this teaser used to sort alphabetically and show
+  // 3 — as the library grows toward the hundreds of tracks it's meant to
+  // hold, that stops being a useful preview (it'd always show the same
+  // early-alphabet tracks) and risks the card feeling like it's trying to
+  // list the whole library instead of just teasing it. Sorting by newest
+  // and capping at 2 keeps this a stable-sized "what just got added" card no
+  // matter how big the library gets — the actual full, scrollable list
+  // lives on music-library.html (see loadTracks() there), which has no cap.
   async function loadMusicPanel() {
     var panel = document.getElementById("rpMusicPanel");
     if (!panel) return;
@@ -3114,14 +3224,15 @@
       .from("tracks")
       .select("title, artist_name")
       .eq("is_active", true)
-      .order("title", { ascending: true })
-      .limit(3);
+      .order("created_at", { ascending: false })
+      .limit(2);
     var rows = (!error && data ? data : []).map(function (t) {
       return '<div class="rp-mini-row"><span class="rp-mini-dot">🎵</span><div><div class="rp-mini-title">' +
         escapeHtml(t.title) + '</div><div class="rp-mini-sub">' + escapeHtml(t.artist_name || "") + '</div></div></div>';
     }).join("");
     panel.innerHTML =
       '<div class="rp-panel-head"><span class="rp-panel-icon">🎧</span><span class="rp-panel-title">Music Library</span></div>' +
+      '<div class="rp-panel-note">(Newest uploads)</div>' +
       (rows || '<div class="rp-panel-empty">Tracks coming soon.</div>') +
       '<a class="rp-panel-link" href="music-library.html">Open Music Library →</a>';
   }
@@ -3140,7 +3251,7 @@
         ? window.SUPABASE_URL + "/storage/v1/object/public/book-covers/" + b.cover_storage_path
         : "";
       return '<div class="rp-book-card">' +
-        (cover ? '<img src="' + cover + '" alt="" />' : '<div class="rp-book-fallback">📖</div>') +
+        (cover ? '<img src="' + cover + '" alt="" loading="lazy" decoding="async" />' : '<div class="rp-book-fallback">📖</div>') +
         '<div class="rp-book-title">' + escapeHtml(b.title) + '</div></div>';
     }).join("");
     panel.innerHTML =
