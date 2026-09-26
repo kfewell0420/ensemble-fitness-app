@@ -228,7 +228,15 @@
       (track.tagline ? '<p class="tp-tagline">“' + escapeHtml(track.tagline) + '”</p>' : '') +
       (track.artist_bio ? '<p class="tp-bio">' + escapeHtml(track.artist_bio) + '</p>' : '') +
       (track.artist_link ? '<a href="' + escapeHtml(track.artist_link) + '" target="_blank" rel="noopener" class="tp-link">' + escapeHtml(track.artist_link) + '</a>' : '') +
-      '<audio controls preload="none" class="tp-audio" id="tpAudio" src="' + escapeHtml(track.signedUrl) + '"></audio>' +
+      // Ken's ask (Sept 2026): landing on a track page after tapping it in
+      // the playlist should just start playing — no second tap on the
+      // player's own play button. `autoplay` plus a real `.play()` call
+      // right after (see renderTrack below) covers both a track opened
+      // fresh from the playlist and one whose signed URL took a moment to
+      // resolve; browsers that block autoplay outright just leave the
+      // native controls sitting at 0:00 like before, so this never breaks
+      // anything, it just removes the extra tap when it's allowed.
+      '<audio controls autoplay preload="auto" class="tp-audio" id="tpAudio" src="' + escapeHtml(track.signedUrl) + '"></audio>' +
       '<div class="tp-wallet-row">' +
         '<span style="font-size:13px; color:var(--faint-invert);">Your wallet:</span>' +
         '<strong id="tpWalletBalance" style="font-family:\'Poppins\',sans-serif;">$0.00</strong>' +
@@ -243,6 +251,16 @@
         '</div>' +
         '<div class="tip-status"></div>' +
       '</div>';
+
+    var audioEl = document.getElementById("tpAudio");
+    if (audioEl) {
+      // Belt-and-suspenders alongside the `autoplay` attribute above — some
+      // browsers only honor autoplay once a play() has actually been
+      // requested from script. Swallow the rejection silently if the
+      // browser blocks it; the visible native controls are the fallback.
+      var playPromise = audioEl.play();
+      if (playPromise && typeof playPromise.catch === "function") playPromise.catch(function () {});
+    }
 
     var amountsEl = document.querySelector(".tip-amounts");
     amountsEl.querySelectorAll(".tip-amount-btn").forEach(function (btn) {
