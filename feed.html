@@ -676,7 +676,7 @@
     display: flex;
     align-items: stretch;
     justify-content: space-around;
-    padding: 4px 6px;
+    padding: 2px 6px;
     border-top: 1px solid rgba(255,255,255,0.08);
   }
   .rp-action-btn {
@@ -688,9 +688,16 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 2px;
+    gap: 1px;
     cursor: pointer;
-    padding: 9px 4px;
+    /* Ken's ask (Sept 2026): the padding above+below the icon/count/label
+       stack was reading as dead black space under the row. Trimmed from
+       9px to 5px a side (and the row's own padding above, plus the gaps
+       between icon/count/label) — the touch target stays comfortably
+       above the 44-48px floor because the icon+count+label stack alone is
+       already ~56px tall, so this is padding coming off a target that was
+       never actually 44px in the first place, not off the minimum itself. */
+    padding: 5px 4px;
     min-height: 44px;
     border-radius: 10px;
   }
@@ -734,11 +741,21 @@
      highlight behind it, since the 💪 emoji always renders in its own
      fixed color and can't be recolored directly the way the vector icons
      can. Setting `color` on the button itself (rather than just the icon)
-     is what lets the count number pick up the same tint automatically. */
-  .rp-action-btn.active[data-reaction="thumbs_up"] { color: var(--star); }
-  .rp-action-btn.active[data-reaction="thumbs_up"] .rp-action-icon { background: rgba(242, 201, 76, 0.16); }
+     is what lets the count number pick up the same tint automatically.
+     Follow-up ask: the count number turning color wasn't enough — the
+     thumb/heart glyphs themselves (SVGs, drawn with currentColor) need to
+     visibly change too. The plain `.rp-action-icon` rule above sets its
+     own `color: rgba(255,255,255,0.85)`, and a rule set directly on an
+     element always beats one it would otherwise inherit, so the button's
+     yellow/red never reached the icon span before now — hence these
+     icon-scoped overrides. Thumbs up uses a brighter, cooler yellow
+     (#ffd400) rather than the same --star gold the muscle emoji already
+     renders in natively on most phones, so the two don't read as the same
+     color sitting side by side. */
+  .rp-action-btn.active[data-reaction="thumbs_up"] { color: #ffd400; }
+  .rp-action-btn.active[data-reaction="thumbs_up"] .rp-action-icon { color: #ffd400; background: rgba(255, 212, 0, 0.16); }
   .rp-action-btn.active[data-reaction="heart"] { color: var(--red); }
-  .rp-action-btn.active[data-reaction="heart"] .rp-action-icon { background: rgba(226, 72, 58, 0.16); }
+  .rp-action-btn.active[data-reaction="heart"] .rp-action-icon { color: var(--red); background: rgba(226, 72, 58, 0.16); }
   .rp-action-btn.active[data-reaction="muscle"] { color: var(--green); }
   .rp-action-btn.active[data-reaction="muscle"] .rp-action-icon { background: rgba(31, 174, 110, 0.18); }
 
