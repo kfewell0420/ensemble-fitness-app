@@ -755,13 +755,15 @@
      visibly change too. The plain `.rp-action-icon` rule above sets its
      own `color: rgba(255,255,255,0.85)`, and a rule set directly on an
      element always beats one it would otherwise inherit, so the button's
-     yellow/red never reached the icon span before now — hence these
-     icon-scoped overrides. Thumbs up uses a brighter, cooler yellow
-     (#ffd400) rather than the same --star gold the muscle emoji already
-     renders in natively on most phones, so the two don't read as the same
-     color sitting side by side. */
-  .rp-action-btn.active[data-reaction="thumbs_up"] { color: #ffd400; }
-  .rp-action-btn.active[data-reaction="thumbs_up"] .rp-action-icon { color: #ffd400; background: rgba(255, 212, 0, 0.16); }
+     color never reached the icon span before now — hence these
+     icon-scoped overrides. Second follow-up: tried a bright yellow for
+     thumbs up to keep it visually distinct from the muscle emoji's native
+     gold tone, but after sitting with it Ken went back to the app's own
+     brand orange (--accent) instead — same color already used for Follow
+     and other primary actions, so an "active" thumb reads as consistent
+     with the rest of the app rather than introducing a one-off color. */
+  .rp-action-btn.active[data-reaction="thumbs_up"] { color: var(--accent); }
+  .rp-action-btn.active[data-reaction="thumbs_up"] .rp-action-icon { color: var(--accent); background: rgba(255, 90, 31, 0.16); }
   .rp-action-btn.active[data-reaction="heart"] { color: var(--red); }
   .rp-action-btn.active[data-reaction="heart"] .rp-action-icon { color: var(--red); background: rgba(226, 72, 58, 0.16); }
   .rp-action-btn.active[data-reaction="muscle"] { color: var(--green); }
@@ -1813,6 +1815,13 @@
     }
   };
   var COMMENT_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-8.4 8.4c-1.28 0-2.5-.28-3.6-.79L3 21l1.9-5.7a8.3 8.3 0 0 1-.8-3.6A8.4 8.4 0 0 1 12.5 3.2a8.4 8.4 0 0 1 8.5 8.3Z"/></svg>';
+  // Ken's ask (Sept 2026): once a post HAS a comment on it, the comment
+  // bubble should read as "filled in white" instead of a plain outline —
+  // same idea as the reaction icons switching to a solid state once
+  // they're active, just keyed off "does this post have any comments" (the
+  // post-level fact) rather than "did I personally comment" (there's no
+  // per-user comment state to track, unlike a like/react toggle).
+  var COMMENT_ICON_FILLED = '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M21 11.5a8.4 8.4 0 0 1-8.4 8.4c-1.28 0-2.5-.28-3.6-.79L3 21l1.9-5.7a8.3 8.3 0 0 1-.8-3.6A8.4 8.4 0 0 1 12.5 3.2a8.4 8.4 0 0 1 8.5 8.3Z"/></svg>';
 
   function reactionIconMarkup(type, active) {
     var icon = REACTION_ICONS[type];
@@ -2649,6 +2658,7 @@
     });
 
     commentBtn.querySelector(".rp-action-count").textContent = commentCount || "";
+    commentBtn.querySelector(".rp-action-icon").innerHTML = commentCount > 0 ? COMMENT_ICON_FILLED : COMMENT_ICON;
   }
 
   async function toggleReaction(mediaId, type, btn) {
@@ -2816,8 +2826,12 @@
     input.value = "";
     await window.sb.from("media_comments").insert({ media_id: item.id, user_id: currentUserId, body: body });
     loadComments(item, panel);
-    var countEl = document.querySelector("#rpActions-" + item.id + " .rp-comment-btn .rp-action-count");
-    if (countEl) countEl.textContent = (parseInt(countEl.textContent || "0", 10) || 0) + 1;
+    var commentBtn = document.querySelector("#rpActions-" + item.id + " .rp-comment-btn");
+    if (commentBtn) {
+      var countEl = commentBtn.querySelector(".rp-action-count");
+      countEl.textContent = (parseInt(countEl.textContent || "0", 10) || 0) + 1;
+      commentBtn.querySelector(".rp-action-icon").innerHTML = COMMENT_ICON_FILLED;
+    }
   }
 
   // In-app replacement for the old "Read & reply on Fitness Journeys →"
