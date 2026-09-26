@@ -1269,7 +1269,17 @@
     .rp-mealprep-card { width: 82px; }
     .rp-mealprep-ring { width: 82px; height: 82px; }
     .rp-mealprep-name { max-width: 82px; }
-    .rp-filters { grid-area: filters; padding: 0 0 18px; border-bottom: none; }
+    /* padding-top must stay 16px here too, matching the mobile fix above —
+       this desktop-only override was zeroing it back out (padding: 0 0
+       18px), which brought back the exact clipping bug that fix was for:
+       overflow-x:auto on .rp-filters (still in effect at every width)
+       forces overflow-y to compute to auto too, so the Fitness Journeys
+       badge (top:-7px) and the active chip's own translateY(-1px) lift
+       both poke above the row's top edge and get sliced off — on desktop
+       this read as "the All tab is cut off" (Ken's report, Sept 2026),
+       same root cause as the earlier mobile badge-clipping report, just
+       resurfacing here because this rule re-zeroed the headroom. */
+    .rp-filters { grid-area: filters; padding: 16px 0 18px; border-bottom: none; }
 
     /* Generic sidebar panel shell — bold bordered card with a warm glow,
        reused for Meal Prep, Quotes, Music, and Books so the whole rail
