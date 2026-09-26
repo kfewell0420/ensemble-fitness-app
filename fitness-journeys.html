@@ -193,7 +193,7 @@
 <section class="fj-section">
   <div class="fj-section-inner">
     <h2 id="fjReal">What real progress looks like →</h2>
-    <p class="fj-sub">Real posts from members, newest first.</p>
+    <p class="fj-sub" id="fjRealSub">Real posts from members, newest first.</p>
     <div class="fj-real-grid" id="fjRealGrid">
       <div class="fj-empty">Loading…</div>
     </div>
@@ -271,6 +271,11 @@
       return;
     }
     var visible = filterOutBlocked(data || []);
+    // Same count the Home feed's chip badge shows (refreshJourneysBadge in
+    // feed.html) — Ken's ask: the tracking should show on both the main
+    // feed page and here on the Fitness Journeys page itself.
+    document.getElementById("fjRealSub").textContent =
+      "Real posts from members, newest first. (" + visible.length + " so far)";
     if (!visible.length) {
       grid.innerHTML = '<div class="fj-empty">No real journeys posted yet — be the first!</div>';
       return;
@@ -477,10 +482,6 @@
 
     document.getElementById("fjStartLink").href = EXTERNAL_SHARE_URL;
     document.getElementById("fjShareLink").href = EXTERNAL_SHARE_URL;
-
-    // Clears the "new journeys" badge on the Home feed's Fitness Journeys
-    // chip — same key feed.html reads (see refreshJourneysBadge there).
-    try { localStorage.setItem("ef_journeys_last_seen_" + currentUserId, new Date().toISOString()); } catch (e) {}
 
     await loadRealJourneys();
     renderIllustrative();
