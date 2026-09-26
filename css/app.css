@@ -312,6 +312,14 @@ img { max-width: 100%; display: block; }
 
 .btn:hover { transform: translateY(-1px); }
 .btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+/* A disabled .btn-primary otherwise keeps its full-strength gradient at
+   just 55% opacity — still a bright, obviously-tappable orange bar, which
+   is exactly why members were tapping the disabled "choose a file" button
+   instead of the actual dropzone above it. Flatten it to a plain neutral
+   panel (same treatment as .status-badge.dismissed elsewhere) so a
+   disabled primary button reads as inert, not as a second, competing
+   call-to-action. */
+.btn-primary:disabled { background: rgba(255, 255, 255, 0.08); color: var(--muted-invert); }
 
 .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent-dark)); color: #fff; }
 .btn-ghost { background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.18); color: #fff; }

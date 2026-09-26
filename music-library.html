@@ -90,16 +90,40 @@
           <div>
             <div class="eyebrow" style="margin-bottom:2px;">Browse Tracks</div>
             <h2 style="font-size:18px; margin-bottom:4px;">Listen &amp; pick your next workout track</h2>
-            <p class="card-sub" style="margin-bottom:0;">Tap any track below for the full page — player, artist story, and tipping. These are the same tracks you can choose from when uploading a workout video on your Profile page.</p>
+            <p class="card-sub" style="margin-bottom:16px;">These are the same tracks you can choose from when uploading a workout video on your Profile page — all from independent artists, free to use.</p>
           </div>
-          <button type="button" class="btn btn-primary btn-sm" id="refreshTracksBtn" style="flex:none; white-space:nowrap;">🔍 Browse Tracks</button>
         </div>
-        <div class="track-table" id="tracksList">
-          <div class="empty-state">Loading…</div>
-        </div>
+        <!-- Ken's ask (Sept 2026): the tracks live in their own "Workout
+             Playlist" popup now rather than sitting inline on the page —
+             tap the button to open it, browse/search there, then close back
+             out to this page. Same search + scrolling list as before, just
+             moved into #playlistModalOverlay below instead of living here. -->
+        <button type="button" class="btn btn-primary" id="openPlaylistBtn">▶ Browse Playlist</button>
       </div>
     </div>
 
+  </div>
+
+  <!-- Ken's ask (Sept 2026): these are unlicensed, independent artists —
+       random names members won't recognize and shouldn't need to. The list
+       itself deliberately shows no artist name (see buildTrackRow below);
+       this is framed as "the workout playlist," not an artist directory.
+       Reuses the app's existing .simple-modal pattern (see profile.html's
+       followers/following popup) so it looks and behaves consistently with
+       every other popup in the app. -->
+  <div class="simple-modal-overlay" id="playlistModalOverlay">
+    <div class="simple-modal" style="max-width:480px;">
+      <button type="button" class="simple-modal-close" id="playlistModalClose" aria-label="Close">&times;</button>
+      <div class="eyebrow" style="margin-bottom:2px;">Workout Playlist</div>
+      <h3 style="margin-bottom:4px;">Tap a track to listen, tip, and use it in a video</h3>
+      <p class="card-sub" style="margin-bottom:16px;">Just two tracks so far — more get added here the moment they're approved.</p>
+      <div class="track-search-row">
+        <input type="search" id="trackSearchInput" class="track-search-input" placeholder="Search by title…" autocomplete="off">
+      </div>
+      <div class="track-table" id="tracksList">
+        <div class="empty-state">Loading…</div>
+      </div>
+    </div>
   </div>
 
   <!-- The "Move / Create / Inspire / Together" row used to live here as
@@ -255,6 +279,25 @@
      between it and the button above. */
   .track-table .empty-state { padding: 6px 4px 2px; font-size: 13px; text-align: left; }
 
+  /* ---- Search box ----------------------------------------------------------
+     Ken's ask (Sept 2026): with the library growing well past a couple of
+     tracks, typing a few letters to narrow the list is what keeps a long
+     scrolling list actually usable — the same job the search field does in
+     an iTunes/Apple Music songs view. */
+  .track-search-row { margin-bottom: 10px; }
+  .track-search-input {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: var(--radius-sm);
+    padding: 9px 12px;
+    font-size: 13.5px;
+    color: #fff;
+    font-family: inherit;
+  }
+  .track-search-input::placeholder { color: var(--faint-invert); }
+  .track-search-input:focus { outline: none; border-color: var(--accent); }
+
   /* ---- Track list, iTunes-style: a compact, clickable row per track —
      art, title + artist, a chevron — built to stay readable at any width,
      from a handful of tracks to a very long library. Title and artist
@@ -264,7 +307,18 @@
      table doesn't leave enough room for a title to stay readable — this
      keeps every row legible at any width instead of squeezing text into a
      sliver. */
+  /* Ken's ask (Sept 2026): this used to be one plain "N tracks" line —
+     reads more like a caption than a list header, so this whole box didn't
+     register as "an actual track list, left to right" the way an iTunes/
+     Apple Music songs view does. A real two-ended header row (count on the
+     left, "Time" on the right, lined up over the rows' own title/duration
+     columns below) makes it unmistakably a track table, without adding any
+     columns this app doesn't actually have data for (no Artist/Album/Genre
+     — see buildTrackRow's tagline-instead-of-artist comment). */
   .track-table-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
     padding: 0 4px 10px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     font-size: 11px;
@@ -313,13 +367,33 @@
   }
   .track-table-chevron { flex: none; font-size: 18px; color: var(--faint-invert); }
 
-  @media (min-width: 900px) {
-    /* Keeps the card's own height sane (and matched to the wallet's,
-       via stretch above) once the library actually has a lot of tracks
-       in it — the list scrolls inside the card instead of the card
-       growing forever down the page. */
-    .track-table { max-height: 420px; overflow-y: auto; }
+  /* Ken's ask (Sept 2026): at 2 tracks this didn't matter, but at hundreds
+     or thousands it does — the list now always scrolls inside its own
+     fixed-height box (phones included), so the page itself never grows
+     taller as the library grows. Paired with the search box above, this is
+     the same "seamless at any size" behavior an iTunes/Apple Music songs
+     view has: a capped window you scroll or filter, never an ever-taller
+     page. min() keeps it from feeling cramped on a short phone screen while
+     still capping it well short of the viewport on a tall one. */
+  .track-table { max-height: min(60vh, 480px); overflow-y: auto; }
+
+  /* The header row stays pinned to the top of that scroll box (rather than
+     scrolling away with the rows) so, just like iTunes' own column headers,
+     you always know what you're looking at no matter how far down the list
+     you've scrolled. Background matches the card behind it so rows don't
+     show through as they pass underneath. */
+  .track-table-head {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: #0c0a11;
   }
+
+  /* Light zebra striping — a small touch, but it's what makes a plain list
+     of stacked rows actually read as a dense table at a glance, the way
+     the iTunes reference screenshot does. */
+  .track-table-row:nth-child(even) { background: rgba(255, 255, 255, 0.02); }
+  .track-table-row:nth-child(even):hover, .track-table-row:nth-child(even):focus-visible { background: rgba(255, 255, 255, 0.045); }
 
   /* ---- Bottom tagline ----------------------------------------------------- */
   .ml-tagline {
@@ -379,6 +453,7 @@
     handleTopupRedirect();
     await loadWallet();
     await loadTracks();
+    subscribeToTrackChanges();
   }
 
   // ---- Wallet -------------------------------------------------------------
@@ -446,6 +521,11 @@
   // or a thousand — since nothing here loads an audio file until you
   // actually open a track.
 
+  var allTracks = [];        // the full library, fetched once — search below
+                              // filters this in memory rather than re-querying
+                              // per keystroke.
+  var currentSearchQuery = "";
+
   async function loadTracks() {
     var list = document.getElementById("tracksList");
     // Ken's ask (Sept 2026): the box needs to end right at the orange
@@ -466,15 +546,48 @@
 
     if (error) {
       list.innerHTML = '<div class="empty-state">Couldn\'t load the Music Library right now — please refresh.</div>';
-      return;
+      return null;
     }
-    if (!data || data.length === 0) {
+
+    allTracks = data || [];
+    renderTrackList();
+    return allTracks.length;
+  }
+
+  function trackMatchesQuery(track, query) {
+    if (!query) return true;
+    // Deliberately not matching against artist_name — the playlist doesn't
+    // surface artist names (see buildTrackRow), so searching by one would
+    // find a track by a name the member never actually saw on screen.
+    var haystack = (track.title + " " + (track.tagline || "")).toLowerCase();
+    return haystack.indexOf(query) !== -1;
+  }
+
+  // Re-draws the list from the already-fetched allTracks, applying the
+  // current search box text — called both after a fresh load and on every
+  // keystroke in the search box, with no extra network trip either way.
+  function renderTrackList() {
+    var list = document.getElementById("tracksList");
+
+    if (allTracks.length === 0) {
       list.innerHTML = '<div class="empty-state">No tracks yet — check back soon.</div>';
       return;
     }
 
-    list.innerHTML = '<div class="track-table-head">' + data.length + ' track' + (data.length === 1 ? "" : "s") + '</div>';
-    data.forEach(function (track) {
+    var query = currentSearchQuery.trim().toLowerCase();
+    var visible = allTracks.filter(function (t) { return trackMatchesQuery(t, query); });
+
+    if (visible.length === 0) {
+      list.innerHTML = '<div class="empty-state">No tracks match "' + escapeHtml(currentSearchQuery.trim()) + '".</div>';
+      return;
+    }
+
+    var headLabel = query
+      ? visible.length + " of " + allTracks.length + " track" + (allTracks.length === 1 ? "" : "s")
+      : allTracks.length + " track" + (allTracks.length === 1 ? "" : "s");
+
+    list.innerHTML = '<div class="track-table-head"><span>' + headLabel + '</span><span>Time</span></div>';
+    visible.forEach(function (track) {
       list.appendChild(buildTrackRow(track));
     });
   }
@@ -487,27 +600,73 @@
   }
 
   function buildTrackRow(track) {
-    // Ken's ask: keep this list light, iTunes-style but with less on it —
-    // a tagline (short and motivating) in place of the artist's name, and
-    // the track length. The artist's name, bio, and link still live on
-    // the track's own full page (track.html) for anyone who wants them.
+    // Ken's ask (Sept 2026): never show the artist's name here — these are
+    // random, unlicensed independent artists, not names a member would
+    // recognize, so this reads as a workout playlist rather than an artist
+    // directory. A tagline (short and motivating) shows instead when the
+    // artist gave one; otherwise the row just carries the title and time.
+    // The artist's actual name, bio, and link still live on the track's own
+    // full page (track.html) — that's the right place for it, since tipping
+    // there means knowing who you're supporting.
     var row = document.createElement("a");
     row.className = "track-table-row";
     row.href = "track.html?id=" + encodeURIComponent(track.id);
-    var subtitle = track.tagline || ("by " + track.artist_name);
+    var subtitle = track.tagline || "";
     row.innerHTML =
       '<span class="track-table-art">🎵</span>' +
       '<span class="track-table-main">' +
         '<span class="track-table-title">' + escapeHtml(track.title) + '</span>' +
-        '<span class="track-table-tagline">' + escapeHtml(subtitle) + '</span>' +
+        (subtitle ? '<span class="track-table-tagline">' + escapeHtml(subtitle) + '</span>' : '') +
       '</span>' +
       (track.duration_seconds ? '<span class="track-table-duration">' + formatTrackDuration(track.duration_seconds) + '</span>' : '') +
       '<span class="track-table-chevron">›</span>';
     return row;
   }
 
-  document.getElementById("refreshTracksBtn").addEventListener("click", function () {
-    loadTracks();
+  document.getElementById("trackSearchInput").addEventListener("input", function (e) {
+    currentSearchQuery = e.target.value;
+    renderTrackList();
+  });
+
+  // Ken's ask (Sept 2026): no manual refresh button — a track approved
+  // elsewhere should just show up here on its own. Same live-update
+  // approach feed.html already uses for new posts: listen for any change to
+  // the tracks table and quietly reload. A short debounce collapses a burst
+  // of several changes (e.g. approving 5 tracks back to back) into one
+  // reload instead of five. loadTracks() re-renders through the same
+  // renderTrackList() the search box uses, so an in-progress search stays
+  // applied across a live reload instead of resetting.
+  var trackReloadTimer = null;
+  function scheduleTrackReload() {
+    clearTimeout(trackReloadTimer);
+    trackReloadTimer = setTimeout(function () { loadTracks(); }, 500);
+  }
+
+  function subscribeToTrackChanges() {
+    if (!window.sb || !window.sb.channel) return;
+    window.sb
+      .channel("music-library-live-changes")
+      .on("postgres_changes", { event: "*", schema: "public", table: "tracks" }, scheduleTrackReload)
+      .subscribe();
+  }
+
+  // ---- Playlist popup ------------------------------------------------------
+  // Same open/close pattern as the app's other popups (e.g. the followers
+  // list on profile.html): toggle a "show" class, close on the X, the
+  // backdrop, or Escape.
+  function openPlaylistModal() {
+    document.getElementById("playlistModalOverlay").classList.add("show");
+  }
+  function closePlaylistModal() {
+    document.getElementById("playlistModalOverlay").classList.remove("show");
+  }
+  document.getElementById("openPlaylistBtn").addEventListener("click", openPlaylistModal);
+  document.getElementById("playlistModalClose").addEventListener("click", closePlaylistModal);
+  document.getElementById("playlistModalOverlay").addEventListener("click", function (e) {
+    if (e.target.id === "playlistModalOverlay") closePlaylistModal();
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") closePlaylistModal();
   });
 
   document.getElementById("signOutLink").addEventListener("click", function (e) {

@@ -228,7 +228,7 @@
       (track.tagline ? '<p class="tp-tagline">“' + escapeHtml(track.tagline) + '”</p>' : '') +
       (track.artist_bio ? '<p class="tp-bio">' + escapeHtml(track.artist_bio) + '</p>' : '') +
       (track.artist_link ? '<a href="' + escapeHtml(track.artist_link) + '" target="_blank" rel="noopener" class="tp-link">' + escapeHtml(track.artist_link) + '</a>' : '') +
-      '<audio controls preload="none" class="tp-audio" id="tpAudio"></audio>' +
+      '<audio controls preload="none" class="tp-audio" id="tpAudio" src="' + escapeHtml(track.signedUrl) + '"></audio>' +
       '<div class="tp-wallet-row">' +
         '<span style="font-size:13px; color:var(--faint-invert);">Your wallet:</span>' +
         '<strong id="tpWalletBalance" style="font-family:\'Poppins\',sans-serif;">$0.00</strong>' +
@@ -243,19 +243,6 @@
         '</div>' +
         '<div class="tip-status"></div>' +
       '</div>';
-
-    var audio = document.getElementById("tpAudio");
-    var signedUrlLoaded = false;
-    audio.addEventListener("play", async function () {
-      if (signedUrlLoaded) return;
-      audio.pause();
-      var { data: signed } = await window.sb.storage.from("tracks").createSignedUrl(track.storage_path, 3600);
-      if (signed) {
-        signedUrlLoaded = true;
-        audio.src = signed.signedUrl;
-        audio.play();
-      }
-    });
 
     var amountsEl = document.querySelector(".tip-amounts");
     amountsEl.querySelectorAll(".tip-amount-btn").forEach(function (btn) {
@@ -298,6 +285,8 @@
     }
 
     track = data;
+    var { data: signed } = await window.sb.storage.from("tracks").createSignedUrl(track.storage_path, 3600);
+    track.signedUrl = signed ? signed.signedUrl : "";
     renderTrack();
 
     var balance = await loadWalletBalance();

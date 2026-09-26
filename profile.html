@@ -305,7 +305,7 @@
       <label for="isProfilePhoto" style="margin:0; font-size:13.5px; color:var(--muted-invert);">Set as profile photo (goes live right away)</label>
     </div>
 
-    <button type="button" class="btn btn-primary btn-block" id="uploadBtn" disabled>Choose a file first</button>
+    <button type="button" class="btn btn-primary btn-block" id="uploadBtn" disabled>↑ Select a file above</button>
   </div>
 
   <div class="card">
@@ -368,9 +368,22 @@
     return parts.length > 1 ? parts.pop().toLowerCase() : "dat";
   }
 
+  // Some file pickers — notably iOS's, for a voice recording pulled in via
+  // the Files app share sheet (Voice Memos exports as .m4a/.caf) — hand
+  // back a File whose .type is empty or unrecognized instead of
+  // "audio/...". Falling straight through to "photo" in that case is what
+  // silently turned an artist's song into a photo post needing a workout
+  // category instead of a song needing a title. Fall back to the file
+  // extension before ever defaulting to "photo".
+  var VIDEO_EXTS = ["mp4", "mov", "m4v", "avi", "webm", "mkv", "3gp", "3gpp"];
+  var AUDIO_EXTS = ["mp3", "wav", "m4a", "aac", "ogg", "oga", "flac", "caf", "aiff", "aif", "wma"];
   function fileKind(file) {
     if (file.type.indexOf("video") === 0) return "video";
     if (file.type.indexOf("audio") === 0) return "audio";
+    if (file.type.indexOf("image") === 0) return "photo";
+    var ext = getExt(file.name);
+    if (VIDEO_EXTS.indexOf(ext) !== -1) return "video";
+    if (AUDIO_EXTS.indexOf(ext) !== -1) return "audio";
     return "photo";
   }
 
@@ -1342,7 +1355,7 @@
     } else {
       dropzoneLabel.textContent = "Click to choose a photo, video, or voice recording";
       uploadBtn.disabled = true;
-      uploadBtn.textContent = "Choose a file first";
+      uploadBtn.textContent = "↑ Select a file above";
       profilePhotoField.style.display = "flex";
       productTagField.style.display = "none";
       document.getElementById("songTitleField").style.display = "none";
@@ -1444,7 +1457,7 @@
         songTitleField.value = "";
         document.getElementById("songTitleField").style.display = "none";
         document.getElementById("captionField").style.display = "block";
-        uploadBtn.textContent = "Choose a file first";
+        uploadBtn.textContent = "↑ Select a file above";
       } catch (err) {
         showMsg(msg, err.message || "Upload failed. Please try again.", "error");
         uploadBtn.disabled = false;
@@ -1570,7 +1583,7 @@
       document.getElementById("isProfilePhoto").checked = false;
       profilePhotoField.style.display = "flex";
       productTagField.style.display = "none";
-      uploadBtn.textContent = "Choose a file first";
+      uploadBtn.textContent = "↑ Select a file above";
       updateNarrationVisibility();
       updateMusicVisibility();
       updateTrimVisibility();
