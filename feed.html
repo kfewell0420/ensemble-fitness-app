@@ -276,6 +276,10 @@
     background: #fff;
     transform: translateY(-1px);
   }
+  /* The Walking chip's icon (see WALKING_ICON) is an inline SVG rather than
+     an emoji character, so it needs its own baseline nudge to sit where an
+     emoji glyph would have. */
+  .rp-filter-icon { vertical-align: -3px; margin-right: 1px; }
 
   /* ---- Vertical reel ------------------------------------------
      Ken's ask (Sept 2026): the reel is now a normal scrolling list of
@@ -1369,6 +1373,16 @@
       grid-template-columns: repeat(2, 1fr);
       gap: 22px;
       align-content: start;
+      /* Zero out the mobile phone-frame's "padding: 14px 0 8px" (see the
+         base .rp-reel rule above) — it was never reset for this desktop
+         grid, so the first row of post cards sat 14px lower than the
+         sidebar's own content, which starts flush at the top of its
+         "side" grid area (.rp-mealprep/.rp-panel both zero their own
+         padding for exactly this reason). That's what made "Healthy Meal
+         Prep" look like it was floating high above the posts — the posts
+         were actually the ones sitting low. Ken flagged this (Sept 2026;
+         screenshots with a hand-drawn line marking the height gap). */
+      padding: 0;
     }
     .rp-sentinel { grid-column: 1 / -1; height: 1px; }
 
@@ -1610,8 +1624,23 @@
   // elsewhere in this app (journal_entries) - different feature, kept
   // deliberately unambiguous here as "Journeys".
   var CATEGORY_FILTERS = ["All", "Journeys", "Working Out", "Walking", "Hiking", "Biking", "Running", "Swimming", "Other"];
+  // The Walking chip's icon used to be the plain 🚶 emoji, same as every
+  // other chip here — but Ken couldn't make out the little figure at this
+  // size ("I'm not sure I could see the walking character," Sept 2026).
+  // OS emoji render as a single fixed-color glyph designed to read at
+  // normal text size, and a walking figure's thin limbs are exactly the
+  // kind of detail that turns to mud once it's shrunk into a 12px chip —
+  // the same legibility problem the reaction icons (thumbs/heart) had
+  // before those were swapped for hand-drawn `currentColor` SVGs earlier
+  // this project. Same fix here: a solid, currentColor SVG (so it inherits
+  // the chip's own text color in both its inactive and .active states,
+  // instead of emoji's fixed color) traced from a standard "walking
+  // person" pictogram, which stays crisp and unambiguous at tiny sizes.
+  var WALKING_ICON = '<svg class="rp-filter-icon" viewBox="0 0 24 24" width="14" height="14" ' +
+    'fill="currentColor" aria-hidden="true"><path d="M13.5 5.5c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zM9.8 8.9L7 23h2.1l1.8-8 2.1 2v6h2v-7.5l-2.1-2 .6-3C14.8 12 16.8 13 19 13v-2c-1.9 0-3.5-1-4.3-2.4l-1-1.6c-.4-.6-1-1-1.7-1-.3 0-.5.1-.8.1L6 8.3V13h2V9.6l1.8-.7z"/></svg>';
+
   var CATEGORY_ICONS = {
-    "Journeys": "📓", "Working Out": "💪", "Walking": "🚶", "Hiking": "🥾", "Biking": "🚴",
+    "Journeys": "📓", "Working Out": "💪", "Walking": WALKING_ICON, "Hiking": "🥾", "Biking": "🚴",
     "Running": "🏃", "Swimming": "🏊", "Meal Prep": "🍱", "Other": "✨"
   };
   var activeFilter = "All";
