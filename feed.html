@@ -506,6 +506,14 @@
     padding: 4px 14px 14px;
     color: #fff;
   }
+  /* Ken's ask (Sept 2026): a post with no caption was still leaving this
+     empty — buildSlide always emits the wrapper div, and with no caption
+     inside it there was nothing to fill its own padding, so it sat there
+     as a pure dead strip of card background below the reaction bar. This
+     collapses it to zero height whenever it has no caption to show. */
+  .rp-overlay-bottom:empty {
+    padding: 0;
+  }
   .rp-name { font-weight: 700; font-size: 15px; margin-bottom: 2px; }
   .rp-sub { font-size: 12px; color: rgba(255,255,255,0.75); margin-bottom: 6px; }
   .rp-caption { font-size: 13.5px; line-height: 1.4; color: rgba(255,255,255,0.95); }
