@@ -46,7 +46,7 @@
   </nav>
 </header>
 
-<div class="app-shell">
+<div class="app-shell" style="max-width:1080px;">
 
   <div id="notAdmin" style="display:none;" class="card">
     <h2>Admins only</h2>
@@ -55,18 +55,45 @@
 
   <div id="adminArea" style="display:none;">
 
-    <div class="admin-tabs" id="adminTabs">
-      <button type="button" class="admin-tab-btn active" data-tab="queue">Pending Review</button>
-      <button type="button" class="admin-tab-btn" data-tab="reports">Reports</button>
-      <button type="button" class="admin-tab-btn" data-tab="members">Members</button>
-      <button type="button" class="admin-tab-btn" data-tab="photos">Photos</button>
-      <button type="button" class="admin-tab-btn" data-tab="videos">Videos</button>
-      <button type="button" class="admin-tab-btn" data-tab="books">Books</button>
-      <button type="button" class="admin-tab-btn" data-tab="community">Community</button>
-      <button type="button" class="admin-tab-btn" data-tab="gear">Approved Gear</button>
-    </div>
+    <div class="admin-layout">
+      <!-- Oct 2026, Ken's ask: every distinct section gets its own always-
+           visible row here — no more generic labels (like the old
+           "Community" tab) hiding unrelated things underneath. Group
+           labels below are just visual dividers for orientation, not
+           collapsible containers — nothing here is hidden or requires
+           digging to find. -->
+      <nav class="admin-tabs" id="adminTabs">
+        <div class="admin-sidenav-group-label">Moderation</div>
+        <button type="button" class="admin-tab-btn active" data-tab="enrollments">New Enrollments</button>
+        <button type="button" class="admin-tab-btn" data-tab="modqueue">Moderation Queue</button>
+        <button type="button" class="admin-tab-btn" data-tab="reports">Reports</button>
 
-    <div class="admin-tab-panel" data-tab="queue">
+        <div class="admin-sidenav-group-label">Members &amp; Community</div>
+        <button type="button" class="admin-tab-btn" data-tab="members">Members</button>
+        <button type="button" class="admin-tab-btn" data-tab="journeys">Journeys</button>
+        <button type="button" class="admin-tab-btn" data-tab="voice">Voice Updates</button>
+
+        <div class="admin-sidenav-group-label">Media</div>
+        <button type="button" class="admin-tab-btn" data-tab="photos-profile">Profile Photos</button>
+        <button type="button" class="admin-tab-btn" data-tab="photos-feed">Feed Photos</button>
+        <button type="button" class="admin-tab-btn" data-tab="videos">Videos</button>
+
+        <div class="admin-sidenav-group-label">Music &amp; Quotes</div>
+        <button type="button" class="admin-tab-btn" data-tab="music">Music Library</button>
+        <button type="button" class="admin-tab-btn" data-tab="quotes">Quote Library</button>
+
+        <div class="admin-sidenav-group-label">Books (Ensemble Reads)</div>
+        <button type="button" class="admin-tab-btn" data-tab="book-submissions">Book Submissions</button>
+        <button type="button" class="admin-tab-btn" data-tab="book-catalog">Book Catalog</button>
+        <button type="button" class="admin-tab-btn" data-tab="book-payouts">Book Payouts</button>
+
+        <div class="admin-sidenav-group-label">Marketplace</div>
+        <button type="button" class="admin-tab-btn" data-tab="gear">Approved Gear</button>
+      </nav>
+
+      <div class="admin-content">
+
+    <div class="admin-tab-panel" data-tab="enrollments">
       <div class="eyebrow">Charter Member Enrollment</div>
       <h2 style="font-size:18px;">New enrollments</h2>
       <p class="card-sub" style="margin-bottom:24px;">Anyone can submit one from the homepage, but nobody becomes a member until you approve it here. Approving sends them an automatic welcome email; denying just removes it.</p>
@@ -76,7 +103,17 @@
         </div>
       </div>
 
-      <div class="eyebrow" style="margin-top:36px;">Moderation</div>
+      <div class="eyebrow" style="margin-top:36px;">History</div>
+      <h2 style="font-size:18px;">Recently reviewed enrollments</h2>
+      <div class="card">
+        <div id="enrollmentHistory">
+          <div class="empty-state">Loading…</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-tab-panel" data-tab="modqueue" hidden>
+      <div class="eyebrow">Moderation</div>
       <h2>Photos, videos &amp; voice updates</h2>
       <p class="card-sub" style="margin-bottom:24px;">Approve content that follows the Community Guidelines, or reject with a reason the member will be able to see.</p>
       <div class="card" style="margin-bottom:16px;">
@@ -87,16 +124,8 @@
 
       <div class="eyebrow" style="margin-top:36px;">History</div>
       <h2 style="font-size:18px;">Recently reviewed</h2>
-      <div class="card" style="margin-bottom:16px;">
-        <div id="history">
-          <div class="empty-state">Loading…</div>
-        </div>
-      </div>
-
-      <div class="eyebrow" style="margin-top:36px;">History</div>
-      <h2 style="font-size:18px;">Recently reviewed enrollments</h2>
       <div class="card">
-        <div id="enrollmentHistory">
+        <div id="history">
           <div class="empty-state">Loading…</div>
         </div>
       </div>
@@ -122,23 +151,21 @@
       </div>
     </div>
 
-    <div class="admin-tab-panel" data-tab="photos" hidden>
-      <div class="eyebrow">Photos</div>
-      <h2>Every photo, in one place</h2>
-      <p class="card-sub" style="margin-bottom:24px;">Profile photos and regular feed photos that already passed review. Remove anything that shouldn't stay up — the member gets a friendly note explaining why.</p>
-
-      <div class="eyebrow" style="margin-top:12px;">Profile Photos</div>
-      <h2 style="font-size:18px;">Recent profile photos</h2>
+    <div class="admin-tab-panel" data-tab="photos-profile" hidden>
+      <div class="eyebrow">Profile Photos</div>
+      <h2>Recent profile photos</h2>
       <p class="card-sub" style="margin-bottom:24px;">Profile photos publish instantly too — no approval needed. Spot-check them here and remove anything that shouldn't be up.</p>
-      <div class="card" style="margin-bottom:16px;">
+      <div class="card">
         <div id="profilePhotoQueue">
           <div class="empty-state">Loading…</div>
         </div>
       </div>
+    </div>
 
-      <div class="eyebrow" style="margin-top:36px;">Feed Photos</div>
-      <h2 style="font-size:18px;">Recent approved photos</h2>
-      <p class="card-sub" style="margin-bottom:24px;">Regular feed photos that already passed review (not profile photos — those are spot-checked above).</p>
+    <div class="admin-tab-panel" data-tab="photos-feed" hidden>
+      <div class="eyebrow">Feed Photos</div>
+      <h2>Recent approved photos</h2>
+      <p class="card-sub" style="margin-bottom:24px;">Regular feed photos that already passed review (not profile photos — those have their own tab).</p>
       <div class="form-msg" id="photoCategoryNudge"></div>
       <div class="card">
         <div id="photoQueue">
@@ -159,13 +186,9 @@
       </div>
     </div>
 
-    <div class="admin-tab-panel" data-tab="books" hidden>
-      <div class="eyebrow">Books</div>
-      <h2>Ensemble Reads — every book, in one place</h2>
-      <p class="card-sub" style="margin-bottom:24px;">Submissions awaiting a decision, the live public catalog, and every sale — all in one tab.</p>
-
-      <div class="eyebrow" style="margin-top:12px;">Ensemble Reads</div>
-      <h2 style="font-size:18px;">Book submissions awaiting review</h2>
+    <div class="admin-tab-panel" data-tab="book-submissions" hidden>
+      <div class="eyebrow">Ensemble Reads</div>
+      <h2>Book submissions awaiting review</h2>
       <p class="card-sub" style="margin-bottom:24px;">Each of these already paid the review fee. Approve to publish it to the public shelf at ensemblefitness.com/books.html, or reject with a reason — the review fee is refunded automatically the moment you reject.</p>
       <div class="card" style="margin-bottom:16px;">
         <div class="field" style="display:flex; align-items:flex-end; gap:10px; margin:0;">
@@ -177,23 +200,27 @@
         </div>
         <div class="form-msg" id="reviewFeeMsg"></div>
       </div>
-      <div class="card" style="margin-bottom:16px;">
+      <div class="card">
         <div id="submissionQueue">
           <div class="empty-state">Loading…</div>
         </div>
       </div>
+    </div>
 
-      <div class="eyebrow" style="margin-top:36px;">Ensemble Reads</div>
-      <h2 style="font-size:18px;">Live catalog</h2>
+    <div class="admin-tab-panel" data-tab="book-catalog" hidden>
+      <div class="eyebrow">Ensemble Reads</div>
+      <h2>Live catalog</h2>
       <p class="card-sub" style="margin-bottom:24px;">Every book currently for sale on the public shelf. Deactivate one to pull it from the shelf without deleting its sales history.</p>
-      <div class="card" style="margin-bottom:16px;">
+      <div class="card">
         <div id="bookCatalog">
           <div class="empty-state">Loading…</div>
         </div>
       </div>
+    </div>
 
-      <div class="eyebrow" style="margin-top:36px;">Ensemble Reads</div>
-      <h2 style="font-size:18px;">Book Sales &amp; Payouts</h2>
+    <div class="admin-tab-panel" data-tab="book-payouts" hidden>
+      <div class="eyebrow">Ensemble Reads</div>
+      <h2>Book Sales &amp; Payouts</h2>
       <p class="card-sub" style="margin-bottom:24px;">Every completed sale lands here automatically. Pay each author their 75% by hand (PayPal, Zelle, check — whatever works), then mark it paid so it stops showing as owed.</p>
       <div class="card">
         <div id="payoutSummary" style="margin-bottom:16px; font-weight:700;"></div>
@@ -228,27 +255,31 @@
       </div>
     </div>
 
-    <div class="admin-tab-panel" data-tab="community" hidden>
+    <div class="admin-tab-panel" data-tab="journeys" hidden>
       <div class="eyebrow">Share Your Journey</div>
-      <h2 style="font-size:18px;">Posted journeys</h2>
+      <h2>Posted journeys</h2>
       <p class="card-sub" style="margin-bottom:24px;">Only signed-in members can post, so it goes live on the homepage box instantly — no approval needed. If something inappropriate ever gets shared, remove it here.</p>
       <div class="card">
         <div id="chatHistory">
           <div class="empty-state">Loading…</div>
         </div>
       </div>
+    </div>
 
-      <div class="eyebrow" style="margin-top:36px;">Voice Updates</div>
-      <h2 style="font-size:18px;">Recent voice updates</h2>
-      <p class="card-sub" style="margin-bottom:24px;">Older audio uploads land here for a one-time manual conversion into the Music Library. Going forward, when someone uploads a song from their Profile page, it publishes straight to the Music Library below automatically — nothing to do here for those. This list is just for cleaning up anything from before that changed.</p>
+    <div class="admin-tab-panel" data-tab="voice" hidden>
+      <div class="eyebrow">Voice Updates</div>
+      <h2>Recent voice updates</h2>
+      <p class="card-sub" style="margin-bottom:24px;">Older audio uploads land here for a one-time manual conversion into the Music Library. Going forward, when someone uploads a song from their Profile page, it publishes straight to the Music Library automatically — nothing to do here for those. This list is just for cleaning up anything from before that changed.</p>
       <div class="card">
         <div id="voiceQueue">
           <div class="empty-state">Loading…</div>
         </div>
       </div>
+    </div>
 
-      <div class="eyebrow" style="margin-top:36px;">Music Library</div>
-      <h2 style="font-size:18px;">Tracks members can add to their videos</h2>
+    <div class="admin-tab-panel" data-tab="music" hidden>
+      <div class="eyebrow">Music Library</div>
+      <h2>Tracks members can add to their videos</h2>
       <p class="card-sub" style="margin-bottom:24px;">When an artist uploads a song from their own Profile page, it lands here automatically — already live in the Music Library, no typing required from you. Check in on this list whenever you get a chance and listen through anything new; "Deactivate" pulls a track from the picker without breaking videos that already used it. Deactivating a self-submitted track sends that artist a friendly note letting them know. You can also add a track yourself below.</p>
 
       <div class="card" style="margin-bottom:20px;">
@@ -293,9 +324,11 @@
           <div class="empty-state">Loading…</div>
         </div>
       </div>
+    </div>
 
-      <div class="eyebrow" style="margin-top:36px;">Quote Voiceover Library</div>
-      <h2 style="font-size:18px;">Quotes members can record themselves reading</h2>
+    <div class="admin-tab-panel" data-tab="quotes" hidden>
+      <div class="eyebrow">Quote Voiceover Library</div>
+      <h2>Quotes members can record themselves reading</h2>
       <p class="card-sub" style="margin-bottom:24px;">Add a quote here and it instantly shows up on quote-library.html for members to record their own reading of it. "Deactivate" pulls a quote from that picker without deleting recordings already made of it. Recordings publish instantly too — spot-check them below and remove anything that shouldn't be up.</p>
 
       <div class="card" style="margin-bottom:20px;">
@@ -375,6 +408,9 @@
         <div id="gearList">
           <div class="empty-state">Loading…</div>
         </div>
+      </div>
+    </div>
+
       </div>
     </div>
   </div>
