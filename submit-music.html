@@ -4,13 +4,86 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Submit Your Music — Music Library | Ensemble Fitness</title>
-<meta name="description" content="Get your track into the Ensemble Fitness Music Library — the curated set of songs members can pick for their workout videos, with your name and link attached to every play." />
+<meta name="description" content="Upload your track into the Ensemble Fitness Music Library — the curated set of songs members can pick for their workout videos, with your name and link attached to every play." />
 <link rel="canonical" href="https://ensemblefitness.com/submit-music.html" />
 <link rel="icon" type="image/png" href="assets/favicon.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/styles.css?v=40" />
+<style>
+  /* ---- Music submission page: styles that don't exist in styles.css yet ---- */
+  .music-pills { display:flex; flex-wrap:wrap; gap:8px 10px; margin:16px 0 0; }
+
+  .music-cta-band {
+    background: var(--accent-tint);
+    border: 1px solid rgba(255, 90, 31, 0.25);
+    border-radius: var(--radius-lg);
+    padding: 36px 28px;
+    text-align: center;
+    margin: 40px 0 48px;
+  }
+  .music-cta-band h3 { margin:0 0 8px; font-size:24px; color: var(--accent-dark); font-family:"Poppins", sans-serif; }
+  .music-cta-band p { margin:0 0 22px; color: var(--ink); font-size:15px; }
+
+  .legal-box {
+    max-width: 640px;
+    margin: 28px auto 0;
+    padding: 20px 22px;
+    background: var(--paper-2);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--muted);
+    max-height: 260px;
+    overflow-y: auto;
+  }
+  .legal-box h5 { margin: 14px 0 4px; font-size: 12.5px; color: var(--ink); text-transform: uppercase; letter-spacing: 0.02em; }
+  .legal-box h5:first-child { margin-top: 0; }
+  .legal-box p { margin: 0 0 8px; }
+
+  .legal-check-row {
+    max-width: 640px;
+    margin: 16px auto 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 13.5px;
+    color: var(--ink);
+  }
+  .legal-check-row input[type="checkbox"] { width: 18px; height: 18px; margin-top: 2px; flex-shrink: 0; accent-color: var(--accent); }
+
+  .upload-progress-wrap { display:none; margin-top:14px; }
+  .upload-progress-track { width:100%; height:8px; border-radius:999px; background: var(--border-light); overflow:hidden; }
+  .upload-progress-fill { height:100%; width:0%; background: var(--accent); border-radius:999px; transition: width 0.15s ease; }
+  .upload-progress-label { font-size:12.5px; color: var(--muted); margin-top:6px; text-align:center; }
+
+  .support-artists-tagline {
+    display: inline-block;
+    margin-top: 14px;
+    font-weight: 800;
+    color: var(--accent-2);
+    font-family: "Poppins", sans-serif;
+    font-size: 15px;
+  }
+
+  /* Ken's ask: the Stripe-tipping benefit was buried inside step 4 — pulling
+     it out into its own small, separate card (rather than a full-width dark
+     band) so it reads as a highlighted extra, right in the flow between
+     "how it works" and the ground rules, without the page suddenly feeling
+     like it's changing sections. */
+  .support-artists-card {
+    max-width: 640px;
+    margin: 0 auto 32px;
+    padding: 28px 26px;
+    background: var(--navy-900);
+    border-radius: var(--radius-lg);
+    text-align: center;
+  }
+  .support-artists-card h3 { color: #fff; font-size: 20px; margin: 0 0 10px; font-family: "Poppins", sans-serif; }
+  .support-artists-card p { color: var(--muted-invert); margin: 0; font-size: 14.5px; }
+</style>
 </head>
 <body>
 
@@ -53,54 +126,139 @@
 </div>
 
 <!-- ============ HERO ============ -->
-<section class="hero" id="top" style="padding-bottom:40px;">
+<section class="hero" id="top" style="padding-bottom:32px;">
   <div class="container" style="display:block;">
     <div class="hero-copy" style="max-width:700px;">
       <div class="eyebrow on-dark">Submit to the Music Library</div>
       <h1 style="font-size:clamp(30px,4.2vw,46px);">Get your music into members' workout videos.</h1>
-      <p class="lede">The Music Library is a curated set of real tracks from independent artists that members can pick for their workout videos instead of — or alongside — recording their own voiceover. It's free to submit, there's no review fee, and your name, bio, and link travel with every play.</p>
+      <p class="lede">The Ensemble Fitness Music Library features original tracks from independent artists. Share your music, inspire our community, and reach new listeners every time your track is played.</p>
+      <div class="music-pills">
+        <span class="gear-stat-chip">Free to submit</span>
+        <span class="gear-stat-chip">Keep ownership</span>
+        <span class="gear-stat-chip">Get discovered</span>
+      </div>
     </div>
   </div>
 </section>
 
-<section class="section" style="padding-top:36px;">
+<section class="section" style="padding-top:20px;">
   <div class="container">
-    <div class="guideline-box">
-      <strong>Before you send anything:</strong> tracks should fit an active, motivational vibe — instrumental or clean vocals both work, but no explicit lyrics and no samples you don't hold the rights to. A real person on our team listens to every submission before it goes live.
-      <br /><br />
-      Submitting is free — there's no review fee like there is for Ensemble Reads. By submitting, you're granting Ensemble Fitness a non-exclusive license to feature your track inside member-uploaded videos; you keep full ownership of your music and can ask us to remove your track at any time.
-    </div>
 
-    <div class="section-head" style="margin:44px 0 24px;">
+    <div class="section-head" style="margin:0 0 24px;">
       <h2 style="font-size:20px;">How it works</h2>
     </div>
 
-    <div class="steps" style="grid-template-columns: repeat(4, 1fr);">
+    <div class="steps" style="grid-template-columns: repeat(2, 1fr);">
       <div class="step-card">
         <div class="step-num">1</div>
-        <h4>Prep your track</h4>
-        <p>Export it as an MP3, M4A, or WAV file. Keep the file size reasonable (under ~10MB is ideal) so it loads quickly for members.</p>
+        <h4>Prepare Your Track</h4>
+        <p>Upload your original music in MP3, M4A or WAV format. Keep files under 10 MB where possible.</p>
       </div>
       <div class="step-card">
         <div class="step-num">2</div>
-        <h4>Write your artist info</h4>
-        <p>Have these ready: track title, your artist name, a line or two of bio, and a link — Spotify, Instagram, your website, wherever you want people to find you.</p>
+        <h4>Tell Us About You</h4>
+        <p>Add your artist name, track title, short bio and a link where members can discover more of your music.</p>
       </div>
       <div class="step-card">
         <div class="step-num">3</div>
-        <h4>Email it to us</h4>
-        <p>Send the audio file and your info to <a href="mailto:partners@ensemblefitness.com?subject=Music%20Library%20Submission" style="color:var(--accent); font-weight:700;">partners@ensemblefitness.com</a> with the subject line "Music Library Submission."</p>
+        <h4>Upload Your Music</h4>
+        <p>Upload your track directly through our secure submission form. Review the terms and submit it for approval.</p>
       </div>
       <div class="step-card">
         <div class="step-num">4</div>
-        <h4>We add it — you're live</h4>
-        <p>Once it's approved and added, your track shows up as a music option every time a member uploads a workout video, with your name and bio attached. We'll also email you a quick link to link a bank account through Stripe, so you're ready to receive tips directly the moment that feature launches.</p>
+        <h4>Get Heard!</h4>
+        <p>Once approved, your track joins our Music Library, where members can discover it and add it to their workout videos.</p>
       </div>
     </div>
 
-    <div style="text-align:center; margin-top:36px;">
-      <a href="mailto:partners@ensemblefitness.com?subject=Music%20Library%20Submission" class="btn btn-primary">Email Your Track</a>
+    <div class="music-cta-band">
+      <h3>Your music. Their motivation.</h3>
+      <p>Free to submit. Every track is personally reviewed.</p>
+      <a href="#submitForm" class="btn btn-primary">Upload Your Track</a>
     </div>
+
+    <div class="support-artists-card">
+      <div class="eyebrow" style="justify-content:center;">Support Real Artists</div>
+      <h3>Your music deserves to be heard.</h3>
+      <p>Share your sound with an active community. Members can discover your music, visit your artist profile and show their appreciation through optional tips.</p>
+      <span class="support-artists-tagline">Your creativity. Their inspiration.</span>
+    </div>
+
+    <div class="guideline-box">
+      <strong style="display:block; font-size:16px; margin-bottom:10px;">Before You Upload</strong>
+      <p style="margin:0 0 10px;">We're looking for original, motivational music that inspires movement. Instrumental tracks and clean vocals are welcome.</p>
+      <p style="margin:0 0 10px;">You must own or control the rights to your music. Every submission is personally reviewed, and there is no submission fee.</p>
+      <p style="margin:0; font-weight:700;">You keep ownership of your music.</p>
+    </div>
+
+    <div id="submitNotice"></div>
+
+    <form class="light-form" id="submitForm">
+      <div class="light-form-row">
+        <label for="ms-title">Track title</label>
+        <input type="text" id="ms-title" required maxlength="150" />
+      </div>
+      <div class="light-form-row">
+        <label for="ms-artist-name">Artist name</label>
+        <input type="text" id="ms-artist-name" required maxlength="120" />
+      </div>
+      <div class="light-form-row">
+        <label for="ms-artist-email">Your email</label>
+        <input type="email" id="ms-artist-email" required />
+        <span class="hint">We'll reach out here once your track's been reviewed.</span>
+      </div>
+      <div class="light-form-row">
+        <label for="ms-artist-bio">A line or two about you (optional)</label>
+        <textarea id="ms-artist-bio" maxlength="400"></textarea>
+      </div>
+      <div class="light-form-row">
+        <label for="ms-artist-link">Spotify / Instagram / website link (optional)</label>
+        <input type="url" id="ms-artist-link" placeholder="https://…" />
+      </div>
+      <div class="light-form-row">
+        <label>Audio file (MP3, M4A, or WAV)</label>
+        <label class="file-drop" for="ms-audio">
+          <strong id="ms-audio-label">Click to choose your track</strong>
+          <span>MP3, M4A, or WAV — up to 25MB</span>
+          <input type="file" id="ms-audio" accept="audio/mpeg,audio/mp4,audio/x-m4a,audio/wav,audio/x-wav,.mp3,.m4a,.wav" required />
+        </label>
+        <span id="ms-audio-note" class="hint" style="display:block; margin-top:6px;"></span>
+        <div class="upload-progress-wrap" id="uploadProgressWrap">
+          <div class="upload-progress-track"><div class="upload-progress-fill" id="uploadProgressFill"></div></div>
+          <div class="upload-progress-label" id="uploadProgressLabel">Uploading… 0%</div>
+        </div>
+      </div>
+
+      <!-- ============ LICENSE & SUBMISSION TERMS ============
+           This is my own drafted agreement text (Ken asked for this to be
+           placed here, but wrote it himself as a functional requirement, not
+           exact copy) — it should be reviewed, ideally by a lawyer, before
+           this page goes live for real public submissions. In particular:
+           the removal clause below deliberately does NOT promise removal
+           from videos already published before a removal request, since
+           promising that without a way to actually enforce it would create
+           a claim Ensemble Fitness can't keep. -->
+      <div class="legal-box" aria-label="Music licensing agreement">
+        <h5>License to use your music</h5>
+        <p>By submitting a track, you grant Ensemble Fitness a non-exclusive, worldwide, royalty-free license to feature your track inside member-uploaded workout videos on the Ensemble Fitness platform, and to use short clips of it in Ensemble Fitness's own marketing for the Music Library. You keep full ownership and copyright of your music — this is a license, not a transfer of rights.</p>
+
+        <h5>Your rights to submit it</h5>
+        <p>You confirm that you wrote or otherwise hold all necessary rights to every element of the track (including any samples, loops, or collaborators), and that using it as described above won't infringe anyone else's rights. You're responsible for your submission if that turns out not to be true.</p>
+
+        <h5>Removal requests</h5>
+        <p>You can ask us to remove your track from the Music Library at any time by emailing us — once removed, it stops being offered to members going forward. Because member videos that already used your track are their own published content, removing a track from the library does not automatically edit or take down videos that were already made with it before your removal request. If you have a specific concern about an existing video, contact us and we'll work with you on it directly.</p>
+
+        <h5>Review &amp; acceptance</h5>
+        <p>Submitting is free. A real person reviews every track for fit before it's added, and Ensemble Fitness may decline or remove any submission at its discretion. If you're under 18, a parent or guardian must agree to these terms on your behalf.</p>
+      </div>
+      <div class="legal-check-row">
+        <input type="checkbox" id="ms-agree" required />
+        <label for="ms-agree">I've read and accept the license and submission terms above.</label>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block" id="submitBtn" style="margin-top:22px;">Upload Your Track</button>
+      <div class="form-error" id="submitError" style="color:#b91c1c;"></div>
+    </form>
   </div>
 </section>
 
@@ -149,5 +307,174 @@
 <script src="js/main.js?v=24"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/journeys-nav-badge.js?v=4"></script>
+
+<script>
+(function () {
+  var SUPABASE_URL = "https://wgrldwdgvvlhcmlyoxrl.supabase.co";
+  var SUPABASE_ANON_KEY = "sb_publishable_4sbGE70Sh5gkgpmBqdGVBg_VkqjzJVx";
+  var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  var MAX_BYTES = 25 * 1024 * 1024; // 25MB
+  var ALLOWED_EXTENSIONS = ["mp3", "m4a", "wav"];
+
+  function fileExtension(name) {
+    return name && name.indexOf(".") > -1 ? name.split(".").pop().toLowerCase() : "";
+  }
+
+  function showNotice() {
+    var params = new URLSearchParams(window.location.search);
+    var status = params.get("submitted");
+    var el = document.getElementById("submitNotice");
+    if (status === "success") {
+      el.innerHTML = '<div class="notice-banner success">Your track is submitted! We\'ll email you once it\'s been reviewed.</div>';
+      document.getElementById("submitForm").style.display = "none";
+    }
+  }
+
+  var audioInput = document.getElementById("ms-audio");
+  var audioLabel = document.getElementById("ms-audio-label");
+  var audioNote = document.getElementById("ms-audio-note");
+
+  audioInput.addEventListener("change", function () {
+    audioNote.textContent = "";
+    audioNote.style.color = "var(--muted)";
+    var file = audioInput.files && audioInput.files[0];
+    if (!file) return;
+
+    var ext = fileExtension(file.name);
+    if (ALLOWED_EXTENSIONS.indexOf(ext) === -1) {
+      audioLabel.textContent = "Click to choose your track";
+      audioNote.textContent = "Please choose an MP3, M4A, or WAV file.";
+      audioNote.style.color = "#b91c1c";
+      audioInput.value = "";
+      return;
+    }
+    if (file.size > MAX_BYTES) {
+      audioLabel.textContent = "Click to choose your track";
+      audioNote.textContent = "That file is " + (file.size / (1024 * 1024)).toFixed(1) + "MB — please keep it under 25MB.";
+      audioNote.style.color = "#b91c1c";
+      audioInput.value = "";
+      return;
+    }
+
+    audioLabel.textContent = file.name;
+    audioNote.textContent = "✓ " + (file.size / (1024 * 1024)).toFixed(1) + "MB — ready to upload.";
+    audioNote.style.color = "#15803d";
+  });
+
+  // Raw XHR straight to Supabase Storage's REST endpoint (rather than the
+  // Supabase JS SDK's storage.upload(), which doesn't expose upload
+  // progress) so the progress bar below reflects real bytes sent, not a
+  // fake animation.
+  function uploadWithProgress(bucket, path, file, onProgress) {
+    return new Promise(function (resolve, reject) {
+      var xhr = new XMLHttpRequest();
+      xhr.open("POST", SUPABASE_URL + "/storage/v1/object/" + bucket + "/" + encodeURIComponent(path).replace(/%2F/g, "/"));
+      xhr.setRequestHeader("apikey", SUPABASE_ANON_KEY);
+      xhr.setRequestHeader("Authorization", "Bearer " + SUPABASE_ANON_KEY);
+      xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
+      xhr.setRequestHeader("x-upsert", "false");
+      xhr.upload.onprogress = function (e) {
+        if (e.lengthComputable && onProgress) onProgress(Math.round((e.loaded / e.total) * 100));
+      };
+      xhr.onload = function () {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve();
+        } else {
+          var message = "Upload failed (" + xhr.status + ")";
+          try {
+            var parsed = JSON.parse(xhr.responseText);
+            if (parsed && parsed.message) message = parsed.message;
+          } catch (e) {}
+          reject(new Error(message));
+        }
+      };
+      xhr.onerror = function () { reject(new Error("Upload failed — check your connection and try again.")); };
+      xhr.send(file);
+    });
+  }
+
+  var progressWrap = document.getElementById("uploadProgressWrap");
+  var progressFill = document.getElementById("uploadProgressFill");
+  var progressLabel = document.getElementById("uploadProgressLabel");
+
+  function setProgress(pct) {
+    progressWrap.style.display = "block";
+    progressFill.style.width = pct + "%";
+    progressLabel.textContent = "Uploading… " + pct + "%";
+  }
+
+  document.getElementById("submitForm").addEventListener("submit", async function (e) {
+    e.preventDefault();
+    var errorEl = document.getElementById("submitError");
+    var btn = document.getElementById("submitBtn");
+    errorEl.textContent = "";
+
+    var audioFile = audioInput.files[0];
+    var ext = audioFile ? fileExtension(audioFile.name) : "";
+
+    if (!audioFile) {
+      errorEl.textContent = "Please choose your audio file.";
+      return;
+    }
+    if (ALLOWED_EXTENSIONS.indexOf(ext) === -1) {
+      errorEl.textContent = "Please choose an MP3, M4A, or WAV file.";
+      return;
+    }
+    if (audioFile.size > MAX_BYTES) {
+      errorEl.textContent = "That file is too large — please keep it under 25MB.";
+      return;
+    }
+    if (!document.getElementById("ms-agree").checked) {
+      errorEl.textContent = "Please confirm you've read and accept the license and submission terms.";
+      return;
+    }
+
+    btn.disabled = true;
+    setProgress(0);
+
+    try {
+      var folder = crypto.randomUUID();
+      var audioPath = folder + "/track." + ext;
+
+      await uploadWithProgress("music-submissions", audioPath, audioFile, function (pct) {
+        setProgress(pct);
+        btn.textContent = "Uploading… " + pct + "%";
+      });
+
+      progressLabel.textContent = "Upload complete — submitting…";
+      btn.textContent = "Submitting…";
+
+      var res = await fetch("/.netlify/functions/create-music-submission", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          track_title: document.getElementById("ms-title").value.trim(),
+          artist_name: document.getElementById("ms-artist-name").value.trim(),
+          artist_email: document.getElementById("ms-artist-email").value.trim(),
+          artist_bio: document.getElementById("ms-artist-bio").value.trim(),
+          artist_link: document.getElementById("ms-artist-link").value.trim(),
+          audio_storage_path: audioPath
+        })
+      });
+      var out = await res.json();
+      if (!res.ok || !out.ok) throw new Error(out.error || "Couldn't submit your track.");
+
+      // Confirmation, without leaving the page.
+      document.getElementById("submitForm").style.display = "none";
+      document.getElementById("submitNotice").innerHTML =
+        '<div class="notice-banner success">Your track is submitted! We\'ll email you once it\'s been reviewed.</div>';
+      window.scrollTo({ top: document.getElementById("submitNotice").offsetTop - 100, behavior: "smooth" });
+    } catch (err) {
+      errorEl.textContent = err.message || "Something went wrong — please try again.";
+      btn.disabled = false;
+      btn.textContent = "Upload Your Track";
+      progressWrap.style.display = "none";
+    }
+  });
+
+  showNotice();
+})();
+</script>
 </body>
 </html>
