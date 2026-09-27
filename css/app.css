@@ -565,6 +565,26 @@ img { max-width: 100%; display: block; }
 .quote-recording-audio { width: 100%; max-width: 260px; height: 32px; }
 
 .dropzone {
+  /* Ken's ask (Oct 2026): "Add a photo, video, or song" was rendering as
+     what looked like two separate dashed boxes with the upload icon
+     floating between them, and the Category field crowding right up
+     against the bottom of it. Root cause: this is a <label>, and a <label>
+     with no explicit display is "inline" by default — but its first child,
+     .dropzone-icon, is display:flex (a block-level box). An inline element
+     is not allowed to just contain a block-level child; the browser has to
+     silently split it into anonymous fragments instead (whatever came
+     before the block child, the block child itself, then whatever comes
+     after), and each fragment gets this rule's OWN border/padding applied
+     separately — which is exactly the "two dashed boxes with a gap" look:
+     an empty bordered sliver for the (empty) fragment before the icon, the
+     icon itself unbordered in the middle, then a second bordered box for
+     the strong/span text fragment after it. Making this a real flex
+     container (rather than relying on default inline behavior) keeps the
+     icon, title, and hint text inside ONE single-fragment box the way this
+     was always meant to look. */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   border: 1.5px dashed rgba(255, 255, 255, 0.25);
   border-radius: var(--radius-md);
   padding: 28px;
