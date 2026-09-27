@@ -214,32 +214,87 @@ img { max-width: 100%; display: block; }
   margin-bottom: 10px;
 }
 
-.admin-tabs {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-  margin-bottom: 28px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  padding-bottom: 0;
+/* Oct 2026: this used to be a horizontal row of tabs that wrapped onto a
+   second, visually disconnected line once there were more than a handful —
+   which is exactly how "Community" ended up as an unlabeled catch-all for
+   Journeys, Voice Updates, the Music Library, and Quotes: nothing about the
+   tab bar hinted that four unrelated sections were hiding in there. Ken's
+   ask: every section gets its own always-visible entry, "lined up... one on
+   top of each other" — a real sidebar, like a proper admin/business
+   platform, not a wrapping row of buttons. See .admin-layout below for how
+   this pairs with the content column, and admin.html for the full list of
+   sections (now split out of the old queue/photos/community/books
+   catch-alls) with light group labels for orientation. */
+.admin-layout {
+  display: block;
 }
 
+.admin-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 28px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.admin-sidenav-group-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--faint-invert);
+  padding: 14px 12px 6px;
+}
+.admin-sidenav-group-label:first-child { padding-top: 2px; }
+
 .admin-tab-btn {
+  display: block;
+  width: 100%;
+  text-align: left;
   background: none;
   border: none;
-  border-bottom: 2px solid transparent;
+  border-left: 2px solid transparent;
+  border-radius: 0 8px 8px 0;
   color: var(--muted-invert);
   font-weight: 700;
-  font-size: 14px;
-  padding: 10px 14px;
+  font-size: 13.5px;
+  padding: 9px 12px;
   cursor: pointer;
   font-family: inherit;
 }
 
-.admin-tab-btn:hover { color: #fff; }
+.admin-tab-btn:hover { color: #fff; background: rgba(255, 255, 255, 0.04); }
 
 .admin-tab-btn.active {
   color: #fff;
-  border-bottom-color: var(--accent-2);
+  background: rgba(255, 255, 255, 0.07);
+  border-left-color: var(--accent-2);
+}
+
+/* Sidebar sits beside the content on wide screens (a real two-column admin
+   layout); on narrow screens .admin-layout stays a plain block, so the
+   nav's own flex-column above just renders as a straightforward stacked
+   list ahead of the content — nothing collapses or hides, it just isn't
+   pinned to the side. */
+@media (min-width: 900px) {
+  .admin-layout {
+    display: grid;
+    grid-template-columns: 232px 1fr;
+    gap: 32px;
+    align-items: start;
+  }
+  .admin-tabs {
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: 0;
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    padding-right: 16px;
+    position: sticky;
+    top: 24px;
+    max-height: calc(100vh - 48px);
+    overflow-y: auto;
+  }
 }
 
 .field { margin-bottom: 16px; }
