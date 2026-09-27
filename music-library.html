@@ -117,6 +117,15 @@
       <div class="eyebrow" style="margin-bottom:2px;">Workout Playlist</div>
       <h3 style="margin-bottom:4px;">Tap a track to listen, tip, and use it in a video</h3>
       <p class="card-sub" style="margin-bottom:16px;">Just two tracks so far — more get added here the moment they're approved.</p>
+      <!-- Ken's ask (Oct 2026): tipping shouldn't require leaving this list
+           to open a track's full page — a one-tap "$2" button right on each
+           row (see buildTrackRow) sends the tip immediately, and the result
+           (thanks / on hold / hit a snag) shows right here so there's never
+           a reason to click through just to support an artist. Opening the
+           track itself is still there for anyone who wants the player, the
+           artist's bio, or a different tip amount — this is just the fast
+           path for "send $2 and be done." -->
+      <div class="form-msg" id="playlistMsg"></div>
       <div class="track-search-row">
         <input type="search" id="trackSearchInput" class="track-search-input" placeholder="Search by title…" autocomplete="off">
       </div>
@@ -334,11 +343,25 @@
     gap: 12px;
     padding: 14px 4px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  }
+  .track-table-row:last-child { border-bottom: none; }
+  .track-table-row:hover, .track-table-row:focus-within { background: rgba(255, 255, 255, 0.035); border-radius: 10px; outline: none; }
+
+  /* Oct 2026: the row used to be a single <a> wrapping everything — clicking
+     anywhere opened track.html. Now the row is a plain <div>, with an inner
+     <a class="track-row-link"> around the art/title/duration/chevron (still
+     goes to track.html, still fully keyboard/screen-reader accessible as a
+     real link) and a sibling <button class="track-tip-btn"> for the new
+     one-tap $2 tip — a button can't legally sit inside an <a> in valid
+     HTML, and this avoids needing stopPropagation tricks. display:contents
+     makes the link itself invisible to the flex layout (no extra box, no
+     changed spacing) while everything inside it still lays out exactly as
+     it did when the row itself was the <a>. */
+  .track-row-link {
+    display: contents;
     text-decoration: none;
     color: inherit;
   }
-  .track-table-row:last-child { border-bottom: none; }
-  .track-table-row:hover, .track-table-row:focus-visible { background: rgba(255, 255, 255, 0.035); border-radius: 10px; outline: none; }
 
   .track-table-art {
     flex: none;
@@ -366,6 +389,26 @@
     font-variant-numeric: tabular-nums;
   }
   .track-table-chevron { flex: none; font-size: 18px; color: var(--faint-invert); }
+
+  /* Oct 2026: the one-tap "send $2 and be done" button living right on each
+     row — see buildTrackRow and sendQuickTipRequest. Kept small and quiet
+     (a pill, not a bold call-to-action) so it doesn't compete with the row's
+     own click-through-to-track.html link right next to it. */
+  .track-tip-btn {
+    flex: none;
+    font-family: inherit;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #fff;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 999px;
+    padding: 7px 12px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .track-tip-btn:hover { background: rgba(255, 255, 255, 0.18); }
+  .track-tip-btn:disabled { opacity: 0.6; cursor: default; }
 
   /* Ken's ask (Sept 2026): at 2 tracks this didn't matter, but at hundreds
      or thousands it does — the list now always scrolls inside its own
@@ -421,6 +464,12 @@
   var SITE_FUNCTIONS_BASE = "https://ensemblefitness.com/.netlify/functions";
   var currentUser = null;
 
+  // Oct 2026: the fixed amount the one-tap button on each row sends. track.html
+  // still offers the full 50¢/$1/$2 choice for anyone who opens a track — this
+  // quick button is deliberately just the one, most-common amount, so it can
+  // be a single tap with nothing to choose.
+  var QUICK_TIP_CENTS = 200;
+
   function showMsg(el, text, kind) {
     el.textContent = text;
     el.className = "form-msg show " + kind;
@@ -454,6 +503,7 @@
     await loadWallet();
     await loadTracks();
     subscribeToTrackChanges();
+    resumePendingQuickTipIfAny();
   }
 
   // ---- Wallet -------------------------------------------------------------
@@ -607,12 +657,17 @@
     // artist gave one; otherwise the row just carries the title and time.
     // The artist's actual name, bio, and link still live on the track's own
     // full page (track.html) — that's the right place for it, since tipping
-    // there means knowing who you're supporting.
-    var row = document.createElement("a");
+    // there means knowing who you're supporting. (The one-tap tip button
+    // below does reveal the artist's name, but only in the result message
+    // after a tip actually goes through — same as track.html already does.)
+    var row = document.createElement("div");
     row.className = "track-table-row";
-    row.href = "track.html?id=" + encodeURIComponent(track.id);
+
+    var link = document.createElement("a");
+    link.className = "track-row-link";
+    link.href = "track.html?id=" + encodeURIComponent(track.id);
     var subtitle = track.tagline || "";
-    row.innerHTML =
+    link.innerHTML =
       '<span class="track-table-art">🎵</span>' +
       '<span class="track-table-main">' +
         '<span class="track-table-title">' + escapeHtml(track.title) + '</span>' +
@@ -620,6 +675,23 @@
       '</span>' +
       (track.duration_seconds ? '<span class="track-table-duration">' + formatTrackDuration(track.duration_seconds) + '</span>' : '') +
       '<span class="track-table-chevron">›</span>';
+    row.appendChild(link);
+
+    // Ken's ask (Oct 2026): "I just want to send the artist two bucks and be
+    // done — I don't want to have to click on something else." This button
+    // is that one click: it sends the tip right from the list, no trip to
+    // track.html required, as long as there's already wallet balance to
+    // cover it (see sendQuickTipRequest for what happens when there isn't).
+    var tipBtn = document.createElement("button");
+    tipBtn.type = "button";
+    tipBtn.className = "track-tip-btn";
+    tipBtn.textContent = "💛 " + formatCents(QUICK_TIP_CENTS);
+    tipBtn.addEventListener("click", function (e) {
+      e.preventDefault();
+      sendQuickTipRequest(track.id, QUICK_TIP_CENTS, { button: tipBtn });
+    });
+    row.appendChild(tipBtn);
+
     return row;
   }
 
@@ -648,6 +720,124 @@
       .channel("music-library-live-changes")
       .on("postgres_changes", { event: "*", schema: "public", table: "tracks" }, scheduleTrackReload)
       .subscribe();
+  }
+
+  // ---- Quick tip (one click, right from the list) ---------------------------
+  // Ken's ask (Oct 2026): "Once I click send, I need it to go directly to the
+  // artist... I don't have to send or approve the money to go out twice."
+  // Sending the tip is always ONE click on the row's button — this app never
+  // asks for a second approval to move that money on to the artist; /tip-track
+  // does that itself the instant this request comes in, with no further
+  // action from the member. The only thing that can still put a screen in
+  // between is Stripe itself, and only when the wallet doesn't already have
+  // $2 sitting in it: Stripe requires the cardholder to personally authorize
+  // any NEW charge to their card, which is true of every online payment
+  // anywhere and isn't something this app adds on top. Even then, this page
+  // doesn't hand that back to the member as a second click — the moment
+  // Stripe sends them back here, resumePendingQuickTipIfAny() reopens the
+  // playlist and finishes sending the same tip on its own. So in practice:
+  // with any balance already in the wallet, it's one tap and done, full
+  // stop; the very first time (or whenever the balance runs dry), there's
+  // one Stripe screen to approve the card charge, and then it finishes
+  // itself with nothing further to click.
+
+  function quickTipStatusText(status, artistName) {
+    if (status === "blocked") {
+      return "💛 Sent! " + artistName + " hasn't linked a bank account yet, so this is on hold — they'll get paid the moment they finish setup.";
+    } else if (status === "unpaid") {
+      return "Your tip was recorded, but sending it to " + artistName + " hit a snag on our end — our team's already on it, no need to resend.";
+    }
+    return "💛 Thanks for supporting " + artistName + "!";
+  }
+
+  async function sendQuickTipRequest(trackId, amountCents, opts) {
+    opts = opts || {};
+    var msg = document.getElementById("playlistMsg");
+    var btn = opts.button || null;
+    var restoreText = btn ? btn.textContent : null;
+    if (btn) { btn.disabled = true; btn.textContent = "…"; }
+    if (!opts.resuming) hideMsg(msg);
+
+    try {
+      var res = await fetch(SITE_FUNCTIONS_BASE + "/tip-track", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: await authHeader() },
+        body: JSON.stringify({ track_id: trackId, amount_cents: amountCents })
+      });
+      var out = await res.json();
+
+      if (res.status === 402 && out.insufficient_funds) {
+        if (opts.resuming) {
+          // Just came back from adding funds, but the wallet balance hasn't
+          // caught up yet (the webhook that credits it can lag a moment
+          // behind the redirect) — quietly retry a few times before asking
+          // the member to do anything themselves.
+          if ((opts.retriesLeft || 0) > 0) {
+            setTimeout(function () {
+              sendQuickTipRequest(trackId, amountCents, { resuming: true, retriesLeft: opts.retriesLeft - 1 });
+            }, 1500);
+            return;
+          }
+          showMsg(msg, "Your funds were added, but the tip didn't quite catch up — tap the tip button once more to finish sending it.", "error");
+        } else {
+          // No balance to cover it yet. This is the one unavoidable extra
+          // screen — Stripe itself needs the member to approve a new charge
+          // to their card — but it's still only one click from the member's
+          // side: startQuickTipTopup remembers this exact tip and finishes
+          // sending it automatically the moment Stripe sends them back here.
+          await startQuickTipTopup(trackId, amountCents);
+          return;
+        }
+      } else if (!res.ok) {
+        throw new Error(out.error || "Something went wrong sending that tip.");
+      } else {
+        showMsg(msg, quickTipStatusText(out.payout_status, out.artist_name), "success");
+        loadWallet();
+      }
+    } catch (err) {
+      showMsg(msg, err.message || "Something went wrong sending that tip.", "error");
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = restoreText || ("💛 " + formatCents(QUICK_TIP_CENTS));
+      }
+    }
+  }
+
+  async function startQuickTipTopup(trackId, amountCents) {
+    var msg = document.getElementById("playlistMsg");
+    try {
+      sessionStorage.setItem("efPendingQuickTip", JSON.stringify({ track_id: trackId, amount_cents: amountCents }));
+      var res = await fetch(SITE_FUNCTIONS_BASE + "/wallet-topup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: await authHeader() },
+        body: JSON.stringify({ amount_cents: amountCents })
+      });
+      var out = await res.json();
+      if (!res.ok || !out.url) throw new Error(out.error || "Couldn't start checkout.");
+      window.location.href = out.url;
+    } catch (err) {
+      try { sessionStorage.removeItem("efPendingQuickTip"); } catch (e2) {}
+      showMsg(msg, err.message || "Something went wrong — please try again.", "error");
+    }
+  }
+
+  // Runs on every page load. wallet-topup's Checkout session always returns
+  // here to music-library.html (see wallet-topup.js's success_url) — this is
+  // what's waiting when it does: it reopens the playlist and sends the exact
+  // tip that triggered the top-up, so nothing further needs clicking.
+  function resumePendingQuickTipIfAny() {
+    var raw = null;
+    try { raw = sessionStorage.getItem("efPendingQuickTip"); } catch (e) { return; }
+    if (!raw) return;
+    try { sessionStorage.removeItem("efPendingQuickTip"); } catch (e) {}
+
+    var pending;
+    try { pending = JSON.parse(raw); } catch (e) { return; }
+    if (!pending || !pending.track_id || !pending.amount_cents) return;
+
+    openPlaylistModal();
+    sendQuickTipRequest(pending.track_id, pending.amount_cents, { resuming: true, retriesLeft: 5 });
   }
 
   // ---- Playlist popup ------------------------------------------------------
