@@ -756,17 +756,6 @@
     return row;
   }
 
-  // Oct 2026: total inches back into a friendly "5'8"" for display —
-  // matches how it's collected on the enrollment form (feet + inches
-  // dropdowns) even though it's stored as one number (see schema.sql
-  // section 11).
-  function formatHeightInches(totalInches) {
-    if (totalInches === null || totalInches === undefined) return null;
-    var feet = Math.floor(totalInches / 12);
-    var inches = totalInches % 12;
-    return feet + "'" + inches + '"';
-  }
-
   function lifestyleLabel(lifestyle) {
     if (lifestyle === "healthy") return "Healthy (1–3 days/wk)";
     if (lifestyle === "mixed_healthy") return "Mixed Healthy (2–4 days/wk)";
@@ -778,7 +767,7 @@
     var el = document.getElementById("enrollmentQueue");
     var { data, error } = await window.sb
       .from("charter_enrollments")
-      .select("id, name, email, zip, wants_tester, height_inches, lifestyle, created_at")
+      .select("id, name, email, zip, wants_tester, lifestyle, created_at")
       .eq("status", "pending")
       .order("created_at", { ascending: true });
 
@@ -795,14 +784,13 @@
     data.forEach(function (item) {
       var row = document.createElement("div");
       row.className = "review-row";
-      var heightLabel = formatHeightInches(item.height_inches);
       var lifestyleText = lifestyleLabel(item.lifestyle);
       row.innerHTML =
         '<div class="review-meta" style="flex:1;">' +
           '<strong>' + item.name + '</strong>' +
           '<span>' + item.email + (item.zip ? " · " + item.zip : "") + (item.wants_tester ? " · wants to be an early tester" : "") + ' · ' + timeAgo(item.created_at) + '</span>' +
-          (heightLabel || lifestyleText
-            ? '<span>' + [heightLabel, lifestyleText].filter(Boolean).join(" · ") + '</span>'
+          (lifestyleText
+            ? '<span>' + lifestyleText + '</span>'
             : '') +
         '</div>' +
         '<div class="review-actions">' +
