@@ -114,13 +114,12 @@
   var myWakeTime = "";
   var myIntent = "";
 
-  // Ken's call: don't show real member cards here yet — with only a handful
-  // of test accounts, a visible "matches" grid looks thin/awkward. Show
-  // blank placeholder tiles instead (dense grid, built for thousands of
-  // members down the road) until there's a real critical mass to display.
-  // Flip this to true when it's time to go live with real matches — the
-  // actual query/rendering logic below is untouched and ready to go.
-  var SHOW_REAL_MATCHES = false;
+  // Oct 2026: Ken's call — go live with real matches now that height is
+  // being collected at Fitness+ signup and shown on match cards below.
+  // (Previously held back at false while there were only a handful of test
+  // accounts and a visible grid looked thin/awkward — see git history if
+  // that placeholder behavior is ever needed again.)
+  var SHOW_REAL_MATCHES = true;
   var PLACEHOLDER_TILE_COUNT = 15;
 
   function renderPlaceholderMatches() {
@@ -195,7 +194,8 @@
 
     var { data, error } = await window.sb
       .from("profiles")
-      .select("id, display_name, bio, zip_code, wake_time_category, relationship_intent")
+      .select("id, display_name, bio, zip_code, wake_time_category, relationship_intent, height_inches, fitness_plus_active")
+      .eq("fitness_plus_active", true)
       .neq("id", currentUser.id);
 
     if (error) {
@@ -224,7 +224,9 @@
 
       var wakeLabel = wakeTimeLabel(member.wake_time_category);
       var intentLabel = relationshipIntentLabel(member.relationship_intent);
+      var heightLabel = formatHeightInches(member.height_inches);
       var subParts = [];
+      if (heightLabel) subParts.push(heightLabel);
       if (member.zip_code) subParts.push("ZIP " + escapeHtml(member.zip_code));
       if (wakeLabel) subParts.push(escapeHtml(wakeLabel));
       if (intentLabel) subParts.push(escapeHtml(intentLabel));
