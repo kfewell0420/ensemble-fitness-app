@@ -127,6 +127,15 @@
     results.innerHTML = new Array(PLACEHOLDER_TILE_COUNT + 1).join('<div class="fp-match-placeholder"></div>');
   }
 
+  // Shown instead of the match grid to anyone who hasn't actually paid for
+  // Fitness+ yet — the upgrade card above is always visible to every member,
+  // but the matches themselves (real or placeholder) are the paid perk, so a
+  // non-subscriber shouldn't see them just by opening this page.
+  function renderLockedState() {
+    var results = document.getElementById("fpResults");
+    results.innerHTML = '<div class="empty-state">Subscribe to Fitness+ above to unlock your matches.</div>';
+  }
+
   function escapeHtml(str) {
     var div = document.createElement("div");
     div.textContent = str || "";
@@ -256,6 +265,22 @@
     if (await isCurrentUserAdmin()) {
       document.getElementById("adminLink").style.display = "inline";
     }
+
+    // Gate the match grid itself behind an active Fitness+ subscription —
+    // checked here, before deciding what to render, so a member who hasn't
+    // paid never even fetches other members' match data.
+    var { data: myProfile } = await window.sb
+      .from("profiles")
+      .select("fitness_plus_active")
+      .eq("id", currentUser.id)
+      .maybeSingle();
+    var isFitnessPlusMember = !!(myProfile && myProfile.fitness_plus_active);
+
+    if (!isFitnessPlusMember) {
+      renderLockedState();
+      return;
+    }
+
     if (SHOW_REAL_MATCHES) {
       await loadMatches();
     } else {
