@@ -72,14 +72,24 @@
         <div class="eyebrow">Your Wallet</div>
         <div style="display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;">
           <div style="font-family:'Poppins',sans-serif; font-weight:800; font-size:32px;" id="walletBalance">$0.00</div>
-          <span style="font-size:13px; color:var(--faint-invert);">available to support artists</span>
         </div>
         <div class="form-msg" id="walletMsg"></div>
-        <div id="topupChoices" style="display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;">
+        <!-- Oct 2026, Ken's ask: the old caption here ("available to support
+             artists") sat next to the balance but never actually said what
+             the buttons below do — moved down and reworded so it reads
+             right above the row it's explaining. -->
+        <p class="card-sub" style="margin:10px 0 0;">Add to your wallet to tip artists</p>
+        <div id="topupChoices" style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
           <button type="button" class="btn btn-ghost btn-sm topup-btn" data-amount-cents="100">Add $1</button>
           <button type="button" class="btn btn-ghost btn-sm topup-btn" data-amount-cents="200">Add $2</button>
           <button type="button" class="btn btn-ghost btn-sm topup-btn" data-amount-cents="500">Add $5</button>
-          <button type="button" class="btn btn-ghost btn-sm topup-btn" data-amount-cents="1000">Add $10</button>
+          <!-- Oct 2026, Ken's ask: dropped the $10 quick-add to make room
+               right here for the artist upload entry point instead — see
+               submit-music.html for the actual upload form this links to.
+               btn-primary (orange) instead of btn-ghost like its neighbors,
+               so it reads as its own distinct action, not a fifth dollar
+               amount. -->
+          <a href="submit-music.html" class="btn btn-primary btn-sm" style="text-decoration:none;">🎤 Upload Music</a>
         </div>
       </div>
     </div>
