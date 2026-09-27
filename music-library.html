@@ -65,6 +65,49 @@
     <div class="ml-stat"><span class="ml-stat-ico" style="color:#15121c;"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg></span><div><strong>All Genres</strong><span>Hip-Hop · Pop · EDM · R&amp;B · Rock · More</span></div></div>
   </div>
 
+  <!-- Ken's ask (Oct 2026): the "How it works" explainer for submitting
+       music only existed on the public marketing site (submit-music.html),
+       for artists who don't have an account yet. Signed-in members land
+       here without ever seeing that page, so there was nowhere in the app
+       itself explaining how their own upload actually works. This is the
+       in-app equivalent — same idea (4 numbered steps), but rewritten for
+       someone who's already a member: no mention of submitting for review
+       or emailing anything, since a member's own upload (via the Upload
+       Music button below, which goes to profile.html#uploadCard) publishes
+       straight to the library the moment they do it — see profile.html's
+       own copy ("no waiting on approval"). Reuses the same solid dark
+       card look as the Browse Tracks / Wallet cards right below it (see
+       .ml-shell .card) so this reads as one consistent page, not a bolted-on
+       section. -->
+  <div class="ml-how">
+    <div class="ml-how-head">
+      <div class="eyebrow" style="margin-bottom:4px;">How It Works</div>
+      <h3>Get your own track in the library</h3>
+    </div>
+    <div class="ml-how-grid">
+      <div class="ml-how-step">
+        <div class="ml-how-num">1</div>
+        <h4>Prep your track</h4>
+        <p>Export it as an MP3, M4A, or WAV file — keep the size reasonable so it loads quickly for other members.</p>
+      </div>
+      <div class="ml-how-step">
+        <div class="ml-how-num">2</div>
+        <h4>Give it a title</h4>
+        <p>You'll be asked for a song title when you upload it — that's what shows up here for everyone to see.</p>
+      </div>
+      <div class="ml-how-step">
+        <div class="ml-how-num">3</div>
+        <h4>Upload it right here</h4>
+        <p>Tap "Upload Music" below and choose your audio file — right on your Profile page, no separate form or email.</p>
+      </div>
+      <div class="ml-how-step">
+        <div class="ml-how-num">4</div>
+        <h4>You're live instantly</h4>
+        <p>Your track publishes to the Music Library right away under your name — no approval wait, unlike photos and videos.</p>
+      </div>
+    </div>
+  </div>
+
   <div class="ml-shell">
 
     <div class="ml-side">
@@ -312,6 +355,50 @@
   .ml-stat strong { display: block; font-size: 13.5px; color: #15121c; }
   .ml-stat span { display: block; font-size: 12px; color: #0c0a10; }
   .ml-stat-ico svg { display: block; }
+
+  /* ---- How It Works (Oct 2026) --------------------------------------------
+     Same solid dark panel look as the Browse Tracks / Wallet cards below
+     (see .ml-shell .card) — a light blur over the busy background photo so
+     the step text stays easy to read. One column on phones, two on small
+     tablets, all four across once there's room (matches the .ml-shell
+     breakpoint at 900px so the whole page's layout shifts together). */
+  .ml-how {
+    background: rgba(6, 5, 9, 0.86);
+    -webkit-backdrop-filter: blur(6px);
+            backdrop-filter: blur(6px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-lg);
+    padding: 22px;
+    margin-bottom: 24px;
+  }
+  .ml-how-head h3 { font-size: 17px; margin: 0; color: #fff; }
+  .ml-how-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+    margin-top: 18px;
+  }
+  @media (min-width: 620px) {
+    .ml-how-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (min-width: 900px) {
+    .ml-how-grid { grid-template-columns: repeat(4, 1fr); }
+  }
+  .ml-how-num {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--accent-tint);
+    color: var(--accent-2);
+    font-size: 13px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+  }
+  .ml-how-step h4 { font-size: 14.5px; color: #fff; margin: 0 0 6px; }
+  .ml-how-step p { font-size: 13px; line-height: 1.5; color: var(--muted-invert); margin: 0; }
 
   /* ---- Browse Tracks header + button -------------------------------------- */
   /* Now that there's a busy photo behind the page instead of a soft glow,
