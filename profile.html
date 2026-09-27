@@ -664,7 +664,7 @@
 
     var { data, error } = await window.sb
       .from("profiles")
-      .select("display_name, bio, zip_code, wake_time_category, relationship_intent, is_artist")
+      .select("display_name, bio, zip_code, wake_time_category, relationship_intent, is_artist, height_inches, fitness_plus_active")
       .eq("id", currentUser.id)
       .maybeSingle();
     if (data && data.is_artist) {
@@ -686,6 +686,13 @@
       if (data.wake_time_category) glanceParts.push("🌞 " + wakeTimeLabel(data.wake_time_category));
       if (data.zip_code) glanceParts.push("📍 ZIP " + data.zip_code);
       if (data.relationship_intent) glanceParts.push("❤️ " + relationshipIntentLabel(data.relationship_intent));
+      // Height only ever gets set once someone pays for Fitness+ (captured at
+      // checkout, see stripe-webhook.js's handleFitnessPlusSignup) — it's not
+      // an editable field on this page, just a readout of what's on file, so
+      // it only shows up here for members who've actually signed up for it.
+      if (data.fitness_plus_active && data.height_inches) {
+        glanceParts.push("📏 " + formatHeightInches(data.height_inches));
+      }
       var glanceEl = document.getElementById("profileGlance");
       if (glanceParts.length) {
         glanceEl.textContent = glanceParts.join("  ·  ");
