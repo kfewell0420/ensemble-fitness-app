@@ -92,13 +92,21 @@
              Browse Playlist gets in its own card (see .ml-side > .card and
              .ml-main > .card below), so the two line up the same way and
              read as equally weighted actions, not one big button and one
-             small one. Points at the marketing site's existing Music
-             Library submission page (ensemblefitness.com/submit-music.html)
-             — an absolute URL and a new tab, since that page lives on a
-             different domain than this app and isn't part of it; there's no
-             separate in-app upload form, so this IS the real "how to
-             upload" destination for an artist. -->
-        <a href="https://ensemblefitness.com/submit-music.html" target="_blank" rel="noopener" class="btn btn-primary" id="uploadMusicBtn" style="margin-top:14px; text-decoration:none;">🎤 Upload Music</a>
+             small one.
+             This links straight to profile.html's own "Upload" card (see
+             sql/track-self-upload.sql and profile.html's #uploadCard) —
+             the ALREADY-BUILT, real self-serve flow: pick an audio file,
+             give it a title, and it publishes straight to the Music Library
+             under the member's own name, no admin approval needed. An
+             earlier version of this button pointed at the marketing site's
+             "email us your track" page instead — that page is for
+             prospective artists who aren't members yet, but anyone clicking
+             this particular button is already signed in right here, so
+             sending them to profile.html's real upload form is both simpler
+             and the actual working feature. Same-origin, so no
+             target="_blank" needed — it should feel like moving to another
+             page in the same app, not leaving it. -->
+        <a href="profile.html#uploadCard" class="btn btn-primary" id="uploadMusicBtn" style="margin-top:14px; text-decoration:none;">🎤 Upload Music</a>
       </div>
     </div>
 
