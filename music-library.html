@@ -464,10 +464,11 @@
   var SITE_FUNCTIONS_BASE = "https://ensemblefitness.com/.netlify/functions";
   var currentUser = null;
 
-  // Oct 2026: the fixed amount the one-tap button on each row sends. track.html
-  // still offers the full 50¢/$1/$2 choice for anyone who opens a track — this
-  // quick button is deliberately just the one, most-common amount, so it can
-  // be a single tap with nothing to choose.
+  // Oct 2026: the amount a row's one-tap button sends for a track that has
+  // never been tipped yet (see buildTrackRow) — once a track has a real tip
+  // on record, the button switches to showing and sending THAT amount
+  // instead. track.html still offers the full 50¢/$1/$2 choice for anyone
+  // who opens a track directly.
   var QUICK_TIP_CENTS = 200;
 
   function showMsg(el, text, kind) {
@@ -600,16 +601,58 @@
     }
 
     allTracks = data || [];
+    await loadLastTips(allTracks);
     renderTrackList();
     return allTracks.length;
   }
 
+  // Oct 2026, Ken's ask: each row's tip button should show (and send)
+  // whatever the LAST tip for that specific song actually was, instead of
+  // always a flat $2 — see buildTrackRow. tip-track.js only ever accepts
+  // 50¢/$1/$2 (its ALLOWED_AMOUNTS_CENTS), so any amount_cents that ever
+  // made it into wallet_transactions is guaranteed to already be one of
+  // those three — nothing further to validate on this end before sending
+  // it straight back through.
+  //
+  // Only fetches tips for tracks actually in the list (not the whole
+  // wallet_transactions table), and keeping just the most recent tip per
+  // track is as simple as sorting newest-first and taking the first row
+  // seen for each track_id below — no separate aggregate query needed.
+  //
+  // Refreshes whenever this list reloads (a track being approved, etc. —
+  // see subscribeToTrackChanges), but doesn't live-update the instant
+  // someone tips a track from track.html's own page in another tab; worth
+  // adding a realtime listener on wallet_transactions too if that turns out
+  // to matter in practice.
+  var lastTipCentsByTrack = {};
+  async function loadLastTips(tracks) {
+    lastTipCentsByTrack = {};
+    var ids = tracks.map(function (t) { return t.id; });
+    if (ids.length === 0) return;
+
+    var { data, error } = await window.sb
+      .from("wallet_transactions")
+      .select("track_id, amount_cents, created_at")
+      .eq("type", "tip")
+      .in("track_id", ids)
+      .order("created_at", { ascending: false });
+
+    if (error || !data) return; // worst case, every row just falls back to "Be the first to tip"
+
+    data.forEach(function (row) {
+      if (!(row.track_id in lastTipCentsByTrack)) {
+        lastTipCentsByTrack[row.track_id] = row.amount_cents;
+      }
+    });
+  }
+
   function trackMatchesQuery(track, query) {
     if (!query) return true;
-    // Deliberately not matching against artist_name — the playlist doesn't
-    // surface artist names (see buildTrackRow), so searching by one would
-    // find a track by a name the member never actually saw on screen.
-    var haystack = (track.title + " " + (track.tagline || "")).toLowerCase();
+    // Oct 2026: artist names are now shown right on each row (see
+    // buildTrackRow), so searching by one should find the track too — this
+    // used to deliberately skip artist_name back when the playlist didn't
+    // display it anywhere on screen.
+    var haystack = (track.title + " " + (track.artist_name || "") + " " + (track.tagline || "")).toLowerCase();
     return haystack.indexOf(query) !== -1;
   }
 
@@ -650,16 +693,14 @@
   }
 
   function buildTrackRow(track) {
-    // Ken's ask (Sept 2026): never show the artist's name here — these are
-    // random, unlicensed independent artists, not names a member would
-    // recognize, so this reads as a workout playlist rather than an artist
-    // directory. A tagline (short and motivating) shows instead when the
-    // artist gave one; otherwise the row just carries the title and time.
-    // The artist's actual name, bio, and link still live on the track's own
-    // full page (track.html) — that's the right place for it, since tipping
-    // there means knowing who you're supporting. (The one-tap tip button
-    // below does reveal the artist's name, but only in the result message
-    // after a tip actually goes through — same as track.html already does.)
+    // Oct 2026, Ken's ask: show the artist right on the row, as
+    // "Artist — Title" — this reverses a Sept 2026 decision (kept the
+    // history here rather than deleting it): back then the worry was that
+    // an unfamiliar independent artist's name would make this read like an
+    // artist directory instead of a workout playlist. Ken's since decided
+    // crediting the artist by name up front matters more than that concern,
+    // so it's back — see trackMatchesQuery above for the matching update to
+    // search.
     var row = document.createElement("div");
     row.className = "track-table-row";
 
@@ -667,28 +708,35 @@
     link.className = "track-row-link";
     link.href = "track.html?id=" + encodeURIComponent(track.id);
     var subtitle = track.tagline || "";
+    var titleLine = track.artist_name
+      ? escapeHtml(track.artist_name) + " — " + escapeHtml(track.title)
+      : escapeHtml(track.title);
     link.innerHTML =
       '<span class="track-table-art">🎵</span>' +
       '<span class="track-table-main">' +
-        '<span class="track-table-title">' + escapeHtml(track.title) + '</span>' +
+        '<span class="track-table-title">' + titleLine + '</span>' +
         (subtitle ? '<span class="track-table-tagline">' + escapeHtml(subtitle) + '</span>' : '') +
       '</span>' +
       (track.duration_seconds ? '<span class="track-table-duration">' + formatTrackDuration(track.duration_seconds) + '</span>' : '') +
       '<span class="track-table-chevron">›</span>';
     row.appendChild(link);
 
-    // Ken's ask (Oct 2026): "I just want to send the artist two bucks and be
-    // done — I don't want to have to click on something else." This button
-    // is that one click: it sends the tip right from the list, no trip to
-    // track.html required, as long as there's already wallet balance to
-    // cover it (see sendQuickTipRequest for what happens when there isn't).
+    // Oct 2026, Ken's ask: instead of a flat $2 on every row, the button now
+    // shows — and sends — whatever the LAST tip for THIS song actually was,
+    // as real social proof rather than the same fixed number everywhere. A
+    // track with no tips yet has nothing to show, so it invites the first
+    // one instead (see loadLastTips above for where lastTipCentsByTrack
+    // comes from). Tapping is still exactly one click either way — see
+    // sendQuickTipRequest — only the amount that click sends has changed.
+    var lastTipCents = lastTipCentsByTrack[track.id];
     var tipBtn = document.createElement("button");
     tipBtn.type = "button";
     tipBtn.className = "track-tip-btn";
-    tipBtn.textContent = "💛 " + formatCents(QUICK_TIP_CENTS);
+    tipBtn.textContent = lastTipCents ? "💛 " + formatCents(lastTipCents) : "💛 Be the first to tip";
     tipBtn.addEventListener("click", function (e) {
       e.preventDefault();
-      sendQuickTipRequest(track.id, QUICK_TIP_CENTS, { button: tipBtn });
+      var amountToSend = lastTipCents || QUICK_TIP_CENTS;
+      sendQuickTipRequest(track.id, amountToSend, { button: tipBtn });
     });
     row.appendChild(tipBtn);
 

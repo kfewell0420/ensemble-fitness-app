@@ -121,6 +121,18 @@ function buildRelationshipIntentOptionsHtml(placeholderLabel) {
   return html;
 }
 
+/* Turns the total-inches integer stored on profiles.height_inches (set by
+   stripe-webhook.js's handleFitnessPlusSignup when someone pays for
+   Fitness+) into a friendly "5'8"" for display on the profile page and
+   Fitness+ match cards. Returns "" for null/undefined so callers can just
+   drop the result straight into a template without an extra null check. */
+function formatHeightInches(totalInches) {
+  if (totalInches === null || totalInches === undefined) return "";
+  var feet = Math.floor(totalInches / 12);
+  var inches = totalInches % 12;
+  return feet + "'" + inches + '"';
+}
+
 async function signOut() {
   if (!window.sb) return;
   await window.sb.auth.signOut();
