@@ -363,6 +363,18 @@ img { max-width: 100%; display: block; }
   cursor: pointer;
   font-family: inherit;
   transition: transform 0.12s ease, opacity 0.12s ease;
+  /* Oct 2026, Ken's ask: two .btn-primary pills (music-library.html's
+     "Browse Playlist" <button> and "Upload Music" <a>) with identical
+     padding/font-size were still rendering at visibly different heights —
+     a color emoji glyph (🎤) has much taller font metrics than a plain
+     text character (▶) at the same font-size, and without an explicit
+     line-height here, that emoji's own tall line box was inflating the
+     whole button's height. Pinning line-height to 1 caps every .btn's
+     content line at the same tight height no matter what's inside it —
+     emoji, plain text, or an icon — so any two same-size buttons now match
+     exactly regardless of tag type (<button> vs <a>) or what glyphs they
+     contain. */
+  line-height: 1;
 }
 
 .btn:hover { transform: translateY(-1px); }
