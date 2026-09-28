@@ -1044,7 +1044,7 @@
           var { error: uploadError } = await window.sb.storage.from("tracks").upload(newPath, blob, {
             cacheControl: "3600",
             upsert: false,
-            contentType: blob.type || "audio/mpeg"
+            contentType: audioContentType(blob, ext)
           });
           if (uploadError) throw uploadError;
 
@@ -1324,6 +1324,23 @@
     return m + ":" + (s < 10 ? "0" : "") + s;
   }
 
+  // A browser/OS can hand back a File (or, for "Add to Music Library" on a
+  // Voice Update, a re-fetched Blob) whose .type is empty or generic —
+  // especially for .m4a exports. Storing the upload with the wrong
+  // Content-Type header makes every other member's browser fail to decode
+  // it later — the player just sits at 0:00/0:00 forever, with no error.
+  // The file's own EXTENSION is always reliable (it's just the filename),
+  // so trust that first and only fall back to the reported .type — and
+  // only when it actually looks like audio — as a last resort.
+  var AUDIO_MIME_BY_EXT = {
+    mp3: "audio/mpeg", wav: "audio/wav", m4a: "audio/mp4", aac: "audio/aac",
+    ogg: "audio/ogg", oga: "audio/ogg", flac: "audio/flac", caf: "audio/x-caf",
+    aiff: "audio/aiff", aif: "audio/aiff", wma: "audio/x-ms-wma", webm: "audio/webm"
+  };
+  function audioContentType(fileOrBlob, ext) {
+    return AUDIO_MIME_BY_EXT[ext] || (fileOrBlob.type && fileOrBlob.type.indexOf("audio") === 0 ? fileOrBlob.type : "audio/mpeg");
+  }
+
   // Reads a track's length straight off the audio file/blob itself, so
   // nobody has to type it in by hand — used both when adding a track
   // through the form below and through "Add to Music Library" on a Voice
@@ -1472,7 +1489,8 @@
 
       var { error: uploadError } = await window.sb.storage.from("tracks").upload(path, file, {
         cacheControl: "3600",
-        upsert: false
+        upsert: false,
+        contentType: audioContentType(file, ext)
       });
       if (uploadError) throw uploadError;
 

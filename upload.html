@@ -268,6 +268,27 @@
   // extension before ever defaulting to "photo".
   var VIDEO_EXTS = ["mp4", "mov", "m4v", "avi", "webm", "mkv", "3gp", "3gpp"];
   var AUDIO_EXTS = ["mp3", "wav", "m4a", "aac", "ogg", "oga", "flac", "caf", "aiff", "aif", "wma"];
+
+  // Same root cause as the fileKind() fallback above, one layer deeper: a
+  // browser/OS can hand back a File whose .type is empty (or something
+  // generic) for an audio file — .m4a exports are the most common case.
+  // Storing the upload with the WRONG Content-Type header (previously we
+  // fell back to "audio/mpeg" whenever .type was blank, no matter the real
+  // format) makes every other member's browser try to decode the file as
+  // MP3 framing when the actual bytes are an AAC-in-MP4 container — it
+  // fails silently and the player just sits at 0:00/0:00, permanently.
+  // Trusting the file's own EXTENSION (always reliable — it's just the
+  // filename) fixes this for every future upload; .type is now only a
+  // last-resort fallback, and only when it actually looks like audio.
+  var AUDIO_MIME_BY_EXT = {
+    mp3: "audio/mpeg", wav: "audio/wav", m4a: "audio/mp4", aac: "audio/aac",
+    ogg: "audio/ogg", oga: "audio/ogg", flac: "audio/flac", caf: "audio/x-caf",
+    aiff: "audio/aiff", aif: "audio/aiff", wma: "audio/x-ms-wma"
+  };
+  function audioContentType(file, ext) {
+    return AUDIO_MIME_BY_EXT[ext] || (file.type && file.type.indexOf("audio") === 0 ? file.type : "audio/mpeg");
+  }
+
   function fileKind(file) {
     if (file.type.indexOf("video") === 0) return "video";
     if (file.type.indexOf("audio") === 0) return "audio";
@@ -929,7 +950,7 @@
         var { error: trackUploadError } = await window.sb.storage.from("tracks").upload(trackPath, selectedFile, {
           cacheControl: "3600",
           upsert: false,
-          contentType: selectedFile.type || "audio/mpeg"
+          contentType: audioContentType(selectedFile, ext)
         });
         if (trackUploadError) throw trackUploadError;
 
