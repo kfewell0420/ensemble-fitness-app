@@ -73,9 +73,9 @@
        in-app equivalent — same idea (4 numbered steps), but rewritten for
        someone who's already a member: no mention of submitting for review
        or emailing anything, since a member's own upload (via the Upload
-       Music button below, which goes to profile.html#uploadCard) publishes
-       straight to the library the moment they do it — see profile.html's
-       own copy ("no waiting on approval"). Reuses the same solid dark
+       Music button below, which goes straight to upload.html's Song flow)
+       publishes straight to the library the moment they do it — see
+       upload.html's own copy ("no waiting on approval"). Reuses the same solid dark
        card look as the Browse Tracks / Wallet cards right below it (see
        .ml-shell .card) so this reads as one consistent page, not a bolted-on
        section. -->
@@ -98,7 +98,7 @@
       <div class="ml-how-step">
         <div class="ml-how-num">3</div>
         <h4>Upload it right here</h4>
-        <p>Tap "Upload Music" below and choose your audio file — right on your Profile page, no separate form or email.</p>
+        <p>Tap "Upload Music" below and choose your audio file — no separate form or email, and nothing else on the page to get through.</p>
       </div>
       <div class="ml-how-step">
         <div class="ml-how-num">4</div>
@@ -136,20 +136,24 @@
              .ml-main > .card below), so the two line up the same way and
              read as equally weighted actions, not one big button and one
              small one.
-             This links straight to profile.html's own "Upload" card (see
-             sql/track-self-upload.sql and profile.html's #uploadCard) —
-             the ALREADY-BUILT, real self-serve flow: pick an audio file,
-             give it a title, and it publishes straight to the Music Library
-             under the member's own name, no admin approval needed. An
-             earlier version of this button pointed at the marketing site's
-             "email us your track" page instead — that page is for
-             prospective artists who aren't members yet, but anyone clicking
-             this particular button is already signed in right here, so
-             sending them to profile.html's real upload form is both simpler
-             and the actual working feature. Same-origin, so no
-             target="_blank" needed — it should feel like moving to another
-             page in the same app, not leaving it. -->
-        <a href="profile.html#uploadCard" class="btn btn-primary" id="uploadMusicBtn" style="margin-top:auto; text-decoration:none;">🎤 Upload Music</a>
+             This links straight into upload.html's Song flow (see
+             sql/track-self-upload.sql) — the ALREADY-BUILT, real self-serve
+             flow: pick an audio file, give it a title, and it publishes
+             straight to the Music Library under the member's own name, no
+             admin approval needed. ?type=song skips the category tiles so
+             tapping this button feels like it goes straight to uploading a
+             song, not one more menu to get through. An earlier version of
+             this button pointed at the marketing site's "email us your
+             track" page instead — that page is for prospective artists who
+             aren't members yet, but anyone clicking this particular button
+             is already signed in right here, so sending them to the app's
+             real upload form is both simpler and the actual working
+             feature. Same-origin, so no target="_blank" needed — it should
+             feel like moving to another page in the same app, not leaving
+             it. (Oct 2026: this used to link to profile.html's #uploadCard,
+             folded into the general Profile page; upload.html later split
+             that out into its own dedicated, distraction-free page.) -->
+        <a href="upload.html?type=song" class="btn btn-primary" id="uploadMusicBtn" style="margin-top:auto; text-decoration:none;">🎤 Upload Music</a>
       </div>
     </div>
 
