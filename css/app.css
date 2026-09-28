@@ -332,6 +332,27 @@ img { max-width: 100%; display: block; }
 
 .field textarea { resize: vertical; min-height: 80px; }
 
+/* Ken's ask (Oct 2026): category dropdowns (like #workoutType) and other
+   selects across the app were unreadable once opened — white text on a
+   white background, only visible while hovering. Root cause: every select
+   in this dark-themed app sets color:#fff so it reads fine while CLOSED
+   (against its own dark box), but that color is inherited by its <option>
+   elements too. The dropdown POPUP itself is drawn by the browser/OS, not
+   this page, and it defaults to a light background no matter what dark
+   theme the rest of the site uses — so white option text on that light
+   popup is invisible until a hover highlight (a different background)
+   happens to make it readable by accident. This is a genuine, easy mistake
+   for a member to make blind, not just a cosmetic nitpick.
+   A couple of selects already had a narrow, one-off fix for this
+   (#musicTrackSelect, .simple-modal select below) — this rule instead
+   covers every <option>, on every <select>, everywhere in the app, so this
+   exact bug can't quietly reappear on some other page's dropdown that
+   didn't get the one-off treatment. */
+select option {
+  color: #111;
+  background: #fff;
+}
+
 .password-field-wrap { position: relative; }
 .password-field-wrap input { padding-right: 46px; }
 .password-toggle {
