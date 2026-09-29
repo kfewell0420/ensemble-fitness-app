@@ -199,3 +199,66 @@ function wireTrimPlayback(video, trimStart, trimEnd) {
     }
   });
 }
+
+/* Multi-clip reels (Ken's ask, Nov 2026): a member can attach several
+   already-trimmed clips to one video post instead of just one, and they're
+   meant to play back-to-back as one continuous reel — see
+   sql/multi-clip-reels.sql for why clip 1 is always the post's own row and
+   clip 2 onward live in media_clips. Nothing is ever merged/re-encoded;
+   this just swaps the <video>'s src to the next clip when the current one
+   finishes, generalizing wireTrimPlayback above from one clip to N. Once
+   the LAST clip finishes it loops back around to clip 1, so a multi-clip
+   post keeps the same infinite-loop feel a single-clip post already has.
+
+   `clips` is an ordered array of { url, start, end } — start/end are each
+   either a number of seconds (that clip's own trim_start/trim_end) or
+   null/undefined, meaning "play this clip's whole file." Clip 1's entry is
+   whatever the <video> was already showing (its src is left alone here).
+   No-op for fewer than 2 clips — callers should use wireTrimPlayback
+   instead for an ordinary single-clip post, which is the vast majority and
+   should keep behaving exactly as it always has. */
+function wireReelPlayback(video, clips) {
+  if (!video || !clips || clips.length < 2) return;
+  var index = 0;
+
+  function clipStart(clip) { return typeof clip.start === "number" ? clip.start : 0; }
+  function clipEnd(clip) { return typeof clip.end === "number" ? clip.end : null; }
+
+  // The native `loop` attribute a single-clip slide is built with would
+  // just replay clip 1 forever and would never even fire "ended" — this
+  // feature drives its own loop-back-to-clip-1 below instead, so that
+  // attribute (if the caller's markup happened to set it) has to go.
+  video.loop = false;
+
+  function clampToStart() {
+    var start = clipStart(clips[index]);
+    if (start && video.currentTime < start) video.currentTime = start;
+  }
+
+  function goToClip(i) {
+    index = i;
+    var clip = clips[index];
+    video.src = clip.url;
+    video.addEventListener("loadedmetadata", function onReady() {
+      video.removeEventListener("loadedmetadata", onReady);
+      clampToStart();
+    });
+    var p = video.play();
+    if (p && p.catch) p.catch(function () {});
+  }
+
+  function advance() {
+    goToClip((index + 1) % clips.length);
+  }
+
+  // Clip 1 is already loaded (its src was set when the slide/tile itself
+  // was built) — just clamp its own start point the same way
+  // wireTrimPlayback does, no need to reload it here.
+  video.addEventListener("loadedmetadata", clampToStart);
+  video.addEventListener("timeupdate", function () {
+    var end = clipEnd(clips[index]);
+    if (end !== null && video.currentTime >= end) advance();
+  });
+  // A clip with no trim_end just plays to its own natural end instead.
+  video.addEventListener("ended", advance);
+}
