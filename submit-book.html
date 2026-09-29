@@ -98,22 +98,17 @@
   </div>
 </section>
 
-<!-- Ken's ask (Nov 2026): straight from the hero into "before you submit"
-     and the form itself — that's the whole point of this page, so it
-     shouldn't be buried below a 4-card "How it works" explainer first.
-     "How it works" still lives on this page, just moved to the very
-     bottom (see after </form> below) for anyone who wants the fuller
-     walkthrough once they've already seen what's being asked of them. -->
-<section class="section" style="padding-top:36px;">
+<!-- Ken's ask (Nov 2026): straight from the hero into the form itself — on
+     a phone especially, people want to get straight to the upload, not
+     read a paragraph of guidelines first (they'll read it on the way down
+     instead). The guideline box that used to open this section now sits
+     right after the form (see just below its closing </form> tag). Its
+     first sentence ("Books should be short-form, 30 pages or fewer...")
+     was dropped entirely rather than just moved, since the page right
+     before this one (books.html's "Submit Your Own Book" hero) already
+     says the exact same thing — no need to say it twice on the way in. -->
+<section class="section" style="padding-top:20px;">
   <div class="container">
-    <div class="guideline-box">
-      <strong>Before you submit:</strong> Books should be short-form (30 pages or fewer) and centered on fitness, health, personal growth, encouragement, or motivation. Every submission is personally reviewed to help maintain the quality and positive spirit of Ensemble Reads.
-      <br /><br />
-      Our review is designed to protect your work, not change your voice. If we notice an obvious typo, formatting issue, or something that needs clarification, we'll give you an opportunity to correct it before a final decision.
-      <br /><br />
-      A small review fee is collected at checkout to cover the review process. <strong>If your book isn't accepted, your review fee is automatically refunded.</strong>
-    </div>
-
     <div id="submitNotice"></div>
 
     <form class="light-form" id="submitForm">
@@ -168,6 +163,18 @@
       <button type="submit" class="btn btn-primary btn-block" id="submitBtn">Continue to Review Fee Payment</button>
       <div class="form-error" id="submitError" style="color:#b91c1c;"></div>
     </form>
+
+    <!-- Moved here from right above the form (Nov 2026, Ken's ask) — the
+         two things worth flagging (we don't rewrite your voice, and the
+         review fee is refunded if a book isn't accepted) now come after
+         the form instead of before it, so nobody has to read past them
+         just to start filling it out. Relabeled from "Before you submit"
+         since it now sits after the submit button, not before it. -->
+    <div class="guideline-box" style="margin-top:24px;">
+      <strong>A couple of things to know:</strong> Our review is designed to protect your work, not change your voice. If we notice an obvious typo, formatting issue, or something that needs clarification, we'll give you an opportunity to correct it before a final decision.
+      <br /><br />
+      A small review fee is collected at checkout to cover the review process. <strong>If your book isn't accepted, your review fee is automatically refunded.</strong>
+    </div>
 
     <!-- Moved here from right under the hero (Nov 2026, Ken's ask) — the
          fuller step-by-step walkthrough, for anyone who wants it after
