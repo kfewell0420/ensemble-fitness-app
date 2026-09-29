@@ -1032,6 +1032,7 @@
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
   .rp-tab {
+    position: relative;
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -1048,6 +1049,41 @@
   .rp-tab-icon { font-size: 20px; line-height: 1; }
   .rp-tab-label { font-size: 10px; font-weight: 600; letter-spacing: 0.01em; }
   .rp-tab.active { color: #fff; }
+
+  /* Nov 2026, Ken's ask: the plain title="" tooltip these tabs used to
+     rely on (see the comment by the <nav> markup below) is a NATIVE
+     browser tooltip — the browser itself imposes a noticeable delay
+     (~1 second, longer on some browsers) before it appears, which is
+     most noticeable on the desktop rail where .rp-tab-label is hidden and
+     the tooltip is the ONLY way to tell the icons apart. This custom one
+     (content from data-tooltip, not title) fades in almost immediately
+     instead. aria-label carries the accessible name now that title is
+     gone — see the <a> tags below. */
+  .rp-tab[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 50%;
+    bottom: 100%;
+    margin-bottom: 8px;
+    transform: translateX(-50%);
+    background: rgba(20, 20, 24, 0.95);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: #fff;
+    font-family: 'Inter', sans-serif;
+    font-size: 11.5px;
+    font-weight: 600;
+    padding: 5px 10px;
+    border-radius: 7px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.08s ease;
+    z-index: 40;
+  }
+  .rp-tab[data-tooltip]:hover::after,
+  .rp-tab[data-tooltip]:focus-visible::after {
+    opacity: 1;
+  }
   .rp-tab-post .rp-tab-icon {
     width: 30px;
     height: 22px;
@@ -1284,6 +1320,19 @@
     .rp-tab-label { display: none; }
     .rp-tab-icon { font-size: 24px; }
     .rp-tab-post .rp-tab-icon { width: 34px; height: 26px; }
+
+    /* With the text label hidden on this rail, the fast tooltip above is
+       the only label left — move it from "above the icon" (which suits a
+       bottom bar) to "beside the icon" (which suits a left-side rail),
+       vertically centered on it instead of horizontally centered above. */
+    .rp-tab[data-tooltip]::after {
+      left: 100%;
+      bottom: auto;
+      top: 50%;
+      margin-bottom: 0;
+      margin-left: 14px;
+      transform: translateY(-50%);
+    }
 
     /* The shell becomes a real page grid: a full-width header row, then
        a wide video column beside a narrower sidebar stack. */
@@ -1623,12 +1672,14 @@
     <div class="rp-sentinel" id="rpSentinel"></div>
   </div>
 
-  <!-- title="" on each tab is a plain native browser tooltip — shows on
-       hover with zero extra JS/CSS, exactly what Ken asked for (hover the
-       icon, see what it does). Desktop-rail-only benefit really, since
-       phones have no hover, but it's free and harmless there. -->
+  <!-- Nov 2026: these used to carry title="" for a plain native browser
+       tooltip — simple, but the browser itself imposes a slow show delay
+       (Ken flagged this), most noticeable on the desktop rail below where
+       .rp-tab-label is hidden and this is the only label left. Swapped for
+       aria-label (accessible name, invisible) + data-tooltip (what the
+       fast custom CSS tooltip above actually displays) instead. -->
   <nav class="rp-tabbar" aria-label="Main">
-    <a href="feed.html" class="rp-tab active" title="Home">
+    <a href="feed.html" class="rp-tab active" aria-label="Home" data-tooltip="Home">
       <span class="rp-tab-icon">🏠</span><span class="rp-tab-label">Home</span>
     </a>
     <!-- Ken's ask (Oct 2026): replaced with a "Find" hub after Meal Prep
@@ -1639,13 +1690,13 @@
          (Working Out, Hiking, Fitness Journeys, Music Library, Gear,
          Members, etc.), one tap each. Members browsing didn't disappear —
          it's just one tile on that page now instead of its own tab. -->
-    <a href="find.html" class="rp-tab" title="Finder">
+    <a href="find.html" class="rp-tab" aria-label="Finder" data-tooltip="Finder">
       <span class="rp-tab-icon">🔎</span><span class="rp-tab-label">Finder</span>
     </a>
-    <a href="upload.html" class="rp-tab rp-tab-post" title="Upload a photo, video, or song">
+    <a href="upload.html" class="rp-tab rp-tab-post" aria-label="Upload a photo, video, or song" data-tooltip="Post">
       <span class="rp-tab-icon">+</span><span class="rp-tab-label">Post</span>
     </a>
-    <a href="profile.html" class="rp-tab" title="My Profile">
+    <a href="profile.html" class="rp-tab" aria-label="My Profile" data-tooltip="Profile">
       <span class="rp-tab-icon">👤</span><span class="rp-tab-label">Profile</span>
     </a>
     <!-- Ken's ask (Sept 2026): put Approved Gear somewhere members will
@@ -1657,7 +1708,7 @@
          row. Points at gear.html — a page inside this same app, not the
          marketing site's approved-gear.html — so it never leaves the app
          or opens a new tab, exactly like Home/Members/Post/Profile. -->
-    <a href="gear.html" class="rp-tab" title="Approved Gear">
+    <a href="gear.html" class="rp-tab" aria-label="Approved Gear" data-tooltip="Gear">
       <span class="rp-tab-icon">🛒</span><span class="rp-tab-label">Gear</span>
     </a>
   </nav>
