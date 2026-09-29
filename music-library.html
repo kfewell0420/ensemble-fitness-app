@@ -110,6 +110,37 @@
 
   <div class="ml-shell">
 
+    <!-- Nov 2026, Ken's ask: get members listening before pitching the
+         wallet — Browse Tracks now comes first in the markup so phones
+         (which just stack these top-to-bottom) show it above Your Wallet.
+         Desktop is untouched: .ml-shell's grid-template-areas below places
+         "main" (Browse Tracks) and "side" (Wallet) by name, not by source
+         order, so the wide two-column layout still puts Wallet in its own
+         side rail exactly like before. -->
+    <div class="ml-main">
+      <div class="card" id="tracksCard">
+        <div class="ml-tracks-head">
+          <div>
+            <div class="eyebrow" style="margin-bottom:2px;">Browse Tracks</div>
+            <!-- Nov 2026, Ken's ask: the old heading ("Listen & pick your
+                 next workout track") wrapped to an awkward orphan second
+                 line just to fit "track" by itself. Shortened it — paired
+                 with the "Browse Tracks" eyebrow right above, "Listen and
+                 Enjoy" says the same thing in one line and trims a line of
+                 height off the card. -->
+            <h2 style="font-size:18px; margin-bottom:4px;">Listen and Enjoy</h2>
+            <p class="card-sub" style="margin-bottom:16px;">These are the same tracks you can choose from when uploading a workout video on your Profile page — all from independent artists, free to use.</p>
+          </div>
+        </div>
+        <!-- Ken's ask (Sept 2026): the tracks live in their own "Workout
+             Playlist" popup now rather than sitting inline on the page —
+             tap the button to open it, browse/search there, then close back
+             out to this page. Same search + scrolling list as before, just
+             moved into #playlistModalOverlay below instead of living here. -->
+        <button type="button" class="btn btn-primary" id="openPlaylistBtn" style="margin-top:auto;">▶ Browse Playlist</button>
+      </div>
+    </div>
+
     <div class="ml-side">
       <div class="card" id="walletCard">
         <div class="eyebrow">Your Wallet</div>
@@ -154,24 +185,6 @@
              folded into the general Profile page; upload.html later split
              that out into its own dedicated, distraction-free page.) -->
         <a href="upload.html?type=song" class="btn btn-primary" id="uploadMusicBtn" style="margin-top:auto; text-decoration:none;">🎤 Upload Music</a>
-      </div>
-    </div>
-
-    <div class="ml-main">
-      <div class="card" id="tracksCard">
-        <div class="ml-tracks-head">
-          <div>
-            <div class="eyebrow" style="margin-bottom:2px;">Browse Tracks</div>
-            <h2 style="font-size:18px; margin-bottom:4px;">Listen &amp; pick your next workout track</h2>
-            <p class="card-sub" style="margin-bottom:16px;">These are the same tracks you can choose from when uploading a workout video on your Profile page — all from independent artists, free to use.</p>
-          </div>
-        </div>
-        <!-- Ken's ask (Sept 2026): the tracks live in their own "Workout
-             Playlist" popup now rather than sitting inline on the page —
-             tap the button to open it, browse/search there, then close back
-             out to this page. Same search + scrolling list as before, just
-             moved into #playlistModalOverlay below instead of living here. -->
-        <button type="button" class="btn btn-primary" id="openPlaylistBtn" style="margin-top:auto;">▶ Browse Playlist</button>
       </div>
     </div>
 
@@ -700,8 +713,8 @@
        flush to the same 24px edge as the content below it. Top padding
        is trimmed further too — still real space, just less of it. */
     .app-nav {
-      padding-top: calc(4px + env(safe-area-inset-top, 0px));
-      padding-bottom: 4px;
+      padding-top: calc(2px + env(safe-area-inset-top, 0px));
+      padding-bottom: 2px;
       padding-left: 24px;
       padding-right: 24px;
     }
@@ -722,11 +735,28 @@
        collapsing the row entirely instead of just squeezing its padding. */
     .app-nav-links { display: none; }
     .app-nav { row-gap: 0; }
-    .app-shell { padding-top: 4px; }
+    .app-shell { padding-top: 0; }
+    /* Pulled as tight as it goes: icons keep their own comfortable tap
+       padding, but everything around them — nav padding, shell padding,
+       and the eyebrow's own bottom margin — is squeezed to a minimum so
+       the icon row sits right on top of "MUSIC LIBRARY" with no
+       leftover gap. */
+    .eyebrow { margin-bottom: 6px; }
     /* (2) Close most of the gap between the "All Genres" divider line and
        the HOW IT WORKS card — was a flat 24px, Ken asked for it to come
        up about a quarter inch (~24px), so this brings it nearly flush. */
-    .ml-stats { margin-bottom: 4px; }
+    .ml-stats { margin-bottom: 4px; padding-bottom: 12px; }
+    /* Nov 2026, Ken's ask: "Workout Ready" was cut on mobile — with
+       "High-energy tracks" as its own subtitle it wasn't telling members
+       anything the page doesn't already say, and dropping it lets "Real
+       Artists" and "All Genres" close up into one single row instead of
+       two, folding a whole row's worth of height out of the page (this
+       row's own top/bottom padding and gap, on top of the row itself).
+       Left untouched on desktop, where there was always room for three. */
+    .ml-stats .ml-stat:nth-child(1) { display: none; }
+    /* A little more off the top: the intro paragraph's own bottom margin,
+       trimmed along with everything else in this block. */
+    .app-shell > p.card-sub { margin-bottom: 8px !important; }
     /* (3) .ml-tracks-head's own margin-bottom:0 (below) doesn't reach the
        paragraph inside it — margins on a flex item's children don't
        collapse out past the item's own box — so the paragraph's inline
