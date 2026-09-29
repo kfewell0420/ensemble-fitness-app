@@ -57,7 +57,14 @@
 
   /* ---- Meal Prep strip -------------------------------------- */
   .rp-mealprep {
-    padding: calc(env(safe-area-inset-top, 0px) + 14px) 0 12px;
+    /* No safe-area padding here on purpose — .app-nav (#rpAppNav) sits
+       directly above this in the mobile layout and already carries the
+       env(safe-area-inset-top) padding, so this strip just needs its
+       normal 14px. Adding the inset in both places double-counted it
+       and pushed this whole strip almost an inch too low, cutting the
+       Meal Prep row/first post off screen. Ken's report (mobile wrap
+       testing, Sept 2026). */
+    padding: 14px 0 12px;
     background: #000;
     border-bottom: 1px solid rgba(255,255,255,0.08);
   }
@@ -207,6 +214,26 @@
     font-size: 12.5px;
     color: var(--faint-invert);
   }
+  /* Same ask as the .rp-media square crop above — trimming this row's own
+     height (smaller circles, tighter padding) buys back more of the phone
+     screen for the action row below the post. Desktop's sidebar version
+     (min-width: 900px, further down) already sets its own larger 82px
+     size and isn't touched by this. */
+  @media (max-width: 899px) {
+    /* Ken reconsidered (Sept 2026) after first asking for this to be
+       pulled off the feed like the filter row — on reflection, Meal Prep
+       is its own source of entertainment (a constantly-refreshing rail of
+       community meal photos, distinct from the main photo/video scroll)
+       and he wants it to stay put on the feed permanently, not move
+       anywhere. So: no display:none here — this block only tightens its
+       sizing (smaller circles, less padding) to leave more room for the
+       post below it. */
+    .rp-mealprep { padding: 8px 0 6px; }
+    .rp-mealprep-banner { margin: 0 14px 5px; }
+    .rp-mealprep-card { width: 52px; }
+    .rp-mealprep-ring { width: 52px; height: 52px; }
+    .rp-mealprep-name { max-width: 56px; font-size: 9.5px; }
+  }
 
   /* ---- Category filter chips ------------------------------------
      A slim, optional-to-notice row that lets a member jump straight to
@@ -232,6 +259,16 @@
     -webkit-overflow-scrolling: touch;
   }
   .rp-filters::-webkit-scrollbar { display: none; }
+  /* Ken's ask (Sept 2026): pull the category filter row off the mobile
+     feed entirely, matching Instagram/TikTok's Home feed (neither shows
+     a filter row above the posts) — this is step one of "relocate it",
+     hiding the row now; where it actually resurfaces (a Discover tab,
+     folded into an existing tab, etc.) is still to be decided. Desktop's
+     grid (min-width: 900px, further down) keeps its own copy of this row
+     and isn't touched by this. */
+  @media (max-width: 899px) {
+    .rp-filters { display: none; }
+  }
   .rp-filter-chip {
     position: relative;
     flex: 0 0 auto;
@@ -295,6 +332,18 @@
     scrollbar-width: none;
     padding: 14px 0 8px;
   }
+  /* Ken's ask (Oct 2026): on mobile, this 14px top padding was the last
+     bit of visible gap between the Meal Prep row and the first post's
+     edge-to-edge photo — everything else in that stack (header, Meal
+     Prep, the post itself) has already been tightened up, so this was
+     the one gap left. Down to 2px rather than 0 so the post's top edge
+     doesn't touch Meal Prep's bottom border with zero breathing room at
+     all. Desktop's grid (min-width: 900px, further down) keeps its own
+     14px — it's a multi-column layout there, not a single tight column,
+     so the same reasoning doesn't apply. */
+  @media (max-width: 899px) {
+    .rp-reel { padding: 2px 0 8px; }
+  }
   /* A post that lands live above whatever's currently on screen isn't
      something you'd otherwise notice - the browser holds your place on
      whatever you're already looking at. This is the "something's new"
@@ -356,6 +405,26 @@
     border-radius: 16px;
     overflow: hidden;
   }
+  /* Ken's ask (Sept 2026): match how Instagram's actual Home feed looks
+     (he sent a screenshot to confirm) — the photo/video runs edge-to-edge,
+     full device width, no rounded card and no side margins, instead of
+     sitting in a bounded box with room on either side. Still the same
+     scrolling list of posts underneath each other (not a TikTok-style
+     one-post-per-screen swipe — that was the other option, and this is
+     the one Ken picked). A plain bottom border replaces the card's own
+     border/background to separate one post from the next, same as
+     Instagram's subtle divider between posts. Desktop's grid (min-width:
+     900px, further down) already looks like a bounded card by design and
+     keeps that untouched. */
+  @media (max-width: 899px) {
+    .rp-slide {
+      margin: 0 0 10px;
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      border-radius: 0;
+    }
+  }
   /* The video/photo itself is a bounded box (not the whole screen) — the
      header still overlays its top edge (see .rp-slide-header, now nested
      inside .rp-media in the markup so it positions against just this box),
@@ -368,6 +437,24 @@
     aspect-ratio: 4 / 5;
     background: #000;
     overflow: hidden;
+  }
+  /* Ken's ask (Sept 2026): on a phone, the header + Meal Prep row + filter
+     chips already use a lot of the screen before the post even starts, so
+     the 4:5 ratio above pushed the like/comment row (and caption) off the
+     bottom of the first screen — you had to scroll just to see reactions
+     on the very first post, unlike Instagram/TikTok where that row is
+     always visible right away. Started at square (1:1), which fixed it
+     with room to spare; Ken then asked for a little less cropping while
+     still keeping the action row on-screen with no scroll, so this is
+     9:10 — noticeably closer to square than the original 4:5, but a touch
+     taller than a flat square. Paired with the slightly tighter Meal Prep
+     sizing further down (same ask) to keep the action row fitting.
+     Desktop's wider two-column layout (min-width: 900px, further down)
+     already has plenty of headroom, so it keeps the taller 4:5 crop from
+     the rule above. Trade-off: tall portrait photos/videos still crop in
+     tighter than the original 4:5, just not as tight as a flat square. */
+  @media (max-width: 899px) {
+    .rp-media { aspect-ratio: 9 / 10; }
   }
   .rp-media img, .rp-media video {
     width: 100%;
@@ -718,7 +805,16 @@
     align-items: stretch;
     justify-content: space-around;
     padding: 2px 6px;
+    /* On the edge-to-edge mobile layout (see .rp-slide's mobile override
+       above), 6px sat the icons almost flush against the actual screen
+       edge with no card border to visually separate them from it anymore
+       — bumped to 12px there so the row breathes the way Instagram's own
+       icon row does. Left at 6px on desktop, where the bounded card still
+       provides that separation on its own. */
     border-top: 1px solid rgba(255,255,255,0.08);
+  }
+  @media (max-width: 899px) {
+    .rp-actions { padding: 2px 12px; }
   }
   .rp-action-btn {
     flex: 1 1 0;
@@ -1535,8 +1631,16 @@
     <a href="feed.html" class="rp-tab active" title="Home">
       <span class="rp-tab-icon">🏠</span><span class="rp-tab-label">Home</span>
     </a>
-    <a href="members.html" class="rp-tab" title="Find Members">
-      <span class="rp-tab-icon">🔎</span><span class="rp-tab-label">Members</span>
+    <!-- Ken's ask (Oct 2026): replaced with a "Find" hub after Meal Prep
+         and the category filter chips got tightened up on mobile (see
+         .rp-filters' mobile override further up) — instead of a member
+         directory being its own tab, this now opens find.html, a single
+         page of tiles for every category and section the app has
+         (Working Out, Hiking, Fitness Journeys, Music Library, Gear,
+         Members, etc.), one tap each. Members browsing didn't disappear —
+         it's just one tile on that page now instead of its own tab. -->
+    <a href="find.html" class="rp-tab" title="Find what you're looking for">
+      <span class="rp-tab-icon">🔎</span><span class="rp-tab-label">Find</span>
     </a>
     <a href="upload.html" class="rp-tab rp-tab-post" title="Upload a photo, video, or song">
       <span class="rp-tab-icon">+</span><span class="rp-tab-label">Post</span>
@@ -3235,6 +3339,20 @@
     mealPrepItems = lastFetchError ? [] : composeMealPrepStrip(mealPrepRealItems);
     renderMealPrepStrip();
 
+    // Ken's ask (Oct 2026): the new Find page (find.html) links straight
+    // into a specific category — e.g. Hiking — instead of making someone
+    // land on Home and hunt for a filter chip that's hidden on mobile
+    // anyway (see .rp-filters' mobile override further up). Reads
+    // ?filter=Hiking from the URL once, on first load only; the chips
+    // (still present in the markup, just visually hidden on phones)
+    // keep working normally after that. "Journeys" is excluded since that
+    // chip navigates to its own page (fitness-journeys.html) rather than
+    // filtering in place — find.html links to that page directly instead.
+    var requestedFilter = new URLSearchParams(window.location.search).get("filter");
+    if (requestedFilter && CATEGORY_FILTERS.indexOf(requestedFilter) !== -1 && requestedFilter !== "Journeys") {
+      activeFilter = requestedFilter;
+    }
+
     renderFilters();
     await loadMoreReel();
     loadMoreObserver.observe(document.getElementById("rpSentinel"));
@@ -3405,7 +3523,7 @@
     panel.innerHTML =
       '<div class="rp-panel-head"><span class="rp-panel-icon">📚</span><span class="rp-panel-title">Motivational Books</span></div>' +
       '<div class="rp-book-row">' + (cards || '<div class="rp-panel-empty">New titles coming soon.</div>') + '</div>' +
-      '<a class="rp-panel-link" href="https://ensemblefitness.com/books.html" target="_blank" rel="noopener">Browse all books →</a>';
+      '<a class="rp-panel-link" href="books.html">Browse all books →</a>';
   }
 </script>
 </body>

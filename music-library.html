@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>Music Library — Ensemble Fitness</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -205,6 +205,20 @@
            artist's bio, or a different tip amount — this is just the fast
            path for "send $2 and be done." -->
       <div class="form-msg" id="playlistMsg"></div>
+      <!-- Nov 2026, Ken's ask: a way to browse "by artist" in addition to the
+           flat, searchable list of every track — see browseMode/renderArtistList
+           below. All Tracks stays the default (unchanged behavior); By Artist
+           swaps the same list box into an alphabetical roster of artist names,
+           tap one to drill into just their tracks (artistBackRow below gets
+           you back out). -->
+      <div class="browse-toggle-row">
+        <button type="button" class="browse-toggle-btn active" id="browseAllBtn">All Tracks</button>
+        <button type="button" class="browse-toggle-btn" id="browseArtistBtn">By Artist</button>
+      </div>
+      <div class="artist-back-row" id="artistBackRow" style="display:none;">
+        <button type="button" class="artist-back-btn" id="artistBackBtn">‹ All Artists</button>
+        <span class="artist-back-name" id="artistBackName"></span>
+      </div>
       <div class="track-search-row">
         <input type="search" id="trackSearchInput" class="track-search-input" placeholder="Search by title…" autocomplete="off">
       </div>
@@ -440,6 +454,55 @@
      the button visibly does something), without reopening a big gap
      between it and the button above. */
   .track-table .empty-state { padding: 6px 4px 2px; font-size: 13px; text-align: left; }
+
+  /* ---- Browse toggle + artist back bar (Nov 2026) --------------------------
+     A plain two-way segmented control, same pill language as .track-tip-btn
+     below, rather than a whole new component — this page already reads as
+     "dark pills on a dark card." */
+  .browse-toggle-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .browse-toggle-btn {
+    flex: 1;
+    font-family: inherit;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--muted-invert);
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 999px;
+    padding: 8px 12px;
+    cursor: pointer;
+    text-align: center;
+  }
+  .browse-toggle-btn.active {
+    color: #fff;
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  .artist-back-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .artist-back-btn {
+    font-family: inherit;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--accent-2);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 0;
+  }
+  .artist-back-name {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #fff;
+  }
 
   /* ---- Search box ----------------------------------------------------------
      Ken's ask (Sept 2026): with the library growing well past a couple of
@@ -730,6 +793,21 @@
                               // per keystroke.
   var currentSearchQuery = "";
 
+  // Nov 2026, Ken's ask: browsing "by artist" in addition to search — see
+  // the toggle row above the search box. "all" is the original flat list;
+  // "artists" shows the roster of artist names; "artist-tracks" is that one
+  // artist's tracks (selectedArtist holds which one).
+  var browseMode = "all";
+  var selectedArtist = null;
+
+  // A track with no artist_name on file (older rows, before that field
+  // mattered) still needs a bucket to land in when grouping by artist —
+  // "Independent Artist" matches the generic wording buildTrackRow already
+  // falls back to for a track's title line when artist_name is missing.
+  function artistGroupName(track) {
+    return (track.artist_name && track.artist_name.trim()) ? track.artist_name.trim() : "Independent Artist";
+  }
+
   async function loadTracks() {
     var list = document.getElementById("tracksList");
     // Ken's ask (Sept 2026): the box needs to end right at the orange
@@ -813,30 +891,155 @@
   // current search box text — called both after a fresh load and on every
   // keystroke in the search box, with no extra network trip either way.
   function renderTrackList() {
-    var list = document.getElementById("tracksList");
-
     if (allTracks.length === 0) {
-      list.innerHTML = '<div class="empty-state">No tracks yet — check back soon.</div>';
+      document.getElementById("tracksList").innerHTML = '<div class="empty-state">No tracks yet — check back soon.</div>';
       return;
     }
 
+    if (browseMode === "artists") {
+      renderArtistList();
+      return;
+    }
+
+    var list = document.getElementById("tracksList");
+
+    // "artist-tracks" narrows the pool to just the selected artist first;
+    // "all" (the original behavior) searches the whole library.
+    var pool = browseMode === "artist-tracks"
+      ? allTracks.filter(function (t) { return artistGroupName(t) === selectedArtist; })
+      : allTracks;
+
     var query = currentSearchQuery.trim().toLowerCase();
-    var visible = allTracks.filter(function (t) { return trackMatchesQuery(t, query); });
+    var visible = pool.filter(function (t) { return trackMatchesQuery(t, query); });
 
     if (visible.length === 0) {
-      list.innerHTML = '<div class="empty-state">No tracks match "' + escapeHtml(currentSearchQuery.trim()) + '".</div>';
+      var emptyText = query
+        ? 'No tracks match "' + escapeHtml(currentSearchQuery.trim()) + '".'
+        : "No tracks from this artist yet.";
+      list.innerHTML = '<div class="empty-state">' + emptyText + '</div>';
       return;
     }
 
     var headLabel = query
-      ? visible.length + " of " + allTracks.length + " track" + (allTracks.length === 1 ? "" : "s")
-      : allTracks.length + " track" + (allTracks.length === 1 ? "" : "s");
+      ? visible.length + " of " + pool.length + " track" + (pool.length === 1 ? "" : "s")
+      : pool.length + " track" + (pool.length === 1 ? "" : "s");
 
     list.innerHTML = '<div class="track-table-head"><span>' + headLabel + '</span><span>Time</span></div>';
     visible.forEach(function (track) {
       list.appendChild(buildTrackRow(track));
     });
   }
+
+  // Nov 2026: the "By Artist" view — groups allTracks by artist_name and
+  // lists each artist once, alphabetically, with how many tracks they have.
+  // The search box stays active here too (searches artist names, not track
+  // titles) — see the shared #trackSearchInput listener below.
+  function computeArtistGroups() {
+    var counts = {};
+    allTracks.forEach(function (t) {
+      var name = artistGroupName(t);
+      counts[name] = (counts[name] || 0) + 1;
+    });
+    return Object.keys(counts)
+      .sort(function (a, b) { return a.localeCompare(b); })
+      .map(function (name) { return { name: name, count: counts[name] }; });
+  }
+
+  function renderArtistList() {
+    var list = document.getElementById("tracksList");
+    var groups = computeArtistGroups();
+    var query = currentSearchQuery.trim().toLowerCase();
+    var visible = query
+      ? groups.filter(function (g) { return g.name.toLowerCase().indexOf(query) !== -1; })
+      : groups;
+
+    if (visible.length === 0) {
+      list.innerHTML = '<div class="empty-state">No artists match "' + escapeHtml(currentSearchQuery.trim()) + '".</div>';
+      return;
+    }
+
+    var headLabel = visible.length + " artist" + (visible.length === 1 ? "" : "s");
+    list.innerHTML = '<div class="track-table-head"><span>' + headLabel + '</span><span>Tracks</span></div>';
+    visible.forEach(function (group) {
+      list.appendChild(buildArtistRow(group));
+    });
+  }
+
+  function buildArtistRow(group) {
+    var row = document.createElement("div");
+    row.className = "track-table-row";
+    row.style.cursor = "pointer";
+    row.tabIndex = 0;
+    row.setAttribute("role", "button");
+    row.innerHTML =
+      '<span class="track-table-art">🎤</span>' +
+      '<span class="track-table-main">' +
+        '<span class="track-table-title">' + escapeHtml(group.name) + '</span>' +
+      '</span>' +
+      '<span class="track-table-duration">' + group.count + '</span>' +
+      '<span class="track-table-chevron">›</span>';
+    function open() { openArtistTracks(group.name); }
+    row.addEventListener("click", open);
+    row.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); }
+    });
+    return row;
+  }
+
+  function openArtistTracks(name) {
+    browseMode = "artist-tracks";
+    selectedArtist = name;
+    currentSearchQuery = "";
+    var input = document.getElementById("trackSearchInput");
+    input.value = "";
+    input.placeholder = "Search " + name + "’s tracks…";
+    document.getElementById("artistBackRow").style.display = "flex";
+    document.getElementById("artistBackName").textContent = name;
+    renderTrackList();
+  }
+
+  function backToArtistList() {
+    browseMode = "artists";
+    selectedArtist = null;
+    currentSearchQuery = "";
+    var input = document.getElementById("trackSearchInput");
+    input.value = "";
+    input.placeholder = "Search artists…";
+    document.getElementById("artistBackRow").style.display = "none";
+    renderTrackList();
+  }
+
+  function setActiveBrowseToggle(activeId) {
+    document.getElementById("browseAllBtn").classList.toggle("active", activeId === "browseAllBtn");
+    document.getElementById("browseArtistBtn").classList.toggle("active", activeId === "browseArtistBtn");
+  }
+
+  document.getElementById("browseAllBtn").addEventListener("click", function () {
+    if (browseMode === "all") return;
+    browseMode = "all";
+    selectedArtist = null;
+    currentSearchQuery = "";
+    var input = document.getElementById("trackSearchInput");
+    input.value = "";
+    input.placeholder = "Search by title…";
+    document.getElementById("artistBackRow").style.display = "none";
+    setActiveBrowseToggle("browseAllBtn");
+    renderTrackList();
+  });
+
+  document.getElementById("browseArtistBtn").addEventListener("click", function () {
+    if (browseMode === "artists") return; // already showing the artist roster
+    browseMode = "artists";
+    selectedArtist = null;
+    currentSearchQuery = "";
+    var input = document.getElementById("trackSearchInput");
+    input.value = "";
+    input.placeholder = "Search artists…";
+    setActiveBrowseToggle("browseArtistBtn");
+    renderTrackList();
+  });
+
+  document.getElementById("artistBackBtn").addEventListener("click", backToArtistList);
 
   function formatTrackDuration(seconds) {
     if (seconds === null || seconds === undefined || !isFinite(seconds)) return "";

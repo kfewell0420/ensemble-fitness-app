@@ -2,157 +2,135 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Ensemble Reads — Short-Form Motivational Books | Ensemble Fitness</title>
-<meta name="description" content="Ensemble Reads is a marketplace for short, independent motivational books. Every purchase sends 75% straight to the author." />
-<link rel="canonical" href="https://ensemblefitness.com/books.html" />
-<meta property="og:type" content="website" />
-<meta property="og:site_name" content="Ensemble Fitness" />
-<meta property="og:title" content="Ensemble Reads — Short-Form Motivational Books" />
-<meta property="og:description" content="A marketplace for short, independent motivational books. 75% of every sale goes straight to the author." />
-<meta property="og:url" content="https://ensemblefitness.com/books.html" />
-<meta name="twitter:card" content="summary" />
-<link rel="icon" type="image/png" href="assets/favicon.png" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Ensemble Reads — Ensemble Fitness</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=40" />
+<link rel="stylesheet" href="css/app.css?v=2" />
 </head>
 <body>
 
-<!-- ============ NAV ============ -->
-<header class="nav">
-  <div class="container">
-    <a href="index.html" class="brand"><img src="assets/logo.png" alt="Ensemble Fitness logo" />Ensemble Fitness</a>
-    <nav class="nav-links">
-      <a href="index.html#how-it-works">How It Works</a>
-      <a href="fitness-journey.html">Fitness <span class="journeys-wrap">Journeys<span class="journeys-badge" style="display:none;"></span></span></a>
-      <a href="healthy-meal-prep.html">Healthy Meal Prep</a>
-      <a href="marketplace.html">Marketplace</a>
-      <a href="members.html">Members</a>
-      <a href="fitness-plus.html">❤️ Fitness+</a>
-      <a href="index.html#faq">FAQ</a>
-    </nav>
-    <div class="nav-cta">
-      <a href="https://app.ensemblefitness.com/login.html" class="btn btn-ghost-dark btn-sm nav-signin">Sign In</a>
-      <a href="index.html#waitlist" class="btn btn-primary btn-sm"><span class="full">Become A </span>Member</a>
-      <button class="nav-toggle" id="menuToggle" aria-label="Open menu">☰</button>
-    </div>
-  </div>
+<!-- Nov 2026, Ken's ask: "Ensemble Reads" (the short-form motivational book
+     marketplace) already existed, but only as a page on the public
+     marketing site (ensemblefitness.com/books.html) — signed-in members
+     browsing inside the app had no in-app way to reach it except the small
+     3-cover preview panel on the desktop feed sidebar, whose "Browse all
+     books" link kicked them out to a browser tab. This page is the in-app
+     equivalent: same `books` table, same cover art, same Buy Now → Stripe
+     Checkout flow as the marketing site, but it never leaves the app and
+     (being a signed-in request) hands the member's own email to Checkout
+     automatically — see buyBook() below and create-book-checkout.js's
+     `app: true` branch. -->
+
+<header class="app-nav">
+  <a href="feed.html" class="app-brand">
+    <span class="app-brand-mark"><img src="assets/logo.png" alt="Ensemble Fitness" /></span>Ensemble Fitness
+  </a>
+  <nav class="app-nav-links">
+    <a href="feed.html">Community</a>
+    <a href="journey.html">My Journey</a>
+    <a href="members.html">Members</a>
+    <a href="fitness-plus.html">Fitness+</a>
+    <a href="gear.html">Gear</a>
+    <a href="music-library.html">Music</a>
+    <a href="books.html" style="color:#fff;">Books</a>
+    <a href="quote-library.html">Quotes</a>
+    <a href="profile.html">My Profile</a>
+    <a href="admin.html" id="adminLink" style="display:none;">Queue</a>
+    <a href="#" id="signOutLink">Sign Out</a>
+  </nav>
 </header>
 
-<div class="mobile-menu" id="mobileMenu">
-  <div class="mobile-menu-top">
-    <a href="index.html" class="brand"><img src="assets/logo.png" alt="" />Ensemble Fitness</a>
-    <button class="mobile-close" id="menuClose" aria-label="Close menu">✕</button>
+<div class="app-shell">
+
+  <div class="eyebrow">Ensemble Reads</div>
+  <h2 style="margin-bottom:6px;">Short books. Real motivation.</h2>
+  <p class="card-sub" style="margin-bottom:18px;">Short-form (30 pages or fewer), written by independent authors. 75% of every sale goes straight to them.</p>
+
+  <div id="purchaseNotice"></div>
+
+  <div class="feed-grid" id="booksGrid">
+    <div class="empty-state">Loading books…</div>
   </div>
-  <a href="index.html#how-it-works">How It Works</a>
-  <a href="fitness-journey.html">Fitness <span class="journeys-wrap">Journeys<span class="journeys-badge" style="display:none;"></span></span></a>
-  <a href="healthy-meal-prep.html">Healthy Meal Prep</a>
-  <a href="marketplace.html">Marketplace</a>
-  <a href="members.html">Members</a>
-  <a href="fitness-plus.html">❤️ Fitness+</a>
-  <a href="index.html#faq">FAQ</a>
-  <a href="index.html#contact">Contact</a>
-  <a href="https://app.ensemblefitness.com/login.html">Sign In</a>
-  <a href="index.html#waitlist" class="btn btn-primary">Become A Member</a>
+
+  <!-- Same reasoning as the "Submit Your Music" flow living on the
+       marketing site instead of inside upload.html: submitting a book
+       involves a review-fee payment and an approval step (see
+       book_submissions in schema.sql), so it isn't a same-tap self-serve
+       upload the way a member's own song or workout video is — anyone,
+       member or not, submits it the same way, on the public site. -->
+  <div class="ml-how" style="margin-top:28px;">
+    <div class="ml-how-head">
+      <div class="eyebrow" style="margin-bottom:4px;">Your turn</div>
+      <h3 style="font-size:17px; margin:0; color:#fff;">Are you a writer?</h3>
+    </div>
+    <p style="font-size:13.5px; line-height:1.6; color:var(--muted-invert); margin:12px 0 16px;">Submit a short-form motivational book for review. If it fits, it goes live right here — and you keep 75% of every sale.</p>
+    <a href="https://ensemblefitness.com/submit-book.html" target="_blank" rel="noopener" class="btn btn-primary btn-sm">Submit Your Book</a>
+  </div>
+
 </div>
 
-<!-- ============ HERO ============ -->
-<!-- Kept short on purpose: this page's job is to get a visitor to real book
-     covers as fast as possible, not to re-sell them on the idea first. -->
-<section class="hero" id="top" style="padding:28px 0 20px;">
-  <div class="container" style="display:block;">
-    <div class="hero-copy" style="max-width:700px;">
-      <div class="eyebrow on-dark">Ensemble Reads</div>
-      <h1 style="font-size:clamp(26px,3.4vw,38px); margin-bottom:10px;">Short books. Real motivation.</h1>
-      <p class="lede" style="font-size:15px; margin-bottom:16px;">Short-form (30 pages or fewer), written by independent authors. 75% of every sale goes straight to them.</p>
-      <div class="hero-actions" style="position:static;">
-        <a href="#shelf" class="btn btn-primary btn-sm">Browse Books</a>
-        <a href="submit-book.html" class="btn btn-ghost-dark btn-sm">Submit Your Own Book</a>
-      </div>
-    </div>
-  </div>
-</section>
+<style>
+  /* Page-specific extras, same convention as gear.html's own inline
+     <style> block — kept off the shared app.css since nothing else in the
+     app needs these. Reuses .feed-grid/.feed-card/.feed-card-thumb from
+     app.css (same grid gear.html's picks and admin's media tiles use) so
+     this reads as one consistent app, not a bolted-on page. */
+  .notice-banner {
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    font-size: 13.5px;
+    margin-bottom: 16px;
+  }
+  .notice-banner.success { background: rgba(60, 200, 130, 0.12); border: 1px solid rgba(60, 200, 130, 0.35); color: #bdf5d8; }
+  .notice-banner.cancelled { background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255,255,255,0.14); color: var(--muted-invert); }
 
-<!-- ============ SHELF ============ -->
-<!-- A left-to-right scrolling row, not a tall wrapping grid — the goal is
-     "see a real book cover within one glance," not "scroll past headings." -->
-<section class="section" id="shelf" style="padding:24px 0 64px;">
-  <div class="container">
-    <h2 style="font-size:20px; margin:0 0 12px;">Pick your next quick read →</h2>
+  /* Book covers read best portrait, not the 4:5 that gear/media thumbs use
+     — close enough to reuse .feed-card-thumb's box, just taller. */
+  #booksGrid .feed-card-thumb { aspect-ratio: 3 / 4; }
 
-    <div id="purchaseNotice"></div>
+  .book-card-author { font-size: 12.5px; color: var(--faint-invert); margin-top: 2px; }
+  .book-card-blurb {
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--muted-invert);
+    margin-top: 8px;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .book-card-price-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 12px;
+  }
+  .book-card-price {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 800;
+    font-size: 15px;
+    color: #fff;
+  }
 
-    <div class="books-row" id="booksGrid">
-      <div style="padding:24px 0; color:var(--muted);">Loading books…</div>
-    </div>
-  </div>
-</section>
-
-<!-- ============ CTA ============ -->
-<section class="section alt">
-  <div class="container" style="text-align:center;">
-    <div class="section-head center">
-      <div class="eyebrow">Your turn</div>
-      <h2>Are you a writer? Get your book on this shelf.</h2>
-      <p>Submit a short-form motivational book for review. If it fits our brand, it goes live — and you keep 75% of every sale.</p>
-    </div>
-    <a href="submit-book.html" class="btn btn-primary">Submit Your Book</a>
-  </div>
-</section>
-
-<!-- ============ FOOTER ============ -->
-<footer class="footer">
-  <div class="container">
-    <div class="footer-top">
-      <div class="footer-brand">
-        <a href="index.html" class="brand"><img src="assets/logo.png" alt="" />Ensemble Fitness</a>
-        <p>Where active people meet. Find a fitness partner, see who's active nearby, and let real connection happen from there.</p>
-      </div>
-      <div class="footer-col">
-        <h5>Product</h5>
-        <a href="index.html#how-it-works">How It Works</a>
-        <a href="fitness-journey.html">Fitness Journeys</a>
-        <a href="healthy-meal-prep.html">Healthy Meal Prep</a>
-        <a href="marketplace.html">Fit Marketplace</a>
-        <a href="approved-gear.html">Approved Gear</a>
-        <a href="books.html">Ensemble Reads</a>
-        <a href="submit-music.html">Submit Your Music</a>
-        <a href="share-your-journey.html">Share Your Journey</a>
-        <a href="members.html">Members</a>
-        <a href="fitness-plus.html">Ensemble Fitness+</a>
-      </div>
-      <div class="footer-col">
-        <h5>Company</h5>
-        <a href="index.html#story">Our Mission</a>
-        <a href="index.html#safety">Safety</a>
-        <a href="index.html#faq">FAQ</a>
-        <a href="index.html#contact">Contact</a>
-      </div>
-      <div class="footer-col">
-        <h5>Legal</h5>
-        <a href="privacy.html">Privacy Policy</a>
-        <a href="terms.html">Terms of Service</a>
-        <a href="community-guidelines.html">Community Guidelines</a>
-      </div>
-    </div>
-    <div class="footer-bottom">
-      <span>© 2026 Ensemble Fitness. All rights reserved.</span>
-      <span>Ensemble Reads books are written by independent third-party authors, not Ensemble Fitness.</span>
-    </div>
-    <div class="footer-disclaimer">Ensemble Fitness is currently in pre-launch development. "Ensemble Fitness" is a working product name pending trademark screening.</div>
-  </div>
-</footer>
+  .ml-how {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-lg);
+    padding: 20px 22px;
+  }
+</style>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/journeys-nav-badge.js?v=4"></script>
-<script src="js/main.js?v=24"></script>
+<script src="js/config.js"></script>
+<script src="js/shared-session.js"></script>
+<script src="js/supabaseClient.js"></script>
+<script src="js/notifications.js"></script>
 <script>
-(function () {
-  var SUPABASE_URL = "https://wgrldwdgvvlhcmlyoxrl.supabase.co";
-  var SUPABASE_ANON_KEY = "sb_publishable_4sbGE70Sh5gkgpmBqdGVBg_VkqjzJVx";
-  var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  var SITE_FUNCTIONS_BASE = "https://ensemblefitness.com/.netlify/functions";
+  var currentUser = null;
 
   function escapeHtml(str) {
     var div = document.createElement("div");
@@ -160,21 +138,15 @@
     return div.innerHTML;
   }
 
-  // Stand-in books so the shelf's layout (row, cover size, spacing) can be
-  // reviewed before real submissions are approved — real photos of an open
-  // book with a motivational line on the page, not drawn art. Shown only
-  // when the live "books" table comes back empty — a real published book
-  // always takes precedence and these disappear on their own once that
-  // happens.
-  var PLACEHOLDER_BOOKS = [
-    { title: "The Morning Mile", author_name: "J. Rivera", blurb: "A short daily practice for people who don't think of themselves as \"morning people\" yet.", price_cents: 499, img: "assets/book-placeholders/sample-book-2.jpg" },
-    { title: "Small Wins Every Day", author_name: "T. Brooks", blurb: "Twenty short chapters on building momentum without burning out.", price_cents: 399, img: "assets/book-placeholders/sample-book-3.jpg" },
-    { title: "Rebuild: A Comeback Story", author_name: "M. Alvarez", blurb: "One athlete's short, honest account of starting over after injury.", price_cents: 599, img: "assets/book-placeholders/sample-book-5.jpg" },
-    { title: "Breathe. Move. Begin.", author_name: "K. Chen", blurb: "A pocket-sized guide to getting unstuck, one small step at a time.", price_cents: 299, img: "assets/book-placeholders/sample-book-2.jpg" },
-    { title: "The Discipline Habit", author_name: "A. Okafor", blurb: "Short, practical thinking on showing up when motivation runs out.", price_cents: 449, img: "assets/book-placeholders/sample-book-4.jpg" },
-    { title: "Strong Is a Decision", author_name: "R. Patel", blurb: "A quick read for anyone rebuilding their relationship with fitness.", price_cents: 349, img: "assets/book-placeholders/sample-book-1.jpg" }
-  ];
+  async function authHeader() {
+    var { data } = await window.sb.auth.getSession();
+    return "Bearer " + data.session.access_token;
+  }
 
+  // Same query param + wording the marketing site's books.html already
+  // uses on return from Stripe Checkout (see create-book-checkout.js's
+  // success_url/cancel_url) — kept identical so the message reads the same
+  // no matter which "books.html" a buyer happens to land back on.
   function showPurchaseNotice() {
     var params = new URLSearchParams(window.location.search);
     var status = params.get("purchase");
@@ -184,82 +156,119 @@
     } else if (status === "cancelled") {
       el.innerHTML = '<div class="notice-banner cancelled">No charge was made — your order was cancelled.</div>';
     }
+    if (status) {
+      window.history.replaceState({}, "", "books.html");
+    }
   }
 
   async function loadBooks() {
     var grid = document.getElementById("booksGrid");
-    var { data, error } = await sb
+    var { data, error } = await window.sb
       .from("books")
       .select("id, title, author_name, blurb, price_cents, cover_storage_path")
       .eq("is_active", true)
       .order("created_at", { ascending: false });
 
-    var usingPlaceholders = !!(error || !data || data.length === 0);
-    var books = usingPlaceholders ? PLACEHOLDER_BOOKS : data;
-
-    if (usingPlaceholders) {
-      document.getElementById("purchaseNotice").insertAdjacentHTML(
-        "beforeend",
-        '<div class="notice-banner cancelled">Previewing the shelf layout with sample books — real submissions will take their place once they\'re published.</div>'
-      );
+    if (error) {
+      grid.innerHTML = '<div class="empty-state">Couldn\'t load Ensemble Reads right now — please refresh.</div>';
+      return;
+    }
+    if (!data || data.length === 0) {
+      grid.innerHTML = '<div class="empty-state">New titles are on the way — check back soon.</div>';
+      return;
     }
 
     grid.innerHTML = "";
-    books.forEach(function (book) {
-      var coverUrl = book.cover_storage_path
-        ? SUPABASE_URL + "/storage/v1/object/public/book-covers/" + book.cover_storage_path
-        : book.img || "";
-
-      var fallbackHtml = '<div class="book-cover-fallback">' +
-        '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path d="M2 6c2-1.4 5-1.4 7 0v13c-2-1.4-5-1.4-7 0V6z"></path><path d="M22 6c-2-1.4-5-1.4-7 0v13c2-1.4 5-1.4 7 0V6z"></path></svg>' +
-        '<span class="book-cover-fallback-title">' + escapeHtml(book.title) + '</span>' +
-      '</div>';
-
-      var card = document.createElement("div");
-      card.className = "book-card";
-      card.innerHTML =
-        '<div class="book-cover' + (book.img ? ' landscape' : '') + '">' +
-          (coverUrl ? '<img src="' + coverUrl + '" alt="' + escapeHtml(book.title) + ' cover" />' : fallbackHtml) +
-        '</div>' +
-        '<div class="book-card-body">' +
-          '<p class="book-title">' + escapeHtml(book.title) + '</p>' +
-          '<p class="book-author">by ' + escapeHtml(book.author_name) + '</p>' +
-          (book.blurb ? '<p class="book-blurb">' + escapeHtml(book.blurb) + '</p>' : '') +
-          '<div class="book-price-row">' +
-            '<span class="book-price-tag">$' + (book.price_cents / 100).toFixed(2) + '</span>' +
-            (usingPlaceholders
-              ? '<button type="button" class="btn btn-primary btn-sm" disabled title="Sample book — not yet for sale">Coming Soon</button>'
-              : '<button type="button" class="btn btn-primary btn-sm buy-book-btn" data-id="' + book.id + '">Buy Now</button>') +
-          '</div>' +
-        '</div>';
-      grid.appendChild(card);
-    });
-
-    grid.querySelectorAll(".buy-book-btn").forEach(function (btn) {
-      btn.addEventListener("click", async function () {
-        btn.disabled = true;
-        btn.textContent = "Redirecting…";
-        try {
-          var res = await fetch("/.netlify/functions/create-book-checkout", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ book_id: btn.getAttribute("data-id") })
-          });
-          var out = await res.json();
-          if (!res.ok || !out.url) throw new Error(out.error || "Couldn't start checkout.");
-          window.location.href = out.url;
-        } catch (err) {
-          btn.disabled = false;
-          btn.textContent = "Buy Now";
-          alert(err.message || "Something went wrong — please try again.");
-        }
-      });
+    data.forEach(function (book) {
+      grid.appendChild(buildBookCard(book));
     });
   }
 
-  showPurchaseNotice();
-  loadBooks();
-})();
+  function buildBookCard(book) {
+    var card = document.createElement("div");
+    card.className = "feed-card";
+
+    var coverUrl = book.cover_storage_path
+      ? window.SUPABASE_URL + "/storage/v1/object/public/book-covers/" + book.cover_storage_path
+      : "";
+    var thumb = coverUrl
+      ? '<img src="' + coverUrl + '" alt="" loading="lazy" decoding="async" />'
+      : '<div class="thumb-initial">📖</div>';
+
+    card.innerHTML =
+      '<div class="feed-card-thumb">' + thumb + '<span class="kind-badge">Ensemble Reads</span></div>' +
+      '<div class="feed-card-meta">' +
+        '<div class="feed-card-name">' + escapeHtml(book.title) + '</div>' +
+        '<div class="book-card-author">by ' + escapeHtml(book.author_name) + '</div>' +
+        (book.blurb ? '<p class="book-card-blurb">' + escapeHtml(book.blurb) + '</p>' : '') +
+        '<div class="book-card-price-row">' +
+          '<span class="book-card-price">$' + (book.price_cents / 100).toFixed(2) + '</span>' +
+          '<button type="button" class="btn btn-primary btn-sm buy-book-btn" data-id="' + book.id + '">Buy Now</button>' +
+        '</div>' +
+      '</div>';
+
+    card.querySelector(".buy-book-btn").addEventListener("click", function (e) {
+      buyBook(book.id, e.target);
+    });
+    return card;
+  }
+
+  async function buyBook(bookId, btn) {
+    var original = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = "Redirecting…";
+    try {
+      var res = await fetch(SITE_FUNCTIONS_BASE + "/create-book-checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: await authHeader() },
+        // `app: true` tells create-book-checkout.js to send Stripe back to
+        // THIS app (app.ensemblefitness.com/books.html) instead of the
+        // marketing site once payment finishes, and to prefill Checkout
+        // with the signed-in member's own email.
+        body: JSON.stringify({ book_id: bookId, app: true })
+      });
+      var out = await res.json();
+      if (!res.ok || !out.url) throw new Error(out.error || "Couldn't start checkout.");
+      window.location.href = out.url;
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = original;
+      alert(err.message || "Something went wrong — please try again.");
+    }
+  }
+
+  // Same live-update approach as Music Library and the Home feed: a book
+  // approved elsewhere should just show up here on its own, no manual
+  // refresh needed.
+  var bookReloadTimer = null;
+  function scheduleBookReload() {
+    clearTimeout(bookReloadTimer);
+    bookReloadTimer = setTimeout(function () { loadBooks(); }, 500);
+  }
+  function subscribeToBookChanges() {
+    if (!window.sb || !window.sb.channel) return;
+    window.sb
+      .channel("books-library-live-changes")
+      .on("postgres_changes", { event: "*", schema: "public", table: "books" }, scheduleBookReload)
+      .subscribe();
+  }
+
+  document.getElementById("signOutLink").addEventListener("click", function (e) {
+    e.preventDefault();
+    signOut();
+  });
+
+  (async function init() {
+    currentUser = await requireAuth();
+    if (!currentUser) return;
+    if (await isCurrentUserAdmin()) {
+      document.getElementById("adminLink").style.display = "inline";
+    }
+    showPurchaseNotice();
+    await loadBooks();
+    subscribeToBookChanges();
+  })();
 </script>
+
 </body>
 </html>
