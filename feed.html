@@ -855,6 +855,20 @@
      which always renders in its own fixed color — sizing it via font-size
      since width/height (above) only affects the svg-based icons. */
   .rp-action-icon { font-size: 18px; line-height: 1; }
+  /* Ken's ask (Nov 2026): thumbs-up and the muscle emoji read noticeably
+     bigger than the heart and comment icons even though every SVG here
+     shares the same 19px box — the heart and speech-bubble artwork just
+     don't fill their own 24x24 viewBox as fully as the thumbs-up path
+     does (real, visible padding baked into those two drawings), so at
+     matched box sizes they look smaller. Bumping just these two up
+     compensates for that built-in whitespace so all four read as the
+     same size at a glance. Same 30px circle for every icon, so this
+     doesn't shift any spacing — just the glyph inside it. */
+  .rp-action-btn[data-reaction="heart"] .rp-action-icon svg,
+  .rp-comment-btn .rp-action-icon svg {
+    width: 23px;
+    height: 23px;
+  }
   .rp-action-count {
     font-size: 12.5px;
     font-weight: 700;
