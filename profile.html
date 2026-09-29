@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>My Profile — Ensemble Fitness</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -825,6 +825,28 @@
       return;
     }
 
+    // Multi-clip reels (Ken's ask, Nov 2026, "when someone views their
+    // profile" too): a video post's clip 2 onward live in their own
+    // media_clips table — see sql/multi-clip-reels.sql. Fetched as its own
+    // query, same reasoning as feed.html's fetchClipsForMediaIds: if that
+    // table isn't there yet in some environment, this just comes back
+    // empty and every post still shows and plays exactly as it does today.
+    var videoIds = data.filter(function (item) { return item.kind === "video"; }).map(function (item) { return item.id; });
+    var clipsByMediaId = {};
+    if (videoIds.length) {
+      try {
+        var { data: clipRows } = await window.sb
+          .from("media_clips")
+          .select("media_id, order_index, storage_path, trim_start, trim_end")
+          .in("media_id", videoIds)
+          .order("order_index", { ascending: true });
+        (clipRows || []).forEach(function (c) {
+          if (!clipsByMediaId[c.media_id]) clipsByMediaId[c.media_id] = [];
+          clipsByMediaId[c.media_id].push(c);
+        });
+      } catch (e) { /* table not migrated yet, or a network hiccup — posts just show as single-clip */ }
+    }
+
     // Same fix as the main feed: fetch every item's signed URLs in
     // parallel instead of one item at a time, so this list doesn't sit
     // blank while N items' worth of URLs resolve back to back.
@@ -832,6 +854,7 @@
       var wantsNarration = item.kind === "video" && !!item.narration_path;
       var wantsMusic = item.kind === "video" && !item.narration_path && !!(item.music_track_id && item.tracks);
       var wantsPoster = item.kind === "video" && !!item.poster_path;
+      var extraClipRows = clipsByMediaId[item.id] || [];
 
       var results = await Promise.all([
         window.sb.storage.from("media").createSignedUrl(item.storage_path, 3600),
@@ -840,12 +863,25 @@
         wantsPoster ? window.sb.storage.from("media").createSignedUrl(item.poster_path, 3600) : Promise.resolve({ data: null })
       ]);
 
+      // Extra clips reuse this exact same one-signed-URL-per-file approach
+      // as everything else on this page — no separate signing mechanism.
+      var extraClipSigned = await Promise.all(extraClipRows.map(function (c) {
+        return window.sb.storage.from("media").createSignedUrl(c.storage_path, 3600);
+      }));
+
       return {
         raw: item,
         url: results[0].data ? results[0].data.signedUrl : "",
         narrationUrl: results[1].data ? results[1].data.signedUrl : "",
         musicUrl: results[2].data ? results[2].data.signedUrl : "",
-        posterUrl: results[3].data ? results[3].data.signedUrl : ""
+        posterUrl: results[3].data ? results[3].data.signedUrl : "",
+        extraClips: extraClipRows.map(function (c, ci) {
+          return {
+            url: extraClipSigned[ci].data ? extraClipSigned[ci].data.signedUrl : "",
+            trim_start: c.trim_start,
+            trim_end: c.trim_end
+          };
+        })
       };
     }));
 
@@ -903,7 +939,18 @@
         wireNarrationSync(tile.querySelector("video"), tile.querySelector("audio." + soundClass));
       }
       if (item.kind === "video") {
-        wireTrimPlayback(tile.querySelector("video"), item.trim_start, item.trim_end);
+        var extraClips = resolved[i].extraClips || [];
+        if (extraClips.length) {
+          // Multi-clip reel (Ken's ask, Nov 2026 — "when someone views
+          // their profile" too): reuse the same feed.html helper instead
+          // of wireTrimPlayback so clip 2 onward play right after clip 1.
+          var reelClips = [{ url: url, start: item.trim_start, end: item.trim_end }].concat(
+            extraClips.map(function (c) { return { url: c.url, start: c.trim_start, end: c.trim_end }; })
+          );
+          wireReelPlayback(tile.querySelector("video"), reelClips);
+        } else {
+          wireTrimPlayback(tile.querySelector("video"), item.trim_start, item.trim_end);
+        }
       }
     }
 

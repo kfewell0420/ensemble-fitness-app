@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>Upload — Ensemble Fitness</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -60,6 +60,58 @@
     font-family: inherit;
   }
   .upload-back-link:hover { text-decoration: underline; }
+
+  /* Extra clips list (Ken's ask, Nov 2026 — "copies one through ten"): a
+     plain up/down/remove list is all this needs, no drag-and-drop library,
+     matching the rest of this page's low-tech, no-new-dependencies style. */
+  .extra-clip-list {
+    list-style: none;
+    margin: 0 0 10px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .extra-clip-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-sm);
+    padding: 8px 10px;
+  }
+  .extra-clip-order {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent-2);
+    flex-shrink: 0;
+  }
+  .extra-clip-name {
+    flex: 1;
+    font-size: 12.5px;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .extra-clip-controls {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  .extra-clip-controls button {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    color: #fff;
+    border-radius: 6px;
+    width: 26px;
+    height: 26px;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .extra-clip-controls button:disabled { opacity: 0.3; cursor: default; }
 </style>
 </head>
 <body>
@@ -157,6 +209,23 @@
           <input type="range" id="trimEndRange" min="0" max="0" step="0.1" value="0" />
         </div>
         <button type="button" class="btn btn-ghost btn-sm" id="previewTrimBtn">▶ Preview trimmed clip</button>
+      </div>
+
+      <!-- Members already edit/trim their footage on their own phone before
+           ever opening this app — so instead of building a video editor in
+           here, a member can just attach several already-trimmed clips and
+           they'll play back-to-back as one continuous reel (Ken's ask, Nov
+           2026). Clip 1 stays the file/trim picked above; this only ever
+           adds clip 2 onward, and those upload exactly as chosen — no trim
+           UI here, that's only ever offered for the primary clip. -->
+      <div class="narration-section" id="extraClipsSection">
+        <div class="field-label-row">
+          <label>🎬 Add more clips to this reel (optional)</label>
+        </div>
+        <p class="narrated-note" style="margin-bottom:10px;">Already have more clips cut on your phone? Attach them here in the order they should play — they'll play back-to-back as one continuous reel, up to 10 clips total. Nothing gets merged; each file just plays right after the last one ends.</p>
+        <ul class="extra-clip-list" id="extraClipList"></ul>
+        <button type="button" class="btn btn-ghost btn-sm" id="addExtraClipBtn">+ Add another clip</button>
+        <input type="file" id="extraClipInput" accept="video/*" style="display:none;" />
       </div>
 
       <div class="narration-section" id="narrationSection">
@@ -447,6 +516,7 @@
     updateNarrationVisibility();
     updateMusicVisibility();
     updateTrimVisibility();
+    updateExtraClipsVisibility();
   });
 
   // Supports a link like upload.html?type=song — used by the "Upload Music"
@@ -593,6 +663,91 @@
       resetTrimUI();
     }
   }
+
+  // ---- Extra clips, for video uploads only (Ken's ask, Nov 2026) --------
+  // A member's already-trimmed footage often comes as several separate
+  // files rather than one continuous clip — a warm-up, the main set, a
+  // finisher. Instead of building real video editing/merging in this app,
+  // they're attached in order here and play back-to-back at playback time
+  // (see sql/multi-clip-reels.sql and wireReelPlayback in
+  // js/supabaseClient.js). Capped at 10 clips total — this is clip 1, so
+  // up to 9 more — matching what Ken described as "copies one through
+  // ten." Plain up/down/remove buttons, no drag-and-drop library.
+  var EXTRA_CLIP_CAP = 10;
+  var extraClipsSection = document.getElementById("extraClipsSection");
+  var extraClipList = document.getElementById("extraClipList");
+  var addExtraClipBtn = document.getElementById("addExtraClipBtn");
+  var extraClipInput = document.getElementById("extraClipInput");
+  var extraClips = []; // ordered array of File objects — clip 2, 3, 4…
+
+  function renderExtraClipList() {
+    extraClipList.innerHTML = "";
+    extraClips.forEach(function (file, i) {
+      var li = document.createElement("li");
+      li.className = "extra-clip-item";
+      li.innerHTML =
+        '<span class="extra-clip-order">Clip ' + (i + 2) + '</span>' +
+        '<span class="extra-clip-name"></span>' +
+        '<span class="extra-clip-controls">' +
+          '<button type="button" data-action="up"' + (i === 0 ? " disabled" : "") + '>↑</button>' +
+          '<button type="button" data-action="down"' + (i === extraClips.length - 1 ? " disabled" : "") + '>↓</button>' +
+          '<button type="button" data-action="remove">✕</button>' +
+        '</span>';
+      // textContent, not innerHTML, for the filename — it's untrusted
+      // user-controlled text (whatever the member's OS named the file).
+      li.querySelector(".extra-clip-name").textContent = file.name;
+      li.querySelector('[data-action="up"]').addEventListener("click", function () {
+        if (i === 0) return;
+        var tmp = extraClips[i - 1];
+        extraClips[i - 1] = extraClips[i];
+        extraClips[i] = tmp;
+        renderExtraClipList();
+      });
+      li.querySelector('[data-action="down"]').addEventListener("click", function () {
+        if (i === extraClips.length - 1) return;
+        var tmp = extraClips[i + 1];
+        extraClips[i + 1] = extraClips[i];
+        extraClips[i] = tmp;
+        renderExtraClipList();
+      });
+      li.querySelector('[data-action="remove"]').addEventListener("click", function () {
+        extraClips.splice(i, 1);
+        renderExtraClipList();
+      });
+      extraClipList.appendChild(li);
+    });
+    // +1 for clip 1 (the file picked above) when checking against the cap.
+    addExtraClipBtn.style.display = (extraClips.length + 1 >= EXTRA_CLIP_CAP) ? "none" : "inline-flex";
+  }
+
+  function resetExtraClips() {
+    extraClips = [];
+    extraClipInput.value = "";
+    renderExtraClipList();
+  }
+
+  function updateExtraClipsVisibility() {
+    var isVideo = !!selectedFile && fileKind(selectedFile) === "video";
+    if (isVideo) {
+      extraClipsSection.classList.add("show");
+    } else {
+      extraClipsSection.classList.remove("show");
+      resetExtraClips();
+    }
+  }
+
+  addExtraClipBtn.addEventListener("click", function () {
+    extraClipInput.click();
+  });
+  extraClipInput.addEventListener("change", function () {
+    var file = extraClipInput.files[0] || null;
+    extraClipInput.value = ""; // lets the member pick the same filename again later if they remove it
+    if (!file) return;
+    if (extraClips.length + 1 >= EXTRA_CLIP_CAP) return; // belt-and-suspenders — the button already hides at the cap
+    extraClips.push(file);
+    renderExtraClipList();
+  });
+  // -------------------------------------------------------------------------
 
   // Grabs a still frame from the video the member just chose (reusing the
   // trim preview element that's already loaded it — no second download) so
@@ -871,6 +1026,7 @@
     updateNarrationVisibility();
     updateMusicVisibility();
     updateTrimVisibility();
+    updateExtraClipsVisibility();
   });
 
   // Small helper so the "no file chosen" placeholder text can fall back to
@@ -1081,16 +1237,61 @@
       // "pending" for a day).
       if (kind === "photo" && isProfilePhotoChecked) insertRow.status = "approved";
 
-      var { error: insertError } = await window.sb.from("media").insert(insertRow);
+      // .select().single() added so insertedRow.id is available below for
+      // any extra clips (they need this post's own id as their media_id) —
+      // the insert itself is otherwise unchanged from before this feature.
+      var { data: insertedRow, error: insertError } = await window.sb.from("media").insert(insertRow).select().single();
       if (insertError) throw insertError;
 
-      showMsg(msg, kind === "photo" && isProfilePhotoChecked
+      // Extra clips (2nd file onward) — only ever present for a video post
+      // that used "+ Add another clip" above. Uploaded and inserted AFTER
+      // the primary post already succeeded, on purpose: the post itself has
+      // already been through the important part (passing insert/RLS as a
+      // real pending post), so one extra clip failing to upload is never
+      // worth rolling back a post that already went through fine — the
+      // member just gets a heads-up that a clip didn't make it, same idea
+      // as the poster-image capture above being best-effort.
+      var failedExtraClips = 0;
+      if (kind === "video" && extraClips.length) {
+        for (var clipIndex = 0; clipIndex < extraClips.length; clipIndex++) {
+          try {
+            var clipFile = extraClips[clipIndex];
+            var clipExt = getExt(clipFile.name);
+            var clipPath = currentUser.id + "/" + crypto.randomUUID() + "." + clipExt;
+            var { error: clipUploadError } = await window.sb.storage.from("media").upload(clipPath, clipFile, {
+              cacheControl: "3600",
+              upsert: false
+            });
+            if (clipUploadError) throw clipUploadError;
+            // order_index starts at 2 — clip 1 is always the media row
+            // itself, inserted just above. No trim UI for extra clips, so
+            // these always upload as-is (null/null), same as an untouched
+            // primary clip does.
+            var { error: clipInsertError } = await window.sb.from("media_clips").insert({
+              media_id: insertedRow.id,
+              order_index: clipIndex + 2,
+              storage_path: clipPath,
+              trim_start: null,
+              trim_end: null
+            });
+            if (clipInsertError) throw clipInsertError;
+          } catch (clipErr) {
+            failedExtraClips++;
+          }
+        }
+      }
+
+      var extraClipNote = failedExtraClips
+        ? " (" + failedExtraClips + " extra clip" + (failedExtraClips > 1 ? "s" : "") + " couldn't be attached — the rest of your post is live; try re-adding " + (failedExtraClips > 1 ? "them" : "it") + " later.)"
+        : "";
+
+      showMsg(msg, (kind === "photo" && isProfilePhotoChecked
         ? "Profile photo updated and live now!"
         : narrationPath
         ? "Uploaded with your voiceover attached! It'll show as \"Pending\" until it's reviewed."
         : musicTrackValue
         ? "Uploaded with your chosen track attached! It'll show as \"Pending\" until it's reviewed."
-        : "Uploaded! It'll show as \"Pending\" until it's reviewed.", "success");
+        : "Uploaded! It'll show as \"Pending\" until it's reviewed.") + extraClipNote, "success");
       fileInput.value = "";
       selectedFile = null;
       dropzoneLabel.textContent = CATEGORY_META[pickedCategoryKey()] ? CATEGORY_META[pickedCategoryKey()].placeholder : "Click to choose a file";
@@ -1103,9 +1304,11 @@
       profilePhotoField.style.display = "flex";
       productTagField.style.display = "none";
       uploadBtn.textContent = "↑ Select a file above";
+      resetExtraClips();
       updateNarrationVisibility();
       updateMusicVisibility();
       updateTrimVisibility();
+      updateExtraClipsVisibility();
       updateCategoryFieldVisibility();
     } catch (err) {
       showMsg(msg, err.message || "Upload failed. Please try again.", "error");

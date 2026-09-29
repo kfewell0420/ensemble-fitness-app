@@ -2205,7 +2205,7 @@
   async function fetchBatch(mealPrepOnly, limit, fromOffset, filterType) {
     var query = window.sb
       .from("media")
-      .select("id, user_id, kind, storage_path, poster_path, caption, workout_type, location, signature, created_at, profiles!media_user_id_fkey(display_name)")
+      .select("id, user_id, kind, storage_path, poster_path, caption, workout_type, location, signature, created_at, trim_start, trim_end, profiles!media_user_id_fkey(display_name)")
       .eq("status", "approved")
       .in("kind", ["video", "photo"]);
     // NOTE: plain .neq("workout_type", "Meal Prep") silently drops every row
@@ -2237,7 +2237,7 @@
   async function fetchNewMediaSince(sinceIso, filterType) {
     var query = window.sb
       .from("media")
-      .select("id, user_id, kind, storage_path, poster_path, caption, workout_type, location, signature, created_at, profiles!media_user_id_fkey(display_name)")
+      .select("id, user_id, kind, storage_path, poster_path, caption, workout_type, location, signature, created_at, trim_start, trim_end, profiles!media_user_id_fkey(display_name)")
       .eq("status", "approved")
       .in("kind", ["video", "photo"]);
     if (filterType && filterType !== "All") {
@@ -2295,15 +2295,60 @@
     };
   }
 
+  // Multi-clip reels (Ken's ask, Nov 2026): a video post's clip 2 onward
+  // live in their own media_clips table — see sql/multi-clip-reels.sql.
+  // Fetched as its OWN query rather than folded into the "media" select
+  // above on purpose: if that table isn't there yet in some environment
+  // (sql/multi-clip-reels.sql hasn't been run there), this just comes back
+  // empty instead of taking the entire feed query down with it — every
+  // post still loads and plays exactly as it does today, just without
+  // extra clips until the migration catches up.
+  async function fetchClipsForMediaIds(mediaIds) {
+    if (!mediaIds.length) return {};
+    try {
+      var { data, error } = await window.sb
+        .from("media_clips")
+        .select("media_id, order_index, storage_path, trim_start, trim_end")
+        .in("media_id", mediaIds)
+        .order("order_index", { ascending: true });
+      if (error || !data) return {};
+      var byMediaId = {};
+      data.forEach(function (c) {
+        if (!byMediaId[c.media_id]) byMediaId[c.media_id] = [];
+        byMediaId[c.media_id].push(c);
+      });
+      return byMediaId;
+    } catch (e) {
+      return {};
+    }
+  }
+
   async function buildItems(rows) {
+    var videoIds = rows.filter(function (r) { return r.kind === "video"; }).map(function (r) { return r.id; });
+    var clipsByMediaId = await fetchClipsForMediaIds(videoIds);
+
     var paths = [];
     rows.forEach(function (raw) {
       if (raw.storage_path) paths.push(raw.storage_path);
       if (raw.kind === "video" && raw.poster_path) paths.push(raw.poster_path);
+      // Extra clips' files reuse this exact same batched signing pass —
+      // no separate signing mechanism just because a post has more files.
+      (clipsByMediaId[raw.id] || []).forEach(function (c) { if (c.storage_path) paths.push(c.storage_path); });
     });
     var urlMap = await resolveSignedUrls(paths);
     return rows.map(function (raw) {
       var wantsPoster = raw.kind === "video" && !!raw.poster_path;
+      // Already ordered by order_index (2, 3, 4…) from the query above —
+      // clip 1 is always this same row's own storage_path/trim_start/
+      // trim_end, never a row in media_clips (see sql/multi-clip-reels.sql).
+      var extraClips = (clipsByMediaId[raw.id] || []).map(function (c) {
+        return {
+          order_index: c.order_index,
+          url: urlMap[c.storage_path] || "",
+          trim_start: c.trim_start,
+          trim_end: c.trim_end
+        };
+      });
       return {
         id: raw.id,
         user_id: raw.user_id,
@@ -2317,7 +2362,10 @@
         caption: raw.caption || "",
         signature: raw.signature || "",
         storage_path: raw.storage_path || "",
-        poster_path: raw.poster_path || ""
+        poster_path: raw.poster_path || "",
+        trim_start: typeof raw.trim_start === "number" ? raw.trim_start : null,
+        trim_end: typeof raw.trim_end === "number" ? raw.trim_end : null,
+        extraClips: extraClips
       };
     });
   }
@@ -2691,6 +2739,17 @@
         videoEl.muted = !videoEl.muted;
         if (muteHint) muteHint.style.display = videoEl.muted ? "" : "none";
       });
+      // Multi-clip reel (Ken's ask, Nov 2026): several separately-uploaded
+      // files play back-to-back as one continuous reel instead of the
+      // `loop` attribute above just replaying clip 1 forever. An ordinary
+      // single-clip post (the vast majority) never touches this branch and
+      // keeps behaving exactly as it always has.
+      if (item.extraClips && item.extraClips.length) {
+        var reelClips = [{ url: item.url, start: item.trim_start, end: item.trim_end }].concat(
+          item.extraClips.map(function (c) { return { url: c.url, start: c.trim_start, end: c.trim_end }; })
+        );
+        wireReelPlayback(videoEl, reelClips);
+      }
     }
 
     wireSlideHeader(item, el);
