@@ -669,6 +669,37 @@
     color: var(--faint-invert);
   }
   .ml-tagline span:not(:last-child)::after { content: "·"; margin-left: 18px; color: var(--accent-2); }
+
+  /* ---- Mobile tightening (Nov 2026, Ken's ask) -----------------------------
+     Three things flagged from the phone: (1) the nav bar's usual padding
+     plus .app-shell's default 48px top padding, stacked on top of a busy
+     full-bleed background photo, read as a big empty gap before any real
+     content — the Home/notification icons, then a lot of blank sky, then
+     "Music Library." Tightened here, scoped to just this page, so the
+     shared nav/shell spacing every other page relies on stays untouched.
+     (2) "Upload Music" had no real gap above it on mobile — the auto
+     top-margin it shares with "Browse Playlist" only pushes a button down
+     to fill leftover space in the two-column desktop layout (see
+     .ml-side > .card / .ml-main > .card above); on a single mobile column
+     there's no leftover space for "auto" to fill, so it collapsed to
+     nothing and the button ended up touching the Add $1/$2/$5 row above
+     it. (3) "Browse Playlist" had the opposite problem — .ml-tracks-head's
+     own margin-bottom was adding extra space on top of its paragraph's
+     already-existing bottom margin. Both buttons now get the exact same
+     explicit gap instead of leaving it to auto-margins that only really
+     make sense in the desktop grid. */
+  @media (max-width: 899px) {
+    .app-nav {
+      padding-top: calc(8px + env(safe-area-inset-top, 0px));
+      padding-bottom: 8px;
+    }
+    .app-shell { padding-top: 14px; }
+    .ml-tracks-head { margin-bottom: 0; }
+    #uploadMusicBtn,
+    #openPlaylistBtn {
+      margin-top: 14px !important;
+    }
+  }
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
