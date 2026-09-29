@@ -62,7 +62,18 @@
       <h3 style="font-size:17px; margin:0; color:#fff;">Are you a writer?</h3>
     </div>
     <p style="font-size:13.5px; line-height:1.6; color:var(--muted-invert); margin:12px 0 16px;">Submit a short-form motivational book for review. If it fits, it goes live right here — and you keep 75% of every sale.</p>
-    <a href="https://ensemblefitness.com/submit-book.html" target="_blank" rel="noopener" class="btn btn-primary btn-sm">Submit Your Book</a>
+    <!-- Ken's ask (Nov 2026): this used to open in a new tab (target="_blank"),
+         which on the mobile app's wrapped webview showed as a blank screen
+         instead of navigating anywhere (Capacitor's webview has no default
+         handler for a link asking to pop a brand-new tab/window). A normal
+         same-tab link instead just navigates there directly — on the
+         website that's an ordinary page-to-page link; on mobile it's
+         allowed to leave the app's own bundled pages for ensemblefitness.com
+         specifically because that domain is now on the allow-list in
+         capacitor.config.json (see server.allowNavigation there). Swiping
+         back (iOS) or the hardware back gesture (Android) returns here,
+         same as any other in-app navigation. -->
+    <a href="https://ensemblefitness.com/submit-book.html" class="btn btn-primary btn-sm">Submit Your Book</a>
   </div>
 
   <!-- Ken's ask (Nov 2026): the buy-grid used to sit inline on the page at
