@@ -26,6 +26,22 @@
   @media (max-width: 760px) {
     #submitLede { white-space: normal; }
   }
+
+  /* Ken's ask (Nov 2026): still about half an inch of empty space above
+     "SUBMIT TO ENSEMBLE READS" on a phone even after the first trim (the
+     hero's own padding-top went from 40px down to 12px earlier) — cutting
+     it further here, phone screens only, since Ken confirmed desktop
+     already looks right and shouldn't move. */
+  @media (max-width: 760px) {
+    #top { padding-top: 0; }
+  }
+
+  /* Ken's ask (Nov 2026, settled after a couple of rounds): the "couple of
+     things to know" box belongs right under the form's orange submit
+     button and before "How it works" — which is just the plain document
+     order below, so no special mobile reordering is needed after all (an
+     earlier pass moved it all the way to the bottom on phones; this
+     undoes that). Same position and size on every screen size now. */
 </style>
 </head>
 <body>
@@ -178,33 +194,37 @@
 
     <!-- Moved here from right under the hero (Nov 2026, Ken's ask) — the
          fuller step-by-step walkthrough, for anyone who wants it after
-         they've already seen the form, not before. -->
-    <div class="section-head" style="margin-bottom:24px; margin-top:56px;">
-      <h2 style="font-size:20px;">How it works</h2>
-    </div>
+         they've already seen the form, not before. Wrapped in one div
+         (how-it-works-block) so the mobile reorder below can move it as
+         a single unit ahead of the guideline box. -->
+    <div class="how-it-works-block">
+      <div class="section-head" style="margin-bottom:24px; margin-top:56px;">
+        <h2 style="font-size:20px;">How it works</h2>
+      </div>
 
-    <div class="steps" style="grid-template-columns: repeat(4, 1fr); margin-bottom:8px;">
-      <div class="step-card">
-        <div class="step-num">1</div>
-        <h4>Prepare your manuscript</h4>
-        <p>A PDF, 30 pages or fewer, plus an optional cover image (JPG or PNG). Have your blurb and suggested price ready too.</p>
-      </div>
-      <div class="step-card">
-        <div class="step-num">2</div>
-        <h4>Fill out the form above</h4>
-        <p>Your title, name, contact info, blurb, price, and files. You'll continue to a small review fee at checkout.</p>
-      </div>
-      <div class="step-card">
-        <div class="step-num">3</div>
-        <h4>We review it for quality &amp; fit</h4>
-        <p>Every submission is reviewed by a real person. We look for overall quality, readability, obvious spelling or formatting issues, proper page layout, and content that aligns with the positive, inspirational spirit of Ensemble Fitness.</p>
-        <p>If something minor needs attention, we'll let you know so you have an opportunity to correct it before approval.</p>
-      </div>
-      <div class="step-card">
-        <div class="step-num">4</div>
-        <h4>Approved books go live</h4>
-        <p>Your book appears on Ensemble Reads, and you keep 75% of every sale. We'll send you a secure link to connect your bank account through Stripe so payouts can be made automatically.</p>
-        <p>Ensemble Fitness never sees or stores your banking information.</p>
+      <div class="steps" style="grid-template-columns: repeat(4, 1fr); margin-bottom:8px;">
+        <div class="step-card">
+          <div class="step-num">1</div>
+          <h4>Prepare your manuscript</h4>
+          <p>A PDF, 30 pages or fewer, plus an optional cover image (JPG or PNG). Have your blurb and suggested price ready too.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-num">2</div>
+          <h4>Fill out the form above</h4>
+          <p>Your title, name, contact info, blurb, price, and files. You'll continue to a small review fee at checkout.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-num">3</div>
+          <h4>We review it for quality &amp; fit</h4>
+          <p>Every submission is reviewed by a real person. We look for overall quality, readability, obvious spelling or formatting issues, proper page layout, and content that aligns with the positive, inspirational spirit of Ensemble Fitness.</p>
+          <p>If something minor needs attention, we'll let you know so you have an opportunity to correct it before approval.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-num">4</div>
+          <h4>Approved books go live</h4>
+          <p>Your book appears on Ensemble Reads, and you keep 75% of every sale. We'll send you a secure link to connect your bank account through Stripe so payouts can be made automatically.</p>
+          <p>Ensemble Fitness never sees or stores your banking information.</p>
+        </div>
       </div>
     </div>
   </div>
