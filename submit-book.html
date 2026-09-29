@@ -11,6 +11,22 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/styles.css?v=40" />
+<!-- Ken's ask (Nov 2026): force the hero's one-sentence lede onto a single
+     line for good — a max-width guess (tried 620px, then 660px) depends on
+     exactly how wide the text renders, which shifts if a visitor's browser
+     ever falls back away from Inter (blocked Google Fonts, an extension,
+     etc.) to a wider system font. nowrap sidesteps that entirely: this
+     line is short enough to always fit on one line on any normal desktop/
+     laptop width no matter which font actually renders. Only reverts to
+     normal wrapping on genuinely narrow phone screens (same breakpoint
+     the rest of this hero already uses), where a single line isn't
+     realistic anyway. -->
+<style>
+  #submitLede { white-space: nowrap; max-width: none; }
+  @media (max-width: 760px) {
+    #submitLede { white-space: normal; }
+  }
+</style>
 </head>
 <body>
 
@@ -70,7 +86,7 @@
            single-sentence line to wrap. Widened just here with an inline
            override rather than touching the shared class, so no other
            page's hero is affected. -->
-      <p class="lede" style="max-width:660px; margin-bottom:0;">Short-form, on-brand motivational books from independent authors.</p>
+      <p class="lede" id="submitLede" style="margin-bottom:0;">Short-form, on-brand motivational books from independent authors.</p>
     </div>
   </div>
 </section>
