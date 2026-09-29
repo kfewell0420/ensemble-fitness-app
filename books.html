@@ -136,6 +136,31 @@
     border-radius: var(--radius-lg);
     padding: 20px 22px;
   }
+
+  /* Ken's ask (Nov 2026): same fix as Music Library's mobile view — on a
+     phone, app.css's own 720px breakpoint turns the full page-link list
+     (Community, My Journey, Gear, Fitness+, Members, Music, Quotes, My
+     Profile, Queue, Sign Out) into a chunky multi-row grid that wraps
+     below the logo/icons, pushing "Ensemble Reads" way down the page.
+     Home + the bell are enough to get around on a phone — this hides the
+     logo and that whole link list here and pulls the icons flush to the
+     same left edge as the heading below them. Scoped to this page only. */
+  @media (max-width: 899px) {
+    .app-nav {
+      padding-top: calc(4px + env(safe-area-inset-top, 0px));
+      padding-bottom: 4px;
+      padding-left: 24px;
+      padding-right: 24px;
+      row-gap: 0;
+    }
+    .app-brand { display: none; }
+    .app-nav-links { display: none; }
+    .efit-nav-utility {
+      margin-left: 0;
+      margin-top: 0;
+    }
+    .app-shell { padding-top: 4px; }
+  }
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
