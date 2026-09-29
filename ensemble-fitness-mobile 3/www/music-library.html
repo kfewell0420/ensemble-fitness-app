@@ -1,0 +1,1415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Music Library — Ensemble Fitness</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&family=Caveat:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/app.css?v=2" />
+</head>
+<body>
+
+<!-- Decorative only — Ken's ask (Sept 2026): this page felt empty and flat,
+     and he wants it to feel like a fun, colorful place made for music and
+     artists. Ken supplied the actual background photo (musicians/DJ/vinyl,
+     with an empty dark center built in for content to sit over), so this
+     is that image plus a couple of handwritten-style captions in the
+     margins. It's fixed behind everything, aria-hidden, and
+     pointer-events:none so it never gets in the way of real content or
+     clicks. -->
+<!-- Sept 2026: the background photo itself now has its captions baked
+     right into the artwork (Music Moves Us, Good Music Brighter Workouts,
+     Different Artists Same Higher Purpose, Create Play Inspire Together,
+     More Than Music A Stronger You, plus the Move/Create/Inspire/Together
+     + Music Fuels A Stronger You line at the bottom) — so the separate
+     handwritten-style .ml-caption spans that used to carry that same
+     messaging as an HTML overlay were removed to avoid doubling up on
+     the same words. -->
+<div class="ml-bg" aria-hidden="true"></div>
+
+<header class="app-nav">
+  <a href="feed.html" class="app-brand">
+    <span class="app-brand-mark"><img src="assets/logo.png" alt="Ensemble Fitness" /></span>Ensemble Fitness
+  </a>
+  <nav class="app-nav-links">
+    <a href="feed.html">Community</a>
+    <a href="journey.html">My Journey</a>
+    <a href="members.html">Members</a>
+    <a href="fitness-plus.html">Fitness+</a>
+    <a href="gear.html">Gear</a>
+    <a href="music-library.html" style="color:#fff;">Music</a>
+    <a href="quote-library.html">Quotes</a>
+    <a href="profile.html">My Profile</a>
+    <a href="admin.html" id="adminLink" style="display:none;">Queue</a>
+    <a href="#" id="signOutLink">Sign Out</a>
+  </nav>
+</header>
+
+<div class="app-shell" style="position:relative; z-index:1;">
+
+  <!-- Ken's call (Sept 2026): no white card here — the app has never used
+       a white box anywhere, and the new wide photo already has a naturally
+       light, hazy strip right down the middle (sky/window glass, with the
+       real artist photos sitting further out to each side), so plain dark
+       text sits directly on the photo, same as the "MUSIC LIBRARY" eyebrow
+       already did. -->
+  <div class="eyebrow">Music Library</div>
+  <h2 style="margin-bottom:6px; color:#15121c;">Real tracks from independent artists.</h2>
+  <p class="card-sub" style="margin-bottom:18px; color:#0c0a10; font-size:13.5px;">Every track here is free to use in your workout videos. If one moves you, you're welcome to leave the artist a little support — totally optional, and 100% of it goes to them.</p>
+
+  <div class="ml-stats">
+    <div class="ml-stat"><span class="ml-stat-ico" style="color:var(--accent-2);"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 14v-2a9 9 0 0 1 18 0v2"></path><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3v3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3v3z"></path></svg></span><div><strong>Workout Ready</strong><span>High-energy tracks</span></div></div>
+    <div class="ml-stat"><span class="ml-stat-ico">❤️</span><div><strong>Real Artists</strong><span>Support independent talent</span></div></div>
+    <div class="ml-stat"><span class="ml-stat-ico" style="color:#15121c;"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg></span><div><strong>All Genres</strong><span>Hip-Hop · Pop · EDM · R&amp;B · Rock · More</span></div></div>
+  </div>
+
+  <!-- Ken's ask (Oct 2026): the "How it works" explainer for submitting
+       music only existed on the public marketing site (submit-music.html),
+       for artists who don't have an account yet. Signed-in members land
+       here without ever seeing that page, so there was nowhere in the app
+       itself explaining how their own upload actually works. This is the
+       in-app equivalent — same idea (4 numbered steps), but rewritten for
+       someone who's already a member: no mention of submitting for review
+       or emailing anything, since a member's own upload (via the Upload
+       Music button below, which goes straight to upload.html's Song flow)
+       publishes straight to the library the moment they do it — see
+       upload.html's own copy ("no waiting on approval"). Reuses the same solid dark
+       card look as the Browse Tracks / Wallet cards right below it (see
+       .ml-shell .card) so this reads as one consistent page, not a bolted-on
+       section. -->
+  <div class="ml-how">
+    <div class="ml-how-head">
+      <div class="eyebrow" style="margin-bottom:4px;">How It Works</div>
+      <h3>Get your own track in the library</h3>
+    </div>
+    <div class="ml-how-grid">
+      <div class="ml-how-step">
+        <div class="ml-how-num">1</div>
+        <h4>Prep your track</h4>
+        <p>Export it as an MP3, M4A, or WAV file — keep the size reasonable so it loads quickly for other members.</p>
+      </div>
+      <div class="ml-how-step">
+        <div class="ml-how-num">2</div>
+        <h4>Give it a title</h4>
+        <p>You'll be asked for a song title when you upload it — that's what shows up here for everyone to see.</p>
+      </div>
+      <div class="ml-how-step">
+        <div class="ml-how-num">3</div>
+        <h4>Upload it right here</h4>
+        <p>Tap "Upload Music" below and choose your audio file — no separate form or email, and nothing else on the page to get through.</p>
+      </div>
+      <div class="ml-how-step">
+        <div class="ml-how-num">4</div>
+        <h4>You're live instantly</h4>
+        <p>Your track publishes to the Music Library right away under your name — no approval wait, unlike photos and videos.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="ml-shell">
+
+    <!-- Nov 2026, Ken's ask: get members listening before pitching the
+         wallet — Browse Tracks now comes first in the markup so phones
+         (which just stack these top-to-bottom) show it above Your Wallet.
+         Desktop is untouched: .ml-shell's grid-template-areas below places
+         "main" (Browse Tracks) and "side" (Wallet) by name, not by source
+         order, so the wide two-column layout still puts Wallet in its own
+         side rail exactly like before. -->
+    <div class="ml-main">
+      <div class="card" id="tracksCard">
+        <div class="ml-tracks-head">
+          <div>
+            <div class="eyebrow" style="margin-bottom:2px;">Browse Tracks</div>
+            <!-- Nov 2026, Ken's ask: the old heading ("Listen & pick your
+                 next workout track") wrapped to an awkward orphan second
+                 line just to fit "track" by itself. Shortened it — paired
+                 with the "Browse Tracks" eyebrow right above, "Listen and
+                 Enjoy" says the same thing in one line and trims a line of
+                 height off the card. -->
+            <h2 style="font-size:18px; margin-bottom:4px;">Listen and Enjoy</h2>
+            <p class="card-sub" style="margin-bottom:16px;">These are the same tracks you can choose from when uploading a workout video on your Profile page — all from independent artists, free to use.</p>
+          </div>
+        </div>
+        <!-- Ken's ask (Sept 2026): the tracks live in their own "Workout
+             Playlist" popup now rather than sitting inline on the page —
+             tap the button to open it, browse/search there, then close back
+             out to this page. Same search + scrolling list as before, just
+             moved into #playlistModalOverlay below instead of living here. -->
+        <button type="button" class="btn btn-primary" id="openPlaylistBtn" style="margin-top:auto;">▶ Browse Playlist</button>
+      </div>
+    </div>
+
+    <div class="ml-side">
+      <div class="card" id="walletCard">
+        <div class="eyebrow">Your Wallet</div>
+        <div style="display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;">
+          <div style="font-family:'Poppins',sans-serif; font-weight:800; font-size:32px;" id="walletBalance">$0.00</div>
+        </div>
+        <div class="form-msg" id="walletMsg"></div>
+        <!-- Oct 2026, Ken's ask: the old caption here ("available to support
+             artists") sat next to the balance but never actually said what
+             the buttons below do — moved down and reworded so it reads
+             right above the row it's explaining. -->
+        <p class="card-sub" style="margin:10px 0 0;">Add to your wallet to tip artists</p>
+        <div id="topupChoices" style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
+          <button type="button" class="btn btn-ghost btn-sm topup-btn" data-amount-cents="100">Add $1</button>
+          <button type="button" class="btn btn-ghost btn-sm topup-btn" data-amount-cents="200">Add $2</button>
+          <button type="button" class="btn btn-ghost btn-sm topup-btn" data-amount-cents="500">Add $5</button>
+        </div>
+        <!-- Oct 2026, Ken's ask: dropped the $10 quick-add to make room for
+             the artist upload entry point instead, and gave it its own line
+             below the dollar amounts rather than squeezing it into that row
+             — a plain .btn.btn-primary (same as Browse Playlist) as a direct
+             child of this card gets the same full-width, full-size treatment
+             Browse Playlist gets in its own card (see .ml-side > .card and
+             .ml-main > .card below), so the two line up the same way and
+             read as equally weighted actions, not one big button and one
+             small one.
+             This links straight into upload.html's Song flow (see
+             sql/track-self-upload.sql) — the ALREADY-BUILT, real self-serve
+             flow: pick an audio file, give it a title, and it publishes
+             straight to the Music Library under the member's own name, no
+             admin approval needed. ?type=song skips the category tiles so
+             tapping this button feels like it goes straight to uploading a
+             song, not one more menu to get through. An earlier version of
+             this button pointed at the marketing site's "email us your
+             track" page instead — that page is for prospective artists who
+             aren't members yet, but anyone clicking this particular button
+             is already signed in right here, so sending them to the app's
+             real upload form is both simpler and the actual working
+             feature. Same-origin, so no target="_blank" needed — it should
+             feel like moving to another page in the same app, not leaving
+             it. (Oct 2026: this used to link to profile.html's #uploadCard,
+             folded into the general Profile page; upload.html later split
+             that out into its own dedicated, distraction-free page.) -->
+        <a href="upload.html?type=song" class="btn btn-primary" id="uploadMusicBtn" style="margin-top:auto; text-decoration:none;">🎤 Upload Music</a>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Ken's ask (Sept 2026): these are unlicensed, independent artists —
+       random names members won't recognize and shouldn't need to. The list
+       itself deliberately shows no artist name (see buildTrackRow below);
+       this is framed as "the workout playlist," not an artist directory.
+       Reuses the app's existing .simple-modal pattern (see profile.html's
+       followers/following popup) so it looks and behaves consistently with
+       every other popup in the app. -->
+  <!-- Ken's ask (Oct 2026): widen this from the generic 480px small-modal
+       size so "Artist — Title" plus the duration reads in full, iTunes/Apple
+       Music style, instead of getting cut off with an ellipsis. width:100%
+       on .simple-modal (see app.css) still caps this back down to fit a
+       narrow phone screen automatically — this only changes the ceiling on
+       wider screens. -->
+  <div class="simple-modal-overlay" id="playlistModalOverlay">
+    <div class="simple-modal" style="max-width:640px;">
+      <button type="button" class="simple-modal-close" id="playlistModalClose" aria-label="Close">&times;</button>
+      <div class="eyebrow" style="margin-bottom:2px;">Workout Playlist</div>
+      <h3 style="margin-bottom:4px;">Tap a track to listen, tip, and use it in a video</h3>
+      <p class="card-sub" style="margin-bottom:16px;">Just two tracks so far — more get added here the moment they're approved.</p>
+      <!-- Ken's ask (Oct 2026): tipping shouldn't require leaving this list
+           to open a track's full page — a one-tap "$2" button right on each
+           row (see buildTrackRow) sends the tip immediately, and the result
+           (thanks / on hold / hit a snag) shows right here so there's never
+           a reason to click through just to support an artist. Opening the
+           track itself is still there for anyone who wants the player, the
+           artist's bio, or a different tip amount — this is just the fast
+           path for "send $2 and be done." -->
+      <div class="form-msg" id="playlistMsg"></div>
+      <!-- Nov 2026, Ken's ask: a way to browse "by artist" in addition to the
+           flat, searchable list of every track — see browseMode/renderArtistList
+           below. All Tracks stays the default (unchanged behavior); By Artist
+           swaps the same list box into an alphabetical roster of artist names,
+           tap one to drill into just their tracks (artistBackRow below gets
+           you back out). -->
+      <div class="browse-toggle-row">
+        <button type="button" class="browse-toggle-btn active" id="browseAllBtn">All Tracks</button>
+        <button type="button" class="browse-toggle-btn" id="browseArtistBtn">By Artist</button>
+      </div>
+      <div class="artist-back-row" id="artistBackRow" style="display:none;">
+        <button type="button" class="artist-back-btn" id="artistBackBtn">‹ All Artists</button>
+        <span class="artist-back-name" id="artistBackName"></span>
+      </div>
+      <div class="track-search-row">
+        <input type="search" id="trackSearchInput" class="track-search-input" placeholder="Search by title…" autocomplete="off">
+      </div>
+      <div class="track-table" id="tracksList">
+        <div class="empty-state">Loading…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- The "Move / Create / Inspire / Together" row used to live here as
+       its own HTML element — now that the background photo has that exact
+       line (plus "Music Fuels A Stronger You") baked into the artwork at
+       the bottom of the page, this element was removed so it doesn't
+       print the same words a second time on top of the photo. -->
+
+</div>
+
+<style>
+  /* Ken's ask (Sept 2026): on wide screens the wallet moves to a vertical
+     side column — the same idea as the Gear/cart card on the feed
+     sidebar — instead of sitting on top of the track list. Tracks become
+     the wide, middle column so the list can run to hundreds of tracks,
+     all the way down the page, without feeling cramped under a card.
+     This uses the same 900px breakpoint feed.html already switches its
+     own rail/sidebar layout at, so the two pages feel consistent.
+     Grid-template-areas (not DOM order) place the wallet on the side —
+     the markup keeps Wallet before Tracks so phones still show Wallet
+     first, then Tracks below, exactly like before. */
+  @media (min-width: 900px) {
+    .ml-shell {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 300px;
+      grid-template-areas: "main side";
+      column-gap: 24px;
+      /* Ken's ask (Sept 2026): the two boxes need to match — same height,
+         lined up left to right — not one taller than the other. Stretch
+         makes both columns match whichever is naturally taller. */
+      align-items: stretch;
+    }
+    .ml-main { grid-area: main; display: flex; }
+    .ml-main > .card { width: 100%; display: flex; flex-direction: column; }
+    .ml-side {
+      grid-area: side;
+      position: sticky;
+      top: 24px;
+      display: flex;
+    }
+    /* Ken's ask (Oct 2026): "Upload Music" was sitting noticeably higher
+       than "Browse Playlist" even though both cards are the same height.
+       The old fix (justify-content: center) vertically centered each
+       card's ENTIRE content block as one piece — since the wallet card has
+       more stuff above its button (balance, caption, the $1/$2/$5 row)
+       than the tracks card has above its button, the two content blocks
+       are different heights, so centering them lands their buttons at two
+       different vertical positions even inside two equal-height cards.
+       Switching back to plain top-aligned flow and pinning each button to
+       the bottom with margin-top: auto (below) is deterministic instead —
+       both buttons land flush with the same bottom edge no matter how much
+       text sits above them. */
+    .ml-side > .card { width: 100%; display: flex; flex-direction: column; }
+  }
+
+  /* Ken's ask (Oct 2026), round 2: app.css already pins every .btn's
+     line-height to 1 to stop a color emoji (🎤) from rendering taller than
+     plain text (▶) at the same font-size — that fixed it in some browsers,
+     but apparently not all of them. Some browsers size an emoji's line box
+     off the emoji font's own (much taller) built-in metrics instead of the
+     page's declared line-height, so "Upload Music" was still coming out
+     thicker than "Browse Playlist" for Ken. Giving both buttons an explicit
+     height — instead of letting either one's height be *computed* from its
+     own text/emoji content — makes them identical no matter what a given
+     browser decides that content's natural line box should be. 40px matches
+     this button's own normal (non-emoji) height today: 13px padding top and
+     bottom, plus a 14.5px line. overflow:hidden is the safety net in case
+     an emoji's oversized line box still tries to poke past that fixed
+     height in some browser — it'll get quietly cropped instead of stretching
+     the button. */
+  #openPlaylistBtn, #uploadMusicBtn {
+    height: 40px;
+    overflow: hidden;
+  }
+
+  /* ---- Decorative backdrop (see the comment on .ml-bg's markup above) ---
+     Ken's own background photo, fixed behind everything and dimmed a touch
+     at the very top/bottom so the nav bar and the tagline row underneath
+     stay easy to read against it. Swapped Sept 2026 for a brighter, more
+     energetic photo (Ken's daughter's note: the old one read too dark for
+     the site's vibe) — the overlay is lightened to match, just enough to
+     keep the white nav text and captions readable against the new photo's
+     lighter background. The cards further down the page keep their own
+     solid backing, unaffected by this.
+     Size is "cover" on phones but switches to "contain" at the same 900px
+     breakpoint the layout itself uses (v6, Sept 2026): the side captions
+     ("Support Real Artists," "Music Inspires Movement," etc.) sit close to
+     the left/right edges of the photo, and "cover" was cropping a sliver
+     off both sides on desktop screens — just enough to clip those words.
+     "Contain" shows the whole photo there, captions included, with a thin
+     bar top/bottom on very wide screens (filled with the same dark color
+     the rest of the page uses, so it blends in). On a phone-width screen,
+     though, "contain" would shrink the whole photo down to a small strip
+     to fit the narrow width — nowhere near tall enough to sit behind the
+     header text — so phones keep the older "cover" behavior instead,
+     trading a little cropping at the edges for a backdrop that actually
+     fills the screen. */
+  .ml-bg {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+    background:
+      linear-gradient(to bottom, rgba(4,3,6,0.4) 0%, rgba(4,3,6,0.08) 16%, rgba(4,3,6,0.08) 78%, rgba(4,3,6,0.4) 100%),
+      #07060a url('assets/music-library-bg.jpg') center center / cover no-repeat;
+  }
+  @media (min-width: 900px) {
+    .ml-bg {
+      background:
+        linear-gradient(to bottom, rgba(4,3,6,0.4) 0%, rgba(4,3,6,0.08) 16%, rgba(4,3,6,0.08) 78%, rgba(4,3,6,0.4) 100%),
+        #07060a url('assets/music-library-bg.jpg') center center / contain no-repeat;
+    }
+  }
+  .ml-caption {
+    position: absolute;
+    display: none;
+    font-family: 'Caveat', cursive;
+    font-size: 26px;
+    line-height: 1.15;
+    color: rgba(255, 255, 255, 0.6);
+    text-shadow: 0 2px 10px rgba(0,0,0,0.6);
+    max-width: 190px;
+  }
+  @media (min-width: 1180px) {
+    .ml-caption { display: block; }
+  }
+
+  /* ---- Stat row -----------------------------------------------------------
+     Sept 2026, v4: back to plain text straight on the photo (Ken's call —
+     no white card, the app's never used one). The new wide photo's center
+     strip is naturally light/hazy (sky + window glass) with the actual
+     artist photos sitting further out to the sides, so dark text reads
+     fine here without any card behind it. */
+  .ml-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px 32px;
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(21, 18, 28, 0.12);
+  }
+  .ml-stat { display: flex; align-items: center; gap: 10px; }
+  .ml-stat-ico { font-size: 20px; color: #15121c; }
+  .ml-stat strong { display: block; font-size: 13.5px; color: #15121c; }
+  .ml-stat span { display: block; font-size: 12px; color: #0c0a10; }
+  .ml-stat-ico svg { display: block; }
+
+  /* ---- How It Works (Oct 2026) --------------------------------------------
+     Same solid dark panel look as the Browse Tracks / Wallet cards below
+     (see .ml-shell .card) — a light blur over the busy background photo so
+     the step text stays easy to read. One column on phones, two on small
+     tablets, all four across once there's room (matches the .ml-shell
+     breakpoint at 900px so the whole page's layout shifts together). */
+  .ml-how {
+    background: rgba(6, 5, 9, 0.86);
+    -webkit-backdrop-filter: blur(6px);
+            backdrop-filter: blur(6px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-lg);
+    padding: 22px;
+    margin-bottom: 24px;
+  }
+  .ml-how-head h3 { font-size: 17px; margin: 0; color: #fff; }
+  .ml-how-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+    margin-top: 18px;
+  }
+  @media (min-width: 620px) {
+    .ml-how-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (min-width: 900px) {
+    .ml-how-grid { grid-template-columns: repeat(4, 1fr); }
+  }
+  .ml-how-num {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--accent-tint);
+    color: var(--accent-2);
+    font-size: 13px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+  }
+  .ml-how-step h4 { font-size: 14.5px; color: #fff; margin: 0 0 6px; }
+  .ml-how-step p { font-size: 13px; line-height: 1.5; color: var(--muted-invert); margin: 0; }
+
+  /* ---- Browse Tracks header + button -------------------------------------- */
+  /* Now that there's a busy photo behind the page instead of a soft glow,
+     the two cards need to read as solid panels sitting on top of it rather
+     than letting it show through — otherwise text over the photo gets hard
+     to read. A touch of blur behind them keeps the photo visible without
+     competing with the content. */
+  /* Ken's ask (Sept 2026): these two boxes were running tall enough to sit
+     right over the "Move / Create / Inspire / Together" line at the bottom
+     of the photo — tightened the padding and cut the margin these cards
+     would otherwise pick up from the global .card style so they take up
+     less vertical room (paired with the background-position change above,
+     which also helps by keeping that line anchored near the bottom of the
+     screen instead of getting cropped off). */
+  .ml-shell .card {
+    background: rgba(6, 5, 9, 0.86);
+    -webkit-backdrop-filter: blur(6px);
+            backdrop-filter: blur(6px);
+    padding: 20px 22px;
+    margin-bottom: 0;
+  }
+
+  .ml-tracks-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+
+  /* The shared .empty-state class' normal 30px top/bottom padding is meant
+     for a big standalone empty page section, not a compact card — tightened
+     just here so "Loading…" / "No tracks yet" / an error still shows (so
+     the button visibly does something), without reopening a big gap
+     between it and the button above. */
+  .track-table .empty-state { padding: 6px 4px 2px; font-size: 13px; text-align: left; }
+
+  /* ---- Browse toggle + artist back bar (Nov 2026) --------------------------
+     A plain two-way segmented control, same pill language as .track-tip-btn
+     below, rather than a whole new component — this page already reads as
+     "dark pills on a dark card." */
+  .browse-toggle-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .browse-toggle-btn {
+    flex: 1;
+    font-family: inherit;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--muted-invert);
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 999px;
+    padding: 8px 12px;
+    cursor: pointer;
+    text-align: center;
+  }
+  .browse-toggle-btn.active {
+    color: #fff;
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  .artist-back-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .artist-back-btn {
+    font-family: inherit;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--accent-2);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 0;
+  }
+  .artist-back-name {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  /* ---- Search box ----------------------------------------------------------
+     Ken's ask (Sept 2026): with the library growing well past a couple of
+     tracks, typing a few letters to narrow the list is what keeps a long
+     scrolling list actually usable — the same job the search field does in
+     an iTunes/Apple Music songs view. */
+  .track-search-row { margin-bottom: 10px; }
+  .track-search-input {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: var(--radius-sm);
+    padding: 9px 12px;
+    font-size: 13.5px;
+    color: #fff;
+    font-family: inherit;
+  }
+  .track-search-input::placeholder { color: var(--faint-invert); }
+  .track-search-input:focus { outline: none; border-color: var(--accent); }
+
+  /* ---- Track list, iTunes-style: a compact, clickable row per track —
+     art, title + artist, a chevron — built to stay readable at any width,
+     from a handful of tracks to a very long library. Title and artist
+     stack instead of sitting in two fixed side-by-side columns: this app's
+     whole shell tops out at 720px wide (see --container in app.css), and
+     once the wallet sidebar takes its share of that, a real two-column
+     table doesn't leave enough room for a title to stay readable — this
+     keeps every row legible at any width instead of squeezing text into a
+     sliver. */
+  /* Ken's ask (Sept 2026): this used to be one plain "N tracks" line —
+     reads more like a caption than a list header, so this whole box didn't
+     register as "an actual track list, left to right" the way an iTunes/
+     Apple Music songs view does. A real two-ended header row (count on the
+     left, "Time" on the right, lined up over the rows' own title/duration
+     columns below) makes it unmistakably a track table, without adding any
+     columns this app doesn't actually have data for (no Artist/Album/Genre
+     — see buildTrackRow's tagline-instead-of-artist comment). */
+  .track-table-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 0 4px 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--faint-invert);
+  }
+
+  .track-table-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 4px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  }
+  .track-table-row:last-child { border-bottom: none; }
+  .track-table-row:hover, .track-table-row:focus-within { background: rgba(255, 255, 255, 0.035); border-radius: 10px; outline: none; }
+
+  /* Oct 2026: the row used to be a single <a> wrapping everything — clicking
+     anywhere opened track.html. Now the row is a plain <div>, with an inner
+     <a class="track-row-link"> around the art/title/duration/chevron (still
+     goes to track.html, still fully keyboard/screen-reader accessible as a
+     real link) and a sibling <button class="track-tip-btn"> for the new
+     one-tap $2 tip — a button can't legally sit inside an <a> in valid
+     HTML, and this avoids needing stopPropagation tricks. display:contents
+     makes the link itself invisible to the flex layout (no extra box, no
+     changed spacing) while everything inside it still lays out exactly as
+     it did when the row itself was the <a>. */
+  .track-row-link {
+    display: contents;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .track-table-art {
+    flex: none;
+    width: 38px; height: 38px;
+    border-radius: 9px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+  .track-table-main { flex: 1; min-width: 0; }
+  .track-table-title {
+    display: block;
+    font-weight: 700; font-size: 14.5px; color: #fff;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .track-table-tagline {
+    display: block;
+    font-size: 12.5px; font-style: italic; color: var(--muted-invert); margin-top: 2px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .track-table-duration {
+    flex: none;
+    font-size: 12.5px;
+    color: var(--faint-invert);
+    font-variant-numeric: tabular-nums;
+  }
+  .track-table-chevron { flex: none; font-size: 18px; color: var(--faint-invert); }
+
+  /* Oct 2026: the one-tap "send $2 and be done" button living right on each
+     row — see buildTrackRow and sendQuickTipRequest. Kept small and quiet
+     (a pill, not a bold call-to-action) so it doesn't compete with the row's
+     own click-through-to-track.html link right next to it. */
+  .track-tip-btn {
+    flex: none;
+    font-family: inherit;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #fff;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 999px;
+    padding: 7px 12px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .track-tip-btn:hover { background: rgba(255, 255, 255, 0.18); }
+  .track-tip-btn:disabled { opacity: 0.6; cursor: default; }
+
+  /* Ken's ask (Sept 2026): at 2 tracks this didn't matter, but at hundreds
+     or thousands it does — the list now always scrolls inside its own
+     fixed-height box (phones included), so the page itself never grows
+     taller as the library grows. Paired with the search box above, this is
+     the same "seamless at any size" behavior an iTunes/Apple Music songs
+     view has: a capped window you scroll or filter, never an ever-taller
+     page. min() keeps it from feeling cramped on a short phone screen while
+     still capping it well short of the viewport on a tall one. */
+  .track-table { max-height: min(60vh, 480px); overflow-y: auto; }
+
+  /* The header row stays pinned to the top of that scroll box (rather than
+     scrolling away with the rows) so, just like iTunes' own column headers,
+     you always know what you're looking at no matter how far down the list
+     you've scrolled. Background matches the card behind it so rows don't
+     show through as they pass underneath. */
+  .track-table-head {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: #0c0a11;
+  }
+
+  /* Light zebra striping — a small touch, but it's what makes a plain list
+     of stacked rows actually read as a dense table at a glance, the way
+     the iTunes reference screenshot does. */
+  .track-table-row:nth-child(even) { background: rgba(255, 255, 255, 0.02); }
+  .track-table-row:nth-child(even):hover, .track-table-row:nth-child(even):focus-visible { background: rgba(255, 255, 255, 0.045); }
+
+  /* ---- Bottom tagline ----------------------------------------------------- */
+  .ml-tagline {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px 18px;
+    margin: 36px 0 8px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--faint-invert);
+  }
+  .ml-tagline span:not(:last-child)::after { content: "·"; margin-left: 18px; color: var(--accent-2); }
+
+  /* ---- Mobile tightening (Nov 2026, Ken's ask) -----------------------------
+     Three things flagged from the phone: (1) the nav bar's usual padding
+     plus .app-shell's default 48px top padding, stacked on top of a busy
+     full-bleed background photo, read as a big empty gap before any real
+     content — the Home/notification icons, then a lot of blank sky, then
+     "Music Library." Tightened here, scoped to just this page, so the
+     shared nav/shell spacing every other page relies on stays untouched.
+     (2) "Upload Music" had no real gap above it on mobile — the auto
+     top-margin it shares with "Browse Playlist" only pushes a button down
+     to fill leftover space in the two-column desktop layout (see
+     .ml-side > .card / .ml-main > .card above); on a single mobile column
+     there's no leftover space for "auto" to fill, so it collapsed to
+     nothing and the button ended up touching the Add $1/$2/$5 row above
+     it. (3) "Browse Playlist" had the opposite problem — .ml-tracks-head's
+     own margin-bottom was adding extra space on top of its paragraph's
+     already-existing bottom margin. Both buttons now get the exact same
+     explicit gap instead of leaving it to auto-margins that only really
+     make sense in the desktop grid. */
+  @media (max-width: 899px) {
+    /* Round 2 (Ken's follow-up): the Home/bell icons still sat indented
+       from the left edge (app.css's own 720px breakpoint sets .app-nav's
+       side padding to 18px, and .efit-nav-utility carries its own 14px
+       left margin meant to space it off the logo on desktop) while
+       "MUSIC LIBRARY" below sits at .app-shell's 24px padding — a ~32px
+       vs 24px mismatch that read as the icons floating out of line with
+       the heading. The logo/wordmark isn't needed twice on a page this
+       tall on a phone, so it's hidden here and the icon group is pulled
+       flush to the same 24px edge as the content below it. Top padding
+       is trimmed further too — still real space, just less of it. */
+    .app-nav {
+      padding-top: calc(2px + env(safe-area-inset-top, 0px));
+      padding-bottom: 2px;
+      padding-left: 24px;
+      padding-right: 24px;
+    }
+    .app-brand { display: none; }
+    .efit-nav-utility {
+      margin-left: 0;
+      margin-top: 0;
+    }
+    /* Round 3 (Ken's follow-up): the "dead space" wasn't actually empty —
+       app.css's own 720px breakpoint turns .app-nav-links (Community, My
+       Journey, Members, Fitness+, Gear, Music, Quotes, My Profile, Sign
+       Out) into a full 3-row grid that wraps onto its own line below the
+       icons, and it was sitting there the whole time, just low-contrast
+       text lost against the busy background photo. That's the whole gap
+       Ken kept seeing between the icons and "MUSIC LIBRARY." Home + the
+       bell are enough to get around from here on a phone (Home goes back
+       to the main feed), so the rest of that link list is hidden here,
+       collapsing the row entirely instead of just squeezing its padding. */
+    .app-nav-links { display: none; }
+    .app-nav { row-gap: 0; }
+    .app-shell { padding-top: 0; }
+    /* Pulled as tight as it goes: icons keep their own comfortable tap
+       padding, but everything around them — nav padding, shell padding,
+       and the eyebrow's own bottom margin — is squeezed to a minimum so
+       the icon row sits right on top of "MUSIC LIBRARY" with no
+       leftover gap. */
+    .eyebrow { margin-bottom: 6px; }
+    /* (2) Close most of the gap between the "All Genres" divider line and
+       the HOW IT WORKS card — was a flat 24px, Ken asked for it to come
+       up about a quarter inch (~24px), so this brings it nearly flush. */
+    .ml-stats { margin-bottom: 4px; padding-bottom: 12px; }
+    /* Nov 2026, Ken's ask: "Workout Ready" was cut on mobile — with
+       "High-energy tracks" as its own subtitle it wasn't telling members
+       anything the page doesn't already say, and dropping it lets "Real
+       Artists" and "All Genres" close up into one single row instead of
+       two, folding a whole row's worth of height out of the page (this
+       row's own top/bottom padding and gap, on top of the row itself).
+       Left untouched on desktop, where there was always room for three. */
+    .ml-stats .ml-stat:nth-child(1) { display: none; }
+    /* A little more off the top: the intro paragraph's own bottom margin,
+       trimmed along with everything else in this block. */
+    .app-shell > p.card-sub { margin-bottom: 4px !important; }
+    /* Nov 2026, Ken's ask, round 2: "Real Artists" was still its own
+       two-line stack (bold heading, then "Support independent talent"
+       underneath) even with "Workout Ready" gone — on a narrow phone
+       "All Genres" is too long to share that row, so it was still
+       wrapping to a row of its own below. Dropping the "Real Artists"
+       heading collapses it to the one line Ken actually wants (heart +
+       "Support independent talent"), pulling it up snug under "...totally
+       optional." and letting "All Genres" close up right beneath it —
+       plus a tighter row-gap and bottom padding, this is as far as this
+       block compresses without losing any of its content. Desktop keeps
+       the original three-stat layout; this is all scoped to mobile. */
+    .ml-stats .ml-stat:nth-child(2) strong { display: none; }
+    /* "Support independent talent" picks up the bold weight "Real Artists"
+       used to carry, since it's now the only line left on this row. */
+    .ml-stats .ml-stat:nth-child(2) span {
+      font-weight: 700;
+      font-size: 13.5px;
+      color: #15121c;
+    }
+    .ml-stats { gap: 6px 32px; padding-bottom: 8px; }
+    /* (3) .ml-tracks-head's own margin-bottom:0 (below) doesn't reach the
+       paragraph inside it — margins on a flex item's children don't
+       collapse out past the item's own box — so the paragraph's inline
+       margin-bottom:16px was still adding extra space Upload Music never
+       had. Target it directly so both buttons get the same gap. */
+    .ml-tracks-head { margin-bottom: 0; }
+    .ml-tracks-head p { margin-bottom: 0 !important; }
+    #uploadMusicBtn,
+    #openPlaylistBtn {
+      margin-top: 14px !important;
+    }
+
+    /* (4) Ken's ask: the HOW IT WORKS card ran long on a phone because
+       each numbered circle sat on its own line above the heading it
+       belonged to. Putting the number next to its heading instead — one
+       row per step, the description wrapping underneath, indented to
+       line up under the heading rather than under the circle — cuts a
+       full text-line of height out of every one of the four steps, so
+       the whole card (and the scroll to get past it) is noticeably
+       shorter without losing any of the content. */
+    .ml-how { padding: 18px 20px; }
+    .ml-how-grid { gap: 14px; margin-top: 14px; }
+    .ml-how-step {
+      display: grid;
+      grid-template-columns: 26px 1fr;
+      column-gap: 10px;
+      row-gap: 4px;
+      align-items: center;
+    }
+    .ml-how-num { grid-column: 1; grid-row: 1; margin-bottom: 0; }
+    .ml-how-step h4 { grid-column: 2; grid-row: 1; margin: 0; }
+    .ml-how-step p { grid-column: 2; grid-row: 2; }
+  }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/shared-session.js"></script>
+<script src="js/supabaseClient.js"></script>
+<script src="js/notifications.js"></script>
+<script>
+  var SITE_FUNCTIONS_BASE = "https://ensemblefitness.com/.netlify/functions";
+  var currentUser = null;
+
+  // Oct 2026: the amount a row's one-tap button sends for a track that has
+  // never been tipped yet (see buildTrackRow) — once a track has a real tip
+  // on record, the button switches to showing and sending THAT amount
+  // instead. track.html still offers the full 50¢/$1/$2 choice for anyone
+  // who opens a track directly.
+  var QUICK_TIP_CENTS = 200;
+
+  function showMsg(el, text, kind) {
+    el.textContent = text;
+    el.className = "form-msg show " + kind;
+  }
+  function hideMsg(el) { el.className = "form-msg"; }
+
+  function formatCents(cents) {
+    return "$" + (cents / 100).toFixed(2);
+  }
+
+  function escapeHtml(s) {
+    return String(s || "").replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  async function authHeader() {
+    var { data } = await window.sb.auth.getSession();
+    return "Bearer " + data.session.access_token;
+  }
+
+  async function init() {
+    currentUser = await requireAuth();
+    if (!currentUser) return;
+
+    if (await isCurrentUserAdmin()) {
+      document.getElementById("adminLink").style.display = "inline";
+    }
+
+    handleTopupRedirect();
+    await loadWallet();
+    await loadTracks();
+    subscribeToTrackChanges();
+    resumePendingQuickTipIfAny();
+  }
+
+  // ---- Wallet -------------------------------------------------------------
+
+  function handleTopupRedirect() {
+    var params = new URLSearchParams(window.location.search);
+    var topup = params.get("topup");
+    if (!topup) return;
+    var msg = document.getElementById("walletMsg");
+    if (topup === "success") {
+      showMsg(msg, "Funds added — thanks! Your balance below is updated.", "success");
+    } else if (topup === "cancelled") {
+      showMsg(msg, "No worries — nothing was charged.", "error");
+    }
+    // Clean the URL so refreshing the page doesn't keep re-showing this.
+    window.history.replaceState({}, "", "music-library.html");
+  }
+
+  async function loadWallet() {
+    try {
+      var res = await fetch(SITE_FUNCTIONS_BASE + "/wallet-balance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: await authHeader() },
+        body: JSON.stringify({})
+      });
+      var out = await res.json();
+      if (res.ok) {
+        document.getElementById("walletBalance").textContent = formatCents(out.balance_cents || 0);
+      }
+    } catch (err) {
+      // Balance just won't show — the add-funds buttons still work and will
+      // surface any real problem then.
+    }
+  }
+
+  document.querySelectorAll(".topup-btn").forEach(function (btn) {
+    btn.addEventListener("click", async function () {
+      var msg = document.getElementById("walletMsg");
+      hideMsg(msg);
+      var original = btn.textContent;
+      document.querySelectorAll(".topup-btn").forEach(function (b) { b.disabled = true; });
+      btn.textContent = "Taking you to Stripe…";
+      try {
+        var res = await fetch(SITE_FUNCTIONS_BASE + "/wallet-topup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: await authHeader() },
+          body: JSON.stringify({ amount_cents: parseInt(btn.getAttribute("data-amount-cents"), 10) })
+        });
+        var out = await res.json();
+        if (!res.ok || !out.url) throw new Error(out.error || "Couldn't start checkout.");
+        window.location.href = out.url;
+      } catch (err) {
+        showMsg(msg, err.message || "Something went wrong — please try again.", "error");
+        document.querySelectorAll(".topup-btn").forEach(function (b) { b.disabled = false; });
+        btn.textContent = original;
+      }
+    });
+  });
+
+  // ---- Tracks ---------------------------------------------------------------
+  // Ken's ask: each track is now a row in a compact, iTunes-style list —
+  // clicking anywhere on a row opens the full track page (track.html),
+  // where the big player, artist bio/link, and tipping actually live. That
+  // keeps this list light no matter how many tracks get added — a handful
+  // or a thousand — since nothing here loads an audio file until you
+  // actually open a track.
+
+  var allTracks = [];        // the full library, fetched once — search below
+                              // filters this in memory rather than re-querying
+                              // per keystroke.
+  var currentSearchQuery = "";
+
+  // Nov 2026, Ken's ask: browsing "by artist" in addition to search — see
+  // the toggle row above the search box. "all" is the original flat list;
+  // "artists" shows the roster of artist names; "artist-tracks" is that one
+  // artist's tracks (selectedArtist holds which one).
+  var browseMode = "all";
+  var selectedArtist = null;
+
+  // A track with no artist_name on file (older rows, before that field
+  // mattered) still needs a bucket to land in when grouping by artist —
+  // "Independent Artist" matches the generic wording buildTrackRow already
+  // falls back to for a track's title line when artist_name is missing.
+  function artistGroupName(track) {
+    return (track.artist_name && track.artist_name.trim()) ? track.artist_name.trim() : "Independent Artist";
+  }
+
+  async function loadTracks() {
+    var list = document.getElementById("tracksList");
+    // Ken's ask (Sept 2026): the box needs to end right at the orange
+    // "Browse Tracks" button, no big empty block below it — but cutting the
+    // loading/error/empty text entirely (an earlier pass at this) went too
+    // far the other way: with nothing printed at all, clicking the button
+    // with no tracks yet looked exactly like a broken button ("goes
+    // nowhere"). Compromise: a single compact line (see the tightened
+    // .track-table .empty-state rule below), so the button visibly does
+    // something, without reopening a big gap under it.
+    list.innerHTML = '<div class="empty-state">Loading…</div>';
+
+    var { data, error } = await window.sb
+      .from("tracks")
+      .select("id, title, artist_name, tagline, duration_seconds, is_independent_artist")
+      .eq("is_active", true)
+      .order("title", { ascending: true });
+
+    if (error) {
+      list.innerHTML = '<div class="empty-state">Couldn\'t load the Music Library right now — please refresh.</div>';
+      return null;
+    }
+
+    allTracks = data || [];
+    await loadLastTips(allTracks);
+    renderTrackList();
+    return allTracks.length;
+  }
+
+  // Oct 2026, Ken's ask: each row's tip button should show (and send)
+  // whatever the LAST tip for that specific song actually was, instead of
+  // always a flat $2 — see buildTrackRow. tip-track.js only ever accepts
+  // 50¢/$1/$2 (its ALLOWED_AMOUNTS_CENTS), so any amount_cents that ever
+  // made it into wallet_transactions is guaranteed to already be one of
+  // those three — nothing further to validate on this end before sending
+  // it straight back through.
+  //
+  // Only fetches tips for tracks actually in the list (not the whole
+  // wallet_transactions table), and keeping just the most recent tip per
+  // track is as simple as sorting newest-first and taking the first row
+  // seen for each track_id below — no separate aggregate query needed.
+  //
+  // Refreshes whenever this list reloads (a track being approved, etc. —
+  // see subscribeToTrackChanges), but doesn't live-update the instant
+  // someone tips a track from track.html's own page in another tab; worth
+  // adding a realtime listener on wallet_transactions too if that turns out
+  // to matter in practice.
+  var lastTipCentsByTrack = {};
+  async function loadLastTips(tracks) {
+    lastTipCentsByTrack = {};
+    var ids = tracks.map(function (t) { return t.id; });
+    if (ids.length === 0) return;
+
+    var { data, error } = await window.sb
+      .from("wallet_transactions")
+      .select("track_id, amount_cents, created_at")
+      .eq("type", "tip")
+      .in("track_id", ids)
+      .order("created_at", { ascending: false });
+
+    if (error || !data) return; // worst case, every row just falls back to "Be the first to tip"
+
+    data.forEach(function (row) {
+      if (!(row.track_id in lastTipCentsByTrack)) {
+        lastTipCentsByTrack[row.track_id] = row.amount_cents;
+      }
+    });
+  }
+
+  function trackMatchesQuery(track, query) {
+    if (!query) return true;
+    // Oct 2026: artist names are now shown right on each row (see
+    // buildTrackRow), so searching by one should find the track too — this
+    // used to deliberately skip artist_name back when the playlist didn't
+    // display it anywhere on screen.
+    var haystack = (track.title + " " + (track.artist_name || "") + " " + (track.tagline || "")).toLowerCase();
+    return haystack.indexOf(query) !== -1;
+  }
+
+  // Re-draws the list from the already-fetched allTracks, applying the
+  // current search box text — called both after a fresh load and on every
+  // keystroke in the search box, with no extra network trip either way.
+  function renderTrackList() {
+    if (allTracks.length === 0) {
+      document.getElementById("tracksList").innerHTML = '<div class="empty-state">No tracks yet — check back soon.</div>';
+      return;
+    }
+
+    if (browseMode === "artists") {
+      renderArtistList();
+      return;
+    }
+
+    var list = document.getElementById("tracksList");
+
+    // "artist-tracks" narrows the pool to just the selected artist first;
+    // "all" (the original behavior) searches the whole library.
+    var pool = browseMode === "artist-tracks"
+      ? allTracks.filter(function (t) { return artistGroupName(t) === selectedArtist; })
+      : allTracks;
+
+    var query = currentSearchQuery.trim().toLowerCase();
+    var visible = pool.filter(function (t) { return trackMatchesQuery(t, query); });
+
+    if (visible.length === 0) {
+      var emptyText = query
+        ? 'No tracks match "' + escapeHtml(currentSearchQuery.trim()) + '".'
+        : "No tracks from this artist yet.";
+      list.innerHTML = '<div class="empty-state">' + emptyText + '</div>';
+      return;
+    }
+
+    var headLabel = query
+      ? visible.length + " of " + pool.length + " track" + (pool.length === 1 ? "" : "s")
+      : pool.length + " track" + (pool.length === 1 ? "" : "s");
+
+    list.innerHTML = '<div class="track-table-head"><span>' + headLabel + '</span><span>Time</span></div>';
+    visible.forEach(function (track) {
+      list.appendChild(buildTrackRow(track));
+    });
+  }
+
+  // Nov 2026: the "By Artist" view — groups allTracks by artist_name and
+  // lists each artist once, alphabetically, with how many tracks they have.
+  // The search box stays active here too (searches artist names, not track
+  // titles) — see the shared #trackSearchInput listener below.
+  function computeArtistGroups() {
+    var counts = {};
+    allTracks.forEach(function (t) {
+      var name = artistGroupName(t);
+      counts[name] = (counts[name] || 0) + 1;
+    });
+    return Object.keys(counts)
+      .sort(function (a, b) { return a.localeCompare(b); })
+      .map(function (name) { return { name: name, count: counts[name] }; });
+  }
+
+  function renderArtistList() {
+    var list = document.getElementById("tracksList");
+    var groups = computeArtistGroups();
+    var query = currentSearchQuery.trim().toLowerCase();
+    var visible = query
+      ? groups.filter(function (g) { return g.name.toLowerCase().indexOf(query) !== -1; })
+      : groups;
+
+    if (visible.length === 0) {
+      list.innerHTML = '<div class="empty-state">No artists match "' + escapeHtml(currentSearchQuery.trim()) + '".</div>';
+      return;
+    }
+
+    var headLabel = visible.length + " artist" + (visible.length === 1 ? "" : "s");
+    list.innerHTML = '<div class="track-table-head"><span>' + headLabel + '</span><span>Tracks</span></div>';
+    visible.forEach(function (group) {
+      list.appendChild(buildArtistRow(group));
+    });
+  }
+
+  function buildArtistRow(group) {
+    var row = document.createElement("div");
+    row.className = "track-table-row";
+    row.style.cursor = "pointer";
+    row.tabIndex = 0;
+    row.setAttribute("role", "button");
+    row.innerHTML =
+      '<span class="track-table-art">🎤</span>' +
+      '<span class="track-table-main">' +
+        '<span class="track-table-title">' + escapeHtml(group.name) + '</span>' +
+      '</span>' +
+      '<span class="track-table-duration">' + group.count + '</span>' +
+      '<span class="track-table-chevron">›</span>';
+    function open() { openArtistTracks(group.name); }
+    row.addEventListener("click", open);
+    row.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); }
+    });
+    return row;
+  }
+
+  function openArtistTracks(name) {
+    browseMode = "artist-tracks";
+    selectedArtist = name;
+    currentSearchQuery = "";
+    var input = document.getElementById("trackSearchInput");
+    input.value = "";
+    input.placeholder = "Search " + name + "’s tracks…";
+    document.getElementById("artistBackRow").style.display = "flex";
+    document.getElementById("artistBackName").textContent = name;
+    renderTrackList();
+  }
+
+  function backToArtistList() {
+    browseMode = "artists";
+    selectedArtist = null;
+    currentSearchQuery = "";
+    var input = document.getElementById("trackSearchInput");
+    input.value = "";
+    input.placeholder = "Search artists…";
+    document.getElementById("artistBackRow").style.display = "none";
+    renderTrackList();
+  }
+
+  function setActiveBrowseToggle(activeId) {
+    document.getElementById("browseAllBtn").classList.toggle("active", activeId === "browseAllBtn");
+    document.getElementById("browseArtistBtn").classList.toggle("active", activeId === "browseArtistBtn");
+  }
+
+  document.getElementById("browseAllBtn").addEventListener("click", function () {
+    if (browseMode === "all") return;
+    browseMode = "all";
+    selectedArtist = null;
+    currentSearchQuery = "";
+    var input = document.getElementById("trackSearchInput");
+    input.value = "";
+    input.placeholder = "Search by title…";
+    document.getElementById("artistBackRow").style.display = "none";
+    setActiveBrowseToggle("browseAllBtn");
+    renderTrackList();
+  });
+
+  document.getElementById("browseArtistBtn").addEventListener("click", function () {
+    if (browseMode === "artists") return; // already showing the artist roster
+    browseMode = "artists";
+    selectedArtist = null;
+    currentSearchQuery = "";
+    var input = document.getElementById("trackSearchInput");
+    input.value = "";
+    input.placeholder = "Search artists…";
+    setActiveBrowseToggle("browseArtistBtn");
+    renderTrackList();
+  });
+
+  document.getElementById("artistBackBtn").addEventListener("click", backToArtistList);
+
+  function formatTrackDuration(seconds) {
+    if (seconds === null || seconds === undefined || !isFinite(seconds)) return "";
+    var m = Math.floor(seconds / 60);
+    var s = Math.round(seconds % 60);
+    return m + ":" + (s < 10 ? "0" : "") + s;
+  }
+
+  function buildTrackRow(track) {
+    // Oct 2026, Ken's ask: show the artist right on the row, as
+    // "Artist — Title" — this reverses a Sept 2026 decision (kept the
+    // history here rather than deleting it): back then the worry was that
+    // an unfamiliar independent artist's name would make this read like an
+    // artist directory instead of a workout playlist. Ken's since decided
+    // crediting the artist by name up front matters more than that concern,
+    // so it's back — see trackMatchesQuery above for the matching update to
+    // search.
+    var row = document.createElement("div");
+    row.className = "track-table-row";
+
+    var link = document.createElement("a");
+    link.className = "track-row-link";
+    link.href = "track.html?id=" + encodeURIComponent(track.id);
+    var subtitle = track.tagline || "";
+    var titleLine = track.artist_name
+      ? escapeHtml(track.artist_name) + " — " + escapeHtml(track.title)
+      : escapeHtml(track.title);
+    link.innerHTML =
+      '<span class="track-table-art">🎵</span>' +
+      '<span class="track-table-main">' +
+        '<span class="track-table-title">' + titleLine + '</span>' +
+        (subtitle ? '<span class="track-table-tagline">' + escapeHtml(subtitle) + '</span>' : '') +
+      '</span>' +
+      (track.duration_seconds ? '<span class="track-table-duration">' + formatTrackDuration(track.duration_seconds) + '</span>' : '') +
+      '<span class="track-table-chevron">›</span>';
+    row.appendChild(link);
+
+    // Oct 2026, Ken's ask: instead of a flat $2 on every row, the button now
+    // shows — and sends — whatever the LAST tip for THIS song actually was,
+    // as real social proof rather than the same fixed number everywhere. A
+    // track with no tips yet has nothing to show, so it invites the first
+    // one instead (see loadLastTips above for where lastTipCentsByTrack
+    // comes from). Tapping is still exactly one click either way — see
+    // sendQuickTipRequest — only the amount that click sends has changed.
+    var lastTipCents = lastTipCentsByTrack[track.id];
+    var tipBtn = document.createElement("button");
+    tipBtn.type = "button";
+    tipBtn.className = "track-tip-btn";
+    tipBtn.textContent = lastTipCents ? "💛 " + formatCents(lastTipCents) : "💛 Be the first to tip";
+    tipBtn.addEventListener("click", function (e) {
+      e.preventDefault();
+      var amountToSend = lastTipCents || QUICK_TIP_CENTS;
+      sendQuickTipRequest(track.id, amountToSend, { button: tipBtn });
+    });
+    row.appendChild(tipBtn);
+
+    return row;
+  }
+
+  document.getElementById("trackSearchInput").addEventListener("input", function (e) {
+    currentSearchQuery = e.target.value;
+    renderTrackList();
+  });
+
+  // Ken's ask (Sept 2026): no manual refresh button — a track approved
+  // elsewhere should just show up here on its own. Same live-update
+  // approach feed.html already uses for new posts: listen for any change to
+  // the tracks table and quietly reload. A short debounce collapses a burst
+  // of several changes (e.g. approving 5 tracks back to back) into one
+  // reload instead of five. loadTracks() re-renders through the same
+  // renderTrackList() the search box uses, so an in-progress search stays
+  // applied across a live reload instead of resetting.
+  var trackReloadTimer = null;
+  function scheduleTrackReload() {
+    clearTimeout(trackReloadTimer);
+    trackReloadTimer = setTimeout(function () { loadTracks(); }, 500);
+  }
+
+  function subscribeToTrackChanges() {
+    if (!window.sb || !window.sb.channel) return;
+    window.sb
+      .channel("music-library-live-changes")
+      .on("postgres_changes", { event: "*", schema: "public", table: "tracks" }, scheduleTrackReload)
+      .subscribe();
+  }
+
+  // ---- Quick tip (one click, right from the list) ---------------------------
+  // Ken's ask (Oct 2026): "Once I click send, I need it to go directly to the
+  // artist... I don't have to send or approve the money to go out twice."
+  // Sending the tip is always ONE click on the row's button — this app never
+  // asks for a second approval to move that money on to the artist; /tip-track
+  // does that itself the instant this request comes in, with no further
+  // action from the member. The only thing that can still put a screen in
+  // between is Stripe itself, and only when the wallet doesn't already have
+  // $2 sitting in it: Stripe requires the cardholder to personally authorize
+  // any NEW charge to their card, which is true of every online payment
+  // anywhere and isn't something this app adds on top. Even then, this page
+  // doesn't hand that back to the member as a second click — the moment
+  // Stripe sends them back here, resumePendingQuickTipIfAny() reopens the
+  // playlist and finishes sending the same tip on its own. So in practice:
+  // with any balance already in the wallet, it's one tap and done, full
+  // stop; the very first time (or whenever the balance runs dry), there's
+  // one Stripe screen to approve the card charge, and then it finishes
+  // itself with nothing further to click.
+
+  function quickTipStatusText(status, artistName) {
+    if (status === "blocked") {
+      return "💛 Sent! " + artistName + " hasn't linked a bank account yet, so this is on hold — they'll get paid the moment they finish setup.";
+    } else if (status === "unpaid") {
+      return "Your tip was recorded, but sending it to " + artistName + " hit a snag on our end — our team's already on it, no need to resend.";
+    }
+    return "💛 Thanks for supporting " + artistName + "!";
+  }
+
+  async function sendQuickTipRequest(trackId, amountCents, opts) {
+    opts = opts || {};
+    var msg = document.getElementById("playlistMsg");
+    var btn = opts.button || null;
+    var restoreText = btn ? btn.textContent : null;
+    if (btn) { btn.disabled = true; btn.textContent = "…"; }
+    if (!opts.resuming) hideMsg(msg);
+
+    try {
+      var res = await fetch(SITE_FUNCTIONS_BASE + "/tip-track", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: await authHeader() },
+        body: JSON.stringify({ track_id: trackId, amount_cents: amountCents })
+      });
+      var out = await res.json();
+
+      if (res.status === 402 && out.insufficient_funds) {
+        if (opts.resuming) {
+          // Just came back from adding funds, but the wallet balance hasn't
+          // caught up yet (the webhook that credits it can lag a moment
+          // behind the redirect) — quietly retry a few times before asking
+          // the member to do anything themselves.
+          if ((opts.retriesLeft || 0) > 0) {
+            setTimeout(function () {
+              sendQuickTipRequest(trackId, amountCents, { resuming: true, retriesLeft: opts.retriesLeft - 1 });
+            }, 1500);
+            return;
+          }
+          showMsg(msg, "Your funds were added, but the tip didn't quite catch up — tap the tip button once more to finish sending it.", "error");
+        } else {
+          // No balance to cover it yet. This is the one unavoidable extra
+          // screen — Stripe itself needs the member to approve a new charge
+          // to their card — but it's still only one click from the member's
+          // side: startQuickTipTopup remembers this exact tip and finishes
+          // sending it automatically the moment Stripe sends them back here.
+          await startQuickTipTopup(trackId, amountCents);
+          return;
+        }
+      } else if (!res.ok) {
+        throw new Error(out.error || "Something went wrong sending that tip.");
+      } else {
+        showMsg(msg, quickTipStatusText(out.payout_status, out.artist_name), "success");
+        loadWallet();
+      }
+    } catch (err) {
+      showMsg(msg, err.message || "Something went wrong sending that tip.", "error");
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = restoreText || ("💛 " + formatCents(QUICK_TIP_CENTS));
+      }
+    }
+  }
+
+  async function startQuickTipTopup(trackId, amountCents) {
+    var msg = document.getElementById("playlistMsg");
+    try {
+      sessionStorage.setItem("efPendingQuickTip", JSON.stringify({ track_id: trackId, amount_cents: amountCents }));
+      var res = await fetch(SITE_FUNCTIONS_BASE + "/wallet-topup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: await authHeader() },
+        body: JSON.stringify({ amount_cents: amountCents })
+      });
+      var out = await res.json();
+      if (!res.ok || !out.url) throw new Error(out.error || "Couldn't start checkout.");
+      window.location.href = out.url;
+    } catch (err) {
+      try { sessionStorage.removeItem("efPendingQuickTip"); } catch (e2) {}
+      showMsg(msg, err.message || "Something went wrong — please try again.", "error");
+    }
+  }
+
+  // Runs on every page load. wallet-topup's Checkout session always returns
+  // here to music-library.html (see wallet-topup.js's success_url) — this is
+  // what's waiting when it does: it reopens the playlist and sends the exact
+  // tip that triggered the top-up, so nothing further needs clicking.
+  function resumePendingQuickTipIfAny() {
+    var raw = null;
+    try { raw = sessionStorage.getItem("efPendingQuickTip"); } catch (e) { return; }
+    if (!raw) return;
+    try { sessionStorage.removeItem("efPendingQuickTip"); } catch (e) {}
+
+    var pending;
+    try { pending = JSON.parse(raw); } catch (e) { return; }
+    if (!pending || !pending.track_id || !pending.amount_cents) return;
+
+    openPlaylistModal();
+    sendQuickTipRequest(pending.track_id, pending.amount_cents, { resuming: true, retriesLeft: 5 });
+  }
+
+  // ---- Playlist popup ------------------------------------------------------
+  // Same open/close pattern as the app's other popups (e.g. the followers
+  // list on profile.html): toggle a "show" class, close on the X, the
+  // backdrop, or Escape.
+  function openPlaylistModal() {
+    document.getElementById("playlistModalOverlay").classList.add("show");
+  }
+  function closePlaylistModal() {
+    document.getElementById("playlistModalOverlay").classList.remove("show");
+  }
+  document.getElementById("openPlaylistBtn").addEventListener("click", openPlaylistModal);
+  document.getElementById("playlistModalClose").addEventListener("click", closePlaylistModal);
+  document.getElementById("playlistModalOverlay").addEventListener("click", function (e) {
+    if (e.target.id === "playlistModalOverlay") closePlaylistModal();
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") closePlaylistModal();
+  });
+
+  document.getElementById("signOutLink").addEventListener("click", function (e) {
+    e.preventDefault();
+    signOut();
+  });
+
+  init();
+</script>
+</body>
+</html>
