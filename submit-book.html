@@ -59,12 +59,18 @@
      page limit, step 4 of "How it works" repeats the 75% split), so
      trimming it here to one short line stops the hero from repeating
      itself and lets the black hero area sit shorter, above the fold. -->
-<section class="hero" id="top" style="padding-bottom:24px;">
+<section class="hero" id="top" style="padding-bottom:16px;">
   <div class="container" style="display:block;">
     <div class="hero-copy" style="max-width:700px;">
       <div class="eyebrow on-dark">Submit to Ensemble Reads</div>
       <h1 style="font-size:clamp(30px,4.2vw,46px);">Get your short book in front of our community.</h1>
-      <p class="lede">Short-form, on-brand motivational books from independent authors.</p>
+      <!-- Ken's ask (Nov 2026): one line, not two — the shared .lede class
+           (used site-wide) caps its width at 410-460px, which is fine for
+           the two-line ledes it was built for but forces this shorter,
+           single-sentence line to wrap. Widened just here with an inline
+           override rather than touching the shared class, so no other
+           page's hero is affected. -->
+      <p class="lede" style="max-width:660px; margin-bottom:0;">Short-form, on-brand motivational books from independent authors.</p>
     </div>
   </div>
 </section>
