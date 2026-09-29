@@ -689,16 +689,76 @@
      explicit gap instead of leaving it to auto-margins that only really
      make sense in the desktop grid. */
   @media (max-width: 899px) {
+    /* Round 2 (Ken's follow-up): the Home/bell icons still sat indented
+       from the left edge (app.css's own 720px breakpoint sets .app-nav's
+       side padding to 18px, and .efit-nav-utility carries its own 14px
+       left margin meant to space it off the logo on desktop) while
+       "MUSIC LIBRARY" below sits at .app-shell's 24px padding — a ~32px
+       vs 24px mismatch that read as the icons floating out of line with
+       the heading. The logo/wordmark isn't needed twice on a page this
+       tall on a phone, so it's hidden here and the icon group is pulled
+       flush to the same 24px edge as the content below it. Top padding
+       is trimmed further too — still real space, just less of it. */
     .app-nav {
-      padding-top: calc(8px + env(safe-area-inset-top, 0px));
-      padding-bottom: 8px;
+      padding-top: calc(4px + env(safe-area-inset-top, 0px));
+      padding-bottom: 4px;
+      padding-left: 24px;
+      padding-right: 24px;
     }
-    .app-shell { padding-top: 14px; }
+    .app-brand { display: none; }
+    .efit-nav-utility {
+      margin-left: 0;
+      margin-top: 0;
+    }
+    /* Round 3 (Ken's follow-up): the "dead space" wasn't actually empty —
+       app.css's own 720px breakpoint turns .app-nav-links (Community, My
+       Journey, Members, Fitness+, Gear, Music, Quotes, My Profile, Sign
+       Out) into a full 3-row grid that wraps onto its own line below the
+       icons, and it was sitting there the whole time, just low-contrast
+       text lost against the busy background photo. That's the whole gap
+       Ken kept seeing between the icons and "MUSIC LIBRARY." Home + the
+       bell are enough to get around from here on a phone (Home goes back
+       to the main feed), so the rest of that link list is hidden here,
+       collapsing the row entirely instead of just squeezing its padding. */
+    .app-nav-links { display: none; }
+    .app-nav { row-gap: 0; }
+    .app-shell { padding-top: 4px; }
+    /* (2) Close most of the gap between the "All Genres" divider line and
+       the HOW IT WORKS card — was a flat 24px, Ken asked for it to come
+       up about a quarter inch (~24px), so this brings it nearly flush. */
+    .ml-stats { margin-bottom: 4px; }
+    /* (3) .ml-tracks-head's own margin-bottom:0 (below) doesn't reach the
+       paragraph inside it — margins on a flex item's children don't
+       collapse out past the item's own box — so the paragraph's inline
+       margin-bottom:16px was still adding extra space Upload Music never
+       had. Target it directly so both buttons get the same gap. */
     .ml-tracks-head { margin-bottom: 0; }
+    .ml-tracks-head p { margin-bottom: 0 !important; }
     #uploadMusicBtn,
     #openPlaylistBtn {
       margin-top: 14px !important;
     }
+
+    /* (4) Ken's ask: the HOW IT WORKS card ran long on a phone because
+       each numbered circle sat on its own line above the heading it
+       belonged to. Putting the number next to its heading instead — one
+       row per step, the description wrapping underneath, indented to
+       line up under the heading rather than under the circle — cuts a
+       full text-line of height out of every one of the four steps, so
+       the whole card (and the scroll to get past it) is noticeably
+       shorter without losing any of the content. */
+    .ml-how { padding: 18px 20px; }
+    .ml-how-grid { gap: 14px; margin-top: 14px; }
+    .ml-how-step {
+      display: grid;
+      grid-template-columns: 26px 1fr;
+      column-gap: 10px;
+      row-gap: 4px;
+      align-items: center;
+    }
+    .ml-how-num { grid-column: 1; grid-row: 1; margin-bottom: 0; }
+    .ml-how-step h4 { grid-column: 2; grid-row: 1; margin: 0; }
+    .ml-how-step p { grid-column: 2; grid-row: 2; }
   }
 </style>
 
