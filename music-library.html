@@ -756,7 +756,27 @@
     .ml-stats .ml-stat:nth-child(1) { display: none; }
     /* A little more off the top: the intro paragraph's own bottom margin,
        trimmed along with everything else in this block. */
-    .app-shell > p.card-sub { margin-bottom: 8px !important; }
+    .app-shell > p.card-sub { margin-bottom: 4px !important; }
+    /* Nov 2026, Ken's ask, round 2: "Real Artists" was still its own
+       two-line stack (bold heading, then "Support independent talent"
+       underneath) even with "Workout Ready" gone — on a narrow phone
+       "All Genres" is too long to share that row, so it was still
+       wrapping to a row of its own below. Dropping the "Real Artists"
+       heading collapses it to the one line Ken actually wants (heart +
+       "Support independent talent"), pulling it up snug under "...totally
+       optional." and letting "All Genres" close up right beneath it —
+       plus a tighter row-gap and bottom padding, this is as far as this
+       block compresses without losing any of its content. Desktop keeps
+       the original three-stat layout; this is all scoped to mobile. */
+    .ml-stats .ml-stat:nth-child(2) strong { display: none; }
+    /* "Support independent talent" picks up the bold weight "Real Artists"
+       used to carry, since it's now the only line left on this row. */
+    .ml-stats .ml-stat:nth-child(2) span {
+      font-weight: 700;
+      font-size: 13.5px;
+      color: #15121c;
+    }
+    .ml-stats { gap: 6px 32px; padding-bottom: 8px; }
     /* (3) .ml-tracks-head's own margin-bottom:0 (below) doesn't reach the
        paragraph inside it — margins on a flex item's children don't
        collapse out past the item's own box — so the paragraph's inline
