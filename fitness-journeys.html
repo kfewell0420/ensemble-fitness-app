@@ -206,15 +206,18 @@
 <script src="js/notifications.js"></script>
 <script src="js/moderation.js"></script>
 <script>
-  // TODO(Ken): swap this for the real URL of the marketing site's own
-  // "Share Your Journey" form — that's where new community_questions rows
-  // actually get created; there's no in-app form for it yet. Using a new
-  // tab (target="_blank" above/below) rather than navigating this tab away
-  // is deliberate: this codebase has already hit "leaving the app to the
-  // marketing site logs the member out" once before (see feed.html's
-  // openJourneyReplyModal comment) — a new tab sidesteps that entirely
-  // since this app tab never navigates anywhere.
-  var EXTERNAL_SHARE_URL = "https://ensemblefitness.com/fitness-journeys#share";
+  // Points at the marketing site's real "Share Your Journey" page — that's
+  // where new community_questions rows actually get created; there's no
+  // in-app form for it yet. (Nov 2026: this used to point at a placeholder
+  // URL — ensemblefitness.com/fitness-journeys#share — that never matched
+  // any real page and 404'd. share-your-journey.html is the actual page,
+  // confirmed against every other link to it across the marketing site.)
+  // Using a new tab (target="_blank" above/below) rather than navigating
+  // this tab away is deliberate: this codebase has already hit "leaving
+  // the app to the marketing site logs the member out" once before (see
+  // feed.html's openJourneyReplyModal comment) — a new tab sidesteps that
+  // entirely since this app tab never navigates anywhere.
+  var EXTERNAL_SHARE_URL = "https://ensemblefitness.com/share-your-journey.html";
 
   var currentUserId = null;
   var AVATAR_COLORS = ["#ff3d68", "#ff9a3d", "#3dd6ff", "#7a3dff", "#3dff9e", "#ffd23d"];
