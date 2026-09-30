@@ -514,7 +514,16 @@
     font-weight: 700;
     font-size: 13px;
     border: 1.5px solid rgba(255,255,255,0.5);
+    overflow: hidden;
   }
+  /* Ken's ask (Nov 2026): a member's real profile photo (see
+     profile.html's avatar uploader, is_profile_photo) already showed up on
+     their own profile, the Members directory, and their public member.html
+     page — just never here, in the feed itself, which always fell back to
+     the plain colored-initial circle even for a member who'd already set a
+     real photo. Same img-fills-the-circle treatment app.css's own
+     .avatar-circle img already uses elsewhere. */
+  .rp-slide-avatar img, .rp-jc-avatar img { width: 100%; height: 100%; object-fit: cover; }
   .rp-slide-headertext {
     flex: 1 1 auto;
     min-width: 0;
@@ -676,6 +685,7 @@
     color: #fff;
     font-weight: 700;
     font-size: 13px;
+    overflow: hidden;
   }
   .rp-jc-headertext { flex: 1 1 auto; min-width: 0; }
   .rp-jc-name {
@@ -2267,7 +2277,7 @@
       console.warn("[feed] journeys query failed:", error);
       return [];
     }
-    return (data || []).map(journalRowToItem);
+    return attachAvatarUrls((data || []).map(journalRowToItem));
   }
 
   // Only journeys newer than `sinceIso` - used for the live "it just
@@ -2281,7 +2291,59 @@
       .order("created_at", { ascending: true })
       .limit(10);
     if (error) return [];
-    return (data || []).map(journalRowToItem);
+    return attachAvatarUrls((data || []).map(journalRowToItem));
+  }
+
+  // Ken's ask (Nov 2026): a member's real profile photo (is_profile_photo,
+  // see profile.html's avatar uploader) already showed up on their own
+  // profile, the Members directory (members.html), and their public page
+  // (member.html) — just never here, in the feed, which always fell back
+  // to the plain colored-initial circle even for someone who'd already set
+  // a real photo. This brings the feed in line with those, batched across
+  // every post/journey in one query instead of one lookup per card — a
+  // feed page can easily show posts from 20+ different members at once.
+  // Mutates and returns the same array so callers can use it either way.
+  async function attachAvatarUrls(items) {
+    var userIds = [];
+    var seen = {};
+    items.forEach(function (item) {
+      if (item.user_id && !seen[item.user_id]) { seen[item.user_id] = true; userIds.push(item.user_id); }
+    });
+    if (!userIds.length) return items;
+
+    try {
+      var { data, error } = await window.sb
+        .from("media")
+        .select("user_id, storage_path, created_at")
+        .in("user_id", userIds)
+        .eq("kind", "photo")
+        .eq("is_profile_photo", true)
+        .eq("status", "approved")
+        .order("created_at", { ascending: false });
+      if (error || !data) return items;
+
+      // Someone can have more than one row with is_profile_photo = true
+      // across their history (setting a new one never unsets the old —
+      // same as profile.html's own loadAvatar()) — only the most recent
+      // counts, which is the first one seen here since this is already
+      // sorted newest-first.
+      var pathByUserId = {};
+      data.forEach(function (row) {
+        if (!pathByUserId[row.user_id]) pathByUserId[row.user_id] = row.storage_path;
+      });
+
+      var paths = Object.keys(pathByUserId).map(function (uid) { return pathByUserId[uid]; });
+      var urlMap = await resolveSignedUrls(paths);
+
+      items.forEach(function (item) {
+        var path = pathByUserId[item.user_id];
+        item.avatarUrl = path ? (urlMap[path] || "") : "";
+      });
+    } catch (e) {
+      // Leave avatarUrl unset on every item — the colored-initial fallback
+      // still renders exactly as it always has.
+    }
+    return items;
   }
 
   function journalRowToItem(row) {
@@ -2336,7 +2398,7 @@
       (clipsByMediaId[raw.id] || []).forEach(function (c) { if (c.storage_path) paths.push(c.storage_path); });
     });
     var urlMap = await resolveSignedUrls(paths);
-    return rows.map(function (raw) {
+    var items = rows.map(function (raw) {
       var wantsPoster = raw.kind === "video" && !!raw.poster_path;
       // Already ordered by order_index (2, 3, 4…) from the query above —
       // clip 1 is always this same row's own storage_path/trim_start/
@@ -2368,6 +2430,7 @@
         extraClips: extraClips
       };
     });
+    return attachAvatarUrls(items);
   }
 
   // ---------------- Meal Prep strip ----------------
@@ -2701,7 +2764,9 @@
         mediaHtml +
         (item.kind === "video" ? '<div class="rp-mute-hint">🔇 tap video for sound</div>' : "") +
         '<div class="rp-slide-header">' +
-          '<div class="rp-slide-avatar" style="background:' + avatarColor(item.user_id) + '">' + escapeHtml(initial) + '</div>' +
+          (item.avatarUrl
+            ? '<div class="rp-slide-avatar"><img src="' + item.avatarUrl + '" alt="' + escapeHtml(item.name) + '" /></div>'
+            : '<div class="rp-slide-avatar" style="background:' + avatarColor(item.user_id) + '">' + escapeHtml(initial) + '</div>') +
           '<div class="rp-slide-headertext">' +
             '<div class="rp-slide-header-name">' + escapeHtml(item.name) + '</div>' +
             '<div class="rp-slide-header-sub">' + escapeHtml(timeAgo(item.created_at)) + '</div>' +
@@ -2777,7 +2842,9 @@
     var initial = (item.name || "?").trim().charAt(0).toUpperCase();
     el.innerHTML =
       '<div class="rp-jc-header">' +
-        '<div class="rp-jc-avatar" style="background:' + avatarColor(item.user_id || item.id) + '">' + escapeHtml(initial) + '</div>' +
+        (item.avatarUrl
+          ? '<div class="rp-jc-avatar"><img src="' + item.avatarUrl + '" alt="' + escapeHtml(item.name) + '" /></div>'
+          : '<div class="rp-jc-avatar" style="background:' + avatarColor(item.user_id || item.id) + '">' + escapeHtml(initial) + '</div>') +
         '<div class="rp-jc-headertext">' +
           '<div class="rp-jc-name">' + escapeHtml(item.name) + '</div>' +
           '<div class="rp-jc-time">' + escapeHtml(timeAgo(item.created_at)) + '</div>' +
