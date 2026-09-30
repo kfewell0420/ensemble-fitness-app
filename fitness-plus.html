@@ -102,6 +102,18 @@
     grid-template-columns: repeat(auto-fill, minmax(68px, 1fr));
     gap: 8px;
   }
+  /* Ken's ask (Nov 2026): the "No other members yet…" (and the "Couldn't
+     load matches" / "Subscribe to Fitness+…") empty-state message is a
+     single div dropped straight into .fp-match-grid above — as just one
+     grid item, it was only as wide as one ~68-100px avatar-tile column, so
+     its sentence wrapped one word per line in a tall, hard-to-read strip.
+     Spanning it across every column here lets it use the full grid width
+     and wrap normally, as a short, readable 2-3 line paragraph. */
+  .fp-match-grid .empty-state {
+    grid-column: 1 / -1;
+    max-width: 360px;
+    margin: 0 auto;
+  }
   .fp-match-placeholder {
     aspect-ratio: 4 / 5;
     border-radius: 10px;
