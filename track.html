@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>Track — Ensemble Fitness</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -134,14 +134,22 @@
     statusEl.textContent = "One quick Stripe step to add funds — you'll come right back and this tip will finish automatically.";
     statusEl.className = "tip-status show";
     var topupCents = pickTopupAmount(amountCents);
+    // Ken's ask (Nov 2026): this return_to used to only ever get stored
+    // locally and never actually reached wallet-topup.js, which had its
+    // success_url hardcoded to music-library.html — so a tip started here
+    // always came back to the WRONG page after Stripe, one whose script has
+    // no idea a tip is pending, and the tip itself just sat there undone.
+    // Sending it along now so Checkout actually lands back here, where
+    // resumePendingTipIfAny() (below) is what finishes the job.
+    var returnTo = "track.html?id=" + encodeURIComponent(track.id);
     try {
-      sessionStorage.setItem("efPendingTip", JSON.stringify({ track_id: track.id, amount_cents: amountCents, return_to: "track.html?id=" + encodeURIComponent(track.id) }));
+      sessionStorage.setItem("efPendingTip", JSON.stringify({ track_id: track.id, amount_cents: amountCents, return_to: returnTo }));
     } catch (e) {}
     try {
       var res = await fetch(SITE_FUNCTIONS_BASE + "/wallet-topup", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: await authHeader() },
-        body: JSON.stringify({ amount_cents: topupCents })
+        body: JSON.stringify({ amount_cents: topupCents, return_to: returnTo })
       });
       var out = await res.json();
       if (!res.ok || !out.url) throw new Error(out.error || "Couldn't start checkout.");
@@ -217,7 +225,14 @@
     }
   }
 
-  async function resumePendingTipIfAny() {
+  // Ken's ask (Nov 2026): now that wallet-topup.js actually returns here
+  // after Stripe (see startTipTopup's return_to above), this also needs to
+  // tell a real "finish the tip" landing apart from a cancelled one — Stripe
+  // sends `?topup=cancelled` back when the member backs out of the charge,
+  // and blindly re-attempting the tip in that case would just throw an
+  // immediate "insufficient funds" error at them (nothing was actually
+  // charged) instead of the plain "nothing was charged" they'd expect.
+  async function resumePendingTipIfAny(topupParam) {
     var raw;
     try { raw = sessionStorage.getItem("efPendingTip"); } catch (e) { raw = null; }
     if (!raw) return;
@@ -225,6 +240,16 @@
     try { pending = JSON.parse(raw); } catch (e) { return; }
     if (!pending || pending.track_id !== track.id) return;
     try { sessionStorage.removeItem("efPendingTip"); } catch (e) {}
+
+    if (topupParam === "cancelled") {
+      var statusEl = document.querySelector(".tip-status");
+      if (statusEl) {
+        statusEl.textContent = "No worries — nothing was charged.";
+        statusEl.className = "tip-status show error";
+      }
+      return;
+    }
+
     var btn = document.querySelector('.tip-amount-btn[data-amount-cents="' + pending.amount_cents + '"]');
     if (btn) setActiveAmount(document.querySelector(".tip-amounts"), btn);
     await sendTip(pending.amount_cents, { resuming: true, retriesLeft: 5, noRedirect: true });
@@ -327,7 +352,14 @@
     var balance = await loadWalletBalance();
     document.getElementById("tpWalletBalance").textContent = formatCents(balance);
 
-    await resumePendingTipIfAny();
+    var topupParam = new URLSearchParams(window.location.search).get("topup");
+    await resumePendingTipIfAny(topupParam);
+    if (topupParam) {
+      // Same cleanup music-library.html already does after its own
+      // topup redirect — so refreshing this page doesn't try to re-process
+      // a param that's already been handled.
+      window.history.replaceState({}, "", "track.html?id=" + encodeURIComponent(id));
+    }
   }
 
   document.getElementById("signOutLink").addEventListener("click", function (e) {
