@@ -466,20 +466,33 @@
     from { opacity: 0; }
     to { opacity: 1; }
   }
-  .rp-mute-hint {
+  /* Ken's ask (Nov 2026): video posts in the reel now autoplay WITH sound
+     by default (see reelObserver + reelMuted in the script below), so the
+     old top-center "tap video for sound" hint no longer makes sense —
+     replaced with a persistent, always-visible mute button in the bottom
+     right corner of the video itself, matching where Ken asked for it.
+     Same dark pill styling as the old hint / the home+bell icons elsewhere
+     in the app, just repositioned and made into a real tappable control
+     that also reflects current mute state (🔊/🔇) rather than static text. */
+  .rp-mute-btn {
     position: absolute;
-    top: 12px;
-    left: 50%;
-    transform: translateX(-50%);
+    bottom: 12px;
+    right: 12px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     background: rgba(0,0,0,0.5);
     color: #fff;
-    font-size: 11px;
-    padding: 5px 10px;
-    border-radius: 999px;
-    pointer-events: none;
-    opacity: 0.85;
+    font-size: 15px;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
     z-index: 6;
+    padding: 0;
   }
+  .rp-mute-btn:active { background: rgba(0,0,0,0.7); }
 
   /* Per-post header — who posted it, a way to follow them, and a way to
      do everything else (message/report/block) without cluttering the
@@ -1576,7 +1589,6 @@
        hover border since a mouse is available here. */
     .rp-slide { margin: 0; transition: border-color 0.15s ease; }
     .rp-slide:hover { border-color: rgba(255,61,104,0.4); }
-    .rp-mute-hint { display: none; }
     /* The desktop grid card is narrower than a full phone screen, so the
        mobile bar's 30px icon target reads oversized here — sized back down
        to match Journeys' already-established 22px (that rule lives outside
@@ -2704,13 +2716,57 @@
   });
 
   // ---------------- Vertical reel ----------------
+  // Ken's ask (Nov 2026): videos in this reel should autoplay WITH sound as
+  // members scroll from one to the next, instead of the old muted-by-
+  // default + "tap for sound" hint. This works here (unlike a website in a
+  // phone browser tab) because Capacitor's WKWebView (iOS) and WebView
+  // (Android) both already allow an app's own bundled content to autoplay
+  // unmuted without a prior tap — that restriction is specifically a
+  // mobile-browser-tab thing. reelMuted is one shared on/off switch, saved
+  // to localStorage, so muting one video keeps every video muted as the
+  // member keeps scrolling (and stays muted next time they open the app)
+  // instead of resetting to "on" for each new video — same behavior as
+  // Instagram/TikTok's own mute toggle.
+  var reelMuted = false;
+  try {
+    var storedReelMute = localStorage.getItem("efit_reel_muted");
+    if (storedReelMute !== null) reelMuted = storedReelMute === "true";
+  } catch (e) {}
+
+  function setReelMuted(value) {
+    reelMuted = value;
+    try { localStorage.setItem("efit_reel_muted", value ? "true" : "false"); } catch (e) {}
+  }
+
+  function syncMuteBtn(slideEl, video) {
+    var btn = slideEl.querySelector(".rp-mute-btn");
+    if (btn) btn.textContent = video.muted ? "🔇" : "🔊";
+  }
+
   var reelObserver = new IntersectionObserver(function (entries) {
     entries.forEach(function (entry) {
       var video = entry.target.querySelector("video");
       if (!video) return;
       if (entry.isIntersecting && entry.intersectionRatio > 0.6) {
+        video.muted = reelMuted;
+        syncMuteBtn(entry.target, video);
         var p = video.play();
-        if (p && p.catch) p.catch(function () {});
+        if (p && p.catch) {
+          p.catch(function () {
+            // A handful of older WebViews still block unmuted autoplay
+            // despite Capacitor's default settings — rather than the video
+            // silently failing to play at all, fall back to muted (which
+            // is always allowed) and reflect that in the mute button so
+            // it's obvious sound is off and can be tapped back on.
+            if (!video.muted) {
+              video.muted = true;
+              setReelMuted(true);
+              syncMuteBtn(entry.target, video);
+              var retry = video.play();
+              if (retry && retry.catch) retry.catch(function () {});
+            }
+          });
+        }
       } else {
         video.pause();
       }
@@ -2731,8 +2787,13 @@
     var el = document.createElement("div");
     el.className = "rp-slide";
 
+    // Ken's ask (Nov 2026): starts with whatever the shared reelMuted
+    // setting currently is (default: unmuted) instead of a hardcoded
+    // `muted` attribute — reelObserver re-asserts this the moment the video
+    // actually becomes visible and plays, so this initial attribute is just
+    // to avoid a one-frame mismatch before that happens.
     var mediaHtml = item.kind === "video"
-      ? '<video src="' + item.url + '"' + (item.posterUrl ? ' poster="' + item.posterUrl + '"' : '') + ' loop muted playsinline preload="metadata"></video>'
+      ? '<video src="' + item.url + '"' + (item.posterUrl ? ' poster="' + item.posterUrl + '"' : '') + (reelMuted ? ' muted' : '') + ' loop playsinline preload="metadata"></video>'
       : '<img src="' + item.url + '" alt="Workout post" loading="lazy" decoding="async" />';
 
     var badgeParts = [];
@@ -2762,7 +2823,9 @@
     el.innerHTML =
       '<div class="rp-media">' +
         mediaHtml +
-        (item.kind === "video" ? '<div class="rp-mute-hint">🔇 tap video for sound</div>' : "") +
+        (item.kind === "video"
+          ? '<button type="button" class="rp-mute-btn" data-action="mute" aria-label="' + (reelMuted ? "Unmute video" : "Mute video") + '">' + (reelMuted ? "🔇" : "🔊") + '</button>'
+          : "") +
         '<div class="rp-slide-header">' +
           (item.avatarUrl
             ? '<div class="rp-slide-avatar"><img src="' + item.avatarUrl + '" alt="' + escapeHtml(item.name) + '" /></div>'
@@ -2799,11 +2862,29 @@
 
     if (item.kind === "video") {
       var videoEl = el.querySelector("video");
-      var muteHint = el.querySelector(".rp-mute-hint");
-      videoEl.addEventListener("click", function () {
-        videoEl.muted = !videoEl.muted;
-        if (muteHint) muteHint.style.display = videoEl.muted ? "" : "none";
-      });
+      var muteBtn = el.querySelector(".rp-mute-btn");
+      // Ken's ask (Nov 2026): a persistent mute button, bottom-right of the
+      // video, replaces the old top-center "tap for sound" hint — tapping
+      // the video itself still also toggles mute, same as before, as a
+      // bonus shortcut (this mirrors Instagram/TikTok, where either works).
+      // Both share setReelMuted so muting from either spot keeps every
+      // other video in the reel muted too, and remembers the choice next
+      // time the app opens.
+      function toggleReelMute() {
+        setReelMuted(!videoEl.muted);
+        videoEl.muted = reelMuted;
+        if (muteBtn) {
+          muteBtn.textContent = videoEl.muted ? "🔇" : "🔊";
+          muteBtn.setAttribute("aria-label", videoEl.muted ? "Unmute video" : "Mute video");
+        }
+      }
+      videoEl.addEventListener("click", toggleReelMute);
+      if (muteBtn) {
+        muteBtn.addEventListener("click", function (e) {
+          e.stopPropagation(); // don't also fire videoEl's own click handler above
+          toggleReelMute();
+        });
+      }
       // Multi-clip reel (Ken's ask, Nov 2026): several separately-uploaded
       // files play back-to-back as one continuous reel instead of the
       // `loop` attribute above just replaying clip 1 forever. An ordinary
