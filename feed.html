@@ -3598,19 +3598,24 @@
     currentUserId = user.id;
     setModerationUser(currentUserId);
     setMessageSender(currentUserId);
-    await loadBlockedIds();
 
-    var { data: followRows } = await window.sb.from("follows").select("followee_id").eq("follower_id", currentUserId);
-    followingIds = new Set((followRows || []).map(function (r) { return r.followee_id; }));
+    // Speed pass (Sept 2026): Ken flagged Home taking "a second or two" to
+    // show anything. Turned out every one of these queries was awaited one
+    // after another — blocked-ids, then follows, then the meal-prep strip,
+    // then only AFTER all of that did the main reel (the content people
+    // actually came here for) even start fetching. None of these actually
+    // depend on each other except "blocked ids before any post query" (the
+    // block list is used synchronously inside fetchBatch/buildItems), so
+    // everything else now fires together instead of queuing up one round
+    // trip at a time. The .then(identity) on the follows query forces it to
+    // start immediately instead of sitting there unstarted until awaited —
+    // Supabase's query builder doesn't actually hit the network until
+    // something calls .then() on it.
+    var followsPromise = window.sb.from("follows").select("followee_id").eq("follower_id", currentUserId)
+      .then(function (r) { return r; });
+    var blockedPromise = loadBlockedIds();
 
-    var mealPrepRows = await fetchBatch(true, MEAL_PREP_STRIP_SIZE, 0);
-    mealPrepRealItems = await buildItems(mealPrepRows);
-    if (mealPrepRealItems.length) newestMealPrepSeenAt = mealPrepRealItems[0].created_at;
-    // On a genuine fetch error, keep the strip empty so renderMealPrepStrip's
-    // error message shows — don't paper over a real problem with examples.
-    mealPrepItems = lastFetchError ? [] : composeMealPrepStrip(mealPrepRealItems);
-    renderMealPrepStrip();
-
+    var requestedFilter = new URLSearchParams(window.location.search).get("filter");
     // Ken's ask (Oct 2026): the new Find page (find.html) links straight
     // into a specific category — e.g. Hiking — instead of making someone
     // land on Home and hunt for a filter chip that's hidden on mobile
@@ -3620,13 +3625,29 @@
     // keep working normally after that. "Journeys" is excluded since that
     // chip navigates to its own page (fitness-journeys.html) rather than
     // filtering in place — find.html links to that page directly instead.
-    var requestedFilter = new URLSearchParams(window.location.search).get("filter");
     if (requestedFilter && CATEGORY_FILTERS.indexOf(requestedFilter) !== -1 && requestedFilter !== "Journeys") {
       activeFilter = requestedFilter;
     }
-
     renderFilters();
-    await loadMoreReel();
+
+    var followRows = (await followsPromise).data;
+    followingIds = new Set((followRows || []).map(function (r) { return r.followee_id; }));
+
+    // Both of these only need blockedIds, not each other — the meal-prep
+    // strip and the main reel are independent content, so they fetch at the
+    // same time instead of the reel waiting for the strip to finish first.
+    await blockedPromise;
+    var mealPrepPromise = fetchBatch(true, MEAL_PREP_STRIP_SIZE, 0).then(function (rows) { return buildItems(rows); });
+    var reelPromise = loadMoreReel();
+
+    mealPrepRealItems = await mealPrepPromise;
+    if (mealPrepRealItems.length) newestMealPrepSeenAt = mealPrepRealItems[0].created_at;
+    // On a genuine fetch error, keep the strip empty so renderMealPrepStrip's
+    // error message shows — don't paper over a real problem with examples.
+    mealPrepItems = lastFetchError ? [] : composeMealPrepStrip(mealPrepRealItems);
+    renderMealPrepStrip();
+
+    await reelPromise;
     loadMoreObserver.observe(document.getElementById("rpSentinel"));
     wireNewPill();
     subscribeToLiveFeed();
