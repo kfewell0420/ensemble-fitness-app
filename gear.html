@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>Approved Gear — Ensemble Fitness</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,23 +11,12 @@
 </head>
 <body>
 
-<header class="app-nav">
-  <a href="feed.html" class="app-brand">
-    <span class="app-brand-mark"><img src="assets/logo.png" alt="Ensemble Fitness" /></span>Ensemble Fitness
-  </a>
-  <nav class="app-nav-links">
-    <a href="feed.html">Community</a>
-    <a href="journey.html">My Journey</a>
-    <a href="members.html">Members</a>
-    <a href="fitness-plus.html">Fitness+</a>
-    <a href="gear.html" style="color:#fff;">Gear</a>
-    <a href="music-library.html">Music</a>
-    <a href="quote-library.html">Quotes</a>
-    <a href="profile.html">My Profile</a>
-    <a href="admin.html" id="adminLink" style="display:none;">Queue</a>
-    <a href="#" id="signOutLink">Sign Out</a>
-  </nav>
-</header>
+<!-- Ken's ask (Nov 2026): this page should NOT show the usual site-wide
+     header/nav (logo, Community/My Journey/Gear/etc. links, Sign Out) —
+     same treatment as quote-library.html, fitness-plus.html, journey.html,
+     and fitness-journeys.html. The page should start right at the orange
+     "Approved Gear" eyebrow / "Gear Ensemble Fitness actually buys."
+     heading below, which is already first in the markup. -->
 
 <div class="app-shell">
 
@@ -199,17 +188,13 @@
     renderGrid("all");
   }
 
-  document.getElementById("signOutLink").addEventListener("click", function (e) {
-    e.preventDefault();
-    signOut();
-  });
-
   (async function init() {
     currentUser = await requireAuth();
     if (!currentUser) return;
-    if (await isCurrentUserAdmin()) {
-      document.getElementById("adminLink").style.display = "inline";
-    }
+
+    // Ken's ask (Nov 2026): this page has no header/nav at all (see the
+    // markup above), so there's no admin "Queue" link or Sign Out link on
+    // this page to wire up — both were removed along with the header.
     await loadGear();
   })();
 </script>
