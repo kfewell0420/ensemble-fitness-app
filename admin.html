@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>Review Queue — Ensemble Fitness</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -37,7 +37,7 @@
     <a href="journey.html">My Journey</a>
     <a href="members.html">Members</a>
     <a href="fitness-plus.html">Fitness+</a>
-    <a href="gear.html">Gear</a>
+    <a href="gear.html">Products</a>
     <a href="music-library.html">Music</a>
     <a href="quote-library.html">Quotes</a>
     <a href="profile.html">My Profile</a>
@@ -88,7 +88,7 @@
         <button type="button" class="admin-tab-btn" data-tab="book-payouts">Book Payouts</button>
 
         <div class="admin-sidenav-group-label">Marketplace</div>
-        <button type="button" class="admin-tab-btn" data-tab="gear">Approved Gear</button>
+        <button type="button" class="admin-tab-btn" data-tab="gear">Approved Products</button>
       </nav>
 
       <div class="admin-content">
@@ -361,8 +361,8 @@
 
     <div class="admin-tab-panel" data-tab="gear" hidden>
       <div class="eyebrow">Fit Marketplace</div>
-      <h2>Approved Gear — real picks</h2>
-      <p class="card-sub" style="margin-bottom:24px;">Paste a real Amazon link, add a photo if you have one, and write your own one-line take. It goes live on the public Approved Gear page right away — no code, no waiting on a deploy. "Deactivate" pulls a pick from the page without losing it.</p>
+      <h2>Ensemble Approved Products — real picks</h2>
+      <p class="card-sub" style="margin-bottom:24px;">Paste a real Amazon and/or TikTok link, add a photo if you have one, and write your own one-line take. It goes live on the public Ensemble Approved Products page right away — no code, no waiting on a deploy. "Deactivate" pulls a pick from the page without losing it.</p>
 
       <div class="card" style="margin-bottom:20px;">
         <div class="form-msg" id="gearMsg"></div>
@@ -394,8 +394,13 @@
           <span class="field-hint">This is just a label for the page — Amazon's own checkout price is always what the customer actually pays.</span>
         </div>
         <div class="field">
-          <label for="gearAmazonUrl">Amazon product link</label>
+          <label for="gearAmazonUrl">Amazon product link (optional if you fill in a TikTok link below)</label>
           <input type="text" id="gearAmazonUrl" placeholder="https://www.amazon.com/…" maxlength="500" />
+        </div>
+        <div class="field">
+          <label for="gearTiktokUrl">TikTok link (optional if you filled in an Amazon link above)</label>
+          <input type="text" id="gearTiktokUrl" placeholder="https://www.tiktok.com/@you/video/…" maxlength="500" />
+          <span class="field-hint">TikTok Shop only pays a commission when someone buys through a product you've tagged inside your own TikTok video or LIVE — not through a plain product page link. So paste the link to YOUR video where you tagged this product, not the product's TikTok Shop listing. (Check your TikTok Shop Creator dashboard — if it ever offers you a direct "copy affiliate link" for outside TikTok, that works here too.)</span>
         </div>
         <div class="field">
           <label for="gearPhoto">Product photo (optional)</label>
@@ -1685,7 +1690,7 @@
   }
   // -------------------------------------------------------------------------
 
-  // ---- Approved Gear (real picks for the public Approved Gear page) -----
+  // ---- Ensemble Approved Products (real picks for the public page) -----
   // Category is free text Ken types himself (fitness, home, health care,
   // whatever fits) rather than a fixed list — the public page builds its
   // filter tabs from whatever distinct categories actually exist.
@@ -1699,7 +1704,7 @@
     var el = document.getElementById("gearList");
     var { data, error } = await window.sb
       .from("approved_gear_items")
-      .select("id, category, name, note, price, amazon_url, image_path, is_active, created_at")
+      .select("id, category, name, note, price, amazon_url, tiktok_url, image_path, is_active, created_at")
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -1723,7 +1728,10 @@
           '<strong>' + escapeHtmlAdmin(item.name) + (item.is_active ? '' : ' · inactive') + '</strong>' +
           '<span>' + escapeHtmlAdmin(item.category) + (item.price ? " · " + escapeHtmlAdmin(item.price) : "") + '</span>' +
           (item.note ? '<div style="font-size:13px; color:var(--muted-invert); margin-top:4px;">' + escapeHtmlAdmin(item.note) + '</div>' : '') +
-          '<div style="font-size:12.5px; margin-top:4px;"><a href="' + escapeHtmlAdmin(item.amazon_url) + '" target="_blank" rel="noopener" style="color:var(--accent-2);">View Amazon link →</a></div>' +
+          '<div style="font-size:12.5px; margin-top:4px; display:flex; gap:12px; flex-wrap:wrap;">' +
+            (item.amazon_url ? '<a href="' + escapeHtmlAdmin(item.amazon_url) + '" target="_blank" rel="noopener" style="color:var(--accent-2);">View Amazon link →</a>' : '') +
+            (item.tiktok_url ? '<a href="' + escapeHtmlAdmin(item.tiktok_url) + '" target="_blank" rel="noopener" style="color:var(--accent-2);">View TikTok link →</a>' : '') +
+          '</div>' +
         '</div>' +
         '<div class="review-actions">' +
           '<button class="btn btn-ghost btn-sm toggle-gear-btn" data-id="' + item.id + '" data-active="' + item.is_active + '">' + (item.is_active ? "Deactivate" : "Reactivate") + '</button>' +
@@ -1751,15 +1759,21 @@
     var note = document.getElementById("gearNote").value.trim();
     var price = document.getElementById("gearPrice").value.trim();
     var amazonUrl = document.getElementById("gearAmazonUrl").value.trim();
+    var tiktokUrl = document.getElementById("gearTiktokUrl").value.trim();
     var file = document.getElementById("gearPhoto").files[0];
 
-    if (!name || !category || !amazonUrl) {
-      msg.textContent = "Product name, category, and an Amazon link are all required.";
+    if (!name || !category || (!amazonUrl && !tiktokUrl)) {
+      msg.textContent = "Product name, category, and at least one link (Amazon or TikTok) are required.";
       msg.className = "form-msg show error";
       return;
     }
-    if (!/^https?:\/\//i.test(amazonUrl)) {
-      msg.textContent = "That doesn't look like a valid link — it should start with https://";
+    if (amazonUrl && !/^https?:\/\//i.test(amazonUrl)) {
+      msg.textContent = "That Amazon link doesn't look valid — it should start with https://";
+      msg.className = "form-msg show error";
+      return;
+    }
+    if (tiktokUrl && !/^https?:\/\//i.test(tiktokUrl)) {
+      msg.textContent = "That TikTok link doesn't look valid — it should start with https://";
       msg.className = "form-msg show error";
       return;
     }
@@ -1784,19 +1798,21 @@
         name: name,
         note: note || null,
         price: price || null,
-        amazon_url: amazonUrl,
+        amazon_url: amazonUrl || null,
+        tiktok_url: tiktokUrl || null,
         image_path: imagePath,
         is_active: true
       });
       if (insertError) throw insertError;
 
-      msg.textContent = "Added! It's live on the Approved Gear page now.";
+      msg.textContent = "Added! It's live on the Ensemble Approved Products page now.";
       msg.className = "form-msg show success";
       document.getElementById("gearName").value = "";
       document.getElementById("gearCategory").value = "";
       document.getElementById("gearNote").value = "";
       document.getElementById("gearPrice").value = "";
       document.getElementById("gearAmazonUrl").value = "";
+      document.getElementById("gearTiktokUrl").value = "";
       document.getElementById("gearPhoto").value = "";
       await loadGear();
     } catch (err) {

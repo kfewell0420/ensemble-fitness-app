@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>Approved Gear — Ensemble Fitness</title>
+<title>Ensemble Approved Products — Ensemble Fitness</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&display=swap" rel="stylesheet">
@@ -12,11 +12,11 @@
 <body>
 
 <!-- Ken's ask (Nov 2026): this page should NOT show the usual site-wide
-     header/nav (logo, Community/My Journey/Gear/etc. links, Sign Out) —
+     header/nav (logo, Community/My Journey/Products/etc. links, Sign Out) —
      same treatment as quote-library.html, fitness-plus.html, journey.html,
      and fitness-journeys.html. The page should start right at the orange
-     "Approved Gear" eyebrow / "Gear Ensemble Fitness actually buys."
-     heading below, which is already first in the markup.
+     "Ensemble Approved Products" eyebrow / "Products Ensemble Fitness
+     actually buys." heading below, which is already first in the markup.
      Nov 2026 follow-up: the header still needs to exist as an EMPTY shell
      (no brand, no links) so js/notifications.js has an .app-nav to inject
      the home icon + notification bell into — see quote-library.html's
@@ -36,12 +36,12 @@
 
 <div class="app-shell">
 
-  <div class="eyebrow">Approved Gear</div>
-  <h2 style="margin-bottom:6px;">Gear Ensemble Fitness actually buys.</h2>
-  <p class="card-sub" style="margin-bottom:16px;">Not a generic "top 10 gadgets" list — every pick here is something Ken has personally bought and uses, based on 500&ndash;1,000 real Amazon orders a year.</p>
+  <div class="eyebrow">Ensemble Approved Products</div>
+  <h2 style="margin-bottom:6px;">Products Ensemble Fitness actually buys.</h2>
+  <p class="card-sub" style="margin-bottom:16px;">Not a generic "top 10 gadgets" list — every pick here is something Ken has personally bought and uses, from Amazon and TikTok Shop alike.</p>
 
   <div class="gear-disclosure">
-    <strong>Honest disclosure:</strong> Ensemble Fitness is a participant in the Amazon Associates program. If you buy something through a link here, we may earn a small commission at no extra cost to you. That never changes which products make this list.
+    <strong>Honest disclosure:</strong> Ensemble Fitness participates in the Amazon Associates program and TikTok Shop's affiliate program. If you buy something through a link here, we may earn a small commission at no extra cost to you. That never changes which products make this list.
   </div>
 
   <div class="gear-filters" id="gearFilters"></div>
@@ -151,7 +151,18 @@
       var thumb = item.imgUrl
         ? '<img src="' + escapeHtml(item.imgUrl) + '" alt="' + escapeHtml(item.name) + '" />'
         : '<div class="thumb-initial">🛒</div>';
-      var link = withAssociateTag(item.amazon_url);
+  var ctas = "";
+      if (item.amazon_url) {
+        var amazonLink = withAssociateTag(item.amazon_url);
+        ctas += '<a class="btn btn-primary btn-sm gear-card-cta" href="' + escapeHtml(amazonLink) + '" target="_blank" rel="sponsored nofollow noopener">' +
+          (item.price ? "Buy on Amazon" : "View on Amazon") +
+        '</a>';
+      }
+      if (item.tiktok_url) {
+        ctas += '<a class="btn btn-ghost btn-sm gear-card-cta" href="' + escapeHtml(item.tiktok_url) + '" target="_blank" rel="sponsored nofollow noopener">' +
+          "View on TikTok" +
+        '</a>';
+      }
       return (
         '<div class="feed-card">' +
           '<div class="feed-card-thumb">' + thumb + '<span class="kind-badge">' + escapeHtml(item.category) + '</span></div>' +
@@ -160,9 +171,7 @@
             (item.price ? '<div class="feed-card-sub">' + escapeHtml(item.price) + '</div>' : '') +
             (item.note ? '<p class="feed-card-caption">“' + escapeHtml(item.note) + '”</p>' : '') +
           '</div>' +
-          '<a class="btn btn-primary btn-sm gear-card-cta" href="' + escapeHtml(link) + '" target="_blank" rel="sponsored nofollow noopener">' +
-            (item.price ? "Buy on Amazon" : "View on Amazon") +
-          '</a>' +
+          ctas +
         '</div>'
       );
     }).join("");
@@ -172,7 +181,7 @@
     var grid = document.getElementById("gearGrid");
     var { data, error } = await window.sb
       .from("approved_gear_items")
-      .select("category, name, note, price, amazon_url, image_path")
+      .select("category, name, note, price, amazon_url, tiktok_url, image_path")
       .eq("is_active", true)
       .order("created_at", { ascending: false });
 
@@ -196,6 +205,7 @@
         note: row.note || "",
         price: row.price || "",
         amazon_url: row.amazon_url,
+        tiktok_url: row.tiktok_url,
         imgUrl: imgUrl
       };
     });
