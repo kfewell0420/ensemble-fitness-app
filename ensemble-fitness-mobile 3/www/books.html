@@ -46,9 +46,20 @@
 
   <div class="eyebrow">Ensemble Reads</div>
   <h2 style="margin-bottom:6px;">Short books. Real motivation.</h2>
-  <p class="card-sub" style="margin-bottom:10px;">Short-form (30 pages or fewer), written by independent authors. 75% of every sale goes straight to them. Every title is an instant PDF download — no print copies, no shipping, no waiting.</p>
+  <p class="card-sub" style="margin-bottom:10px;">Short-form (30 pages or fewer), written by independent authors. 75% of every sale goes straight to them.</p>
 
   <div id="purchaseNotice"></div>
+
+  <!-- This IS the buy-a-book page — the grid right here is where active
+       titles show up with a real "Buy Now" button (see loadBooks()/
+       buildBookCard() below); there's no separate purchase page to link
+       to. It shows the "New titles are on the way" message below only
+       because the `books` table has zero is_active rows right now — the
+       moment one gets added, it replaces that message automatically
+       (see subscribeToBookChanges()), no page change needed. -->
+  <div class="feed-grid" id="booksGrid">
+    <div class="empty-state">Loading books…</div>
+  </div>
 
   <!-- Same reasoning as the "Submit Your Music" flow living on the
        marketing site instead of inside upload.html: submitting a book
@@ -62,52 +73,7 @@
       <h3 style="font-size:17px; margin:0; color:#fff;">Are you a writer?</h3>
     </div>
     <p style="font-size:13.5px; line-height:1.6; color:var(--muted-invert); margin:12px 0 16px;">Submit a short-form motivational book for review. If it fits, it goes live right here — and you keep 75% of every sale.</p>
-    <!-- Ken's ask (Nov 2026): this used to open in a new tab (target="_blank"),
-         which on the mobile app's wrapped webview showed as a blank screen
-         instead of navigating anywhere (Capacitor's webview has no default
-         handler for a link asking to pop a brand-new tab/window). A normal
-         same-tab link instead just navigates there directly — on the
-         website that's an ordinary page-to-page link; on mobile it's
-         allowed to leave the app's own bundled pages for ensemblefitness.com
-         specifically because that domain is now on the allow-list in
-         capacitor.config.json (see server.allowNavigation there). Swiping
-         back (iOS) or the hardware back gesture (Android) returns here,
-         same as any other in-app navigation. -->
-    <a href="https://ensemblefitness.com/submit-book.html" class="btn btn-primary btn-sm">Submit Your Book</a>
-  </div>
-
-  <!-- Ken's ask (Nov 2026): the buy-grid used to sit inline on the page at
-       all times; it now lives behind this "Purchase Books" tab instead, so
-       the page reads intro -> become a writer -> go buy something, rather
-       than opening on a grid that's often still empty. Tapping this opens
-       the same reusable .simple-modal pattern music-library.html's "Browse
-       Playlist" button already uses — see openPurchaseModal() below. -->
-  <div class="ml-how" style="margin-top:16px;">
-    <div class="ml-how-head">
-      <div class="eyebrow" style="margin-bottom:4px;">Ready to read</div>
-      <h3 style="font-size:17px; margin:0; color:#fff;">Purchase Books</h3>
-    </div>
-    <p style="font-size:13.5px; line-height:1.6; color:var(--muted-invert); margin:12px 0 16px;">Browse every title available right now — each one a downloadable PDF you keep forever.</p>
-    <button type="button" class="btn btn-primary btn-sm" id="openPurchaseBtn">📚 Purchase Books</button>
-  </div>
-
-  <!-- This IS the buy-a-book flow — the grid inside here is where active
-       titles show up with a real "Buy Now" button (see loadBooks()/
-       buildBookCard() below); there's no separate purchase page to link
-       to. It shows the "New titles are on the way" message below only
-       because the `books` table has zero is_active rows right now — the
-       moment one gets added, it replaces that message automatically
-       (see subscribeToBookChanges()), no page change needed. -->
-  <div class="simple-modal-overlay" id="purchaseModalOverlay">
-    <div class="simple-modal" style="max-width:640px;">
-      <button type="button" class="simple-modal-close" id="purchaseModalClose" aria-label="Close">&times;</button>
-      <div class="eyebrow" style="margin-bottom:2px;">Ensemble Reads</div>
-      <h3 style="margin-bottom:4px;">Downloadable PDF books</h3>
-      <p class="card-sub" style="margin-bottom:16px;">Instant download after checkout — no print copies, no shipping.</p>
-      <div class="feed-grid" id="booksGrid">
-        <div class="empty-state">Loading books…</div>
-      </div>
-    </div>
+    <a href="https://ensemblefitness.com/submit-book.html" target="_blank" rel="noopener" class="btn btn-primary btn-sm">Submit Your Book</a>
   </div>
 
 </div>
@@ -169,31 +135,6 @@
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: var(--radius-lg);
     padding: 20px 22px;
-  }
-
-  /* Ken's ask (Nov 2026): same fix as Music Library's mobile view — on a
-     phone, app.css's own 720px breakpoint turns the full page-link list
-     (Community, My Journey, Gear, Fitness+, Members, Music, Quotes, My
-     Profile, Queue, Sign Out) into a chunky multi-row grid that wraps
-     below the logo/icons, pushing "Ensemble Reads" way down the page.
-     Home + the bell are enough to get around on a phone — this hides the
-     logo and that whole link list here and pulls the icons flush to the
-     same left edge as the heading below them. Scoped to this page only. */
-  @media (max-width: 899px) {
-    .app-nav {
-      padding-top: calc(4px + env(safe-area-inset-top, 0px));
-      padding-bottom: 4px;
-      padding-left: 24px;
-      padding-right: 24px;
-      row-gap: 0;
-    }
-    .app-brand { display: none; }
-    .app-nav-links { display: none; }
-    .efit-nav-utility {
-      margin-left: 0;
-      margin-top: 0;
-    }
-    .app-shell { padding-top: 4px; }
   }
 </style>
 
@@ -330,24 +271,6 @@
   document.getElementById("signOutLink").addEventListener("click", function (e) {
     e.preventDefault();
     signOut();
-  });
-
-  // Same open/close/click-outside/Escape wiring as music-library.html's
-  // "Browse Playlist" modal — kept identical so every popup in the app
-  // behaves the same way.
-  function openPurchaseModal() {
-    document.getElementById("purchaseModalOverlay").classList.add("show");
-  }
-  function closePurchaseModal() {
-    document.getElementById("purchaseModalOverlay").classList.remove("show");
-  }
-  document.getElementById("openPurchaseBtn").addEventListener("click", openPurchaseModal);
-  document.getElementById("purchaseModalClose").addEventListener("click", closePurchaseModal);
-  document.getElementById("purchaseModalOverlay").addEventListener("click", function (e) {
-    if (e.target.id === "purchaseModalOverlay") closePurchaseModal();
-  });
-  document.addEventListener("keydown", function (e) {
-    if (e.key === "Escape") closePurchaseModal();
   });
 
   (async function init() {

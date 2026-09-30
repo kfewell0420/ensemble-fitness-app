@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Finder — Ensemble Fitness</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/app.css?v=2" />
+<style>
+  /* Ken's ask (Oct 2026): this page replaces the old "Members" tab on
+     mobile with a single hub of everything the app offers — Meal Prep and
+     the category filter chips got tightened up on the Home feed (see
+     feed.html), and this is where those categories (plus every other
+     section: Journey, Music, Books, Gear, Fitness+, Members, ...) live
+     now instead — one tap each, "instantly where they want to be," in
+     Ken's words, rather than hunting through a filter row or a sidebar.
+     Plain static links, no Supabase calls needed — this page is just a
+     directory pointing at pages/filters that already do the real work.
+
+     Ken's follow-up ask: since Find now lives in the main tab bar (not a
+     one-off secondary page like Gear or Journey), it should keep that
+     same tab bar visible here too instead of leaving people to find their
+     way back via the header logo — same reasoning as Instagram/TikTok
+     never dropping their tab bar no matter which tab you're on. These
+     rules (.rp-shell/.rp-tabbar/.rp-tab*) are copied from feed.html,
+     which is the only other page that currently uses them — they live in
+     each page's own <style> rather than the shared css/app.css since
+     nothing else in the app needs them yet. */
+  .rp-shell {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 480px;
+    display: flex;
+    flex-direction: column;
+    background: #000;
+    font-family: 'Inter', sans-serif;
+  }
+  /* Nov 2026 fix: this was missing -webkit-overflow-scrolling, which
+     feed.html's own scroll areas all have (see its .rp-reel and sidebar
+     rules) — without it, a scrollable div nested inside a position:fixed
+     ancestor (.rp-shell) can fail to respond to touch-drag at all on iOS's
+     native WKWebView, even though overflow-y:auto alone looks correct and
+     scrolls fine in a normal desktop/mobile browser. This is why the
+     Explore section (Music Library, Motivational Books, etc.) further down
+     this page could look "missing" on the real device even though it was
+     always in the HTML. */
+  .find-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .rp-tabbar {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: stretch;
+    background: #000;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .rp-tab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    height: 56px;
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.55);
+    text-decoration: none;
+    font-family: 'Inter', sans-serif;
+  }
+  .rp-tab-icon { font-size: 20px; line-height: 1; }
+  .rp-tab-label { font-size: 10px; font-weight: 600; letter-spacing: 0.01em; }
+  .rp-tab.active { color: #fff; }
+  .rp-tab-post .rp-tab-icon {
+    width: 30px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 7px;
+    border: 1.6px solid currentColor;
+    font-size: 15px;
+  }
+  .find-shell { max-width: 640px; margin: 0 auto; padding: 18px 14px 24px; }
+  .find-intro { margin: 4px 2px 22px; }
+  .find-intro h1 {
+    font-family: 'Poppins', 'Inter', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    margin: 0 0 4px;
+    color: #fff;
+  }
+  .find-intro p { margin: 0; font-size: 13.5px; color: var(--muted-invert); }
+  .find-section { margin-bottom: 26px; }
+  .find-section-title {
+    font-family: 'Poppins', 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent-2);
+    margin: 0 2px 10px;
+  }
+  .find-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    background: var(--navy-900);
+  }
+  .find-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 14px;
+    text-decoration: none;
+    color: #fff;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    transition: background 0.12s ease;
+  }
+  .find-list li:last-child .find-row { border-bottom: none; }
+  .find-row:active { background: rgba(255,255,255,0.05); }
+  .find-icon {
+    flex: 0 0 auto;
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+    background: var(--navy-800);
+    border: 1px solid rgba(255,255,255,0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+  }
+  .find-text { flex: 1 1 auto; min-width: 0; }
+  .find-title { font-size: 14.5px; font-weight: 700; margin-bottom: 1px; }
+  .find-sub { font-size: 12px; color: var(--faint-invert); }
+  .find-chevron { flex: 0 0 auto; color: var(--faint-invert); font-size: 18px; }
+</style>
+</head>
+<body>
+
+<div class="rp-shell">
+<header class="app-nav" id="rpAppNav">
+  <a href="feed.html" class="app-brand">
+    <span class="app-brand-mark"><img src="assets/logo.png" alt="Ensemble Fitness" /></span>Ensemble Fitness
+  </a>
+</header>
+
+<div class="find-scroll">
+<div class="find-shell">
+  <div class="find-intro">
+    <h1>Finder</h1>
+    <p>Every category and section in one place — one tap and you're there.</p>
+  </div>
+
+  <div class="find-section">
+    <div class="find-section-title">Browse by activity</div>
+    <ul class="find-list">
+      <li><a class="find-row" href="feed.html?filter=Working%20Out">
+        <span class="find-icon">💪</span>
+        <span class="find-text"><div class="find-title">Working Out</div></span>
+        <span class="find-chevron">›</span>
+      </a></li>
+      <li><a class="find-row" href="feed.html?filter=Walking">
+        <span class="find-icon">🚶</span>
+        <span class="find-text"><div class="find-title">Walking</div></span>
+        <span class="find-chevron">›</span>
+      </a></li>
+      <li><a class="find-row" href="feed.html?filter=Hiking">
+        <span class="find-icon">🥾</span>
+        <span class="find-text"><div class="find-title">Hiking</div></span>
+        <span class="find-chevron">›</span>
+      </a></li>
+      <li><a class="find-row" href="feed.html?filter=Biking">
+        <span class="find-icon">🚴</span>
+        <span class="find-text"><div class="find-title">Biking</div></span>
+        <span class="find-chevron">›</span>
+      </a></li>
+      <li><a class="find-row" href="feed.html?filter=Running">
+        <span class="find-icon">🏃</span>
+        <span class="find-text"><div class="find-title">Running</div></span>
+        <span class="find-chevron">›</span>
+      </a></li>
+      <li><a class="find-row" href="feed.html?filter=Swimming">
+        <span class="find-icon">🏊</span>
+        <span class="find-text"><div class="find-title">Swimming</div></span>
+        <span class="find-chevron">›</span>
+      </a></li>
+      <li><a class="find-row" href="feed.html?filter=Other">
+        <span class="find-icon">✨</span>
+        <span class="find-text"><div class="find-title">Other</div></span>
+        <span class="find-chevron">›</span>
+      </a></li>
+    </ul>
+  </div>
+
+  <div class="find-section">
+    <div class="find-section-title">Explore</div>
+    <ul class="find-list">
+      <li><a class="find-row" href="fitness-journeys.html">
+        <span class="find-icon">📓</span>
+        <span class="find-text"><div class="find-title">Fitness Journeys</div><div class="find-sub">Members' long-form progress updates</div></span>
+        <span class="find-chevron">›</span>
+      </a></li>
+      <li><a class="find-row" href="journey.html">
+        <span class="find-icon">🌱</span>
+        <span class="find-text"><div class="find-title">My Journey</div><div class="find-sub">Log a workout, track your own progress</div></span>
+        <span class="find-chevron">›</span>
+      </a></li>
+      <li><a class="find-row" href="music-library.html">
+        <span class="find-icon">🎧</span>
+        <span class="find-text"><div class="find-title">Music Library</div><div class="find-sub">Browse tracks, or by artist</div></span>
+        <span class="find-chevron">›</span>
+      </a></li>
+      <li><a class="find-row" href="fitness-plus.html">
+        <span class="find-icon">❤️</span>
+        <span class="find-text"><div class="find-title">Fitness+</div><div class="find-sub">Find your person</div></span>
+        <span class="find-chevron">›</span>
+      </a></li>
+      <li><a class="find-row" href="quote-library.html">
+        <span class="find-icon">✨</span>
+        <span class="find-text"><div class="find-title">Daily Inspiration</div></span>
+        <span class="find-chevron">›</span>
+      </a></li>
+      <li><a class="find-row" href="books.html">
+        <span class="find-icon">📚</span>
+        <span class="find-text"><div class="find-title">Motivational Books</div><div class="find-sub">Ensemble Reads — short books from independent authors</div></span>
+        <span class="find-chevron">›</span>
+      </a></li>
+      <li><a class="find-row" href="gear.html">
+        <span class="find-icon">🛒</span>
+        <span class="find-text"><div class="find-title">Approved Gear</div></span>
+        <span class="find-chevron">›</span>
+      </a></li>
+      <li><a class="find-row" href="members.html">
+        <span class="find-icon">🔎</span>
+        <span class="find-text"><div class="find-title">Members</div><div class="find-sub">Browse other members' profiles</div></span>
+        <span class="find-chevron">›</span>
+      </a></li>
+    </ul>
+  </div>
+</div>
+</div>
+
+<nav class="rp-tabbar" aria-label="Main">
+  <a href="feed.html" class="rp-tab" title="Home">
+    <span class="rp-tab-icon">🏠</span><span class="rp-tab-label">Home</span>
+  </a>
+  <a href="find.html" class="rp-tab active" title="Finder">
+    <span class="rp-tab-icon">🔎</span><span class="rp-tab-label">Finder</span>
+  </a>
+  <a href="upload.html" class="rp-tab rp-tab-post" title="Upload a photo, video, or song">
+    <span class="rp-tab-icon">+</span><span class="rp-tab-label">Post</span>
+  </a>
+  <a href="profile.html" class="rp-tab" title="My Profile">
+    <span class="rp-tab-icon">👤</span><span class="rp-tab-label">Profile</span>
+  </a>
+  <a href="gear.html" class="rp-tab" title="Approved Gear">
+    <span class="rp-tab-icon">🛒</span><span class="rp-tab-label">Gear</span>
+  </a>
+</nav>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/shared-session.js"></script>
+<script src="js/supabaseClient.js"></script>
+<script>
+  // Same member-only guard every other app page uses — sends a signed-out
+  // visitor to login.html instead of showing the directory to anyone.
+  (async function init() {
+    var user = await requireAuth();
+    if (!user) return;
+  })();
+</script>
+</body>
+</html>
