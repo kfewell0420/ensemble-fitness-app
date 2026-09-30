@@ -19,8 +19,19 @@
      Nov 2026 follow-up: the header still needs to exist as an EMPTY shell
      (no brand, no links) so js/notifications.js has an .app-nav to inject
      the home icon + notification bell into — see quote-library.html's
-     comment on this same change for the full reasoning. -->
+     comment on this same change for the full reasoning.
+     Nov 2026, round 2: tightened header/shell padding to match
+     books.html's established "icons only" pattern — see quote-library.html's
+     comment on this same follow-up for the full reasoning. -->
 <header class="app-nav"></header>
+<style>
+  .app-nav {
+    padding-top: calc(4px + env(safe-area-inset-top, 0px));
+    padding-bottom: 4px;
+  }
+  .efit-nav-utility { margin-left: 0; margin-top: 0; }
+  .app-shell { padding-top: 4px; }
+</style>
 
 <div class="app-shell">
 

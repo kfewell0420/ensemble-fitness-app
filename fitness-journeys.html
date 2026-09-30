@@ -173,8 +173,22 @@
      pills have their own solid dark background + white icon color (see
      .efit-home-link / .efit-notif-bell in app.css), so they stay clearly
      visible even though this page's own body is white (.fj-page), not
-     the app's usual dark theme. -->
+     the app's usual dark theme.
+     Nov 2026, round 2: tightened header padding to match books.html's
+     established "icons only" pattern — see quote-library.html's comment on
+     this same follow-up for the full reasoning. This page doesn't use
+     .app-shell as its content wrapper (it uses .fj-hero instead, see the
+     <style> block up in <head>), so the padding-top reduction targets
+     .fj-hero here rather than .app-shell. -->
 <header class="app-nav"></header>
+<style>
+  .app-nav {
+    padding-top: calc(4px + env(safe-area-inset-top, 0px));
+    padding-bottom: 4px;
+  }
+  .efit-nav-utility { margin-left: 0; margin-top: 0; }
+  .fj-hero { padding-top: 4px; }
+</style>
 
 <section class="fj-hero">
   <div class="fj-hero-inner">

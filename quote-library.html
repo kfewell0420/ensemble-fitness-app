@@ -21,8 +21,25 @@
      it silently does nothing without one). Keeping the real .app-nav CSS
      class, rather than hand-rolling a one-off bar, is what gives this
      page the exact same header height/padding/icon spacing as every page
-     that kept its full nav — consistency was the whole point of this ask. -->
+     that kept its full nav — consistency was the whole point of this ask.
+     Nov 2026, round 2: that default .app-nav padding (meant to leave room
+     for a full brand row + wrapping link grid) left a big empty gap above
+     "Quote Library" once there was nothing in the header but the icons —
+     Ken flagged this by comparing against books.html and music-library.html,
+     which don't have this gap. Tightened to match books.html's own
+     established "icons only, no brand/links" pattern (see its <style>
+     block) — same padding values, just applied unconditionally here since
+     this page never shows the brand/links at any width, unlike books.html
+     which only hides them below 900px. -->
 <header class="app-nav"></header>
+<style>
+  .app-nav {
+    padding-top: calc(4px + env(safe-area-inset-top, 0px));
+    padding-bottom: 4px;
+  }
+  .efit-nav-utility { margin-left: 0; margin-top: 0; }
+  .app-shell { padding-top: 4px; }
+</style>
 
 <div class="app-shell">
 
