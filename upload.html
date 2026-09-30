@@ -165,6 +165,38 @@
       </button>
     </div>
 
+    <!-- Ken's ask (Nov 2026): "once they get the green light on the bank
+         account attachment, then they can be allowed to upload their
+         music" — shown instead of the Song upload flow (see selectCategory
+         and loadSongPayoutGate in the script below) for anyone who hasn't
+         finished linking a bank account with Stripe yet. Photo and Video
+         are untouched — this only ever blocks Song. Same checklist as
+         connect-setup.html's, so it reads the same wherever someone hits
+         it, whether their content is already approved (the old post-
+         approval email flow) or they're hitting this gate before they've
+         uploaded anything at all. -->
+    <div id="songPayoutGate" style="display:none;">
+      <button type="button" class="upload-back-link" id="songGateBackBtn">← Choose a different type</button>
+      <div class="card">
+        <div class="eyebrow">Payouts</div>
+        <h2 style="font-size:18px;">Link your bank account to upload music</h2>
+        <p class="card-sub">So tips from members can pay out straight to you, every song in the Music Library needs a linked bank account first — this only takes a few minutes, and Ensemble Fitness never sees your bank details, only Stripe does.</p>
+        <div style="margin-bottom:20px;">
+          <strong style="font-size:13.5px;">Before you start, have these ready:</strong>
+          <ul style="margin:8px 0 12px; padding-left:20px; font-size:13.5px; color:var(--muted-invert); line-height:1.6;">
+            <li>Your full legal name and date of birth, matching a government-issued ID</li>
+            <li>Your home address (a P.O. box won't work)</li>
+            <li>Your Social Security Number</li>
+            <li>Your bank account and routing numbers</li>
+          </ul>
+          <p style="font-size:13px; color:var(--amber); margin:0;">Stripe may also ask for a quick photo of your driver's license or passport to confirm your identity — that's normal.</p>
+        </div>
+        <div class="form-msg" id="songGateMsg"></div>
+        <button type="button" class="btn btn-primary" id="songGateLinkBtn" style="margin-bottom:10px;">Link Your Bank Account</button>
+        <button type="button" class="btn btn-ghost" id="songGateRecheckBtn">I just finished — check again</button>
+      </div>
+    </div>
+
     <!-- Step 2: the actual upload flow — hidden until a category is picked
          above. Everything inside here is the same upload logic that used to
          live on the Profile page, just isolated to its own page and shown
@@ -316,6 +348,19 @@
   var currentUser = null;
   var selectedFile = null;
   var memberDisplayName = "";
+  // Ken's ask (Nov 2026): "once they get the green light on the bank
+  // account attachment, then they can be allowed to upload their music" —
+  // two artists in a row had a rough time finishing Stripe's bank-linking
+  // AFTER their track was already live, so payouts sat blocked with nobody
+  // aware. Checking this BEFORE the Song flow even opens (see selectCategory
+  // below) means nobody can publish a track without payouts already
+  // working — the gap just can't happen anymore. Starts false on purpose:
+  // until loadSongPayoutGate() below actually confirms Stripe says
+  // payouts_enabled, the Song category stays blocked, never the other way
+  // around. Photo and Video are entirely unaffected — this only ever
+  // touches the Song category.
+  var songPayoutsEnabled = false;
+  var SITE_FUNCTIONS_BASE = "https://ensemblefitness.com/.netlify/functions";
 
   function showMsg(el, text, kind) {
     el.textContent = text;
@@ -402,11 +447,85 @@
       .maybeSingle();
     memberDisplayName = (data && data.display_name) || "";
 
+    // Awaited before the deep-link check below so a ?type=song link (see
+    // applyDeepLinkType) always sees the real, current status rather than
+    // racing it — a plain tile click has a human's reaction time to work
+    // with, but a deep link fires immediately on page load.
+    await loadSongPayoutGate();
+
     // ?type=photo|video|song (music-library.html's "Upload Music" button)
     // takes priority; ?tag=... (the marketing site's Healthy Meal Prep deep
     // link) only ever appears on its own, but check it second just in case.
     if (!applyDeepLinkType()) applyDeepLinkTag();
   }
+
+  // ---- Song payout gate ----------------------------------------------------
+  async function loadSongPayoutGate() {
+    try {
+      var { data: sessionData } = await window.sb.auth.getSession();
+      var res = await fetch(SITE_FUNCTIONS_BASE + "/payout-status", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + sessionData.session.access_token
+        },
+        body: JSON.stringify({})
+      });
+      var out = await res.json();
+      songPayoutsEnabled = !!(res.ok && out.payouts_enabled);
+    } catch (err) {
+      // Network hiccup — songPayoutsEnabled stays false, the safe default,
+      // same as anyone who genuinely hasn't linked a bank account yet.
+      // Worst case a member sees the gate once and taps "Try Again."
+    }
+  }
+
+  document.getElementById("songGateLinkBtn").addEventListener("click", async function () {
+    var btn = document.getElementById("songGateLinkBtn");
+    var msg = document.getElementById("songGateMsg");
+    hideMsg(msg);
+    btn.disabled = true;
+    btn.textContent = "Taking you to Stripe…";
+    try {
+      var { data: sessionData } = await window.sb.auth.getSession();
+      var res = await fetch(SITE_FUNCTIONS_BASE + "/create-connect-link", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + sessionData.session.access_token
+        },
+        body: JSON.stringify({})
+      });
+      var out = await res.json();
+      if (!res.ok || !out.url) throw new Error(out.error || "Couldn't start bank account setup.");
+      window.location.href = out.url;
+    } catch (err) {
+      showMsg(msg, err.message || "Something went wrong — please try again.", "error");
+      btn.disabled = false;
+      btn.textContent = "Link Your Bank Account";
+    }
+  });
+
+  document.getElementById("songGateRecheckBtn").addEventListener("click", async function () {
+    var btn = document.getElementById("songGateRecheckBtn");
+    btn.disabled = true;
+    btn.textContent = "Checking…";
+    await loadSongPayoutGate();
+    btn.disabled = false;
+    btn.textContent = "I just finished — check again";
+    if (songPayoutsEnabled) {
+      selectCategory("song");
+    } else {
+      showMsg(document.getElementById("songGateMsg"), "Stripe doesn't have you fully set up yet — if you just finished, give it a minute and try again.", "error");
+    }
+  });
+
+  document.getElementById("songGateBackBtn").addEventListener("click", function () {
+    categoryGrid.style.display = "grid";
+    document.getElementById("songPayoutGate").style.display = "none";
+    uploadHeading.textContent = "What would you like to upload?";
+    uploadSub.textContent = "Pick a type to get started — you'll only see what's relevant to it.";
+  });
 
   // ---- Category picker ----------------------------------------------------
   var categoryGrid = document.getElementById("categoryGrid");
@@ -459,6 +578,19 @@
 
   function selectCategory(category, opts) {
     opts = opts || {};
+
+    // Ken's ask (Nov 2026): the Song category is entirely blocked until
+    // Stripe confirms payouts_enabled (see loadSongPayoutGate in init() and
+    // songPayoutsEnabled above) — showing the gate panel instead of opening
+    // the Song flow at all, for both a direct tile click and the ?type=song
+    // deep link (applyDeepLinkType calls this same function).
+    if (category === "song" && !songPayoutsEnabled) {
+      categoryGrid.style.display = "none";
+      document.getElementById("uploadFlow").style.display = "none";
+      document.getElementById("songPayoutGate").style.display = "block";
+      return;
+    }
+
     var meta = CATEGORY_META[category];
     fileInput.accept = meta.accept;
     uploadHeading.textContent = meta.heading;
