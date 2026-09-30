@@ -1258,7 +1258,7 @@
     link.href = "track.html?id=" + encodeURIComponent(track.id);
     var subtitle = track.tagline || "";
     var titleLine = track.artist_name
-      ? escapeHtml(track.artist_name) + " — " + escapeHtml(track.title)
+      ? escapeHtml(track.title) + " — " + escapeHtml(track.artist_name)
       : escapeHtml(track.title);
     link.innerHTML =
       '<span class="track-table-art">🎵</span>' +

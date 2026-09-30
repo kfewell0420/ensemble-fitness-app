@@ -11,23 +11,26 @@
 </head>
 <body>
 
-<header class="app-nav">
-  <a href="feed.html" class="app-brand">
-    <span class="app-brand-mark"><img src="assets/logo.png" alt="Ensemble Fitness" /></span>Ensemble Fitness
-  </a>
-  <nav class="app-nav-links">
-    <a href="feed.html">Community</a>
-    <a href="journey.html">My Journey</a>
-    <a href="members.html">Members</a>
-    <a href="fitness-plus.html">Fitness+</a>
-    <a href="gear.html">Gear</a>
-    <a href="music-library.html">Music</a>
-    <a href="quote-library.html">Quotes</a>
-    <a href="profile.html">My Profile</a>
-    <a href="admin.html" id="adminLink" style="display:none;">Queue</a>
-    <a href="#" id="signOutLink">Sign Out</a>
-  </nav>
-</header>
+<!-- Ken's ask (Sept 2026): stay consistent with quote-library.html, journey.html,
+     members.html, gear.html, fitness-plus.html, fitness-journeys.html, and
+     upload.html — once a member taps into a single track's player, hide the
+     full site nav (Community, My Journey, Gear, Fitness+, Members, Music,
+     Quotes, My Profile, Queue, Sign Out) and leave only the "Back to Music
+     Library" link and the player itself. The header still needs to exist as
+     an EMPTY shell (no brand, no links) so js/notifications.js has an
+     .app-nav to inject the home icon + notification bell into — it silently
+     does nothing without one. Keeping the real .app-nav CSS class, rather
+     than hand-rolling a one-off bar, is what gives this page the exact same
+     header height/padding/icon spacing as every other page. -->
+<header class="app-nav"></header>
+<style>
+  .app-nav {
+    padding-top: calc(4px + env(safe-area-inset-top, 0px));
+    padding-bottom: 4px;
+  }
+  .efit-nav-utility { margin-left: 0; margin-top: 0; }
+  .app-shell { padding-top: 4px; }
+</style>
 
 <div class="app-shell">
 
@@ -323,7 +326,6 @@
   async function init() {
     currentUser = await requireAuth();
     if (!currentUser) return;
-    if (await isCurrentUserAdmin()) document.getElementById("adminLink").style.display = "inline";
 
     var id = trackIdFromUrl();
     var card = document.getElementById("trackCard");
@@ -361,11 +363,6 @@
       window.history.replaceState({}, "", "track.html?id=" + encodeURIComponent(id));
     }
   }
-
-  document.getElementById("signOutLink").addEventListener("click", function (e) {
-    e.preventDefault();
-    signOut();
-  });
 
   init();
 </script>
