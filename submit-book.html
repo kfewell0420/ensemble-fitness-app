@@ -161,8 +161,12 @@
       <div class="light-form-row">
         <label>Manuscript (PDF, 30 pages or fewer)</label>
         <label class="file-drop" for="sb-pdf">
+          <!-- Ken's ask (Nov 2026): "Click to choose your PDF" followed by
+               "PDF only" right underneath read as saying PDF twice in a row.
+               Kept the parenthetical as a lightweight reminder of the file
+               type, per Ken's call. -->
           <strong id="sb-pdf-label">Click to choose your PDF</strong>
-          <span>PDF only</span>
+          <span>(PDF only)</span>
           <input type="file" id="sb-pdf" accept="application/pdf" required />
         </label>
         <span id="sb-pdf-page-note" class="hint" style="display:block; margin-top:6px;"></span>
@@ -274,7 +278,16 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/journeys-nav-badge.js?v=4"></script>
-<script src="js/main.js?v=24"></script>
+<!-- Ken's ask (Nov 2026): this page was missing shared-session.js, so it
+     could never pick up the handoff cookie the member app leaves behind
+     (js/shared-session.js) — landing here straight from the in-app Books
+     page always showed this header's plain "Sign In" button even for a
+     signed-in member, which read as "it signed me out." main.js?v=25
+     below now checks for that cookie (or an existing local session) on
+     every page load and swaps "Sign In" to "My Account" when it finds
+     one — this script just needs to be present for that check to work. -->
+<script src="js/shared-session.js?v=3"></script>
+<script src="js/main.js?v=25"></script>
 
 <!-- Real page-count check on the manuscript itself — "30 pages or fewer" is
      stated three times above but was never actually verified before now.
