@@ -65,49 +65,6 @@
     <div class="ml-stat"><span class="ml-stat-ico" style="color:#15121c;"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg></span><div><strong>All Genres</strong><span>Hip-Hop · Pop · EDM · R&amp;B · Rock · More</span></div></div>
   </div>
 
-  <!-- Ken's ask (Oct 2026): the "How it works" explainer for submitting
-       music only existed on the public marketing site (submit-music.html),
-       for artists who don't have an account yet. Signed-in members land
-       here without ever seeing that page, so there was nowhere in the app
-       itself explaining how their own upload actually works. This is the
-       in-app equivalent — same idea (4 numbered steps), but rewritten for
-       someone who's already a member: no mention of submitting for review
-       or emailing anything, since a member's own upload (via the Upload
-       Music button below, which goes straight to upload.html's Song flow)
-       publishes straight to the library the moment they do it — see
-       upload.html's own copy ("no waiting on approval"). Reuses the same solid dark
-       card look as the Browse Tracks / Wallet cards right below it (see
-       .ml-shell .card) so this reads as one consistent page, not a bolted-on
-       section. -->
-  <div class="ml-how">
-    <div class="ml-how-head">
-      <div class="eyebrow" style="margin-bottom:4px;">How It Works</div>
-      <h3>Get your own track in the library</h3>
-    </div>
-    <div class="ml-how-grid">
-      <div class="ml-how-step">
-        <div class="ml-how-num">1</div>
-        <h4>Prep your track</h4>
-        <p>Export it as an MP3, M4A, or WAV file — keep the size reasonable so it loads quickly for other members.</p>
-      </div>
-      <div class="ml-how-step">
-        <div class="ml-how-num">2</div>
-        <h4>Give it a title</h4>
-        <p>You'll be asked for a song title when you upload it — that's what shows up here for everyone to see.</p>
-      </div>
-      <div class="ml-how-step">
-        <div class="ml-how-num">3</div>
-        <h4>Upload it right here</h4>
-        <p>Tap "Upload Music" below and choose your audio file — no separate form or email, and nothing else on the page to get through.</p>
-      </div>
-      <div class="ml-how-step">
-        <div class="ml-how-num">4</div>
-        <h4>You're live instantly</h4>
-        <p>Your track publishes to the Music Library right away under your name — no approval wait, unlike photos and videos.</p>
-      </div>
-    </div>
-  </div>
-
   <div class="ml-shell">
 
     <!-- Nov 2026, Ken's ask: get members listening before pitching the
@@ -153,6 +110,17 @@
              the buttons below do — moved down and reworded so it reads
              right above the row it's explaining. -->
         <p class="card-sub" style="margin:10px 0 0;">Add to your wallet to tip artists</p>
+        <!-- Ken's ask (Nov 2026, corrected): an earlier pass here added a
+             20px margin-bottom on this row to stop it touching Upload Music
+             on a phone — turns out that wasn't actually the missing piece:
+             #uploadMusicBtn already gets `margin-top: 14px !important` on
+             phones (see the @media (max-width: 899px) block further down,
+             the same rule that keeps it lined up with Browse Playlist's
+             button), which was already enough on its own. Stacking my own
+             20px on top of that gave 34px total here vs. Browse Playlist's
+             14px — the "inconsistent, too-large gap" Ken flagged. Removed;
+             the shared !important rule is the only thing doing this job
+             now, so both buttons get the exact same phone-width gap. -->
         <div id="topupChoices" style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
           <button type="button" class="btn btn-ghost btn-sm topup-btn" data-amount-cents="100">Add $1</button>
           <button type="button" class="btn btn-ghost btn-sm topup-btn" data-amount-cents="200">Add $2</button>
@@ -188,6 +156,57 @@
       </div>
     </div>
 
+  </div>
+
+  <!-- Ken's ask (Oct 2026): the "How it works" explainer for submitting
+       music only existed on the public marketing site (submit-music.html),
+       for artists who don't have an account yet. Signed-in members land
+       here without ever seeing that page, so there was nowhere in the app
+       itself explaining how their own upload actually works. This is the
+       in-app equivalent — same idea (4 numbered steps), but rewritten for
+       someone who's already a member: no mention of submitting for review
+       or emailing anything, since a member's own upload (via the Upload
+       Music button below, which goes straight to upload.html's Song flow)
+       publishes straight to the library the moment they do it — see
+       upload.html's own copy ("no waiting on approval"). Reuses the same solid dark
+       card look as the Browse Tracks / Wallet cards right above it (see
+       .ml-shell .card) so this reads as one consistent page, not a bolted-on
+       section.
+
+       Nov 2026, Ken's ask: this used to sit ABOVE .ml-shell (Browse Tracks
+       / Your Wallet), between the stats row and the two cards — meaning a
+       member had to scroll past four explainer steps before reaching
+       anything clickable. Moved to here, after both cards, so the two
+       things members actually tap (Browse Playlist, Upload Music) are the
+       first thing they reach; this explainer is still right there for
+       anyone who wants it, just no longer in the way. -->
+  <div class="ml-how">
+    <div class="ml-how-head">
+      <div class="eyebrow" style="margin-bottom:4px;">How It Works</div>
+      <h3>Get your own track in the library</h3>
+    </div>
+    <div class="ml-how-grid">
+      <div class="ml-how-step">
+        <div class="ml-how-num">1</div>
+        <h4>Prep your track</h4>
+        <p>Export it as an MP3, M4A, or WAV file — keep the size reasonable so it loads quickly for other members.</p>
+      </div>
+      <div class="ml-how-step">
+        <div class="ml-how-num">2</div>
+        <h4>Give it a title</h4>
+        <p>You'll be asked for a song title when you upload it — that's what shows up here for everyone to see.</p>
+      </div>
+      <div class="ml-how-step">
+        <div class="ml-how-num">3</div>
+        <h4>Upload it right here</h4>
+        <p>Tap "Upload Music" below and choose your audio file — no separate form or email, and nothing else on the page to get through.</p>
+      </div>
+      <div class="ml-how-step">
+        <div class="ml-how-num">4</div>
+        <h4>You're live instantly</h4>
+        <p>Your track publishes to the Music Library right away under your name — no approval wait, unlike photos and videos.</p>
+      </div>
+    </div>
   </div>
 
   <!-- Ken's ask (Sept 2026): these are unlicensed, independent artists —
@@ -293,6 +312,19 @@
        text sits above them. */
     .ml-side > .card { width: 100%; display: flex; flex-direction: column; }
   }
+
+  /* Ken's ask (Nov 2026): "add $1/$2/$5 needs to move up because there's
+     plenty of space above it" — that space is app.css's .form-msg.show,
+     which reserves a 16px margin-bottom for every success/error banner
+     everywhere else it's used (forms with just one message and nothing
+     stacked tightly below it). Here, once the top-up success/cancelled
+     message shows, that same 16px reads as a big empty gap above "Add to
+     your wallet to tip artists" — tightening it just for this card pulls
+     the row up, closer to the balance/message above. (The separate
+     "Upload Music was touching these buttons" issue turned out to be
+     unrelated to this gap — see topupChoices' own comment above for the
+     real fix: the phone-width !important rule on #uploadMusicBtn.) */
+  #walletMsg.show { margin-bottom: 8px; }
 
   /* Ken's ask (Oct 2026), round 2: app.css already pins every .btn's
      line-height to 1 to stop a color emoji (🎤) from rendering taller than
@@ -857,22 +889,30 @@
       document.getElementById("adminLink").style.display = "inline";
     }
 
-    handleTopupRedirect();
+    // Ken's ask (Nov 2026): read this once, before handleTopupRedirect()
+    // strips it off the URL, so resumePendingQuickTipIfAny() below can also
+    // tell a real "finish the tip" return apart from a cancelled one —
+    // blindly re-attempting a tip after a cancelled Checkout used to just
+    // throw an "insufficient funds" retry loop at the member for no reason,
+    // since nothing was actually charged.
+    var topupParam = new URLSearchParams(window.location.search).get("topup");
+    handleTopupRedirect(topupParam);
     await loadWallet();
     await loadTracks();
     subscribeToTrackChanges();
-    resumePendingQuickTipIfAny();
+    resumePendingQuickTipIfAny(topupParam);
   }
 
   // ---- Wallet -------------------------------------------------------------
 
-  function handleTopupRedirect() {
-    var params = new URLSearchParams(window.location.search);
-    var topup = params.get("topup");
+  function handleTopupRedirect(topup) {
     if (!topup) return;
     var msg = document.getElementById("walletMsg");
     if (topup === "success") {
-      showMsg(msg, "Funds added — thanks! Your balance below is updated.", "success");
+      // Ken's ask (Nov 2026): this banner renders BELOW walletBalance (the
+      // big $ amount sits above it in the markup, not below) — "your
+      // balance below" was pointing the wrong direction.
+      showMsg(msg, "Funds added — thanks! Your balance above is updated.", "success");
     } else if (topup === "cancelled") {
       showMsg(msg, "No worries — nothing was charged.", "error");
     }
@@ -1356,7 +1396,10 @@
       var res = await fetch(SITE_FUNCTIONS_BASE + "/wallet-topup", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: await authHeader() },
-        body: JSON.stringify({ amount_cents: amountCents })
+        // Explicit even though "music-library.html" is wallet-topup.js's
+        // own fallback — future-proofing so this keeps working even if that
+        // default ever changes for some other caller.
+        body: JSON.stringify({ amount_cents: amountCents, return_to: "music-library.html" })
       });
       var out = await res.json();
       if (!res.ok || !out.url) throw new Error(out.error || "Couldn't start checkout.");
@@ -1371,7 +1414,13 @@
   // here to music-library.html (see wallet-topup.js's success_url) — this is
   // what's waiting when it does: it reopens the playlist and sends the exact
   // tip that triggered the top-up, so nothing further needs clicking.
-  function resumePendingQuickTipIfAny() {
+  //
+  // Ken's ask (Nov 2026): a cancelled Checkout used to end up here too, and
+  // this would still blindly retry the tip — throwing an "insufficient
+  // funds" error at the member for a charge they'd just deliberately backed
+  // out of, instead of just leaving it be. Now it only auto-finishes the
+  // tip on an actual successful top-up.
+  function resumePendingQuickTipIfAny(topupParam) {
     var raw = null;
     try { raw = sessionStorage.getItem("efPendingQuickTip"); } catch (e) { return; }
     if (!raw) return;
@@ -1380,6 +1429,7 @@
     var pending;
     try { pending = JSON.parse(raw); } catch (e) { return; }
     if (!pending || !pending.track_id || !pending.amount_cents) return;
+    if (topupParam === "cancelled") return;
 
     openPlaylistModal();
     sendQuickTipRequest(pending.track_id, pending.amount_cents, { resuming: true, retriesLeft: 5 });
