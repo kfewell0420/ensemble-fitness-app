@@ -670,6 +670,10 @@
   }
   .track-tip-btn:hover { background: rgba(255, 255, 255, 0.18); }
   .track-tip-btn:disabled { opacity: 0.6; cursor: default; }
+  /* Nov 2026: full "Be the first to tip" wording by default (plenty of room
+     on a wider screen); swapped for the short "Tip" version below 899px —
+     see the buildTrackRow comment on this same change. */
+  .track-tip-btn-short { display: none; }
 
   /* Ken's ask (Sept 2026): at 2 tracks this didn't matter, but at hundreds
      or thousands it does — the list now always scrolls inside its own
@@ -841,6 +845,14 @@
     .ml-how-num { grid-column: 1; grid-row: 1; margin-bottom: 0; }
     .ml-how-step h4 { grid-column: 2; grid-row: 1; margin: 0; }
     .ml-how-step p { grid-column: 2; grid-row: 2; }
+
+    /* (5) Nov 2026, Ken's ask: see the buildTrackRow/.track-tip-btn-short
+       comments above — "Be the first to tip" was wide enough on a phone
+       that .track-table-main (the track's title/artist) got squeezed down
+       to nothing next to it. Swapping in the short "Tip" label here frees
+       up real width for the title to actually show. */
+    .track-tip-btn-full { display: none; }
+    .track-tip-btn-short { display: inline; }
   }
 </style>
 
@@ -1265,11 +1277,28 @@
     // one instead (see loadLastTips above for where lastTipCentsByTrack
     // comes from). Tapping is still exactly one click either way — see
     // sendQuickTipRequest — only the amount that click sends has changed.
+    // Ken's ask (Nov 2026): on a phone, "💛 Be the first to tip" is long
+    // enough that this button (flex: none — it never shrinks) was squeezing
+    // the track title next to it down to nothing, so every row just showed
+    // the note icon, duration, and tip button with no song name at all.
+    // Rather than truncating the title further (there was barely any room
+    // left for it to truncate INTO), the button's own label goes short
+    // ("💛 Tip") on narrow screens instead — see the matching
+    // .track-tip-btn-full / .track-tip-btn-short CSS in the
+    // @media (max-width: 899px) block below. A track that already has a
+    // real tip amount to show (e.g. "💛 $2.00") was never the problem, so
+    // that case is left as one plain string.
     var lastTipCents = lastTipCentsByTrack[track.id];
     var tipBtn = document.createElement("button");
     tipBtn.type = "button";
     tipBtn.className = "track-tip-btn";
-    tipBtn.textContent = lastTipCents ? "💛 " + formatCents(lastTipCents) : "💛 Be the first to tip";
+    if (lastTipCents) {
+      tipBtn.textContent = "💛 " + formatCents(lastTipCents);
+    } else {
+      tipBtn.innerHTML = "💛 " +
+        '<span class="track-tip-btn-full">Be the first to tip</span>' +
+        '<span class="track-tip-btn-short">Tip</span>';
+    }
     tipBtn.addEventListener("click", function (e) {
       e.preventDefault();
       var amountToSend = lastTipCents || QUICK_TIP_CENTS;
