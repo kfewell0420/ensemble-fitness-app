@@ -165,7 +165,16 @@
      same treatment as quote-library.html, fitness-plus.html, and
      journey.html. The page should start right at the orange "Fitness
      Journeys" eyebrow / "Progress you can look back on." hero below,
-     which is already first in the markup. -->
+     which is already first in the markup.
+     Nov 2026 follow-up: the header still needs to exist as an EMPTY shell
+     (no brand, no links) so js/notifications.js has an .app-nav to inject
+     the home icon + notification bell into — see quote-library.html's
+     comment on this same change for the full reasoning. The home/bell
+     pills have their own solid dark background + white icon color (see
+     .efit-home-link / .efit-notif-bell in app.css), so they stay clearly
+     visible even though this page's own body is white (.fj-page), not
+     the app's usual dark theme. -->
+<header class="app-nav"></header>
 
 <section class="fj-hero">
   <div class="fj-hero-inner">

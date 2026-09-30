@@ -14,8 +14,15 @@
 <!-- Ken's ask (Sept 2026): this page should NOT show the usual site-wide
      header/nav (logo, Community/My Journey/Gear/etc. links, Sign Out) —
      just the orange "Quote Library" label, the heading/subtext, and the
-     quotes themselves. Intentionally different from every other page in
-     the app, which all keep the shared <header class="app-nav">. -->
+     quotes themselves.
+     Nov 2026 follow-up: the header still needs to exist as an EMPTY shell
+     (no brand, no links) so js/notifications.js has an .app-nav to inject
+     the home icon + notification bell into (see getUtilityGroup() there —
+     it silently does nothing without one). Keeping the real .app-nav CSS
+     class, rather than hand-rolling a one-off bar, is what gives this
+     page the exact same header height/padding/icon spacing as every page
+     that kept its full nav — consistency was the whole point of this ask. -->
+<header class="app-nav"></header>
 
 <div class="app-shell">
 
