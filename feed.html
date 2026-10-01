@@ -2754,31 +2754,36 @@
     if (btn) btn.textContent = video.muted ? "🔇" : "🔊";
   }
 
-  // Ken's ask (Oct 2026): only ever one video playing — and its audio
-  // audible — at a time. The observer below decides play/pause per card
-  // independently based on that card's OWN visibility ratio, which is fine
-  // on a narrow single-column phone layout where only one card can ever
-  // cross 60% at once, but on the wider desktop grid two (or more) cards
-  // can each individually cross 60% at the same time, and each one playing
-  // itself is exactly correct per-card logic that still adds up to several
-  // videos — several decoders, several unmuted audio tracks — all running
-  // together, which is both the overlapping-audio bug and a real source of
-  // slowdown. This tracks whichever video is the single current "owner" of
-  // playback and explicitly pauses it the instant a different video is
-  // about to start, so starting a new one always stops the last one first
-  // regardless of how many cards the browser considers "visible enough."
-  var currentlyPlayingVideo = null;
+  // Ken's ask (Oct 2026): several cards can legitimately be playing at
+  // once — that's normal on the wider desktop grid, where two (or more)
+  // cards can each cross 60% visible at the same time, same as it's always
+  // worked. The bug was that each one ALSO independently unmuted itself per
+  // the shared reelMuted setting, so several videos could be audible
+  // together. (An earlier version of this fix tried making only one video
+  // ever PLAY at all, pausing every other one — that broke the grid outright,
+  // since the moment a second card became eligible it paused the first one
+  // again, and in some orderings a card could end up paused with nothing
+  // left to ever resume it.) The actual fix only touches sound: at most one
+  // video is ever audible at a time, tracked here, and becoming the newly
+  // audible one simply mutes whichever card had it before — it keeps
+  // playing, just silently, same as every other visible-but-not-the-
+  // current-sound card already does.
+  var currentlyAudibleVideo = null;
 
   var reelObserver = new IntersectionObserver(function (entries) {
     entries.forEach(function (entry) {
       var video = entry.target.querySelector("video");
       if (!video) return;
       if (entry.isIntersecting && entry.intersectionRatio > 0.6) {
-        if (currentlyPlayingVideo && currentlyPlayingVideo !== video) {
-          currentlyPlayingVideo.pause();
+        if (reelMuted) {
+          video.muted = true;
+        } else {
+          if (currentlyAudibleVideo && currentlyAudibleVideo !== video) {
+            currentlyAudibleVideo.muted = true;
+          }
+          currentlyAudibleVideo = video;
+          video.muted = false;
         }
-        currentlyPlayingVideo = video;
-        video.muted = reelMuted;
         syncMuteBtn(entry.target, video);
         var p = video.play();
         if (p && p.catch) {
@@ -2799,7 +2804,7 @@
         }
       } else {
         video.pause();
-        if (currentlyPlayingVideo === video) currentlyPlayingVideo = null;
+        if (currentlyAudibleVideo === video) currentlyAudibleVideo = null;
       }
     });
   }, { threshold: [0, 0.6, 1] });
