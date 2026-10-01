@@ -1806,6 +1806,20 @@
   var isWideLayout = window.matchMedia("(min-width: 900px)").matches;
 
   var currentUserId = null;
+  // Ken's ask (Oct 2026): renderActions() used to run its own two queries
+  // (reactions + comment count) separately for EVERY single post, so a
+  // screen showing 8 posts meant 16 separate network round trips just for
+  // like/comment counts — visible in a Network tab as a long staggered
+  // chain of media_reactions/media_comments requests, each only ~100-140ms
+  // but adding up to real, measurable load time. This cache is filled once
+  // per batch (see preloadActionCounts, called from buildItems — the same
+  // single choke point attachAvatarUrls already uses for the same reason)
+  // with ONE query for reactions and ONE for comments covering every post
+  // in that batch at once; renderActions below reads from here instantly
+  // when a post was part of a batch, and only falls back to its own
+  // original per-item queries for anything that wasn't (e.g. a single
+  // post that just arrived via the live "new post" check).
+  var actionCountsCache = {};
   var PAGE_SIZE = 8;
   var offset = 0;
   var reachedEnd = false;
@@ -2404,6 +2418,28 @@
     }
   }
 
+  // See actionCountsCache above for why this exists. Skips any id already
+  // cached (e.g. an item that showed up in both the meal-prep strip and
+  // the main reel) so a second batch never re-fetches what a prior one
+  // already has. Every id passed in gets SOME cache entry, even a post
+  // with zero reactions/comments, so renderActions can tell "checked,
+  // there's nothing" apart from "never checked" and knows to trust it.
+  async function preloadActionCounts(mediaIds) {
+    mediaIds = mediaIds.filter(function (id) { return !(id in actionCountsCache); });
+    if (!mediaIds.length) return;
+    mediaIds.forEach(function (id) { actionCountsCache[id] = { reactions: [], commentCount: 0 }; });
+    var [{ data: reactions }, { data: comments }] = await Promise.all([
+      window.sb.from("media_reactions").select("media_id, user_id, reaction_type").in("media_id", mediaIds),
+      window.sb.from("media_comments").select("media_id").in("media_id", mediaIds)
+    ]);
+    (reactions || []).forEach(function (r) {
+      if (actionCountsCache[r.media_id]) actionCountsCache[r.media_id].reactions.push(r);
+    });
+    (comments || []).forEach(function (c) {
+      if (actionCountsCache[c.media_id]) actionCountsCache[c.media_id].commentCount++;
+    });
+  }
+
   async function buildItems(rows) {
     var videoIds = rows.filter(function (r) { return r.kind === "video"; }).map(function (r) { return r.id; });
     var clipsByMediaId = await fetchClipsForMediaIds(videoIds);
@@ -2449,7 +2485,14 @@
         extraClips: extraClips
       };
     });
-    return attachAvatarUrls(items);
+    // Run together rather than one after the other — two independent
+    // batched lookups for the same set of posts, neither needs to wait on
+    // the other to start.
+    var avatarResult = await Promise.all([
+      attachAvatarUrls(items),
+      preloadActionCounts(rows.map(function (r) { return r.id; }))
+    ]);
+    return avatarResult[0];
   }
 
   // ---------------- Meal Prep strip ----------------
@@ -3188,10 +3231,22 @@
     var commentBtn = container.querySelector(".rp-comment-btn");
     commentBtn.addEventListener("click", function () { openCommentsModal(item); });
 
-    var [{ data: reactions }, { count: commentCount }] = await Promise.all([
-      window.sb.from("media_reactions").select("user_id, reaction_type").eq("media_id", item.id),
-      window.sb.from("media_comments").select("id", { count: "exact", head: true }).eq("media_id", item.id)
-    ]);
+    var reactions, commentCount;
+    var cached = actionCountsCache[item.id];
+    if (cached) {
+      reactions = cached.reactions;
+      commentCount = cached.commentCount;
+    } else {
+      // Not part of a preloaded batch (e.g. a single post that just
+      // arrived via the live "new post" check) — same two queries this
+      // always ran, just scoped to one post instead of the whole batch.
+      var results = await Promise.all([
+        window.sb.from("media_reactions").select("user_id, reaction_type").eq("media_id", item.id),
+        window.sb.from("media_comments").select("id", { count: "exact", head: true }).eq("media_id", item.id)
+      ]);
+      reactions = results[0].data;
+      commentCount = results[1].count;
+    }
 
     var counts = { thumbs_up: 0, muscle: 0, heart: 0 };
     var mine = {};
