@@ -2754,11 +2754,30 @@
     if (btn) btn.textContent = video.muted ? "🔇" : "🔊";
   }
 
+  // Ken's ask (Oct 2026): only ever one video playing — and its audio
+  // audible — at a time. The observer below decides play/pause per card
+  // independently based on that card's OWN visibility ratio, which is fine
+  // on a narrow single-column phone layout where only one card can ever
+  // cross 60% at once, but on the wider desktop grid two (or more) cards
+  // can each individually cross 60% at the same time, and each one playing
+  // itself is exactly correct per-card logic that still adds up to several
+  // videos — several decoders, several unmuted audio tracks — all running
+  // together, which is both the overlapping-audio bug and a real source of
+  // slowdown. This tracks whichever video is the single current "owner" of
+  // playback and explicitly pauses it the instant a different video is
+  // about to start, so starting a new one always stops the last one first
+  // regardless of how many cards the browser considers "visible enough."
+  var currentlyPlayingVideo = null;
+
   var reelObserver = new IntersectionObserver(function (entries) {
     entries.forEach(function (entry) {
       var video = entry.target.querySelector("video");
       if (!video) return;
       if (entry.isIntersecting && entry.intersectionRatio > 0.6) {
+        if (currentlyPlayingVideo && currentlyPlayingVideo !== video) {
+          currentlyPlayingVideo.pause();
+        }
+        currentlyPlayingVideo = video;
         video.muted = reelMuted;
         syncMuteBtn(entry.target, video);
         var p = video.play();
@@ -2780,6 +2799,7 @@
         }
       } else {
         video.pause();
+        if (currentlyPlayingVideo === video) currentlyPlayingVideo = null;
       }
     });
   }, { threshold: [0, 0.6, 1] });
@@ -2817,7 +2837,12 @@
     // 1x1 image — a real poster, just one that's invisible against
     // .rp-media's own black background, so there's never a "no poster" gap
     // for the browser to fill in with its own icon.
-    var BLANK_VIDEO_POSTER = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";
+    // (This data URI really is a solid-black 1x1 pixel — a decode check
+    // confirmed it, after an earlier version of this fix used a string that
+    // actually decoded to solid WHITE, showing a brief white flash where
+    // the video card should have just looked like the rest of its black
+    // background.)
+    var BLANK_VIDEO_POSTER = "data:image/gif;base64,R0lGODdhAQABAIEAAAAAAAAAAAAAAAAAACwAAAAAAQABAAAIBAABBAQAOw==";
     var videoPoster = item.posterUrl || BLANK_VIDEO_POSTER;
     var mediaHtml = item.kind === "video"
       ? '<video src="' + item.url + '" poster="' + videoPoster + '"' + (reelMuted ? ' muted' : '') + ' loop playsinline preload="metadata"></video>'
