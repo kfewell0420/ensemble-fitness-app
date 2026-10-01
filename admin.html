@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>Review Queue — Ensemble Fitness</title>
-<link rel="stylesheet" href="css/fonts.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&family=Caveat:wght@600;700&family=Dancing+Script:wght@600;700&display=swap">
 <link rel="stylesheet" href="css/app.css?v=2" />
 <style>
   /* Lets admin tag/re-tag a post's category right from the review rows,
@@ -422,7 +422,16 @@
 
 </div>
 
-<script src="js/vendor/supabase.js"></script>
+<!-- Ken's ask (Oct 2026): the "self-hosted copy, fall back to CDN" setup
+     never actually had a self-hosted copy on disk (js/vendor/supabase.js
+     was never created), so EVERY page load was silently failing that first
+     request, then falling back to this exact CDN script via a blocking
+     document.write (which stalls the page while it reruns) -- on every
+     page, every load, website and app alike. That's the real reason things
+     have felt slower since that change went in, not the CDN itself. Loading
+     directly from the CDN, plainly, is both simpler and faster than the
+     broken fallback dance was. -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="js/config.js"></script>
 <script src="js/shared-session.js"></script>
 <script src="js/supabaseClient.js"></script>
