@@ -325,9 +325,9 @@
     </div>
 
     <div class="admin-tab-panel" data-tab="quotes" hidden>
-      <div class="eyebrow">Quote Voiceover Library</div>
-      <h2>Quotes members can record themselves reading</h2>
-      <p class="card-sub" style="margin-bottom:24px;">Add a quote here and it instantly shows up on quote-library.html for members to record their own reading of it. "Deactivate" pulls a quote from that picker without deleting recordings already made of it. Recordings publish instantly too — spot-check them below and remove anything that shouldn't be up.</p>
+      <div class="eyebrow">Quote Library</div>
+      <h2>Quotes shown on the Quote Library page</h2>
+      <p class="card-sub" style="margin-bottom:24px;">Add a quote here and it instantly shows up on quote-library.html. "Deactivate" pulls a quote from that page without deleting it.</p>
 
       <div class="card" style="margin-bottom:20px;">
         <div class="form-msg" id="quoteMsg"></div>
@@ -342,16 +342,8 @@
         <button type="button" class="btn btn-primary btn-block" id="addQuoteBtn">Add Quote</button>
       </div>
 
-      <div class="card" style="margin-bottom:20px;">
-        <div id="quoteList">
-          <div class="empty-state">Loading…</div>
-        </div>
-      </div>
-
-      <h2 style="font-size:18px; margin-top:28px;">Recent quote recordings</h2>
-      <p class="card-sub" style="margin-bottom:24px;">Spot-check member recordings and remove anything that shouldn't be up.</p>
       <div class="card">
-        <div id="quoteRecordingQueue">
+        <div id="quoteList">
           <div class="empty-state">Loading…</div>
         </div>
       </div>
@@ -471,7 +463,6 @@
     await loadRecentPhotos();
     await loadTracks();
     await loadQuotes();
-    await loadQuoteRecordings();
     await loadReviewFee();
     await loadSubmissionQueue();
     await loadOrders();
@@ -1634,7 +1625,7 @@
       });
       if (insertError) throw insertError;
 
-      msg.textContent = "Quote added! It's live for members to record now.";
+      msg.textContent = "Quote added! It's live in the Quote Library now.";
       msg.className = "form-msg show success";
       document.getElementById("quoteText").value = "";
       document.getElementById("quoteAuthor").value = "";
@@ -1647,54 +1638,11 @@
     btn.textContent = "Add Quote";
   });
 
-  async function loadQuoteRecordings() {
-    var el = document.getElementById("quoteRecordingQueue");
-    var { data, error } = await window.sb
-      .from("quote_recordings")
-      .select("id, storage_path, created_at, quotes(quote_text), profiles!quote_recordings_user_id_fkey(display_name)")
-      .order("created_at", { ascending: false })
-      .limit(30);
-
-    if (error) {
-      el.innerHTML = '<div class="empty-state">Couldn\'t load quote recordings: ' + error.message + '</div>';
-      return;
-    }
-    if (!data || data.length === 0) {
-      el.innerHTML = '<div class="empty-state">No quote recordings yet.</div>';
-      return;
-    }
-
-    el.innerHTML = "";
-    for (var i = 0; i < data.length; i++) {
-      var item = data[i];
-      var url = await signedUrlFor(item.storage_path, "quote-voices");
-      var name = (item.profiles && item.profiles.display_name) || "A member";
-      var quoteText = (item.quotes && item.quotes.quote_text) || "";
-      var row = document.createElement("div");
-      row.className = "review-row";
-      row.innerHTML =
-        '<div class="review-thumb"><div class="audio-card"><span class="audio-ico">🎙️</span><audio src="' + url + '" controls></audio></div></div>' +
-        '<div class="review-meta">' +
-          '<strong>' + name + '</strong>' +
-          '<span>' + timeAgo(item.created_at) + '</span>' +
-          (quoteText ? '<div style="font-size:13px; color:var(--muted-invert); margin-top:4px;">“' + escapeHtmlAdmin(quoteText) + '”</div>' : '') +
-        '</div>' +
-        '<div class="review-actions">' +
-          '<button class="btn btn-ghost btn-sm delete-quote-recording-btn" data-id="' + item.id + '" data-path="' + item.storage_path + '">Remove</button>' +
-        '</div>';
-      el.appendChild(row);
-    }
-
-    el.querySelectorAll(".delete-quote-recording-btn").forEach(function (btn) {
-      btn.addEventListener("click", async function () {
-        if (!confirm("Remove this quote recording? This can't be undone.")) return;
-        btn.disabled = true;
-        await window.sb.storage.from("quote-voices").remove([btn.getAttribute("data-path")]);
-        await window.sb.from("quote_recordings").delete().eq("id", btn.getAttribute("data-id"));
-        await loadQuoteRecordings();
-      });
-    });
-  }
+  // Ken's ask (Oct 2026): dropped the "members record themselves reading
+  // a quote" feature entirely — the message itself is what's relevant to
+  // the brand, not a recording of it. This removes the moderation queue
+  // for those recordings (loadQuoteRecordings) along with it; adding and
+  // deactivating quotes themselves (above) still works exactly as before.
   // -------------------------------------------------------------------------
 
   // ---- Ensemble Approved Products (real picks for the public page) -----
