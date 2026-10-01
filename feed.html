@@ -2770,6 +2770,22 @@
     entries.forEach(function (entry) {
       var video = entry.target.querySelector("video");
       if (!video) return;
+      // Every slide is built with preload="metadata" (on purpose — it
+      // avoids downloading actual video bytes for the dozens of offscreen
+      // cards in a feed, just their duration/size). That means the moment
+      // a card crosses 60% and is told to play, the browser is starting
+      // its real video download from zero, which is the half-second
+      // black beat Ken's seeing before motion starts (worse on a post
+      // with no captured thumbnail, since there's nothing but that black
+      // placeholder to look at while it loads). Upgrading to preload=
+      // "auto" here, the moment a card starts entering the viewport AT
+      // ALL (threshold 0, well before the 60% play line below), gives
+      // the real download a head start while the user is still scrolling
+      // it into place, so there's usually real buffered video by the
+      // time it's actually asked to play.
+      if (entry.isIntersecting && video.preload !== "auto") {
+        video.preload = "auto";
+      }
       if (entry.isIntersecting && entry.intersectionRatio > 0.6) {
         if (reelMuted) {
           video.muted = true;
