@@ -321,7 +321,10 @@
           <option value="Meal Prep">Healthy Meal Prep</option>
           <option value="Other">Other</option>
         </select>
-        <p class="card-sub" style="margin-top:6px; font-size:12px;">Required for photos and videos — this is what powers the filters on the Community feed. Not needed for a profile photo or a voice/music upload.</p>
+        <!-- Ken's ask (Oct 2026): "delete it, that way Caption will pull up"
+             — this explanatory paragraph was pushing Caption further down
+             the page for no benefit most members needed; the category
+             dropdown is self-explanatory. -->
       </div>
       <div class="field" id="songTitleField" style="display:none;">
         <label for="songTitle">Song title</label>
@@ -504,6 +507,15 @@
     if (VIDEO_EXTS.indexOf(ext) !== -1) return "video";
     if (AUDIO_EXTS.indexOf(ext) !== -1) return "audio";
     return "photo";
+  }
+
+  // Ken's ask (Oct 2026): a phone's own auto-generated filename (something
+  // like "1000042055.mp4") "may be confusing for someone" and means
+  // nothing to a member — the file TYPE is what's actually useful to
+  // confirm at a glance. Shows just the extension, e.g. "MP4 selected".
+  function fileTypeLabel(file) {
+    var ext = getExt(file.name).toUpperCase();
+    return (ext && ext !== "DAT" ? ext : fileKind(file)) + " selected";
   }
 
   // Reads an audio file's length client-side (no server processing needed)
@@ -1435,7 +1447,7 @@
     }
     hideMsg(document.getElementById("uploadMsg"));
     if (selectedFile) {
-      dropzoneLabel.textContent = selectedFile.name;
+      dropzoneLabel.textContent = fileTypeLabel(selectedFile);
       uploadBtn.disabled = false;
       uploadBtn.textContent = "Upload";
       // "Set as profile photo" only makes sense for an actual photo — a video

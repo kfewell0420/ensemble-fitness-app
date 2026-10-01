@@ -606,7 +606,11 @@ select option {
   align-items: center;
   border: 1.5px dashed rgba(255, 255, 255, 0.25);
   border-radius: var(--radius-md);
-  padding: 28px;
+  /* Ken's ask (Oct 2026): "shrunk for sure, like maybe cut in half" — this
+     was a big, heavily-padded box before any content on the page even
+     starts. Padding and icon size both come down so it reads as a compact
+     "tap here" prompt rather than its own tall section. */
+  padding: 14px;
   text-align: center;
   cursor: pointer;
   transition: border-color 0.15s ease, background 0.15s ease;
@@ -620,19 +624,20 @@ select option {
 .dropzone input[type="file"] { display: none; }
 
 .dropzone-icon {
-  width: 40px;
-  height: 40px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.08);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 12px;
+  margin: 0 auto 6px;
   color: var(--accent-2);
 }
+.dropzone-icon svg { width: 15px; height: 15px; }
 
-.dropzone strong { display: block; color: #fff; font-size: 14.5px; margin-bottom: 4px; }
-.dropzone span { font-size: 12.5px; color: var(--faint-invert); }
+.dropzone strong { display: block; color: #fff; font-size: 13.5px; margin-bottom: 2px; }
+.dropzone span { font-size: 11.5px; color: var(--faint-invert); }
 
 .upload-progress {
   height: 6px;
@@ -784,8 +789,22 @@ select option {
 }
 
 .trim-preview-video {
+  /* Ken's ask (Oct 2026): a phone-shot video (tall ~9:16) was being shown at
+     its full native height, which made the box itself very tall AND still
+     left black bars down the left/right sides (the video shrinks to fit
+     inside that height while keeping its own shape, so it stops short of
+     the box's full width). Switching to a fixed, shorter 3:4 box plus
+     object-fit:cover fixes both at once: the preview now always fills the
+     box's full width edge-to-edge (no black bars), at the cost of cropping
+     off roughly the top/bottom quarter of a typical vertical phone video —
+     exactly the trade Ken asked for. This is a PREVIEW crop only: the full,
+     uncropped video is still what actually gets uploaded and played back
+     everywhere else; captureFrameDataUrl/captureVideoPosterBlob read pixels
+     from the real video (videoWidth/videoHeight), not this cropped CSS box,
+     so cover-photo and poster captures are unaffected. */
   width: 100%;
-  max-height: 260px;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
   border-radius: var(--radius-sm);
   background: #000;
   margin-bottom: 12px;
@@ -818,7 +837,7 @@ select option {
   }
   .trim-media { flex: 0 0 44%; max-width: 44%; }
   .trim-controls { flex: 1 1 auto; min-width: 0; }
-  .trim-preview-video { max-height: 420px; margin-bottom: 0; }
+  .trim-preview-video { margin-bottom: 0; }
 }
 
 /* Ken's ask (Oct 2026), inspired by Instagram's video editor: real frames
@@ -1713,6 +1732,25 @@ select option {
 @media (max-width: 560px) {
   .app-shell { padding: 32px 16px 64px; }
   .card { padding: 20px; }
+}
+
+/* Ken's ask (Oct 2026): "my goal [is] to fit all of this on a screen
+   without scrolling" on a phone. These classes (dropzone, narration-section,
+   field, trim-*, cover-*, more-option-*) are all upload-page-only already,
+   so tightening them here only affects upload.html, not any other page.
+   This won't make every upload fit with zero scrolling on every phone —
+   a video with the trim/cover-photo editor showing is a lot of real
+   content — but combined with the shrunk dropzone and dropped category
+   paragraph above, this gets meaningfully closer. */
+@media (max-width: 560px) {
+  #uploadCard { padding: 16px; }
+  .narration-section { padding: 10px; margin: 2px 0 10px; }
+  .field { margin-bottom: 10px; }
+  #workoutTypeField { margin-top: 10px !important; }
+  .trim-filmstrip { height: 28px; margin-bottom: 8px; }
+  .trim-slider-row { margin-bottom: 4px; }
+  .cover-picker { margin-bottom: 8px; }
+  #extraClipsSection { margin-top: 8px !important; }
 }
 
 /* ==========================================================================
