@@ -75,6 +75,7 @@
         <button type="button" class="admin-tab-btn" data-tab="photos-profile">Profile Photos</button>
         <button type="button" class="admin-tab-btn" data-tab="photos-feed">Feed Photos</button>
         <button type="button" class="admin-tab-btn" data-tab="videos">Videos</button>
+        <button type="button" class="admin-tab-btn" data-tab="media-backfill">Media Backfill</button>
 
         <div class="admin-sidenav-group-label">Music &amp; Quotes</div>
         <button type="button" class="admin-tab-btn" data-tab="music">Music Library</button>
@@ -181,6 +182,23 @@
         <div id="videoQueue">
           <div class="empty-state">Loading…</div>
         </div>
+      </div>
+    </div>
+
+    <div class="admin-tab-panel" data-tab="media-backfill" hidden>
+      <div class="eyebrow">Media Backfill</div>
+      <h2>Clean up old photos &amp; videos, in one shot</h2>
+      <p class="card-sub" style="margin-bottom:24px;">New uploads already get a video thumbnail and a shrunk-down photo automatically. This runs the same two fixes over everything uploaded before that — one-time, safe to re-run, and it only touches videos with no thumbnail yet and photos that are still oversized.</p>
+
+      <div class="form-msg" id="backfillMsg"></div>
+
+      <div class="card" style="margin-bottom:20px;">
+        <p style="margin-top:0; font-size:14px; color:var(--muted-invert);">Before running this the first time, a one-time database update is needed — see <code>sql/media-backfill-admin-storage.sql</code> (run it once in the Supabase SQL editor). Without it, this will stop with an error on the first file it tries to fix.</p>
+        <button type="button" class="btn btn-primary btn-block" id="runBackfillBtn">Run Backfill</button>
+      </div>
+
+      <div class="card">
+        <div id="backfillLog" style="font-family: ui-monospace, monospace; font-size:13px; line-height:1.6; max-height:420px; overflow-y:auto; white-space:pre-wrap;">Not run yet this session.</div>
       </div>
     </div>
 
@@ -1643,6 +1661,283 @@
   // the brand, not a recording of it. This removes the moderation queue
   // for those recordings (loadQuoteRecordings) along with it; adding and
   // deactivating quotes themselves (above) still works exactly as before.
+  // -------------------------------------------------------------------------
+
+  // ---- Media Backfill (Ken's ask, Oct 2026) ------------------------------
+  // One-time cleanup pass over media uploaded BEFORE the two upload.html
+  // fixes existed: videos with no poster_path get a thumbnail generated the
+  // same way a brand-new upload does (see captureVideoPosterBlob in
+  // upload.html), and photos still at full camera resolution get shrunk the
+  // same way resizeImageFile in upload.html shrinks a new upload. Both
+  // passes are best-effort per file — one failure is logged and skipped,
+  // never fatal to the rest of the run — except a permission error, which
+  // means the one-time SQL update hasn't been run yet (see the note in the
+  // tab) and stops that pass immediately rather than failing file after
+  // file the same way.
+  function backfillLog(line) {
+    var el = document.getElementById("backfillLog");
+    if (el.textContent === "Not run yet this session.") el.textContent = "";
+    el.textContent += line + "\n";
+    el.scrollTop = el.scrollHeight;
+  }
+
+  // Same still-frame technique as captureVideoPosterBlob in upload.html,
+  // adapted to start from a freshly downloaded blob instead of a video
+  // element that's already loaded and playing on the page.
+  function captureVideoPosterFromBlob(blob, seekTime) {
+    return new Promise(function (resolve) {
+      var objectUrl = URL.createObjectURL(blob);
+      var videoEl = document.createElement("video");
+      videoEl.muted = true;
+      videoEl.playsInline = true;
+      videoEl.preload = "auto";
+      videoEl.style.position = "fixed";
+      videoEl.style.left = "-9999px";
+      document.body.appendChild(videoEl);
+
+      var settled = false;
+      function cleanup(result) {
+        if (settled) return;
+        settled = true;
+        videoEl.removeEventListener("loadedmetadata", onLoaded);
+        videoEl.removeEventListener("seeked", onSeeked);
+        videoEl.removeEventListener("error", onError);
+        URL.revokeObjectURL(objectUrl);
+        videoEl.remove();
+        resolve(result);
+      }
+      function onError() { cleanup(null); }
+      function onSeeked() {
+        try {
+          var w = videoEl.videoWidth, h = videoEl.videoHeight;
+          if (!w || !h) { cleanup(null); return; }
+          var canvas = document.createElement("canvas");
+          canvas.width = w;
+          canvas.height = h;
+          canvas.getContext("2d").drawImage(videoEl, 0, 0, w, h);
+          canvas.toBlob(function (posterBlob) { cleanup(posterBlob); }, "image/jpeg", 0.82);
+        } catch (e) {
+          cleanup(null);
+        }
+      }
+      function onLoaded() {
+        if (!videoEl.duration || isNaN(videoEl.duration)) { cleanup(null); return; }
+        var target = Math.min(Math.max(seekTime || 0, 0.05), Math.max(videoEl.duration - 0.05, 0));
+        videoEl.addEventListener("seeked", onSeeked);
+        videoEl.currentTime = target;
+      }
+      videoEl.addEventListener("loadedmetadata", onLoaded);
+      videoEl.addEventListener("error", onError);
+      // Same belt-and-suspenders as captureVideoPosterBlob — never let one
+      // unusual file hang the whole run waiting on an event that never fires.
+      setTimeout(function () { cleanup(null); }, 8000);
+      videoEl.src = objectUrl;
+    });
+  }
+
+  // Identical shrink logic to resizeImageFile in upload.html (max 1920px on
+  // the long edge, JPEG quality 0.85), reused here against a downloaded
+  // Blob instead of a freshly chosen File. Resolves with the SAME blob
+  // reference, unchanged, when the photo is already small enough — the
+  // caller uses that to know there's nothing to re-upload.
+  function resizeImageBlobForBackfill(blob, maxDimension, quality) {
+    return new Promise(function (resolve) {
+      try {
+        var objectUrl = URL.createObjectURL(blob);
+        var img = new Image();
+        img.onload = function () {
+          var w = img.naturalWidth, h = img.naturalHeight;
+          if (!w || !h || (w <= maxDimension && h <= maxDimension)) {
+            URL.revokeObjectURL(objectUrl);
+            resolve(blob);
+            return;
+          }
+          var scale = maxDimension / Math.max(w, h);
+          var canvas = document.createElement("canvas");
+          canvas.width = Math.round(w * scale);
+          canvas.height = Math.round(h * scale);
+          canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+          canvas.toBlob(function (resized) {
+            URL.revokeObjectURL(objectUrl);
+            resolve(resized || blob);
+          }, "image/jpeg", quality);
+        };
+        img.onerror = function () { URL.revokeObjectURL(objectUrl); resolve(blob); };
+        img.src = objectUrl;
+      } catch (e) {
+        resolve(blob);
+      }
+    });
+  }
+
+  // True only for an RLS-style permission error, so a run missing the
+  // one-time SQL update stops with one clear message instead of quietly
+  // failing every single file.
+  function looksLikePermissionError(error) {
+    if (!error) return false;
+    var text = ((error.message || "") + " " + (error.error || "") + " " + (error.statusCode || "")).toLowerCase();
+    return text.indexOf("row-level security") !== -1 || text.indexOf("403") !== -1 || text.indexOf("permission") !== -1 || text.indexOf("42501") !== -1;
+  }
+
+  async function backfillVideoPosters() {
+    var { data: rows, error } = await window.sb
+      .from("media")
+      .select("id, user_id, storage_path, trim_start")
+      .eq("kind", "video")
+      .is("poster_path", null);
+
+    if (error) {
+      backfillLog("Couldn't look up videos needing a thumbnail: " + error.message);
+      return { fixed: 0, skipped: 0, stopped: false };
+    }
+    if (!rows || rows.length === 0) {
+      backfillLog("Videos: none missing a thumbnail — nothing to do.");
+      return { fixed: 0, skipped: 0, stopped: false };
+    }
+
+    backfillLog("Videos: " + rows.length + " missing a thumbnail. Starting…");
+    var fixed = 0, skipped = 0;
+    for (var i = 0; i < rows.length; i++) {
+      var row = rows[i];
+      try {
+        var { data: videoBlob, error: downloadError } = await window.sb.storage.from("media").download(row.storage_path);
+        if (downloadError || !videoBlob) {
+          backfillLog("  [" + (i + 1) + "/" + rows.length + "] video " + row.id + " — skipped, couldn't download: " + (downloadError ? downloadError.message : "no file"));
+          skipped++;
+          continue;
+        }
+        var posterBlob = await captureVideoPosterFromBlob(videoBlob, row.trim_start || 0);
+        if (!posterBlob) {
+          backfillLog("  [" + (i + 1) + "/" + rows.length + "] video " + row.id + " — skipped, couldn't capture a frame");
+          skipped++;
+          continue;
+        }
+        var posterPath = row.user_id + "/" + crypto.randomUUID() + "-poster.jpg";
+        var { error: uploadError } = await window.sb.storage.from("media").upload(posterPath, posterBlob, {
+          cacheControl: "3600",
+          upsert: false,
+          contentType: "image/jpeg"
+        });
+        if (uploadError) {
+          if (looksLikePermissionError(uploadError)) {
+            backfillLog("  [" + (i + 1) + "/" + rows.length + "] video " + row.id + " — STOPPED, permission error: " + uploadError.message);
+            backfillLog("    Run sql/media-backfill-admin-storage.sql in the Supabase SQL editor, then try again.");
+            return { fixed: fixed, skipped: skipped, stopped: true };
+          }
+          backfillLog("  [" + (i + 1) + "/" + rows.length + "] video " + row.id + " — skipped, upload failed: " + uploadError.message);
+          skipped++;
+          continue;
+        }
+        var { error: updateError } = await window.sb.from("media").update({ poster_path: posterPath }).eq("id", row.id);
+        if (updateError) {
+          backfillLog("  [" + (i + 1) + "/" + rows.length + "] video " + row.id + " — skipped, thumbnail uploaded but couldn't save it: " + updateError.message);
+          skipped++;
+          continue;
+        }
+        backfillLog("  [" + (i + 1) + "/" + rows.length + "] video " + row.id + " — thumbnail added.");
+        fixed++;
+      } catch (e) {
+        backfillLog("  [" + (i + 1) + "/" + rows.length + "] video " + row.id + " — skipped, unexpected error: " + (e && e.message ? e.message : e));
+        skipped++;
+      }
+    }
+    return { fixed: fixed, skipped: skipped, stopped: false };
+  }
+
+  async function backfillLargePhotos() {
+    var { data: rows, error } = await window.sb
+      .from("media")
+      .select("id, storage_path")
+      .eq("kind", "photo");
+
+    if (error) {
+      backfillLog("Couldn't look up photos: " + error.message);
+      return { fixed: 0, skipped: 0, stopped: false };
+    }
+    if (!rows || rows.length === 0) {
+      backfillLog("Photos: none on file — nothing to do.");
+      return { fixed: 0, skipped: 0, stopped: false };
+    }
+
+    backfillLog("Photos: checking " + rows.length + " for oversized dimensions…");
+    var fixed = 0, skipped = 0;
+    for (var i = 0; i < rows.length; i++) {
+      var row = rows[i];
+      try {
+        var { data: photoBlob, error: downloadError } = await window.sb.storage.from("media").download(row.storage_path);
+        if (downloadError || !photoBlob) {
+          backfillLog("  [" + (i + 1) + "/" + rows.length + "] photo " + row.id + " — skipped, couldn't download: " + (downloadError ? downloadError.message : "no file"));
+          skipped++;
+          continue;
+        }
+        var resized = await resizeImageBlobForBackfill(photoBlob, 1920, 0.85);
+        if (resized === photoBlob) {
+          // Already within size — nothing to upload. Not worth a log line
+          // for every single one of these; the final summary covers it.
+          continue;
+        }
+        var { error: uploadError } = await window.sb.storage.from("media").upload(row.storage_path, resized, {
+          cacheControl: "3600",
+          upsert: true,
+          contentType: "image/jpeg"
+        });
+        if (uploadError) {
+          if (looksLikePermissionError(uploadError)) {
+            backfillLog("  [" + (i + 1) + "/" + rows.length + "] photo " + row.id + " — STOPPED, permission error: " + uploadError.message);
+            backfillLog("    Run sql/media-backfill-admin-storage.sql in the Supabase SQL editor, then try again.");
+            return { fixed: fixed, skipped: skipped, stopped: true };
+          }
+          backfillLog("  [" + (i + 1) + "/" + rows.length + "] photo " + row.id + " — skipped, upload failed: " + uploadError.message);
+          skipped++;
+          continue;
+        }
+        backfillLog("  [" + (i + 1) + "/" + rows.length + "] photo " + row.id + " — shrunk and replaced.");
+        fixed++;
+      } catch (e) {
+        backfillLog("  [" + (i + 1) + "/" + rows.length + "] photo " + row.id + " — skipped, unexpected error: " + (e && e.message ? e.message : e));
+        skipped++;
+      }
+    }
+    return { fixed: fixed, skipped: skipped, stopped: false };
+  }
+
+  document.getElementById("runBackfillBtn").addEventListener("click", async function () {
+    var btn = document.getElementById("runBackfillBtn");
+    var msg = document.getElementById("backfillMsg");
+    msg.className = "form-msg";
+    document.getElementById("backfillLog").textContent = "";
+    btn.disabled = true;
+    btn.textContent = "Running…";
+
+    try {
+      var videoResult = await backfillVideoPosters();
+      var photoResult = { fixed: 0, skipped: 0, stopped: false };
+      if (!videoResult.stopped) {
+        photoResult = await backfillLargePhotos();
+      }
+
+      backfillLog("");
+      backfillLog(
+        "Done. " + videoResult.fixed + " video thumbnail(s) added, " + photoResult.fixed + " photo(s) shrunk" +
+        ((videoResult.skipped + photoResult.skipped) > 0 ? ", " + (videoResult.skipped + photoResult.skipped) + " skipped" : "") + "."
+      );
+
+      if (videoResult.stopped || photoResult.stopped) {
+        msg.textContent = "Stopped early — see the log below for the database update needed first.";
+        msg.className = "form-msg show error";
+      } else {
+        msg.textContent = "Backfill complete.";
+        msg.className = "form-msg show success";
+      }
+    } catch (err) {
+      backfillLog("Unexpected error: " + (err && err.message ? err.message : err));
+      msg.textContent = "Something went wrong — see the log below.";
+      msg.className = "form-msg show error";
+    }
+
+    btn.disabled = false;
+    btn.textContent = "Run Backfill";
+  });
   // -------------------------------------------------------------------------
 
   // ---- Ensemble Approved Products (real picks for the public page) -----
