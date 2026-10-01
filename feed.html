@@ -454,7 +454,7 @@
   @media (max-width: 899px) {
     .rp-media { aspect-ratio: 9 / 10; }
   }
-  .rp-media img, .rp-media video:not(.rp-video-pending) {
+  .rp-media img, .rp-media video {
     width: 100%;
     height: 100%;
     object-fit: cover;
@@ -463,19 +463,6 @@
   @keyframes rpMediaFadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
-  }
-  /* Ken's ask (Sept 2026): a poster-less video starts fully transparent
-     (so .rp-media's own black background shows through, same as any video
-     before its poster loads) instead of the browser's generic gray
-     play-icon placeholder — see buildSlide's 'loadeddata' listener below,
-     which removes this class the moment a real frame is ready and hands
-     the video off to the normal fade-in rule above. */
-  .rp-media video.rp-video-pending {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    opacity: 0;
-    transition: opacity 0.25s ease;
   }
   /* Ken's ask (Nov 2026): video posts in the reel now autoplay WITH sound
      by default (see reelObserver + reelMuted in the script below), so the
@@ -2816,17 +2803,24 @@
     // `muted` attribute — reelObserver re-asserts this the moment the video
     // actually becomes visible and plays, so this initial attribute is just
     // to avoid a one-frame mismatch before that happens.
-    // Ken's ask (Sept 2026): older (and occasionally new) video posts have
-    // no captured poster image — if a video has no poster AND hasn't
-    // decoded a real frame yet, mobile browsers/WebViews show their own
-    // generic gray "play button in a circle" icon over it, which reads as
-    // broken/generic. The rp-video-pending class (removed below once the
-    // video's 'loadeddata' event fires) hides the video behind .rp-media's
-    // existing black background until a real frame is ready, instead of
-    // showing that icon — see the matching CSS above .rp-media img/video.
-    var needsPendingClass = item.kind === "video" && !item.posterUrl;
+    // Ken's ask (Sept 2026, round 2): older (and occasionally new) video
+    // posts have no captured poster image — mobile WebViews render their
+    // own generic gray "play button in a circle" over any video with no
+    // poster AND no decoded frame yet, which is every video in the reel
+    // until it's scrolled fully into view (preload="metadata" only loads
+    // duration/size, never actual pixels). Hiding the video via CSS
+    // (tried first) didn't suppress that icon on Android's WebView — it's
+    // drawn as part of the native video surface, not something page CSS
+    // can paint over reliably. The fix that actually works everywhere:
+    // every video always gets SOME poster attribute. One that was actually
+    // captured at upload time if we have it, otherwise this tiny solid-black
+    // 1x1 image — a real poster, just one that's invisible against
+    // .rp-media's own black background, so there's never a "no poster" gap
+    // for the browser to fill in with its own icon.
+    var BLANK_VIDEO_POSTER = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";
+    var videoPoster = item.posterUrl || BLANK_VIDEO_POSTER;
     var mediaHtml = item.kind === "video"
-      ? '<video src="' + item.url + '"' + (item.posterUrl ? ' poster="' + item.posterUrl + '"' : '') + (reelMuted ? ' muted' : '') + (needsPendingClass ? ' class="rp-video-pending"' : '') + ' loop playsinline preload="metadata"></video>'
+      ? '<video src="' + item.url + '" poster="' + videoPoster + '"' + (reelMuted ? ' muted' : '') + ' loop playsinline preload="metadata"></video>'
       : '<img src="' + item.url + '" alt="Workout post" loading="lazy" decoding="async" />';
 
     var badgeParts = [];
@@ -2896,17 +2890,6 @@
     if (item.kind === "video") {
       var videoEl = el.querySelector("video");
       var muteBtn = el.querySelector(".rp-mute-btn");
-      // Ken's ask (Sept 2026): once a poster-less video actually has a real
-      // decoded frame to show, drop the "pending" class so it fades in
-      // normally instead of staying hidden behind .rp-media's black
-      // background forever — see needsPendingClass above and the matching
-      // CSS. Videos that already had a poster never get this class, so
-      // this listener is harmless (and near-instant) for them too.
-      if (videoEl.classList.contains("rp-video-pending")) {
-        videoEl.addEventListener("loadeddata", function () {
-          videoEl.classList.remove("rp-video-pending");
-        }, { once: true });
-      }
       // Ken's ask (Nov 2026): a persistent mute button, bottom-right of the
       // video, replaces the old top-center "tap for sound" hint — tapping
       // the video itself still also toggles mute, same as before, as a
