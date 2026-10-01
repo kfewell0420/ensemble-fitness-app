@@ -933,6 +933,51 @@
     });
   }
 
+  // Ken's ask (Oct 2026): a phone camera photo commonly comes in at
+  // 3-4+ MB and several thousand pixels wide — way more than any feed
+  // card, grid tile, or avatar ever actually displays at. Serving that
+  // full-size original to every single person who views the post is what
+  // was causing photos (and video posters, same storage/display path) to
+  // visibly render top-to-bottom as they slowly downloaded, especially
+  // noticeable on mobile — a multi-megabyte JPEG downloading slowly
+  // renders exactly like that. Shrinking it down before it's ever
+  // uploaded removes that cost for every future viewer, not just this
+  // one upload. Best-effort, same philosophy as captureVideoPosterBlob
+  // above: any failure here just uploads the original file untouched,
+  // exactly like before this existed. Skips resizing anything already at
+  // or under the cap, so a photo that's already web-sized isn't needlessly
+  // re-compressed and doesn't lose a transparent PNG's transparency for
+  // nothing.
+  function resizeImageFile(file, maxDimension, quality) {
+    return new Promise(function (resolve) {
+      try {
+        var objectUrl = URL.createObjectURL(file);
+        var img = new Image();
+        img.onload = function () {
+          var w = img.naturalWidth, h = img.naturalHeight;
+          if (!w || !h || (w <= maxDimension && h <= maxDimension)) {
+            URL.revokeObjectURL(objectUrl);
+            resolve(file);
+            return;
+          }
+          var scale = maxDimension / Math.max(w, h);
+          var canvas = document.createElement("canvas");
+          canvas.width = Math.round(w * scale);
+          canvas.height = Math.round(h * scale);
+          canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+          canvas.toBlob(function (blob) {
+            URL.revokeObjectURL(objectUrl);
+            resolve(blob || file);
+          }, "image/jpeg", quality);
+        };
+        img.onerror = function () { URL.revokeObjectURL(objectUrl); resolve(file); };
+        img.src = objectUrl;
+      } catch (e) {
+        resolve(file);
+      }
+    });
+  }
+
   trimStartRange.addEventListener("input", function () {
     var start = parseFloat(trimStartRange.value);
     var end = parseFloat(trimEndRange.value);
@@ -1288,16 +1333,24 @@
     }
 
     try {
-      var ext = getExt(selectedFile.name);
+      var kind = fileKind(selectedFile);
+
+      // See resizeImageFile() above for why this exists — shrinks an
+      // oversized photo down to a sane feed-display size before it's
+      // uploaded at all, instead of storing (and serving, forever after,
+      // to every viewer) the camera's full-resolution original.
+      var fileToUpload = selectedFile;
+      if (kind === "photo") {
+        fileToUpload = await resizeImageFile(selectedFile, 1920, 0.85);
+      }
+
+      var ext = kind === "photo" ? "jpg" : getExt(selectedFile.name);
       var path = currentUser.id + "/" + crypto.randomUUID() + "." + ext;
 
-      var { error: uploadError } = await window.sb.storage.from("media").upload(path, selectedFile, {
-        cacheControl: "3600",
-        upsert: false
-      });
+      var uploadOpts = { cacheControl: "3600", upsert: false };
+      if (kind === "photo") uploadOpts.contentType = "image/jpeg";
+      var { error: uploadError } = await window.sb.storage.from("media").upload(path, fileToUpload, uploadOpts);
       if (uploadError) throw uploadError;
-
-      var kind = fileKind(selectedFile);
 
       // If this is a video and the member recorded a voiceover for it, upload
       // that as its own file in the same private bucket and link it below.
