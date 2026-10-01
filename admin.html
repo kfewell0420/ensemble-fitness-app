@@ -69,7 +69,6 @@
         <div class="admin-sidenav-group-label">Members &amp; Community</div>
         <button type="button" class="admin-tab-btn" data-tab="members">Members</button>
         <button type="button" class="admin-tab-btn" data-tab="journeys">Journeys</button>
-        <button type="button" class="admin-tab-btn" data-tab="voice">Voice Updates</button>
 
         <div class="admin-sidenav-group-label">Media</div>
         <button type="button" class="admin-tab-btn" data-tab="photos-profile">Profile Photos</button>
@@ -282,17 +281,6 @@
       </div>
     </div>
 
-    <div class="admin-tab-panel" data-tab="voice" hidden>
-      <div class="eyebrow">Voice Updates</div>
-      <h2>Recent voice updates</h2>
-      <p class="card-sub" style="margin-bottom:24px;">Older audio uploads land here for a one-time manual conversion into the Music Library. Going forward, when someone uploads a song from their Profile page, it publishes straight to the Music Library automatically — nothing to do here for those. This list is just for cleaning up anything from before that changed.</p>
-      <div class="card">
-        <div id="voiceQueue">
-          <div class="empty-state">Loading…</div>
-        </div>
-      </div>
-    </div>
-
     <div class="admin-tab-panel" data-tab="music" hidden>
       <div class="eyebrow">Music Library</div>
       <h2>Tracks members can add to their videos</h2>
@@ -475,7 +463,6 @@
     await loadEnrollmentHistory();
     await loadMembers();
     await loadChatHistory();
-    await loadVoiceUpdates();
     await loadProfilePhotos();
     await loadRecentVideos();
     await loadRecentPhotos();
@@ -989,117 +976,6 @@
         btn.disabled = true;
         await window.sb.from("community_questions").delete().eq("id", btn.getAttribute("data-id"));
         await loadChatHistory();
-      });
-    });
-  }
-
-  async function loadVoiceUpdates() {
-    var el = document.getElementById("voiceQueue");
-    // Only already-approved audio — anything still waiting on a decision
-    // shows up (with a Play, Approve, Reject) in the Pending Review list
-    // above instead, same as photos and videos.
-    var { data, error } = await window.sb
-      .from("media")
-      .select("id, storage_path, caption, workout_type, created_at, profiles!media_user_id_fkey(display_name)")
-      .eq("kind", "audio")
-      .eq("status", "approved")
-      .order("created_at", { ascending: false })
-      .limit(30);
-
-    if (error) {
-      el.innerHTML = '<div class="empty-state">Couldn\'t load voice updates: ' + error.message + '</div>';
-      return;
-    }
-    if (!data || data.length === 0) {
-      el.innerHTML = '<div class="empty-state">No voice updates posted yet.</div>';
-      return;
-    }
-
-    el.innerHTML = "";
-    for (var i = 0; i < data.length; i++) {
-      var item = data[i];
-      var url = await signedUrlFor(item.storage_path);
-      var name = (item.profiles && item.profiles.display_name) || "A member";
-      var row = document.createElement("div");
-      row.className = "review-row";
-      row.innerHTML =
-        '<div class="review-thumb"><div class="audio-card"><span class="audio-ico">🎙️</span><audio src="' + url + '" controls></audio></div></div>' +
-        '<div class="review-meta">' +
-          '<strong>' + name + '</strong>' +
-          '<span>' + (item.workout_type ? categoryLabel(item.workout_type) + " · " : "") + timeAgo(item.created_at) + '</span>' +
-          (item.caption ? '<div style="font-size:13px; color:var(--muted-invert); margin-top:4px;">“' + item.caption + '”</div>' : '') +
-        '</div>' +
-        '<div class="review-actions" style="flex-wrap:wrap;">' +
-          '<button class="btn btn-primary btn-sm add-to-library-btn" data-id="' + item.id + '" data-path="' + item.storage_path + '" data-name="' + name.replace(/"/g, "&quot;") + '" data-caption="' + (item.caption || "").replace(/"/g, "&quot;") + '" title="Turns this into a real, playable Music Library track">Add to Music Library</button>' +
-          '<a class="btn btn-ghost btn-sm" href="' + url + '" download title="Save this audio file to your computer">Download</a>' +
-          '<button class="btn btn-ghost btn-sm delete-voice-btn" data-id="' + item.id + '" data-path="' + item.storage_path + '">Remove</button>' +
-        '</div>';
-      el.appendChild(row);
-    }
-
-    el.querySelectorAll(".add-to-library-btn").forEach(function (btn) {
-      btn.addEventListener("click", async function () {
-        var title = prompt("Track title:", btn.getAttribute("data-caption") || "Untitled Track");
-        if (title === null || !title.trim()) return;
-        var artistName = prompt("Artist name:", btn.getAttribute("data-name") || "");
-        if (artistName === null || !artistName.trim()) return;
-        var artistEmail = prompt("Artist email (so we can send them a bank-linking setup link for payouts):", "");
-        if (artistEmail === null || !artistEmail.trim()) return;
-        var tagline = prompt("Tagline (optional, short & motivating — shown in the track list instead of the artist name):", "");
-        if (tagline === null) return;
-        var isIndependentArtist = confirm("Is this artist independent — not signed to a label or publisher for this track?\n\nOK = yes, show the \"100% Royalties\" badge.\nCancel = no badge.");
-
-        var originalLabel = btn.textContent;
-        btn.disabled = true;
-        btn.textContent = "Adding…";
-        try {
-          var sourcePath = btn.getAttribute("data-path");
-          var signedSrc = await signedUrlFor(sourcePath);
-          var resp = await fetch(signedSrc);
-          if (!resp.ok) throw new Error("Couldn't read that audio file — please try again.");
-          var blob = await resp.blob();
-          var durationSeconds = await getAudioDurationSeconds(blob);
-          var ext = sourcePath.indexOf(".") > -1 ? sourcePath.split(".").pop().toLowerCase() : "mp3";
-          var newPath = crypto.randomUUID() + "-" + title.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 40) + "." + ext;
-
-          var { error: uploadError } = await window.sb.storage.from("tracks").upload(newPath, blob, {
-            cacheControl: "3600",
-            upsert: false,
-            contentType: audioContentType(blob, ext)
-          });
-          if (uploadError) throw uploadError;
-
-          var { error: insertError } = await window.sb.from("tracks").insert({
-            title: title.trim(),
-            artist_name: artistName.trim(),
-            artist_email: artistEmail.trim(),
-            tagline: tagline.trim() || null,
-            duration_seconds: durationSeconds,
-            storage_path: newPath,
-            is_active: true,
-            is_independent_artist: isIndependentArtist
-          });
-          if (insertError) throw insertError;
-
-          await sendPayoutSetupEmail({ email: artistEmail.trim(), name: artistName.trim(), context: "music" });
-
-          btn.textContent = "✓ Added — live in Music Library";
-          await loadTracks();
-        } catch (err) {
-          alert(err.message || "Couldn't add this track to the Music Library. Please try again.");
-          btn.disabled = false;
-          btn.textContent = originalLabel;
-        }
-      });
-    });
-
-    el.querySelectorAll(".delete-voice-btn").forEach(function (btn) {
-      btn.addEventListener("click", async function () {
-        if (!confirm("Remove this voice update? This can't be undone.")) return;
-        btn.disabled = true;
-        await window.sb.storage.from("media").remove([btn.getAttribute("data-path")]);
-        await window.sb.from("media").delete().eq("id", btn.getAttribute("data-id"));
-        await loadVoiceUpdates();
       });
     });
   }
