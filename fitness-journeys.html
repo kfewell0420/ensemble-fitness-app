@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>Fitness Journeys — Ensemble Fitness</title>
-<link rel="stylesheet" href="css/fonts.css">
+<link rel="stylesheet" href="css/fonts.css" onerror="this.onerror=null; this.href='https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&family=Caveat:wght@600;700&family=Dancing+Script:wght@600;700&display=swap';">
 <link rel="stylesheet" href="css/app.css?v=2" />
 <style>
   /* Ken's ask (Oct 2026): this page should look IDENTICAL to the public
@@ -221,6 +221,19 @@
 </section>
 
 <script src="js/vendor/supabase.js"></script>
+<script>
+  // Ken's ask (Sept 2026): if the self-hosted copy of the Supabase library
+  // is ever missing or fails to load (a deploy that didn't include
+  // js/vendor/supabase.js, a bad path, etc.), fall back to loading it from
+  // the CDN we used before, the same way this app worked for months,
+  // instead of leaving sign-in broken. document.write here is intentional
+  // and safe: it runs while the page is still being parsed, so the
+  // injected <script> tag loads and finishes BEFORE the next script tags
+  // (config.js, supabaseClient.js) run and need window.supabase to exist.
+  if (!window.supabase) {
+    document.write('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"><\/script>');
+  }
+</script>
 <script src="js/config.js"></script>
 <script src="js/shared-session.js"></script>
 <script src="js/supabaseClient.js"></script>
