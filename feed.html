@@ -2766,6 +2766,32 @@
   // current-sound card already does.
   var currentlyAudibleVideo = null;
 
+  // Ken's ask (Oct 2026): Instagram/TikTok feel smooth flicking through
+  // several videos as fast as you can swipe because they're already
+  // downloading the NEXT one or two while you're still watching the
+  // current one — they don't wait for a video to actually scroll into
+  // view before starting its fetch. The preload="auto" upgrade above only
+  // kicks in once a card starts entering the viewport, which is barely a
+  // head start at all on a fast flick through several cards in a row.
+  // This instead starts buffering the next couple of cards in DOM order
+  // the moment the CURRENT one begins playing, giving them the entire
+  // time someone spends watching the current video (seconds, not a
+  // fraction of one) to get real video data buffered before they're ever
+  // asked to play.
+  function preloadUpcomingVideos(afterEl, count) {
+    var el = afterEl;
+    var found = 0;
+    while (el && found < count) {
+      el = el.nextElementSibling;
+      if (!el) break;
+      var upcomingVideo = el.querySelector && el.querySelector("video");
+      if (upcomingVideo) {
+        if (upcomingVideo.preload !== "auto") upcomingVideo.preload = "auto";
+        found++;
+      }
+    }
+  }
+
   var reelObserver = new IntersectionObserver(function (entries) {
     entries.forEach(function (entry) {
       var video = entry.target.querySelector("video");
@@ -2797,6 +2823,7 @@
           video.muted = false;
         }
         syncMuteBtn(entry.target, video);
+        preloadUpcomingVideos(entry.target, 2);
         var p = video.play();
         if (p && p.catch) {
           p.catch(function () {
