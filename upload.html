@@ -247,53 +247,6 @@
         <button type="button" class="btn btn-ghost btn-sm" id="previewTrimBtn">▶ Preview trimmed clip</button>
       </div>
 
-      <!-- Members already edit/trim their footage on their own phone before
-           ever opening this app — so instead of building a video editor in
-           here, a member can just attach several already-trimmed clips and
-           they'll play back-to-back as one continuous reel (Ken's ask, Nov
-           2026). Clip 1 stays the file/trim picked above; this only ever
-           adds clip 2 onward, and those upload exactly as chosen — no trim
-           UI here, that's only ever offered for the primary clip. -->
-      <div class="narration-section" id="extraClipsSection">
-        <div class="field-label-row">
-          <label>🎬 Add more clips to this reel (optional)</label>
-        </div>
-        <p class="narrated-note" style="margin-bottom:10px;">Already have more clips cut on your phone? Attach them here in the order they should play — they'll play back-to-back as one continuous reel, up to 10 clips total. Nothing gets merged; each file just plays right after the last one ends.</p>
-        <ul class="extra-clip-list" id="extraClipList"></ul>
-        <button type="button" class="btn btn-ghost btn-sm" id="addExtraClipBtn">+ Add another clip</button>
-        <input type="file" id="extraClipInput" accept="video/*" style="display:none;" />
-      </div>
-
-      <div class="narration-section" id="narrationSection">
-        <div class="field-label-row">
-          <label>🎙️ Voice narration for this video (optional)</label>
-          <span class="narration-timer" id="narrationTimer">0:00</span>
-        </div>
-        <p class="narrated-note" style="margin-bottom:10px;">Record yourself explaining what's happening in this video. It'll play automatically whenever someone watches it, in place of the video's own sound.</p>
-        <div class="narration-row">
-          <button type="button" class="btn btn-ghost btn-sm record-btn" id="recordNarrationBtn">🎙️ Record narration</button>
-          <button type="button" class="btn btn-ghost btn-sm" id="reRecordBtn" style="display:none;">Re-record</button>
-          <button type="button" class="btn btn-ghost btn-sm" id="removeNarrationBtn" style="display:none;">Remove</button>
-        </div>
-        <div class="narration-preview" id="narrationPreview" style="display:none;">
-          <audio id="narrationAudioPreview" controls></audio>
-        </div>
-      </div>
-
-      <div class="narration-section" id="musicSection">
-        <div class="field-label-row">
-          <label>🎵 Add music from our library (optional)</label>
-        </div>
-        <p class="narrated-note" style="margin-bottom:10px;">Pick a track from independent, unsigned artists to play in place of this video's own sound. It's one or the other — choose music here, or record a voice narration above, not both.</p>
-        <div class="narration-row">
-          <select id="musicTrackSelect">
-            <option value="">No music — keep the video's own sound</option>
-          </select>
-          <button type="button" class="btn btn-ghost btn-sm" id="previewMusicBtn">▶ Preview</button>
-        </div>
-        <audio id="musicPreviewAudio" style="display:none;"></audio>
-      </div>
-
       <div class="field" id="workoutTypeField" style="margin-top:18px;">
         <label for="workoutType">Category</label>
         <select id="workoutType" name="workoutType">
@@ -339,6 +292,60 @@
       </div>
 
       <button type="button" class="btn btn-primary btn-block" id="uploadBtn" disabled>↑ Select a file above</button>
+
+      <!-- Ken's ask (Oct 2026): these three were each their own full card
+           with a paragraph explaining what they do — a lot of space and
+           reading for something most uploads never touch. Folded into one
+           compact "More options" box, each down to just its control with a
+           short label, no explanatory copy — the button/picker itself is
+           the explanation. Placed after Upload on purpose: the common path
+           (pick a file, caption, location, upload) stays short and is all
+           most people ever need; these stay reachable for the rare person
+           who wants them, without adding to what everyone else scrolls
+           past. Each piece keeps its own id (extraClipsSection,
+           narrationSection, musicSection) and show/hide logic exactly as
+           before — see updateExtraClipsVisibility/updateNarrationVisibility/
+           updateMusicVisibility — only the markup inside got simpler, and a
+           shared "moreOptionsBox" wrapper (see updateMoreOptionsBoxVisibility)
+           shows itself whenever any of the three would, so there's never an
+           empty bordered box left over for a photo/song upload where none
+           of this applies. -->
+      <div class="narration-section" id="moreOptionsBox">
+        <div class="field-label-row">
+          <label>More options</label>
+        </div>
+
+        <div class="narration-section more-option-compact" id="extraClipsSection">
+          <div class="more-option-row">
+            <button type="button" class="btn btn-ghost btn-sm" id="addExtraClipBtn">🎬 + Add another clip</button>
+          </div>
+          <ul class="extra-clip-list" id="extraClipList"></ul>
+          <input type="file" id="extraClipInput" accept="video/*" style="display:none;" />
+        </div>
+
+        <div class="narration-section more-option-compact" id="narrationSection">
+          <div class="more-option-row">
+            <button type="button" class="btn btn-ghost btn-sm record-btn" id="recordNarrationBtn">🎙️ Record narration</button>
+            <button type="button" class="btn btn-ghost btn-sm" id="reRecordBtn" style="display:none;">Re-record</button>
+            <button type="button" class="btn btn-ghost btn-sm" id="removeNarrationBtn" style="display:none;">Remove</button>
+            <span class="narration-timer" id="narrationTimer">0:00</span>
+          </div>
+          <div class="narration-preview" id="narrationPreview" style="display:none;">
+            <audio id="narrationAudioPreview" controls></audio>
+          </div>
+        </div>
+
+        <div class="narration-section more-option-compact" id="musicSection">
+          <div class="more-option-row">
+            <span class="more-option-icon">🎵</span>
+            <select id="musicTrackSelect">
+              <option value="">No music</option>
+            </select>
+            <button type="button" class="btn btn-ghost btn-sm" id="previewMusicBtn">▶ Preview</button>
+          </div>
+          <audio id="musicPreviewAudio" style="display:none;"></audio>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -362,6 +369,15 @@
   var currentUser = null;
   var selectedFile = null;
   var memberDisplayName = "";
+  // Ken's ask (Oct 2026): a 1:42 workout video hit Supabase's "the object
+  // exceeded the maximum allowed size" error — the media bucket never had
+  // an explicit limit set (see sql/media-bucket-size-limit.sql, which
+  // raises it), so it was quietly capped at whatever the project-wide
+  // default is. This constant matches that bucket's new limit so a too-big
+  // file gets caught right here, instantly, with a friendly message —
+  // instead of someone waiting through an upload attempt just to hit a raw
+  // storage-API error at the end. Keep these two in sync if either changes.
+  var MAX_UPLOAD_BYTES = 500 * 1024 * 1024; // 500 MB
   // Ken's ask (Nov 2026): "once they get the green light on the bank
   // account attachment, then they can be allowed to upload their music" —
   // two artists in a row had a rough time finishing Stripe's bank-linking
@@ -663,6 +679,7 @@
     updateMusicVisibility();
     updateTrimVisibility();
     updateExtraClipsVisibility();
+    updateMoreOptionsBoxVisibility();
   });
 
   // Supports a link like upload.html?type=song — used by the "Upload Music"
@@ -1133,6 +1150,17 @@
     syncMusicNarrationExclusivity();
   }
 
+  // The shared "More options" card (see moreOptionsBox in the markup)
+  // wraps extraClipsSection/narrationSection/musicSection, which all three
+  // already only ever show for a video file — this just mirrors that same
+  // check so the card itself appears/disappears along with them, instead
+  // of being left behind as an empty bordered box for a photo/song upload.
+  var moreOptionsBox = document.getElementById("moreOptionsBox");
+  function updateMoreOptionsBoxVisibility() {
+    var isVideo = !!selectedFile && fileKind(selectedFile) === "video";
+    moreOptionsBox.classList.toggle("show", isVideo);
+  }
+
   musicTrackSelect.addEventListener("change", function () {
     if (musicTrackSelect.value) resetNarrationUI();
     syncMusicNarrationExclusivity();
@@ -1184,6 +1212,20 @@
 
   fileInput.addEventListener("change", function () {
     selectedFile = fileInput.files[0] || null;
+    if (selectedFile && selectedFile.size > MAX_UPLOAD_BYTES) {
+      showMsg(
+        document.getElementById("uploadMsg"),
+        "That file is " + (selectedFile.size / (1024 * 1024)).toFixed(0) + " MB — a bit too large (limit is " + (MAX_UPLOAD_BYTES / (1024 * 1024)).toFixed(0) + " MB). Try trimming it shorter or lowering your camera's recording quality, then pick it again.",
+        "error"
+      );
+      fileInput.value = "";
+      selectedFile = null;
+      dropzoneLabel.textContent = CATEGORY_META[pickedCategoryKey()] ? CATEGORY_META[pickedCategoryKey()].placeholder : "Click to choose a file";
+      uploadBtn.disabled = true;
+      uploadBtn.textContent = "↑ Select a file above";
+      return;
+    }
+    hideMsg(document.getElementById("uploadMsg"));
     if (selectedFile) {
       dropzoneLabel.textContent = selectedFile.name;
       uploadBtn.disabled = false;
@@ -1218,6 +1260,7 @@
     updateMusicVisibility();
     updateTrimVisibility();
     updateExtraClipsVisibility();
+    updateMoreOptionsBoxVisibility();
   });
 
   // Small helper so the "no file chosen" placeholder text can fall back to
@@ -1508,6 +1551,7 @@
       updateMusicVisibility();
       updateTrimVisibility();
       updateExtraClipsVisibility();
+      updateMoreOptionsBoxVisibility();
       updateCategoryFieldVisibility();
     } catch (err) {
       showMsg(msg, err.message || "Upload failed. Please try again.", "error");

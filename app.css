@@ -31,6 +31,16 @@
   --red: #e2483a;
   --red-tint: rgba(226, 72, 58, 0.14);
 
+  /* A distinct gold-yellow for the Journeys "star" reaction only —
+     deliberately not --amber (that's the muted gold used for pending/
+     warning states elsewhere and would read as a status color here, not
+     a reaction). Ken: a bright star breaks up the orange/red/orange
+     repetition in the Journeys reaction row and "people gravitate to it."
+     Matched directly to his reference image (measured ~rgb(238,200,77)),
+     not a generic "yellow" guess — this is a warm gold star, not neon
+     lemon-yellow. */
+  --star: #f2c94c;
+
   --muted-invert: #a7afc0;
   --faint-invert: #6b7690;
 
@@ -80,8 +90,15 @@ img { max-width: 100%; display: block; }
 .app-nav {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 18px 24px;
+  justify-content: flex-start;
+  /* The extra env(safe-area-inset-top) keeps this bar clear of the phone's
+     own status bar (clock/battery/signal) when running as a wrapped app
+     in Capacitor. On the web, where that variable doesn't exist, it just
+     resolves to 0 and this is identical to the old flat 18px. Ken's
+     report (mobile wrap testing, Sept 2026): the logo/title overlapped
+     the iPhone's status bar the very first time the app ran in the
+     Simulator. */
+  padding: calc(18px + env(safe-area-inset-top, 0px)) 24px 18px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
@@ -119,30 +136,44 @@ img { max-width: 100%; display: block; }
   font-size: 13.5px;
   font-weight: 600;
   color: var(--muted-invert);
+  /* .app-nav switched from justify-content:space-between to flex-start so
+     the home/bell group (see .efit-nav-utility) can sit right next to the
+     logo on the left — this margin keeps the page's own links pinned to
+     the far right, exactly where space-between used to put them, so
+     nothing shifts on any page that doesn't have that group. */
+  margin-left: auto;
 }
 
 .app-nav-links a:hover { color: #fff; }
 
 /* Small screens: never make someone scroll sideways to see the rest of the
    nav, and read top-to-bottom in clean columns rather than wrapping
-   left-to-right. A CSS grid with each link explicitly placed by its
-   position in the markup (rather than flex-wrap, which just fills rows
-   left-to-right and reflows everything after a hidden item) gives:
-     Col 1: Community / Fitness+ / My Profile
-     Col 2: My Journey / Members / Queue
-     Col 3: Music / Quotes / Sign Out (+ the bell, same cell as Sign Out)
-   The admin-only "Queue" (Review Queue) link is display:none for
-   non-admins — since it's placed explicitly, hiding it just leaves its
-   cell empty instead of shifting Music/Quotes/Sign Out up a row.
-   Labels are kept to single short words here on purpose (the full page
-   names — "Music Library", "Quote Library", etc. — still show as the
-   heading on each page itself) so nothing wraps to a second line inside
-   its narrow column, which is what made this feel cluttered before. */
+   left-to-right.
+   Oct 2026, Ken's ask: on an admin's phone, "Queue" and "Sign Out" were
+   rendering on top of each other, jammed into one cell. Root cause: this
+   used to explicitly place every link by its numeric position in the
+   markup (1st link here, 2nd link there, etc.), built back when the nav
+   was exactly 9 links ending in Sign Out. Since then a "Products" link got
+   added on every page, and books.html separately added its own "Books"
+   link — both shift every link after them over by one — and the explicit
+   "Queue" (admin-only) link admin.html etc. show adds a 10th. The fixed
+   numeric slots never got updated for any of that, so by now different
+   pages have different numbers of links landing in the wrong slots, and on
+   admin.html specifically the last two links collide into the one cell
+   this was still reserving for a 9-link page's Sign Out.
+   Fix: let the grid place links in plain reading order instead of pinning
+   each one to a hardcoded position. It loses the old deliberate column
+   theming (Community/Fitness+/My Profile together, etc.), but that theming
+   is already broken today and silently breaks again the next time a link
+   is added or removed anywhere — reading order never can. Labels are kept
+   to single short words here on purpose (the full page names — "Music
+   Library", "Quote Library", etc. — still show as the heading on each page
+   itself) so nothing wraps to a second line inside its narrow column. */
 @media (max-width: 720px) {
   .app-nav {
     flex-wrap: wrap;
     row-gap: 12px;
-    padding: 16px 18px;
+    padding: calc(16px + env(safe-area-inset-top, 0px)) 18px 16px;
   }
   .app-nav-links {
     display: grid;
@@ -151,23 +182,6 @@ img { max-width: 100%; display: block; }
     row-gap: 12px;
     width: 100%;
   }
-  /* Column 1 */
-  .app-nav-links > *:nth-child(1) { grid-column: 1; grid-row: 1; } /* Community */
-  .app-nav-links > *:nth-child(4) { grid-column: 1; grid-row: 2; } /* Fitness+ */
-  .app-nav-links > *:nth-child(7) { grid-column: 1; grid-row: 3; } /* My Profile */
-  /* Column 2 */
-  .app-nav-links > *:nth-child(2) { grid-column: 2; grid-row: 1; } /* My Journey */
-  .app-nav-links > *:nth-child(3) { grid-column: 2; grid-row: 2; } /* Members */
-  .app-nav-links > *:nth-child(8) { grid-column: 2; grid-row: 3; } /* Queue (admin only) */
-  /* Column 3 */
-  .app-nav-links > *:nth-child(5) { grid-column: 3; grid-row: 1; } /* Music */
-  .app-nav-links > *:nth-child(6) { grid-column: 3; grid-row: 2; } /* Quotes */
-  /* Sign Out and the bell (appended right after Sign Out by
-     js/notifications.js) share the last cell instead of the bell
-     getting a lonely column of its own — Sign Out sits at the cell's
-     start, the bell at its end, on the same line. */
-  .app-nav-links > *:nth-child(9) { grid-column: 3; grid-row: 3; justify-self: start; }
-  .app-nav-links > *:nth-child(10) { grid-column: 3; grid-row: 3; justify-self: end; align-self: center; }
 }
 
 .app-shell {
@@ -198,32 +212,87 @@ img { max-width: 100%; display: block; }
   margin-bottom: 10px;
 }
 
-.admin-tabs {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-  margin-bottom: 28px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  padding-bottom: 0;
+/* Oct 2026: this used to be a horizontal row of tabs that wrapped onto a
+   second, visually disconnected line once there were more than a handful —
+   which is exactly how "Community" ended up as an unlabeled catch-all for
+   Journeys, Voice Updates, the Music Library, and Quotes: nothing about the
+   tab bar hinted that four unrelated sections were hiding in there. Ken's
+   ask: every section gets its own always-visible entry, "lined up... one on
+   top of each other" — a real sidebar, like a proper admin/business
+   platform, not a wrapping row of buttons. See .admin-layout below for how
+   this pairs with the content column, and admin.html for the full list of
+   sections (now split out of the old queue/photos/community/books
+   catch-alls) with light group labels for orientation. */
+.admin-layout {
+  display: block;
 }
 
+.admin-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 28px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.admin-sidenav-group-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--faint-invert);
+  padding: 14px 12px 6px;
+}
+.admin-sidenav-group-label:first-child { padding-top: 2px; }
+
 .admin-tab-btn {
+  display: block;
+  width: 100%;
+  text-align: left;
   background: none;
   border: none;
-  border-bottom: 2px solid transparent;
+  border-left: 2px solid transparent;
+  border-radius: 0 8px 8px 0;
   color: var(--muted-invert);
   font-weight: 700;
-  font-size: 14px;
-  padding: 10px 14px;
+  font-size: 13.5px;
+  padding: 9px 12px;
   cursor: pointer;
   font-family: inherit;
 }
 
-.admin-tab-btn:hover { color: #fff; }
+.admin-tab-btn:hover { color: #fff; background: rgba(255, 255, 255, 0.04); }
 
 .admin-tab-btn.active {
   color: #fff;
-  border-bottom-color: var(--accent-2);
+  background: rgba(255, 255, 255, 0.07);
+  border-left-color: var(--accent-2);
+}
+
+/* Sidebar sits beside the content on wide screens (a real two-column admin
+   layout); on narrow screens .admin-layout stays a plain block, so the
+   nav's own flex-column above just renders as a straightforward stacked
+   list ahead of the content — nothing collapses or hides, it just isn't
+   pinned to the side. */
+@media (min-width: 900px) {
+  .admin-layout {
+    display: grid;
+    grid-template-columns: 232px 1fr;
+    gap: 32px;
+    align-items: start;
+  }
+  .admin-tabs {
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: 0;
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    padding-right: 16px;
+    position: sticky;
+    top: 24px;
+    max-height: calc(100vh - 48px);
+    overflow-y: auto;
+  }
 }
 
 .field { margin-bottom: 16px; }
@@ -261,6 +330,27 @@ img { max-width: 100%; display: block; }
 
 .field textarea { resize: vertical; min-height: 80px; }
 
+/* Ken's ask (Oct 2026): category dropdowns (like #workoutType) and other
+   selects across the app were unreadable once opened — white text on a
+   white background, only visible while hovering. Root cause: every select
+   in this dark-themed app sets color:#fff so it reads fine while CLOSED
+   (against its own dark box), but that color is inherited by its <option>
+   elements too. The dropdown POPUP itself is drawn by the browser/OS, not
+   this page, and it defaults to a light background no matter what dark
+   theme the rest of the site uses — so white option text on that light
+   popup is invisible until a hover highlight (a different background)
+   happens to make it readable by accident. This is a genuine, easy mistake
+   for a member to make blind, not just a cosmetic nitpick.
+   A couple of selects already had a narrow, one-off fix for this
+   (#musicTrackSelect, .simple-modal select below) — this rule instead
+   covers every <option>, on every <select>, everywhere in the app, so this
+   exact bug can't quietly reappear on some other page's dropdown that
+   didn't get the one-off treatment. */
+select option {
+  color: #111;
+  background: #fff;
+}
+
 .password-field-wrap { position: relative; }
 .password-field-wrap input { padding-right: 46px; }
 .password-toggle {
@@ -292,10 +382,30 @@ img { max-width: 100%; display: block; }
   cursor: pointer;
   font-family: inherit;
   transition: transform 0.12s ease, opacity 0.12s ease;
+  /* Oct 2026, Ken's ask: two .btn-primary pills (music-library.html's
+     "Browse Playlist" <button> and "Upload Music" <a>) with identical
+     padding/font-size were still rendering at visibly different heights —
+     a color emoji glyph (🎤) has much taller font metrics than a plain
+     text character (▶) at the same font-size, and without an explicit
+     line-height here, that emoji's own tall line box was inflating the
+     whole button's height. Pinning line-height to 1 caps every .btn's
+     content line at the same tight height no matter what's inside it —
+     emoji, plain text, or an icon — so any two same-size buttons now match
+     exactly regardless of tag type (<button> vs <a>) or what glyphs they
+     contain. */
+  line-height: 1;
 }
 
 .btn:hover { transform: translateY(-1px); }
 .btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+/* A disabled .btn-primary otherwise keeps its full-strength gradient at
+   just 55% opacity — still a bright, obviously-tappable orange bar, which
+   is exactly why members were tapping the disabled "choose a file" button
+   instead of the actual dropzone above it. Flatten it to a plain neutral
+   panel (same treatment as .status-badge.dismissed elsewhere) so a
+   disabled primary button reads as inert, not as a second, competing
+   call-to-action. */
+.btn-primary:disabled { background: rgba(255, 255, 255, 0.08); color: var(--muted-invert); }
 
 .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent-dark)); color: #fff; }
 .btn-ghost { background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.18); color: #fff; }
@@ -474,6 +584,26 @@ img { max-width: 100%; display: block; }
 .quote-recording-audio { width: 100%; max-width: 260px; height: 32px; }
 
 .dropzone {
+  /* Ken's ask (Oct 2026): "Add a photo, video, or song" was rendering as
+     what looked like two separate dashed boxes with the upload icon
+     floating between them, and the Category field crowding right up
+     against the bottom of it. Root cause: this is a <label>, and a <label>
+     with no explicit display is "inline" by default — but its first child,
+     .dropzone-icon, is display:flex (a block-level box). An inline element
+     is not allowed to just contain a block-level child; the browser has to
+     silently split it into anonymous fragments instead (whatever came
+     before the block child, the block child itself, then whatever comes
+     after), and each fragment gets this rule's OWN border/padding applied
+     separately — which is exactly the "two dashed boxes with a gap" look:
+     an empty bordered sliver for the (empty) fragment before the icon, the
+     icon itself unbordered in the middle, then a second bordered box for
+     the strong/span text fragment after it. Making this a real flex
+     container (rather than relying on default inline behavior) keeps the
+     icon, title, and hint text inside ONE single-fragment box the way this
+     was always meant to look. */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   border: 1.5px dashed rgba(255, 255, 255, 0.25);
   border-radius: var(--radius-md);
   padding: 28px;
@@ -559,6 +689,33 @@ img { max-width: 100%; display: block; }
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+/* Ken's ask (Oct 2026): "Add more clips," "Voice narration," and "Add
+   music" used to each be their own full bordered card with a paragraph of
+   explanation — a lot of space and reading for features most uploads never
+   touch. #moreOptionsBox is the one outer card now (keeps the normal
+   .narration-section border/background/padding); .more-option-compact
+   strips all of that back off the three sections nested inside it, so they
+   read as plain stacked rows within that single card instead of three
+   separate boxes. */
+.more-option-compact {
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0 0 14px;
+}
+.more-option-compact:last-child { margin-bottom: 0; }
+
+.more-option-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.more-option-icon {
+  font-size: 15px;
 }
 
 #musicTrackSelect {
@@ -1432,6 +1589,7 @@ img { max-width: 100%; display: block; }
 .match-badge.great { background: linear-gradient(135deg, var(--pink-2), var(--pink)); }
 .match-badge.zip { background: var(--green-tint); color: var(--green); }
 .match-badge.wake { background: var(--amber-tint); color: var(--amber); }
+.match-badge.intent { background: var(--pink-tint); color: var(--pink-2); }
 
 .spinner {
   width: 16px;
@@ -1685,10 +1843,39 @@ img { max-width: 100%; display: block; }
 }
 
 /* ==========================================================================
-   Notification bell — injected into .app-nav by js/notifications.js on
-   every signed-in page. See sql/notifications.sql for what creates these
-   rows (reactions, comments, follows, messages).
-   ========================================================================== */
+   Home icon + notification bell — injected into .app-nav by
+   js/notifications.js on every signed-in page. See sql/notifications.sql
+   for what creates the notification rows (reactions, comments, follows,
+   messages).
+   Ken's ask (Sept 2026): these two used to land at the far right end of
+   the page's own nav links, which put them hard against the top-right
+   corner — on a page with a busy photo behind the nav (Music Library) they
+   read as cramped and easy to miss. Grouped into one .efit-nav-utility
+   wrapper, placed right next to the logo on the left instead (see
+   .app-nav-links' margin-left:auto above, which keeps the page's own links
+   over on the right exactly like before), with a couple px of extra top
+   margin so they sit a little lower than dead-flush with the top edge. */
+.efit-nav-utility {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 14px;
+  margin-top: 3px;
+}
+.efit-home-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 6px;
+  text-decoration: none;
+  border-radius: var(--radius-pill);
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.5));
+}
+.efit-home-link:hover { background: rgba(0, 0, 0, 0.6); }
+.efit-home-link svg { display: block; }
+
 .efit-notif-wrap {
   position: relative;
   display: inline-flex;
@@ -1696,14 +1883,21 @@ img { max-width: 100%; display: block; }
 
 .efit-notif-bell {
   position: relative;
-  background: none;
+  /* Matches the home icon's dark circle (Ken's ask, Sept 2026) so the two
+     read as one paired set rather than the bell floating unbacked next to
+     a solid icon — also gives the bell the same contrast boost against a
+     busy photo background that the home icon already had. */
+  background: rgba(0, 0, 0, 0.4);
   border: none;
-  color: var(--muted-invert);
-  font-size: 17px;
+  border-radius: var(--radius-pill);
+  color: #fff;
+  font-size: 16px;
   line-height: 1;
   cursor: pointer;
-  padding: 4px;
+  padding: 7px;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.5));
 }
+.efit-notif-bell:hover { background: rgba(0, 0, 0, 0.6); }
 .efit-notif-bell:hover { color: #fff; }
 
 .efit-notif-badge {
@@ -1723,9 +1917,14 @@ img { max-width: 100%; display: block; }
 }
 
 .efit-notif-panel {
+  /* Anchored from the LEFT, not the right: the bell now lives near the
+     logo on the left side of the nav (Ken's ask, Sept 2026), so a
+     right-anchored panel would extend further left than the bell itself
+     and bleed off the edge of the screen. Left-anchoring lets it open
+     into the open space to the right instead. */
   position: absolute;
   top: calc(100% + 14px);
-  right: 0;
+  left: 0;
   width: 320px;
   max-width: min(320px, calc(100vw - 32px));
   max-height: 420px;
