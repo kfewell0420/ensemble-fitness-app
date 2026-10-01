@@ -138,7 +138,7 @@
   .app-shell { padding-top: 4px; }
 </style>
 
-<div class="app-shell narrow">
+<div class="app-shell narrow" id="uploadShell">
 
   <div class="card" id="uploadCard">
     <!-- Ken's ask (Oct 2026): once a category tile below is picked, the
@@ -247,50 +247,64 @@
           <span class="narration-timer" id="trimRangeLabel" style="display:inline;">0:00 – 0:00</span>
         </div>
         <p class="narrated-note" style="margin-bottom:10px;">Drag the handles to pick the part worth keeping.</p>
-        <video id="trimPreviewVideo" muted playsinline class="trim-preview-video"></video>
 
-        <!-- Ken's ask (Oct 2026), inspired by Instagram's editor: let the
-             member pick which actual frame becomes the post's cover/poster
-             image, instead of it always being auto-captured from the trim
-             start point. This card is always one column — same on a phone
-             as on a computer, since .app-shell narrow never widens — so
-             this just stacks under the video, never squeezed beside it. -->
-        <div class="cover-picker" id="coverPicker" style="display:none;">
-          <div class="field-label-row">
-            <label>🖼️ Cover photo</label>
+        <!-- Ken's ask (Oct 2026): "The computer version will always look
+             different than the mobile version" — like Instagram/TikTok's
+             own editors. On a phone this still just stacks top to bottom,
+             exactly as before (.trim-layout is a plain block by default).
+             At a computer-sized viewport (see the #uploadShell media query
+             in app.css), .trim-layout becomes a side-by-side row: the video
+             on the left, the cover photo picker / filmstrip / trim handles
+             / preview button / add-another-clip on the right — wider and
+             easier to work with on a bigger screen, same as those apps. -->
+        <div class="trim-layout" id="trimLayout">
+          <div class="trim-media">
+            <video id="trimPreviewVideo" muted playsinline class="trim-preview-video"></video>
           </div>
-          <div class="cover-picker-row" id="coverPickerRow">
-            <span class="cover-picker-status">Generating previews…</span>
+
+          <div class="trim-controls">
+            <!-- Ken's ask (Oct 2026), inspired by Instagram's editor: let the
+                 member pick which actual frame becomes the post's cover/poster
+                 image, instead of it always being auto-captured from the trim
+                 start point. -->
+            <div class="cover-picker" id="coverPicker" style="display:none;">
+              <div class="field-label-row">
+                <label>🖼️ Cover photo</label>
+              </div>
+              <div class="cover-picker-row" id="coverPickerRow">
+                <span class="cover-picker-status">Generating previews…</span>
+              </div>
+            </div>
+
+            <!-- Same generated frames as the cover picker above, laid out as a
+                 filmstrip behind the trim handles (Instagram shows real video
+                 frames here too, instead of a plain bar) so it's obvious what's
+                 actually at each point in the clip while dragging. -->
+            <div class="trim-filmstrip" id="trimFilmstrip"></div>
+
+            <div class="trim-slider-row">
+              <label for="trimStartRange">Start</label>
+              <input type="range" id="trimStartRange" min="0" max="0" step="0.1" value="0" />
+            </div>
+            <div class="trim-slider-row">
+              <label for="trimEndRange">End</label>
+              <input type="range" id="trimEndRange" min="0" max="0" step="0.1" value="0" />
+            </div>
+            <button type="button" class="btn btn-ghost btn-sm" id="previewTrimBtn">▶ Preview trimmed clip</button>
+
+            <!-- Ken's ask (Oct 2026): moved here from the "More options" box
+                 below — right under the trim controls, next to the video it
+                 actually applies to, so it's obvious at a glance what clip
+                 you're adding to. Same element, same id, same show/hide logic
+                 (updateExtraClipsVisibility) as before, just relocated. -->
+            <div class="narration-section more-option-compact" id="extraClipsSection" style="margin-top:14px;">
+              <div class="more-option-row">
+                <button type="button" class="btn btn-ghost btn-sm" id="addExtraClipBtn">🎬 + Add another clip</button>
+              </div>
+              <ul class="extra-clip-list" id="extraClipList"></ul>
+              <input type="file" id="extraClipInput" accept="video/*" style="display:none;" />
+            </div>
           </div>
-        </div>
-
-        <!-- Same generated frames as the cover picker above, laid out as a
-             filmstrip behind the trim handles (Instagram shows real video
-             frames here too, instead of a plain bar) so it's obvious what's
-             actually at each point in the clip while dragging. -->
-        <div class="trim-filmstrip" id="trimFilmstrip"></div>
-
-        <div class="trim-slider-row">
-          <label for="trimStartRange">Start</label>
-          <input type="range" id="trimStartRange" min="0" max="0" step="0.1" value="0" />
-        </div>
-        <div class="trim-slider-row">
-          <label for="trimEndRange">End</label>
-          <input type="range" id="trimEndRange" min="0" max="0" step="0.1" value="0" />
-        </div>
-        <button type="button" class="btn btn-ghost btn-sm" id="previewTrimBtn">▶ Preview trimmed clip</button>
-
-        <!-- Ken's ask (Oct 2026): moved here from the "More options" box
-             below — right under the trim controls, next to the video it
-             actually applies to, so it's obvious at a glance what clip
-             you're adding to. Same element, same id, same show/hide logic
-             (updateExtraClipsVisibility) as before, just relocated. -->
-        <div class="narration-section more-option-compact" id="extraClipsSection" style="margin-top:14px;">
-          <div class="more-option-row">
-            <button type="button" class="btn btn-ghost btn-sm" id="addExtraClipBtn">🎬 + Add another clip</button>
-          </div>
-          <ul class="extra-clip-list" id="extraClipList"></ul>
-          <input type="file" id="extraClipInput" accept="video/*" style="display:none;" />
         </div>
       </div>
 
@@ -923,9 +937,16 @@
   // trim handles) and the cover-photo picker (clickable, picks the poster
   // frame). Sequential on purpose: there's only the one shared
   // trimPreviewVideo element to seek around in, so these can't run at once.
+  //
+  // Ken's ask (Oct 2026): a fixed count, same as Instagram/TikTok's own
+  // cover-photo picker — a handful of clean options (beginning, middle,
+  // near the end, the end), never more, no matter how long the clip is.
+  // A longer video must NOT mean more tiles to scroll through; a member
+  // with a 1:42 video should see exactly the same four choices as someone
+  // with a 10-second one.
   async function generateTrimFilmstrip(videoEl, duration) {
     var myGeneration = ++filmstripGeneration;
-    var count = 6;
+    var count = 4;
     trimFilmstrip.innerHTML = "";
     coverPickerRow.innerHTML = '<span class="cover-picker-status">Generating previews…</span>';
     coverPicker.style.display = "block";

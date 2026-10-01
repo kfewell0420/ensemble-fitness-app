@@ -691,9 +691,55 @@ select option {
   flex-wrap: wrap;
 }
 
+/* Ken's ask (Oct 2026): "Add more clips," "Voice narration," and "Add
+   music" used to each be their own full bordered card with a paragraph of
+   explanation — a lot of space and reading for features most uploads never
+   touch. #moreOptionsBox is the one outer card now (keeps the normal
+   .narration-section border/background/padding); .more-option-compact
+   strips all of that back off the three sections nested inside it, so they
+   read as plain stacked rows within that single card instead of three
+   separate boxes. */
+.more-option-compact {
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0 0 14px;
+}
+.more-option-compact:last-child { margin-bottom: 0; }
+
+.more-option-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  max-width: 100%;
+}
+/* A flex item's default "auto" min-width is its content's own natural
+   size — for a <select>, that can be the width of its LONGEST option text,
+   which ignores flex-shrink/flex-basis entirely in several browsers and is
+   exactly what pushed #musicTrackSelect past this row once real track
+   names loaded (Ken's ask, Oct 2026). min-width: 0 here removes that floor
+   so every child can actually shrink to fit. */
+.more-option-row > * { min-width: 0; }
+
+.more-option-icon-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+}
+
+.more-option-icon {
+  font-size: 15px;
+  flex: 0 0 auto;
+}
+
 #musicTrackSelect {
-  flex: 1;
-  min-width: 180px;
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: var(--radius-sm);
@@ -701,6 +747,13 @@ select option {
   font-size: 14px;
   color: #fff;
   font-family: inherit;
+  /* Belt-and-suspenders for a very long "Title — Artist" option: the box
+     itself always stays exactly this row's width (never the frame-busting
+     overflow Ken saw), and the text inside it truncates with … instead of
+     forcing the box wider. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 #musicTrackSelect:focus { outline: none; border-color: var(--accent-2); }
 #musicTrackSelect option { color: #111; }
@@ -736,6 +789,88 @@ select option {
   border-radius: var(--radius-sm);
   background: #000;
   margin-bottom: 12px;
+  display: block;
+}
+
+/* Ken's ask (Oct 2026): "The computer version will always look different
+   than the mobile version" — like Instagram/TikTok. By default (phones,
+   and narrow windows generally) .trim-layout is just a plain block, so
+   .trim-media and .trim-controls stack top-to-bottom exactly as the single
+   narrow column always has — this rule changes nothing below the 900px
+   breakpoint. #uploadShell's own width override (also scoped to that same
+   breakpoint, see below) is what actually gives this room to lay out side
+   by side; this block only has to describe the side-by-side arrangement
+   itself. */
+.trim-media { width: 100%; }
+.trim-controls { width: 100%; }
+@media (min-width: 900px) {
+  /* Scoped to #uploadShell specifically, NOT the shared .app-shell.narrow
+     rule (line ~193) — that class is used by admin.html, books.html,
+     member.html, music-library.html, and profile.html too, and widening it
+     directly would change all of those pages. This id-scoped override only
+     ever affects the upload page. */
+  #uploadShell.app-shell.narrow { max-width: 720px; }
+
+  .trim-layout {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+  }
+  .trim-media { flex: 0 0 44%; max-width: 44%; }
+  .trim-controls { flex: 1 1 auto; min-width: 0; }
+  .trim-preview-video { max-height: 420px; margin-bottom: 0; }
+}
+
+/* Ken's ask (Oct 2026), inspired by Instagram's video editor: real frames
+   from the member's own clip instead of a plain gray bar/slider, plus a
+   cover-photo picker so the post's poster image is a deliberate choice
+   instead of always whatever frame sits at the trim start point.
+   Ken's follow-up ask: "clean and precise equals business and diplomacy" —
+   there are always exactly 4 options now (see generateTrimFilmstrip in
+   upload.html), so this lays them out as one tidy, evenly-split row that
+   always fits the card — no scrolling, no wrapping into a grid, same fixed
+   look for a 10-second clip as for a 3-minute one. */
+.cover-picker { margin-bottom: 12px; }
+.cover-picker-row {
+  display: flex;
+  gap: 8px;
+}
+.cover-picker-status {
+  font-size: 12px;
+  color: var(--faint-invert);
+  padding: 16px 0;
+}
+.cover-thumb {
+  flex: 1 1 0;
+  min-width: 0;
+  aspect-ratio: 1 / 1;
+  width: auto;
+  height: auto;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid transparent;
+  padding: 0;
+  background: #000;
+  cursor: pointer;
+  line-height: 0;
+}
+.cover-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cover-thumb.selected { border-color: var(--accent-2); }
+
+.trim-filmstrip {
+  display: flex;
+  height: 40px;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 10px;
+  background: rgba(255, 255, 255, 0.06);
+}
+.trim-filmstrip img {
+  flex: 1 1 0;
+  min-width: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
   display: block;
 }
 
