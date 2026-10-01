@@ -2210,12 +2210,29 @@
       // request per path keeps photos and videos loading instead of one
       // missing method taking down every image on the page.
       if (typeof bucket.createSignedUrls === "function") {
-        var { data, error } = await bucket.createSignedUrls(toFetch, SIGNED_URL_TTL_SECONDS);
-        (!error && data ? data : []).forEach(function (row) {
-          var url = (!row.error && row.signedUrl) ? row.signedUrl : "";
-          result[row.path] = url;
-          signedUrlCache.set(row.path, { url: url, expiresAt: expiresAt });
-        });
+        // Ken's ask (Oct 2026): a brief network hiccup signing one batch of
+        // files (not a Supabase-reported `error` in the response — the
+        // request itself failing or timing out) used to throw straight out
+        // of this function, uncaught, past buildItems and into
+        // loadMoreReel — skipping its `loadingMore = false` reset and
+        // permanently wedging infinite scroll for the rest of the session
+        // (symptom: a loading hiccup on a video or two, then scrolling
+        // never loads anything past that point until a hard refresh). The
+        // per-path fallback just below already degrades gracefully per
+        // file on a failure; this matches that so one bad network blip
+        // costs this one batch's URLs, never every post after it.
+        try {
+          var { data, error } = await bucket.createSignedUrls(toFetch, SIGNED_URL_TTL_SECONDS);
+          (!error && data ? data : []).forEach(function (row) {
+            var url = (!row.error && row.signedUrl) ? row.signedUrl : "";
+            result[row.path] = url;
+            signedUrlCache.set(row.path, { url: url, expiresAt: expiresAt });
+          });
+        } catch (e) {
+          // Leave this batch's paths unresolved (falsy url) — callers
+          // already treat a missing signed URL as "didn't load this pass,"
+          // same as an individual failed path always has.
+        }
       } else {
         await Promise.all(toFetch.map(async function (p) {
           try {
@@ -3556,45 +3573,57 @@
     if (loadingMore || isReelExhausted()) return;
     loadingMore = true;
 
-    if (activeFilter === "Journeys") {
-      var journalItems = await fetchJournalBatch(JOURNAL_PAGE_SIZE, journalOffset);
-      journalOffset += journalItems.length;
-      journalReachedEnd = journalItems.length < JOURNAL_PAGE_SIZE;
-      loadingMore = false;
-      if (!journalItems.length) {
-        if (loadedItems.length === 0) showEmptyReelMessage("No approved journeys yet — the first one shared will show up here live.");
+    // Ken's ask (Oct 2026): everything in here used to run with no
+    // try/finally, so ANY unexpected failure along the way (see the
+    // createSignedUrls fix above for the specific one this was written
+    // for) skipped the `loadingMore = false` reset and left infinite
+    // scroll permanently dead for the rest of the session — the sentinel
+    // keeps coming back into view and calling this function, but the very
+    // first line (`if (loadingMore ...) return;`) now silently no-ops
+    // forever. Same belt-and-suspenders pattern as checkForLiveUpdates
+    // below: whatever happens inside, this always resets the flag.
+    try {
+      if (activeFilter === "Journeys") {
+        var journalItems = await fetchJournalBatch(JOURNAL_PAGE_SIZE, journalOffset);
+        journalOffset += journalItems.length;
+        journalReachedEnd = journalItems.length < JOURNAL_PAGE_SIZE;
+        if (!journalItems.length) {
+          if (loadedItems.length === 0) showEmptyReelMessage("No approved journeys yet — the first one shared will show up here live.");
+          return;
+        }
+        journalItems.forEach(appendItem);
+        trackNewest(journalItems);
         return;
       }
-      journalItems.forEach(appendItem);
-      trackNewest(journalItems);
-      return;
-    }
 
-    // "All" (and every specific workout-type filter) is media-only.
-    // Journeys are their own dedicated tab now — see the branch above —
-    // so a text journey never shows up mixed in among photos/videos here.
-    var mediaRows = reachedEnd ? [] : await fetchBatch(false, PAGE_SIZE, offset, activeFilter);
-    var combined = await buildItems(mediaRows);
-    if (!reachedEnd) {
-      offset += mediaRows.length;
-      reachedEnd = mediaRows.length < PAGE_SIZE;
-    }
-
-    loadingMore = false;
-
-    if (!combined.length) {
-      if (loadedItems.length === 0) {
-        var reelMsg = lastFetchError
-          ? "Couldn't load the feed — " + escapeHtml(lastFetchError.message || String(lastFetchError))
-          : (activeFilter !== "All"
-              ? "No approved " + escapeHtml(categoryLabel(activeFilter)) + " posts yet."
-              : "Nothing approved yet outside Healthy Meal Prep — once videos or photos are shared, they'll scroll here.");
-        showEmptyReelMessage(reelMsg);
+      // "All" (and every specific workout-type filter) is media-only.
+      // Journeys are their own dedicated tab now — see the branch above —
+      // so a text journey never shows up mixed in among photos/videos here.
+      var mediaRows = reachedEnd ? [] : await fetchBatch(false, PAGE_SIZE, offset, activeFilter);
+      var combined = await buildItems(mediaRows);
+      if (!reachedEnd) {
+        offset += mediaRows.length;
+        reachedEnd = mediaRows.length < PAGE_SIZE;
       }
-      return;
+
+      if (!combined.length) {
+        if (loadedItems.length === 0) {
+          var reelMsg = lastFetchError
+            ? "Couldn't load the feed — " + escapeHtml(lastFetchError.message || String(lastFetchError))
+            : (activeFilter !== "All"
+                ? "No approved " + escapeHtml(categoryLabel(activeFilter)) + " posts yet."
+                : "Nothing approved yet outside Healthy Meal Prep — once videos or photos are shared, they'll scroll here.");
+          showEmptyReelMessage(reelMsg);
+        }
+        return;
+      }
+      combined.forEach(appendItem);
+      trackNewest(combined);
+    } catch (e) {
+      console.error("[feed] loadMoreReel failed:", e);
+    } finally {
+      loadingMore = false;
     }
-    combined.forEach(appendItem);
-    trackNewest(combined);
   }
 
   // Newest real Meal Prep post(s) - checked alongside the main reel on
