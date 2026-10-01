@@ -380,7 +380,17 @@
       </div>
       <div class="field" id="captionField">
         <label for="caption" id="captionLabel">Caption (optional)</label>
-        <textarea id="caption" name="caption" placeholder="Say something about this one" maxlength="120" rows="2"></textarea>
+        <!-- Ken's ask (Oct 2026): "that box should be the same size as
+             Category, which is the same size as Location... normally the
+             caption is very short anyway." The .caption-compact class
+             (see app.css) removes the textarea's usual 80px minimum height
+             and manual resize handle so a 1-row caption renders at exactly
+             the same height as the Category select / Location input next
+             to it. updateCategoryFieldVisibility() below removes this class
+             (and bumps rows to 6) only for Healthy Meal Prep, which
+             genuinely needs the bigger write-up box — that's an
+             intentional exception, not an oversight. -->
+        <textarea id="caption" name="caption" placeholder="Say something about this one" maxlength="120" rows="1" class="caption-compact"></textarea>
         <span class="field-hint" id="captionHint" style="display:none;">Healthy Meal Prep posts get their own full-page profile — prep time, ingredients, your tips, whatever makes it yours. Write the whole thing here; there's room for it.</span>
       </div>
       <div class="field" id="signatureField" style="display:none;">
@@ -1305,22 +1315,7 @@
 
     var trackId = musicTrackSelect.value;
     var hasMusic = !!trackId && !musicTrackSelect.disabled;
-    if (hasMusic) {
-      var track = tracksById[trackId];
-      if (track) {
-        if (musicPreviewAudio.dataset.trackId !== trackId) {
-          var { data: signed } = await window.sb.storage.from("tracks").createSignedUrl(track.storage_path, 300);
-          if (signed) {
-            musicPreviewAudio.src = signed.signedUrl;
-            musicPreviewAudio.dataset.trackId = trackId;
-          }
-        }
-        musicPreviewAudio.currentTime = 0;
-        musicPreviewAudio.play().catch(function () {});
-      }
-    } else {
-      musicPreviewAudio.pause();
-    }
+    await playTrackPreview(hasMusic ? trackId : "");
 
     trimPreviewVideo.currentTime = start;
     trimPreviewVideo.play().catch(function () {});
@@ -1423,6 +1418,27 @@
     return (track.title || "?").trim().charAt(0).toUpperCase() || "♪";
   }
 
+  // Ken's ask (Oct 2026): "when you click on the box, it should play the
+  // music... so you can hear it before you add it to your video" — tapping
+  // a track card now previews it immediately, instead of only hearing it
+  // once "Preview trimmed clip" is pressed. Shared by the card click
+  // handler below AND by previewTrimBtn's own click handler (which plays
+  // this same selected track alongside the trimmed video) so the
+  // sign-the-URL-once logic only lives in one place.
+  async function playTrackPreview(trackId) {
+    if (!trackId) { musicPreviewAudio.pause(); return; }
+    var track = tracksById[trackId];
+    if (!track) return;
+    if (musicPreviewAudio.dataset.trackId !== trackId) {
+      var { data: signed } = await window.sb.storage.from("tracks").createSignedUrl(track.storage_path, 300);
+      if (!signed) return;
+      musicPreviewAudio.src = signed.signedUrl;
+      musicPreviewAudio.dataset.trackId = trackId;
+    }
+    musicPreviewAudio.currentTime = 0;
+    musicPreviewAudio.play().catch(function () {});
+  }
+
   function renderTrackCards(tracks) {
     trackPickerRow.innerHTML = "";
 
@@ -1460,6 +1476,7 @@
       if (musicTrackSelect.disabled) return; // narration already chosen — see syncMusicNarrationExclusivity
       musicTrackSelect.value = id;
       musicTrackSelect.dispatchEvent(new Event("change"));
+      playTrackPreview(id); // Ken's ask: hear it right away, before committing
     });
   }
 
@@ -1555,7 +1572,11 @@
     captionHint.style.display = isMealPrep ? "block" : "none";
     captionLabel.textContent = isMealPrep ? "Your Healthy Meal Prep write-up" : "Caption (optional)";
     captionField.maxLength = isMealPrep ? 600 : 120;
-    captionField.rows = isMealPrep ? 6 : 2;
+    captionField.rows = isMealPrep ? 6 : 1;
+    // Ken's ask (Oct 2026): only the plain short caption should match
+    // Category/Location's compact height — Meal Prep's write-up box stays
+    // its normal taller self, same as always.
+    captionField.classList.toggle("caption-compact", !isMealPrep);
   }
   var workoutTypeSelect = document.getElementById("workoutType");
   workoutTypeSelect.addEventListener("change", updateCategoryFieldVisibility);

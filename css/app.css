@@ -330,6 +330,20 @@ img { max-width: 100%; display: block; }
 
 .field textarea { resize: vertical; min-height: 80px; }
 
+/* Ken's ask (Oct 2026): "that box should be the same size as Category,
+   which is the same size as Location... normally the caption is very short
+   anyway." #caption is upload.html-only, so this only ever affects that one
+   page. Overrides the 80px floor above and turns off manual resize so a
+   1-row caption renders at exactly the same height as the Category select
+   / Location input beside it — identical padding/font-size/border already
+   makes those match, this just removes the textarea-specific minimum that
+   was the one thing still making it taller. Longer text still works fine;
+   it scrolls inside the box instead of growing it, which is the trade Ken
+   asked for. Healthy Meal Prep's write-up box drops this class (see
+   updateCategoryFieldVisibility in upload.html) and keeps its normal taller
+   behavior, since that one genuinely needs the room. */
+#caption.caption-compact { min-height: 0; resize: none; }
+
 /* Ken's ask (Oct 2026): category dropdowns (like #workoutType) and other
    selects across the app were unreadable once opened — white text on a
    white background, only visible while hovering. Root cause: every select
