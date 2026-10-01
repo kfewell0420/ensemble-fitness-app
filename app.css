@@ -792,6 +792,54 @@ select option {
   display: block;
 }
 
+/* Ken's ask (Oct 2026), inspired by Instagram's video editor: real frames
+   from the member's own clip instead of a plain gray bar/slider, plus a
+   cover-photo picker so the post's poster image is a deliberate choice
+   instead of always whatever frame sits at the trim start point. */
+.cover-picker { margin-bottom: 12px; }
+.cover-picker-row {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+.cover-picker-status {
+  font-size: 12px;
+  color: var(--faint-invert);
+  padding: 16px 0;
+}
+.cover-thumb {
+  flex: 0 0 auto;
+  width: 52px;
+  height: 52px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid transparent;
+  padding: 0;
+  background: #000;
+  cursor: pointer;
+  line-height: 0;
+}
+.cover-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cover-thumb.selected { border-color: var(--accent-2); }
+
+.trim-filmstrip {
+  display: flex;
+  height: 40px;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 10px;
+  background: rgba(255, 255, 255, 0.06);
+}
+.trim-filmstrip img {
+  flex: 1 1 0;
+  min-width: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
 .trim-slider-row {
   display: flex;
   align-items: center;

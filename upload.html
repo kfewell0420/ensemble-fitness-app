@@ -248,6 +248,28 @@
         </div>
         <p class="narrated-note" style="margin-bottom:10px;">Drag the handles to pick the part worth keeping.</p>
         <video id="trimPreviewVideo" muted playsinline class="trim-preview-video"></video>
+
+        <!-- Ken's ask (Oct 2026), inspired by Instagram's editor: let the
+             member pick which actual frame becomes the post's cover/poster
+             image, instead of it always being auto-captured from the trim
+             start point. This card is always one column — same on a phone
+             as on a computer, since .app-shell narrow never widens — so
+             this just stacks under the video, never squeezed beside it. -->
+        <div class="cover-picker" id="coverPicker" style="display:none;">
+          <div class="field-label-row">
+            <label>🖼️ Cover photo</label>
+          </div>
+          <div class="cover-picker-row" id="coverPickerRow">
+            <span class="cover-picker-status">Generating previews…</span>
+          </div>
+        </div>
+
+        <!-- Same generated frames as the cover picker above, laid out as a
+             filmstrip behind the trim handles (Instagram shows real video
+             frames here too, instead of a plain bar) so it's obvious what's
+             actually at each point in the clip while dragging. -->
+        <div class="trim-filmstrip" id="trimFilmstrip"></div>
+
         <div class="trim-slider-row">
           <label for="trimStartRange">Start</label>
           <input type="range" id="trimStartRange" min="0" max="0" step="0.1" value="0" />
@@ -834,6 +856,18 @@
   var trimPreviewObjectUrl = null;
   var trimPreviewStopCheck = null;
 
+  // Ken's ask (Oct 2026): which frame becomes this post's cover/poster
+  // image — null means "not chosen yet," falls back to the old default
+  // (the trim start point) exactly like before this existed. Set by
+  // tapping a tile in #coverPickerRow; read back at upload time below.
+  var selectedCoverTime = null;
+  var coverPicker = document.getElementById("coverPicker");
+  var coverPickerRow = document.getElementById("coverPickerRow");
+  var trimFilmstrip = document.getElementById("trimFilmstrip");
+  var filmstripGeneration = 0; // bumped on every new file so a slow, still-running
+                                // generation from a PREVIOUS file can never paint
+                                // over the current one once it finally finishes.
+
   function formatSeconds(sec) {
     return formatTimer((sec || 0) * 1000);
   }
@@ -842,7 +876,103 @@
     trimRangeLabel.textContent = formatSeconds(trimStartRange.value) + " – " + formatSeconds(trimEndRange.value);
   }
 
+  // Grabs one small preview frame at `time` from `videoEl` as a data URL —
+  // same still-frame-via-canvas technique as captureVideoPosterBlob below,
+  // just downscaled and kept in memory (not uploaded) since these only
+  // ever exist to populate the filmstrip/cover-picker UI. The REAL poster
+  // that gets uploaded is always captured fresh, at full resolution, by
+  // captureVideoPosterBlob at submit time — these are preview-only.
+  function captureFrameDataUrl(videoEl, time) {
+    return new Promise(function (resolve) {
+      var settled = false;
+      function done(result) {
+        if (settled) return;
+        settled = true;
+        videoEl.removeEventListener("seeked", onSeeked);
+        resolve(result);
+      }
+      function onSeeked() {
+        try {
+          var w = videoEl.videoWidth, h = videoEl.videoHeight;
+          if (!w || !h) { done(null); return; }
+          var targetW = 120;
+          var canvas = document.createElement("canvas");
+          canvas.width = targetW;
+          canvas.height = Math.round((h / w) * targetW);
+          canvas.getContext("2d").drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+          done(canvas.toDataURL("image/jpeg", 0.6));
+        } catch (e) {
+          done(null);
+        }
+      }
+      videoEl.addEventListener("seeked", onSeeked);
+      setTimeout(function () { done(null); }, 4000);
+      videoEl.currentTime = time;
+    });
+  }
+
+  function selectCoverTime(time) {
+    selectedCoverTime = time;
+    coverPickerRow.querySelectorAll(".cover-thumb").forEach(function (btn) {
+      btn.classList.toggle("selected", parseFloat(btn.getAttribute("data-time")) === time);
+    });
+  }
+
+  // Walks the video start-to-end capturing a handful of evenly-spaced
+  // frames — one pass feeds both the filmstrip (purely visual, behind the
+  // trim handles) and the cover-photo picker (clickable, picks the poster
+  // frame). Sequential on purpose: there's only the one shared
+  // trimPreviewVideo element to seek around in, so these can't run at once.
+  async function generateTrimFilmstrip(videoEl, duration) {
+    var myGeneration = ++filmstripGeneration;
+    var count = 6;
+    trimFilmstrip.innerHTML = "";
+    coverPickerRow.innerHTML = '<span class="cover-picker-status">Generating previews…</span>';
+    coverPicker.style.display = "block";
+    selectedCoverTime = null;
+
+    var frames = [];
+    for (var i = 0; i < count; i++) {
+      // A frame right at 0 or right at the very end is often a half-decoded
+      // black/blank edge case — the same 0.05s/duration-0.05s clamp
+      // captureVideoPosterBlob already uses for the real poster capture.
+      var t = Math.min(Math.max((duration * i) / (count - 1), 0.05), Math.max(duration - 0.05, 0));
+      var dataUrl = await captureFrameDataUrl(videoEl, t);
+      if (myGeneration !== filmstripGeneration) return; // a newer file took over mid-generation
+      if (dataUrl) frames.push({ time: t, dataUrl: dataUrl });
+    }
+    if (myGeneration !== filmstripGeneration) return;
+
+    if (!frames.length) {
+      coverPicker.style.display = "none";
+      return;
+    }
+
+    trimFilmstrip.innerHTML = "";
+    frames.forEach(function (f) {
+      var img = document.createElement("img");
+      img.src = f.dataUrl;
+      img.alt = "";
+      trimFilmstrip.appendChild(img);
+    });
+
+    coverPickerRow.innerHTML = "";
+    frames.forEach(function (f, i) {
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "cover-thumb" + (i === 0 ? " selected" : "");
+      btn.setAttribute("data-time", f.time);
+      btn.innerHTML = '<img src="' + f.dataUrl + '" alt="Cover option" />';
+      btn.addEventListener("click", function () { selectCoverTime(f.time); });
+      coverPickerRow.appendChild(btn);
+    });
+    // Default to the first frame — same starting point as the old
+    // always-capture-at-trim-start behavior, just explicit now.
+    selectedCoverTime = frames[0].time;
+  }
+
   function resetTrimUI() {
+    filmstripGeneration++; // orphans any in-flight generateTrimFilmstrip run
     if (trimPreviewStopCheck) { clearInterval(trimPreviewStopCheck); trimPreviewStopCheck = null; }
     if (trimPreviewObjectUrl) { URL.revokeObjectURL(trimPreviewObjectUrl); trimPreviewObjectUrl = null; }
     trimPreviewVideo.pause();
@@ -851,6 +981,10 @@
     trimStartRange.min = 0; trimStartRange.max = 0; trimStartRange.value = 0;
     trimEndRange.min = 0; trimEndRange.max = 0; trimEndRange.value = 0;
     trimRangeLabel.textContent = "0:00 – 0:00";
+    selectedCoverTime = null;
+    coverPicker.style.display = "none";
+    coverPickerRow.innerHTML = "";
+    trimFilmstrip.innerHTML = "";
   }
 
   function loadTrimPreview(file) {
@@ -865,6 +999,7 @@
       trimEndRange.max = duration;
       trimEndRange.value = duration;
       updateTrimRangeLabel();
+      generateTrimFilmstrip(trimPreviewVideo, duration);
     };
   }
 
@@ -1491,11 +1626,15 @@
       // See captureVideoPosterBlob() above for why this exists — a poster
       // image is what actually removes the "waiting on the video" feeling
       // in the feed. Best-effort: any failure here just means no poster,
-      // never a failed upload.
+      // never a failed upload. Prefers whichever frame the member actually
+      // tapped in the cover-photo picker (selectedCoverTime); falls back to
+      // the old default — the trim start point — if that picker never
+      // finished generating (e.g. a very short video, or a slow decode).
       var posterPath = null;
       if (kind === "video") {
         try {
-          var posterBlob = await captureVideoPosterBlob(trimPreviewVideo, trimStartValue || 0);
+          var posterSeekTime = selectedCoverTime != null ? selectedCoverTime : (trimStartValue || 0);
+          var posterBlob = await captureVideoPosterBlob(trimPreviewVideo, posterSeekTime);
           if (posterBlob) {
             var candidatePosterPath = currentUser.id + "/" + crypto.randomUUID() + "-poster.jpg";
             var { error: posterError } = await window.sb.storage.from("media").upload(candidatePosterPath, posterBlob, {
