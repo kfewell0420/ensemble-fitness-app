@@ -2766,52 +2766,25 @@
   // current-sound card already does.
   var currentlyAudibleVideo = null;
 
-  // Ken's ask (Oct 2026): Instagram/TikTok feel smooth flicking through
-  // several videos as fast as you can swipe because they're already
-  // downloading the NEXT one or two while you're still watching the
-  // current one — they don't wait for a video to actually scroll into
-  // view before starting its fetch. The preload="auto" upgrade above only
-  // kicks in once a card starts entering the viewport, which is barely a
-  // head start at all on a fast flick through several cards in a row.
-  // This instead starts buffering the next couple of cards in DOM order
-  // the moment the CURRENT one begins playing, giving them the entire
-  // time someone spends watching the current video (seconds, not a
-  // fraction of one) to get real video data buffered before they're ever
-  // asked to play.
-  function preloadUpcomingVideos(afterEl, count) {
-    var el = afterEl;
-    var found = 0;
-    while (el && found < count) {
-      el = el.nextElementSibling;
-      if (!el) break;
-      var upcomingVideo = el.querySelector && el.querySelector("video");
-      if (upcomingVideo) {
-        if (upcomingVideo.preload !== "auto") upcomingVideo.preload = "auto";
-        found++;
-      }
-    }
-  }
-
+  // Ken's ask (Oct 2026): tried making videos preload="auto" (either on
+  // scroll-in, or ahead of time for the next couple of cards) to shrink
+  // the gap before a video shows real motion. Reverted both attempts —
+  // reassigning .preload on a <video> that's already begun loading isn't
+  // safe across browsers: instead of speeding anything up, it can make
+  // the browser discard what it had already started fetching and never
+  // properly resume, which is exactly the "video never starts, just stays
+  // black" symptom this produced on the website, the simulator, AND the
+  // phone all at once (same script, same bug, everywhere). Back to the
+  // plain, known-working setup: every video just uses the preload=
+  // "metadata" it's built with in buildSlide() and nothing here ever
+  // changes that afterward. Making the very first frame appear faster is
+  // a real, separate thing worth doing properly later (e.g. real captured
+  // poster thumbnails, or a server-side preview clip) rather than a
+  // client-side attribute toggle like this.
   var reelObserver = new IntersectionObserver(function (entries) {
     entries.forEach(function (entry) {
       var video = entry.target.querySelector("video");
       if (!video) return;
-      // Every slide is built with preload="metadata" (on purpose — it
-      // avoids downloading actual video bytes for the dozens of offscreen
-      // cards in a feed, just their duration/size). That means the moment
-      // a card crosses 60% and is told to play, the browser is starting
-      // its real video download from zero, which is the half-second
-      // black beat Ken's seeing before motion starts (worse on a post
-      // with no captured thumbnail, since there's nothing but that black
-      // placeholder to look at while it loads). Upgrading to preload=
-      // "auto" here, the moment a card starts entering the viewport AT
-      // ALL (threshold 0, well before the 60% play line below), gives
-      // the real download a head start while the user is still scrolling
-      // it into place, so there's usually real buffered video by the
-      // time it's actually asked to play.
-      if (entry.isIntersecting && video.preload !== "auto") {
-        video.preload = "auto";
-      }
       if (entry.isIntersecting && entry.intersectionRatio > 0.6) {
         if (reelMuted) {
           video.muted = true;
@@ -2823,7 +2796,6 @@
           video.muted = false;
         }
         syncMuteBtn(entry.target, video);
-        preloadUpcomingVideos(entry.target, 2);
         var p = video.play();
         if (p && p.catch) {
           p.catch(function () {
