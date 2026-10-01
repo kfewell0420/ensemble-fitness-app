@@ -243,10 +243,20 @@
 
       <div class="narration-section" id="trimSection">
         <div class="field-label-row">
-          <label>✂️ Shorten this video (optional)</label>
+          <label>✂️ Shorten this video</label>
           <span class="narration-timer" id="trimRangeLabel" style="display:inline;">0:00 – 0:00</span>
         </div>
-        <p class="narrated-note" style="margin-bottom:10px;">Drag the handles to pick the part worth keeping.</p>
+        <!-- Ken's ask (Oct 2026): "just drag the handles, period" — this used
+             to also say "...to pick the part worth keeping," which was
+             accurate but not needed and took up its own line on a phone. -->
+        <p class="narrated-note" style="margin-bottom:10px;">Drag the handles.</p>
+        <!-- Ken's ask (Oct 2026): "we don't need the MP4 selected [box] at
+             the top because that's already been chosen to get here" — once
+             the trim editor is showing, the big dropzone above is redundant
+             and just eats space. toggleDropzoneForVideo() (below) hides it
+             in that case; this small link is the replacement way to pick a
+             different file, so that ability isn't lost along with the box. -->
+        <button type="button" class="btn btn-ghost btn-sm" id="changeVideoBtn" style="margin-bottom:10px; display:none;">Change video</button>
 
         <!-- Ken's ask (Oct 2026): "The computer version will always look
              different than the mobile version" — like Instagram/TikTok's
@@ -299,7 +309,7 @@
                  (updateExtraClipsVisibility) as before, just relocated. -->
             <div class="narration-section more-option-compact" id="extraClipsSection" style="margin-top:14px;">
               <div class="more-option-row">
-                <button type="button" class="btn btn-ghost btn-sm" id="addExtraClipBtn">🎬 + Add another clip</button>
+                <button type="button" class="btn btn-ghost btn-sm" id="addExtraClipBtn">🎬 + Add additional clip(s)</button>
               </div>
               <ul class="extra-clip-list" id="extraClipList"></ul>
               <input type="file" id="extraClipInput" accept="video/*" style="display:none;" />
@@ -1045,7 +1055,24 @@
       trimSection.classList.remove("show");
       resetTrimUI();
     }
+    toggleDropzoneForVideo(isVideo);
   }
+
+  // Ken's ask (Oct 2026): once a video is picked and the trim editor is
+  // showing, the big dropzone box above it is just repeating something
+  // already done ("MP4 selected") and wasting space on a phone screen —
+  // hide it and show a small "Change video" link in the trim section
+  // instead, so there's still a way to swap files without the full box.
+  // Photos and songs have no trim section, so the dropzone always stays
+  // visible for those — there's nothing else competing for the space.
+  var changeVideoBtn = document.getElementById("changeVideoBtn");
+  function toggleDropzoneForVideo(isVideo) {
+    dropzone.style.display = isVideo ? "none" : "";
+    changeVideoBtn.style.display = isVideo ? "inline-flex" : "none";
+  }
+  changeVideoBtn.addEventListener("click", function () {
+    fileInput.click();
+  });
 
   // ---- Extra clips, for video uploads only (Ken's ask, Nov 2026) --------
   // A member's already-trimmed footage often comes as several separate

@@ -793,17 +793,19 @@ select option {
      its full native height, which made the box itself very tall AND still
      left black bars down the left/right sides (the video shrinks to fit
      inside that height while keeping its own shape, so it stops short of
-     the box's full width). Switching to a fixed, shorter 3:4 box plus
-     object-fit:cover fixes both at once: the preview now always fills the
-     box's full width edge-to-edge (no black bars), at the cost of cropping
-     off roughly the top/bottom quarter of a typical vertical phone video —
-     exactly the trade Ken asked for. This is a PREVIEW crop only: the full,
-     uncropped video is still what actually gets uploaded and played back
-     everywhere else; captureFrameDataUrl/captureVideoPosterBlob read pixels
-     from the real video (videoWidth/videoHeight), not this cropped CSS box,
-     so cover-photo and poster captures are unaffected. */
+     the box's full width). A fixed-ratio box plus object-fit:cover fixes
+     both at once: the preview always fills the box's full width
+     edge-to-edge (no black bars), at the cost of cropping off some of the
+     top/bottom of a vertical phone video. First pass used 3:4 (the width
+     was already right, per Ken's confirmation); his follow-up asked to
+     "lose a quarter of that" height too, so this is now 1:1 (square) —
+     3:4's own height cut by another 25%. This is a PREVIEW crop only: the
+     full, uncropped video is still what actually gets uploaded and played
+     back everywhere else; captureFrameDataUrl/captureVideoPosterBlob read
+     pixels from the real video (videoWidth/videoHeight), not this cropped
+     CSS box, so cover-photo and poster captures are unaffected. */
   width: 100%;
-  aspect-ratio: 3 / 4;
+  aspect-ratio: 1 / 1;
   object-fit: cover;
   border-radius: var(--radius-sm);
   background: #000;
