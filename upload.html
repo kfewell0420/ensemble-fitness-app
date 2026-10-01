@@ -255,8 +255,14 @@
              the trim editor is showing, the big dropzone above is redundant
              and just eats space. toggleDropzoneForVideo() (below) hides it
              in that case; this small link is the replacement way to pick a
-             different file, so that ability isn't lost along with the box. -->
-        <button type="button" class="btn btn-ghost btn-sm" id="changeVideoBtn" style="margin-bottom:10px; display:none;">Change video</button>
+             different file, so that ability isn't lost along with the box.
+             Ken's follow-up ask: put "Add additional clip(s)" up here next
+             to it instead of down by the sliders — same .more-option-row
+             flex layout already used for the narration buttons below. -->
+        <div class="more-option-row" style="margin-bottom:10px;">
+          <button type="button" class="btn btn-ghost btn-sm" id="changeVideoBtn" style="display:none;">Change video</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="addExtraClipBtn">🎬 + Add additional clip(s)</button>
+        </div>
 
         <!-- Ken's ask (Oct 2026): "The computer version will always look
              different than the mobile version" — like Instagram/TikTok's
@@ -302,17 +308,48 @@
             </div>
             <button type="button" class="btn btn-ghost btn-sm" id="previewTrimBtn">▶ Preview trimmed clip</button>
 
-            <!-- Ken's ask (Oct 2026): moved here from the "More options" box
-                 below — right under the trim controls, next to the video it
-                 actually applies to, so it's obvious at a glance what clip
-                 you're adding to. Same element, same id, same show/hide logic
+            <!-- Ken's ask (Oct 2026): the "+ Add additional clip(s)" BUTTON
+                 moved up into the action row next to "Change video" above —
+                 this is now just the running list of added clips. Collapses
+                 to nothing (see renderExtraClipList's display toggle) until
+                 there's actually a clip in it, so it adds no space of its
+                 own by default. Same element, same id, same show/hide logic
                  (updateExtraClipsVisibility) as before, just relocated. -->
             <div class="narration-section more-option-compact" id="extraClipsSection" style="margin-top:14px;">
-              <div class="more-option-row">
-                <button type="button" class="btn btn-ghost btn-sm" id="addExtraClipBtn">🎬 + Add additional clip(s)</button>
-              </div>
               <ul class="extra-clip-list" id="extraClipList"></ul>
               <input type="file" id="extraClipInput" accept="video/*" style="display:none;" />
+            </div>
+
+            <!-- Ken's ask (Oct 2026): "where add additional clips is
+                 located, that should be... choose music track" — moved up
+                 from the "More options" box below, right next to the video
+                 it applies to. Ken's follow-up ask: a plain dropdown "shows
+                 way too much information, looks cluttered" when opened, and
+                 should instead be "wider... left to right... easy to
+                 scroll... something that makes them want to choose" — like
+                 Instagram/TikTok's own sound pickers. This is that: a
+                 horizontally-scrolling row of track cards instead of a
+                 native dropdown list. The original <select> stays, just
+                 hidden — it's still what the upload logic and the
+                 narration/music exclusivity check actually read from (see
+                 musicTrackSelect in the script), so every card click just
+                 sets its value and fires a "change" event on it rather than
+                 duplicating that logic. True "trending/most-played" sorting
+                 would need real play/use counts, which nothing tracks yet —
+                 flagged to Ken as a real future addition once there's usage
+                 data to sort by; for now tracks list alphabetically, same
+                 order as before. -->
+            <div class="narration-section more-option-compact" id="musicSection" style="margin-top:14px;">
+              <div class="field-label-row">
+                <label>🎵 Music (optional)</label>
+              </div>
+              <div class="track-picker-row" id="trackPickerRow">
+                <span class="cover-picker-status">Loading tracks…</span>
+              </div>
+              <select id="musicTrackSelect" style="display:none;" aria-hidden="true" tabindex="-1">
+                <option value="">Select music track</option>
+              </select>
+              <audio id="musicPreviewAudio" style="display:none;"></audio>
             </div>
           </div>
         </div>
@@ -372,18 +409,17 @@
            lot of space and reading for something most uploads never touch.
            Folded into one compact "More options" box, each down to just its
            control with a short label, no explanatory copy — the picker
-           itself is the explanation. ("Add another clip" uses this same
-           compact styling but now lives up in #trimSection instead, next to
-           the video it applies to.) Placed after Upload on purpose: the
-           common path (pick a file, caption, location, upload) stays short
-           and is all most people ever need; these stay reachable for the
-           rare person who wants them, without adding to what everyone else
-           scrolls past. Each piece keeps its own id (narrationSection,
-           musicSection) and show/hide logic exactly as before — see
-           updateNarrationVisibility/updateMusicVisibility — only the markup
-           inside got simpler, and a shared "moreOptionsBox" wrapper (see
-           updateMoreOptionsBoxVisibility) shows itself whenever either one
-           would, so there's never an empty bordered box left over for a
+           itself is the explanation. ("Add another clip" and "Music" use
+           this same compact styling but now live up in #trimSection instead,
+           next to the video they apply to.) Placed after Upload on purpose:
+           the common path (pick a file, caption, location, upload) stays
+           short and is all most people ever need; these stay reachable for
+           the rare person who wants them, without adding to what everyone
+           else scrolls past. Kept its own id (narrationSection) and
+           show/hide logic exactly as before — see updateNarrationVisibility
+           — and the shared "moreOptionsBox" wrapper (see
+           updateMoreOptionsBoxVisibility) still shows/hides itself the same
+           way, so there's never an empty bordered box left over for a
            photo/song upload where none of this applies. -->
       <div class="narration-section" id="moreOptionsBox">
         <div class="field-label-row">
@@ -400,26 +436,6 @@
           <div class="narration-preview" id="narrationPreview" style="display:none;">
             <audio id="narrationAudioPreview" controls></audio>
           </div>
-        </div>
-
-        <div class="narration-section more-option-compact" id="musicSection">
-          <!-- Ken's ask (Oct 2026): the select was overflowing past the
-               card's right edge once real track names loaded into it — a
-               long "Title — Artist" option can force a native dropdown
-               wider than its flex row allows room for on a narrow screen.
-               Giving it its own full-width row (icon above, Preview below)
-               instead of squeezing all three onto one line, plus the
-               width/overflow rules in #musicTrackSelect's CSS, keeps the
-               box itself always exactly as wide as this card, with a long
-               track name truncating (…) instead of pushing the box wider. -->
-          <div class="more-option-icon-row">
-            <span class="more-option-icon">🎵</span>
-            <select id="musicTrackSelect">
-              <option value="">Select music track</option>
-            </select>
-          </div>
-          <button type="button" class="btn btn-ghost btn-sm" id="previewMusicBtn" style="margin-top:8px;">▶ Preview</button>
-          <audio id="musicPreviewAudio" style="display:none;"></audio>
         </div>
       </div>
     </div>
@@ -1028,6 +1044,7 @@
     coverPicker.style.display = "none";
     coverPickerRow.innerHTML = "";
     trimFilmstrip.innerHTML = "";
+    if (musicPreviewAudio) musicPreviewAudio.pause();
   }
 
   function loadTrimPreview(file) {
@@ -1128,6 +1145,10 @@
     });
     // +1 for clip 1 (the file picked above) when checking against the cap.
     addExtraClipBtn.style.display = (extraClips.length + 1 >= EXTRA_CLIP_CAP) ? "none" : "inline-flex";
+    // Ken's ask (Oct 2026): the button moved up next to "Change video" —
+    // this box is now just the list itself, so collapse it to nothing (no
+    // leftover margin/padding) until there's actually a clip in it.
+    extraClipsSection.style.display = extraClips.length ? "block" : "none";
   }
 
   function resetExtraClips() {
@@ -1140,6 +1161,11 @@
     var isVideo = !!selectedFile && fileKind(selectedFile) === "video";
     if (isVideo) {
       extraClipsSection.classList.add("show");
+      // Re-run the empty/non-empty collapse check (see renderExtraClipList)
+      // right away — otherwise a freshly-picked video with 0 extra clips
+      // yet would show this as an empty bordered box until the first
+      // add/remove click ever recalculated it.
+      renderExtraClipList();
     } else {
       extraClipsSection.classList.remove("show");
       resetExtraClips();
@@ -1265,15 +1291,43 @@
     updateTrimRangeLabel();
   });
 
-  previewTrimBtn.addEventListener("click", function () {
+  // Ken's ask (Oct 2026): "we should have a preview that automatically
+  // plays it with the music. That should be the preview button" — folds in
+  // what the separate, confusing music-only "▶ Preview" button used to do.
+  // If a track is chosen (and there's no narration — those two are already
+  // mutually exclusive, see syncMusicNarrationExclusivity), it now plays
+  // alongside the trimmed clip automatically; there's no longer a second
+  // preview button to wonder about.
+  previewTrimBtn.addEventListener("click", async function () {
     var start = parseFloat(trimStartRange.value);
     var end = parseFloat(trimEndRange.value);
     if (trimPreviewStopCheck) clearInterval(trimPreviewStopCheck);
+
+    var trackId = musicTrackSelect.value;
+    var hasMusic = !!trackId && !musicTrackSelect.disabled;
+    if (hasMusic) {
+      var track = tracksById[trackId];
+      if (track) {
+        if (musicPreviewAudio.dataset.trackId !== trackId) {
+          var { data: signed } = await window.sb.storage.from("tracks").createSignedUrl(track.storage_path, 300);
+          if (signed) {
+            musicPreviewAudio.src = signed.signedUrl;
+            musicPreviewAudio.dataset.trackId = trackId;
+          }
+        }
+        musicPreviewAudio.currentTime = 0;
+        musicPreviewAudio.play().catch(function () {});
+      }
+    } else {
+      musicPreviewAudio.pause();
+    }
+
     trimPreviewVideo.currentTime = start;
     trimPreviewVideo.play().catch(function () {});
     trimPreviewStopCheck = setInterval(function () {
       if (trimPreviewVideo.paused || trimPreviewVideo.currentTime >= end) {
         trimPreviewVideo.pause();
+        musicPreviewAudio.pause();
         clearInterval(trimPreviewStopCheck);
         trimPreviewStopCheck = null;
       }
@@ -1339,35 +1393,108 @@
   // A member can attach ONE track from the artist database instead of (or
   // never both with) their own recorded voiceover — mirrors how Instagram/
   // TikTok let you pick either your own audio or a licensed track.
+  //
+  // Ken's ask (Oct 2026): a plain dropdown "shows way too much information,
+  // looks cluttered" once opened, and should instead feel like a real music
+  // picker — "wider... left to right... easy to scroll... something that
+  // makes them want to choose." This renders tracks as a horizontally
+  // scrolling row of cards (#trackPickerRow) instead of native <option>
+  // list items. The original <select> (#musicTrackSelect) is kept, just
+  // hidden — every other piece of this page (syncMusicNarrationExclusivity,
+  // the upload submit handler) already reads ITS value, so each card click
+  // just sets that value and fires a real "change" event on it instead of
+  // duplicating that logic in two places.
+  //
+  // Ken also asked about surfacing which tracks are popular/trending —
+  // genuinely worth doing, but it needs real data (how many posts actually
+  // used a track) that nothing in the schema tracks yet. Flagging that as a
+  // real future addition (a times_used counter, bumped when a post
+  // publishes with that track, sorted to the front with a small "Popular"
+  // tag) rather than faking it — for now cards list alphabetically, same
+  // order as the old dropdown did.
   var musicSection = document.getElementById("musicSection");
   var musicTrackSelect = document.getElementById("musicTrackSelect");
-  var previewMusicBtn = document.getElementById("previewMusicBtn");
   var musicPreviewAudio = document.getElementById("musicPreviewAudio");
+  var trackPickerRow = document.getElementById("trackPickerRow");
   var tracksLoaded = false;
   var tracksById = {};
+
+  function trackInitial(track) {
+    return (track.title || "?").trim().charAt(0).toUpperCase() || "♪";
+  }
+
+  function renderTrackCards(tracks) {
+    trackPickerRow.innerHTML = "";
+
+    // A "No music" card first — the only way to clear a selection now that
+    // the real dropdown is hidden.
+    var noneCard = document.createElement("button");
+    noneCard.type = "button";
+    noneCard.className = "track-card track-card-none selected";
+    noneCard.setAttribute("data-track-id", "");
+    noneCard.innerHTML = '<span class="track-card-art">🚫</span><span class="track-card-title">No music</span>';
+    trackPickerRow.appendChild(noneCard);
+
+    tracks.forEach(function (track) {
+      var card = document.createElement("button");
+      card.type = "button";
+      card.className = "track-card";
+      card.setAttribute("data-track-id", track.id);
+      card.innerHTML =
+        '<span class="track-card-art">' + trackInitial(track) + '</span>' +
+        (track.is_independent_artist ? '<span class="track-card-badge" title="100% royalties to the artist">★</span>' : '') +
+        '<span class="track-card-title"></span>' +
+        '<span class="track-card-artist"></span>';
+      // textContent, not innerHTML, for real track/artist names — these
+      // come straight from our own tracks table, not user-typed HTML, but
+      // there's no reason to risk it.
+      card.querySelector(".track-card-title").textContent = track.title;
+      card.querySelector(".track-card-artist").textContent = track.artist_name;
+      trackPickerRow.appendChild(card);
+    });
+
+    trackPickerRow.addEventListener("click", function (e) {
+      var card = e.target.closest(".track-card");
+      if (!card) return;
+      var id = card.getAttribute("data-track-id");
+      if (musicTrackSelect.disabled) return; // narration already chosen — see syncMusicNarrationExclusivity
+      musicTrackSelect.value = id;
+      musicTrackSelect.dispatchEvent(new Event("change"));
+    });
+  }
 
   async function loadTracksForPicker() {
     if (tracksLoaded) return;
     tracksLoaded = true;
     var { data, error } = await window.sb
       .from("tracks")
-      .select("id, title, artist_name, is_independent_artist")
+      .select("id, title, artist_name, is_independent_artist, storage_path")
       .eq("is_active", true)
       .order("title", { ascending: true });
-    if (error || !data) return;
+    if (error || !data) {
+      trackPickerRow.innerHTML = '<span class="cover-picker-status">Couldn’t load tracks — try again in a moment.</span>';
+      return;
+    }
     for (var i = 0; i < data.length; i++) {
       tracksById[data[i].id] = data[i];
       var opt = document.createElement("option");
       opt.value = data[i].id;
-      // A plain-text hint since <option> can't render the styled badge used
-      // elsewhere — still calls out which artists keep 100% of royalties.
-      opt.textContent = data[i].title + " — " + data[i].artist_name + (data[i].is_independent_artist ? " ★ 100% Royalties" : "");
+      opt.textContent = data[i].title + " — " + data[i].artist_name;
       musicTrackSelect.appendChild(opt);
     }
+    renderTrackCards(data);
+  }
+
+  function updateSelectedTrackCard() {
+    var selected = musicTrackSelect.value || "";
+    trackPickerRow.querySelectorAll(".track-card").forEach(function (card) {
+      card.classList.toggle("selected", card.getAttribute("data-track-id") === selected);
+    });
   }
 
   function resetMusicUI() {
     musicTrackSelect.value = "";
+    updateSelectedTrackCard();
     musicPreviewAudio.pause();
     musicPreviewAudio.removeAttribute("src");
   }
@@ -1380,7 +1507,7 @@
     var hasNarration = !!narrationBlob || recording;
     var hasMusic = !!musicTrackSelect.value;
     musicTrackSelect.disabled = hasNarration;
-    previewMusicBtn.disabled = hasNarration;
+    trackPickerRow.classList.toggle("disabled", hasNarration);
     recordNarrationBtn.disabled = hasMusic;
     reRecordBtn.disabled = hasMusic;
   }
@@ -1398,10 +1525,9 @@
   }
 
   // The shared "More options" card (see moreOptionsBox in the markup)
-  // wraps extraClipsSection/narrationSection/musicSection, which all three
-  // already only ever show for a video file — this just mirrors that same
-  // check so the card itself appears/disappears along with them, instead
-  // of being left behind as an empty bordered box for a photo/song upload.
+  // wraps narrationSection — mirrors the same video-only check so the card
+  // itself appears/disappears along with it, instead of being left behind
+  // as an empty bordered box for a photo/song upload.
   var moreOptionsBox = document.getElementById("moreOptionsBox");
   function updateMoreOptionsBoxVisibility() {
     var isVideo = !!selectedFile && fileKind(selectedFile) === "video";
@@ -1410,29 +1536,8 @@
 
   musicTrackSelect.addEventListener("change", function () {
     if (musicTrackSelect.value) resetNarrationUI();
+    updateSelectedTrackCard();
     syncMusicNarrationExclusivity();
-  });
-
-  previewMusicBtn.addEventListener("click", async function () {
-    if (!musicTrackSelect.value) return;
-    var track = tracksById[musicTrackSelect.value];
-    if (!track) return;
-    if (musicPreviewAudio.dataset.trackId !== musicTrackSelect.value) {
-      var { data: signed } = await window.sb.storage.from("tracks").createSignedUrl(track.storage_path, 300);
-      if (!signed) return;
-      musicPreviewAudio.src = signed.signedUrl;
-      musicPreviewAudio.dataset.trackId = musicTrackSelect.value;
-    }
-    if (musicPreviewAudio.paused) {
-      musicPreviewAudio.play().catch(function () {});
-      previewMusicBtn.textContent = "⏸ Pause";
-    } else {
-      musicPreviewAudio.pause();
-      previewMusicBtn.textContent = "▶ Preview";
-    }
-  });
-  musicPreviewAudio.addEventListener("ended", function () {
-    previewMusicBtn.textContent = "▶ Preview";
   });
 
   // Healthy Meal Prep gets its own longer write-up + an optional signature —
