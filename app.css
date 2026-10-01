@@ -712,15 +712,34 @@ select option {
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
+  max-width: 100%;
+}
+/* A flex item's default "auto" min-width is its content's own natural
+   size — for a <select>, that can be the width of its LONGEST option text,
+   which ignores flex-shrink/flex-basis entirely in several browsers and is
+   exactly what pushed #musicTrackSelect past this row once real track
+   names loaded (Ken's ask, Oct 2026). min-width: 0 here removes that floor
+   so every child can actually shrink to fit. */
+.more-option-row > * { min-width: 0; }
+
+.more-option-icon-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
 }
 
 .more-option-icon {
   font-size: 15px;
+  flex: 0 0 auto;
 }
 
 #musicTrackSelect {
-  flex: 1;
-  min-width: 180px;
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: var(--radius-sm);
@@ -728,6 +747,13 @@ select option {
   font-size: 14px;
   color: #fff;
   font-family: inherit;
+  /* Belt-and-suspenders for a very long "Title — Artist" option: the box
+     itself always stays exactly this row's width (never the frame-busting
+     overflow Ken saw), and the text inside it truncates with … instead of
+     forcing the box wider. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 #musicTrackSelect:focus { outline: none; border-color: var(--accent-2); }
 #musicTrackSelect option { color: #111; }

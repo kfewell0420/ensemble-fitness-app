@@ -141,7 +141,15 @@
 <div class="app-shell narrow">
 
   <div class="card" id="uploadCard">
-    <div class="eyebrow">Upload</div>
+    <!-- Ken's ask (Oct 2026): once a category tile below is picked, the
+         member already knows they're uploading — repeating "Upload" / "Add
+         a video" again at the top of the very next screen was redundant.
+         These three stay as-is for this first screen (the category picker,
+         where someone genuinely needs the "what would you like to upload?"
+         framing); selectCategory() hides all three the moment a tile is
+         picked, and restores them when changeCategoryGrid resets back to
+         this screen. -->
+    <div class="eyebrow" id="uploadEyebrow">Upload</div>
     <h2 id="uploadHeading">What would you like to upload?</h2>
     <p class="card-sub" id="uploadSub">Pick a type to get started — you'll only see what's relevant to it.</p>
 
@@ -206,7 +214,6 @@
          live on the Profile page, just isolated to its own page and shown
          one category at a time. -->
     <div id="uploadFlow" style="display:none;">
-      <button type="button" class="upload-back-link" id="changeCategoryBtn">← Choose a different type</button>
 
       <!-- The file input is nested inside this label (the standard way to
            build a custom-styled upload button around a hidden native input —
@@ -234,7 +241,7 @@
           <label>✂️ Shorten this video (optional)</label>
           <span class="narration-timer" id="trimRangeLabel" style="display:inline;">0:00 – 0:00</span>
         </div>
-        <p class="narrated-note" style="margin-bottom:10px;">Drag the two handles to pick just the part worth keeping — the powerful punch, not the dead air. Wherever this video shows up, it'll skip straight to your start point and stop at your end point. The original file is kept as-is, so you can always come back and re-trim it.</p>
+        <p class="narrated-note" style="margin-bottom:10px;">Drag the handles to pick the part worth keeping.</p>
         <video id="trimPreviewVideo" muted playsinline class="trim-preview-video"></video>
         <div class="trim-slider-row">
           <label for="trimStartRange">Start</label>
@@ -245,6 +252,19 @@
           <input type="range" id="trimEndRange" min="0" max="0" step="0.1" value="0" />
         </div>
         <button type="button" class="btn btn-ghost btn-sm" id="previewTrimBtn">▶ Preview trimmed clip</button>
+
+        <!-- Ken's ask (Oct 2026): moved here from the "More options" box
+             below — right under the trim controls, next to the video it
+             actually applies to, so it's obvious at a glance what clip
+             you're adding to. Same element, same id, same show/hide logic
+             (updateExtraClipsVisibility) as before, just relocated. -->
+        <div class="narration-section more-option-compact" id="extraClipsSection" style="margin-top:14px;">
+          <div class="more-option-row">
+            <button type="button" class="btn btn-ghost btn-sm" id="addExtraClipBtn">🎬 + Add another clip</button>
+          </div>
+          <ul class="extra-clip-list" id="extraClipList"></ul>
+          <input type="file" id="extraClipInput" accept="video/*" style="display:none;" />
+        </div>
       </div>
 
       <div class="field" id="workoutTypeField" style="margin-top:18px;">
@@ -293,34 +313,27 @@
 
       <button type="button" class="btn btn-primary btn-block" id="uploadBtn" disabled>↑ Select a file above</button>
 
-      <!-- Ken's ask (Oct 2026): these three were each their own full card
-           with a paragraph explaining what they do — a lot of space and
-           reading for something most uploads never touch. Folded into one
-           compact "More options" box, each down to just its control with a
-           short label, no explanatory copy — the button/picker itself is
-           the explanation. Placed after Upload on purpose: the common path
-           (pick a file, caption, location, upload) stays short and is all
-           most people ever need; these stay reachable for the rare person
-           who wants them, without adding to what everyone else scrolls
-           past. Each piece keeps its own id (extraClipsSection,
-           narrationSection, musicSection) and show/hide logic exactly as
-           before — see updateExtraClipsVisibility/updateNarrationVisibility/
-           updateMusicVisibility — only the markup inside got simpler, and a
-           shared "moreOptionsBox" wrapper (see updateMoreOptionsBoxVisibility)
-           shows itself whenever any of the three would, so there's never an
-           empty bordered box left over for a photo/song upload where none
-           of this applies. -->
+      <!-- Ken's ask (Oct 2026): "Voice narration" and "Add music" were each
+           their own full card with a paragraph explaining what they do — a
+           lot of space and reading for something most uploads never touch.
+           Folded into one compact "More options" box, each down to just its
+           control with a short label, no explanatory copy — the picker
+           itself is the explanation. ("Add another clip" uses this same
+           compact styling but now lives up in #trimSection instead, next to
+           the video it applies to.) Placed after Upload on purpose: the
+           common path (pick a file, caption, location, upload) stays short
+           and is all most people ever need; these stay reachable for the
+           rare person who wants them, without adding to what everyone else
+           scrolls past. Each piece keeps its own id (narrationSection,
+           musicSection) and show/hide logic exactly as before — see
+           updateNarrationVisibility/updateMusicVisibility — only the markup
+           inside got simpler, and a shared "moreOptionsBox" wrapper (see
+           updateMoreOptionsBoxVisibility) shows itself whenever either one
+           would, so there's never an empty bordered box left over for a
+           photo/song upload where none of this applies. -->
       <div class="narration-section" id="moreOptionsBox">
         <div class="field-label-row">
           <label>More options</label>
-        </div>
-
-        <div class="narration-section more-option-compact" id="extraClipsSection">
-          <div class="more-option-row">
-            <button type="button" class="btn btn-ghost btn-sm" id="addExtraClipBtn">🎬 + Add another clip</button>
-          </div>
-          <ul class="extra-clip-list" id="extraClipList"></ul>
-          <input type="file" id="extraClipInput" accept="video/*" style="display:none;" />
         </div>
 
         <div class="narration-section more-option-compact" id="narrationSection">
@@ -336,13 +349,22 @@
         </div>
 
         <div class="narration-section more-option-compact" id="musicSection">
-          <div class="more-option-row">
+          <!-- Ken's ask (Oct 2026): the select was overflowing past the
+               card's right edge once real track names loaded into it — a
+               long "Title — Artist" option can force a native dropdown
+               wider than its flex row allows room for on a narrow screen.
+               Giving it its own full-width row (icon above, Preview below)
+               instead of squeezing all three onto one line, plus the
+               width/overflow rules in #musicTrackSelect's CSS, keeps the
+               box itself always exactly as wide as this card, with a long
+               track name truncating (…) instead of pushing the box wider. -->
+          <div class="more-option-icon-row">
             <span class="more-option-icon">🎵</span>
             <select id="musicTrackSelect">
-              <option value="">No music</option>
+              <option value="">Select music track</option>
             </select>
-            <button type="button" class="btn btn-ghost btn-sm" id="previewMusicBtn">▶ Preview</button>
           </div>
+          <button type="button" class="btn btn-ghost btn-sm" id="previewMusicBtn" style="margin-top:8px;">▶ Preview</button>
           <audio id="musicPreviewAudio" style="display:none;"></audio>
         </div>
       </div>
@@ -561,6 +583,7 @@
   var categoryGrid = document.getElementById("categoryGrid");
   var uploadFlow = document.getElementById("uploadFlow");
   var changeCategoryBtn = document.getElementById("changeCategoryBtn");
+  var uploadEyebrow = document.getElementById("uploadEyebrow");
   var uploadHeading = document.getElementById("uploadHeading");
   var uploadSub = document.getElementById("uploadSub");
   var workoutTypeField = document.getElementById("workoutTypeField");
@@ -575,21 +598,25 @@
       accept: "image/*",
       heading: "Add a photo",
       sub: "Photos are reviewed before they're visible to anyone but you — usually within a day or two.",
-      placeholder: "Click to choose a photo",
+      // Ken's ask (Oct 2026): "Upload" now lives here, inside the dropzone
+      // itself, instead of as a heading above it (see uploadEyebrow note
+      // near the top of this file) — the box tells you what tapping it
+      // does without needing a separate line of text above the whole page.
+      placeholder: "Upload a photo",
       hint: "JPG or PNG"
     },
     video: {
       accept: "video/*",
       heading: "Add a video",
       sub: "Videos are reviewed before they're visible to anyone but you — usually within a day or two. You'll also get the option to trim it, and to add a voice narration or a music track.",
-      placeholder: "Click to choose a video",
+      placeholder: "Upload a video",
       hint: "MP4 or MOV"
     },
     song: {
       accept: "audio/*",
       heading: "Add a song",
       sub: "Give it a title and it publishes straight to the Music Library under your name — no waiting on approval.",
-      placeholder: "Click to choose an audio file",
+      placeholder: "Upload an audio file",
       hint: "MP3, M4A, or WAV"
     },
     // Used only for the marketing site's deep link (e.g. Healthy Meal Prep's
@@ -601,7 +628,7 @@
       accept: "image/*,video/*",
       heading: "Add your post",
       sub: "Photos and videos are reviewed before they're visible to anyone but you — usually within a day or two.",
-      placeholder: "Click to choose a photo or video",
+      placeholder: "Upload a photo or video",
       hint: "JPG, PNG, MP4, or MOV"
     }
   };
@@ -623,6 +650,15 @@
 
     var meta = CATEGORY_META[category];
     fileInput.accept = meta.accept;
+    // Ken's ask (Oct 2026): the eyebrow/heading/subtext above only earn
+    // their place on the category-picker screen itself — once a tile's
+    // picked, the dropzone's own "Upload a video" (etc.) label already says
+    // what this screen is, so these three just get hidden rather than kept
+    // around showing redundant "Upload" / "Add a video" text. Still updated
+    // underneath in case resetToCategoryGrid ever shows them again.
+    uploadEyebrow.style.display = "none";
+    uploadHeading.style.display = "none";
+    uploadSub.style.display = "none";
     uploadHeading.textContent = meta.heading;
     uploadSub.textContent = meta.sub;
     dropzoneLabel.textContent = meta.placeholder;
@@ -663,9 +699,19 @@
     });
   });
 
-  changeCategoryBtn.addEventListener("click", function () {
+  // Ken's ask (Oct 2026): removed the visible "← Choose a different type"
+  // link — once someone's tapped a tile, they already know what they
+  // picked, and a reload/back-navigation to this page starts fresh on the
+  // category grid anyway. Kept this as a plain function rather than
+  // deleting it outright, guarded behind changeCategoryBtn actually
+  // existing (it no longer does), in case a future build wants a way back
+  // in without carrying a stale file/field selection into a new category.
+  function resetToCategoryGrid() {
     categoryGrid.style.display = "grid";
     uploadFlow.style.display = "none";
+    uploadEyebrow.style.display = "";
+    uploadHeading.style.display = "";
+    uploadSub.style.display = "";
     uploadHeading.textContent = "What would you like to upload?";
     uploadSub.textContent = "Pick a type to get started — you'll only see what's relevant to it.";
     // Clear out anything already picked so switching types doesn't carry a
@@ -680,7 +726,8 @@
     updateTrimVisibility();
     updateExtraClipsVisibility();
     updateMoreOptionsBoxVisibility();
-  });
+  }
+  if (changeCategoryBtn) changeCategoryBtn.addEventListener("click", resetToCategoryGrid);
 
   // Supports a link like upload.html?type=song — used by the "Upload Music"
   // button on music-library.html — by skipping straight past the category
