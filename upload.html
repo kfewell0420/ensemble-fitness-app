@@ -1741,6 +1741,15 @@
         document.getElementById("captionField").style.display = "block";
         uploadBtn.textContent = "↑ Select a file above";
       } catch (err) {
+        // Ken's ask (Oct 2026): if the audio file made it to the "tracks"
+        // bucket but the tracks row failed to insert (RLS hiccup, dropped
+        // connection), the file used to just sit there forever with no row
+        // pointing to it. trackPath is only ever set once the upload above
+        // actually succeeds, so this only fires when there's really
+        // something to clean up.
+        if (typeof trackPath !== "undefined" && trackPath) {
+          try { await window.sb.storage.from("tracks").remove([trackPath]); } catch (cleanupErr) { /* best effort */ }
+        }
         showMsg(msg, err.message || "Upload failed. Please try again.", "error");
         uploadBtn.disabled = false;
         uploadBtn.textContent = "Upload";
@@ -1931,6 +1940,19 @@
       updateMoreOptionsBoxVisibility();
       updateCategoryFieldVisibility();
     } catch (err) {
+      // Ken's ask (Oct 2026): clean up whatever already made it to storage
+      // before the failure — the main file, and/or the narration/poster
+      // clips — so a failed post doesn't leave orphaned files behind with
+      // no database row ever pointing to them. `path`/`narrationPath`/
+      // `posterPath` are declared with `var` above, so they're still in
+      // scope here (undefined/null if that step never ran). Deliberately
+      // NOT cleaning up extraClips here — those only upload AFTER this
+      // insert already succeeded (see the comment on that loop above), so
+      // this catch can only run before any of them exist.
+      var orphanedPaths = [path, narrationPath, posterPath].filter(Boolean);
+      if (orphanedPaths.length) {
+        try { await window.sb.storage.from("media").remove(orphanedPaths); } catch (cleanupErr) { /* best effort */ }
+      }
       showMsg(msg, err.message || "Upload failed. Please try again.", "error");
       uploadBtn.disabled = false;
       uploadBtn.textContent = "Upload";

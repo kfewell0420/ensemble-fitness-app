@@ -315,8 +315,15 @@
     link.textContent = "Sending…";
 
     try {
+      // Hardcoded to the real site, NOT window.location.origin — this page
+      // is also loaded inside the mobile app (Capacitor), where the origin
+      // is "capacitor://localhost" (iOS) or "https://localhost" (Android),
+      // not app.ensemblefitness.com. Using location.origin would put a
+      // dead link in the reset email for anyone who tapped "Forgot your
+      // password?" from inside the app — it would look fine here and only
+      // fail later, when the member opens the email on their phone.
       await window.sb.auth.resetPasswordForEmail(emailValue, {
-        redirectTo: window.location.origin + "/reset-password.html"
+        redirectTo: "https://app.ensemblefitness.com/reset-password.html"
       });
     } catch (err) {
       // Fall through to the same message either way — never reveal whether an email

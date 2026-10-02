@@ -231,9 +231,13 @@
     }
 
     grid.innerHTML = "";
-    for (var i = 0; i < items.length; i++) {
-      var item = items[i];
-
+    // Ken's ask (Oct 2026): this used to await each item's signed URL(s) —
+    // photo/video, then narration, then music — one item at a time, so a
+    // member with 30-40 posts meant 30-80+ sequential network round-trips
+    // before the grid finished painting. Resolving every item's URLs
+    // concurrently with Promise.all means the whole page waits only as
+    // long as the slowest single lookup, not the sum of all of them.
+    var resolved = await Promise.all(items.map(async function (item) {
       var { data: signed } = await window.sb.storage.from("media").createSignedUrl(item.storage_path, 3600);
       var url = signed ? signed.signedUrl : "";
 
@@ -248,6 +252,14 @@
         var { data: signedMusic } = await window.sb.storage.from("tracks").createSignedUrl(item.tracks.storage_path, 3600);
         musicUrl = signedMusic ? signedMusic.signedUrl : "";
       }
+      return { url: url, narrationUrl: narrationUrl, musicUrl: musicUrl };
+    }));
+
+    for (var i = 0; i < items.length; i++) {
+      var item = items[i];
+      var url = resolved[i].url;
+      var narrationUrl = resolved[i].narrationUrl;
+      var musicUrl = resolved[i].musicUrl;
       var soundUrl = narrationUrl || musicUrl;
       var soundClass = narrationUrl ? "narration-track" : "music-track";
 

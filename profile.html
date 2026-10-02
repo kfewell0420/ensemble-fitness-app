@@ -36,7 +36,7 @@
 
     <div class="avatar-row">
       <div class="avatar-circle avatar-circle-uploadable" id="avatarCircle" role="button" tabindex="0" aria-label="Upload profile photo">
-        ?
+        <span id="avatarInitialText">?</span>
         <span class="avatar-upload-badge" id="avatarUploadBadge">📷</span>
       </div>
       <input type="file" id="avatarFileInput" accept="image/*" style="display:none;" />
@@ -516,8 +516,20 @@
       document.getElementById("zipCode").value = data.zip_code || "";
       document.getElementById("wakeTimeCategory").value = data.wake_time_category || "";
       document.getElementById("relationshipIntent").value = data.relationship_intent || "";
-      document.getElementById("avatarCircle").textContent =
-        (data.display_name || currentUser.email || "?").trim().charAt(0).toUpperCase();
+      // Ken's ask (Oct 2026): same fix as the Save Profile handler below —
+      // this ran BEFORE loadAvatar() on every single page load, and since
+      // it used to set the whole avatarCircle's .textContent, it wiped out
+      // the 📷 upload badge immediately for anyone who hadn't uploaded a
+      // profile photo yet (loadAvatar() only restores the circle's markup
+      // when there IS a photo to show — with none, whatever this left
+      // behind is what stays on screen). That meant a brand-new member's
+      // very first visit to this page could already be missing the "tap to
+      // add a photo" affordance. Targeting the dedicated inner span avoids
+      // touching the badge at all.
+      var avatarInitialTextOnLoad = document.getElementById("avatarInitialText");
+      if (avatarInitialTextOnLoad) {
+        avatarInitialTextOnLoad.textContent = (data.display_name || currentUser.email || "?").trim().charAt(0).toUpperCase();
+      }
 
       // At-a-glance readout so a member sees their own wake-up time (and ZIP) the moment
       // they land on their profile — no need to open the form below to be reminded of it.
@@ -719,6 +731,7 @@
     }
   });
 
+  var avatarUploadInFlight = false;
   avatarFileInput.addEventListener("change", async function () {
     var file = avatarFileInput.files[0];
     avatarFileInput.value = "";
@@ -727,10 +740,17 @@
       showMsg(document.getElementById("profileMsg"), "Please choose an image file for your profile photo.", "error");
       return;
     }
+    // Ken's ask (Oct 2026): nothing used to stop a second tap on the avatar
+    // circle while the first photo was still uploading — that could start
+    // a second concurrent upload + insert, racing the first one and
+    // potentially leaving two rows both marked is_profile_photo.
+    if (avatarUploadInFlight) return;
+    avatarUploadInFlight = true;
 
     var localPreviewUrl = URL.createObjectURL(file);
     setAvatarPreview(localPreviewUrl, "Uploading…", "Hang tight, this only takes a second.");
 
+    var uploadedPath = null;
     try {
       var ext = getExt(file.name);
       var path = currentUser.id + "/" + crypto.randomUUID() + "." + ext;
@@ -740,6 +760,7 @@
         upsert: false
       });
       if (uploadError) throw uploadError;
+      uploadedPath = path;
 
       var { error: insertError } = await window.sb.from("media").insert({
         user_id: currentUser.id,
@@ -754,8 +775,25 @@
       showMsg(document.getElementById("profileMsg"), "Profile photo updated!", "success");
       await loadMyMedia();
     } catch (err) {
+      // Ken's ask (Oct 2026): if the file made it to storage but the
+      // database row failed to insert (RLS hiccup, dropped connection,
+      // etc.), the uploaded photo used to just sit in storage forever with
+      // nothing pointing to it. Clean it up so a failed save doesn't quietly
+      // waste storage space, which compounds over thousands of members.
+      if (uploadedPath) {
+        try { await window.sb.storage.from("media").remove([uploadedPath]); } catch (cleanupErr) { /* best effort */ }
+      }
       await loadAvatar();
+      // Safe to revoke now — loadAvatar() has already replaced the circle's
+      // image with either a real signed URL or the no-photo placeholder, so
+      // nothing on screen still points at this local blob. (On the success
+      // path above, the blob URL stays live as the displayed image's src
+      // until a future reload swaps in the real one, so it's deliberately
+      // NOT revoked there.)
+      URL.revokeObjectURL(localPreviewUrl);
       showMsg(document.getElementById("profileMsg"), err.message || "Upload failed. Please try again.", "error");
+    } finally {
+      avatarUploadInFlight = false;
     }
   });
 
@@ -798,10 +836,20 @@
       showMsg(msg, error.message, "error");
     } else {
       showMsg(msg, "Saved.", "success");
-      document.getElementById("avatarCircle").firstChild &&
-        !document.getElementById("avatarCircle").querySelector("img") &&
-        (document.getElementById("avatarCircle").textContent =
-          document.getElementById("displayName").value.trim().charAt(0).toUpperCase() || "?");
+      // Ken's ask (Oct 2026): this used to set the whole avatarCircle's
+      // .textContent, which wipes out ALL of its children — including the
+      // 📷 upload badge span that's only in the markup when there's no
+      // photo yet. That meant the very first "Save Profile" click (before
+      // ever uploading a photo) silently erased the camera icon for the
+      // rest of the session. #avatarInitialText is a dedicated inner span
+      // for just the placeholder letter, so updating it leaves the badge
+      // (and anything else in the circle) alone. It only exists in the
+      // no-photo state — setAvatarPreview() replaces it entirely once a
+      // real photo is set, so there's nothing to update at that point.
+      var avatarInitialText = document.getElementById("avatarInitialText");
+      if (avatarInitialText) {
+        avatarInitialText.textContent = document.getElementById("displayName").value.trim().charAt(0).toUpperCase() || "?";
+      }
 
       // Refresh the at-a-glance readout immediately so a changed wake-up time, ZIP, or
       // relationship preference shows right away, without needing a page reload.

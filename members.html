@@ -110,6 +110,7 @@
   async function runSearch() {
     var msg = document.getElementById("searchMsg");
     var results = document.getElementById("memberResults");
+    var searchBtn = document.getElementById("searchBtn");
     hideMsg(msg);
 
     var zip = document.getElementById("zipSearch").value.trim();
@@ -118,71 +119,91 @@
       return;
     }
 
+    // Ken's ask (Oct 2026): this button wasn't disabled while a search was
+    // in flight, so clicking Search twice (or clicking then hitting Enter)
+    // fired two overlapping searches whose results could land in either
+    // order and get mixed together in the list below. Guard against that
+    // the same way the rest of the app disables a button mid-request.
+    if (searchBtn.disabled) return;
+    searchBtn.disabled = true;
+
     var wakeFilter = document.getElementById("wakeTimeFilter").value;
 
     results.innerHTML = '<div class="empty-state">Searching…</div>';
 
-    var query = window.sb
-      .from("profiles")
-      .select("id, display_name, bio, zip_code, wake_time_category")
-      .eq("zip_code", zip)
-      .neq("id", currentUser.id);
+    try {
+      var query = window.sb
+        .from("profiles")
+        .select("id, display_name, bio, zip_code, wake_time_category")
+        .eq("zip_code", zip)
+        .neq("id", currentUser.id);
 
-    if (wakeFilter) query = query.eq("wake_time_category", wakeFilter);
+      if (wakeFilter) query = query.eq("wake_time_category", wakeFilter);
 
-    var { data, error } = await query.order("display_name", { ascending: true });
+      // A safety cap — one ZIP code shouldn't realistically have more
+      // members than this, but it keeps a single search from ever pulling
+      // down an unbounded result set as the member base grows.
+      var { data, error } = await query.order("display_name", { ascending: true }).limit(200);
 
-    if (error) {
-      results.innerHTML = '<div class="empty-state">Couldn\'t load results. Please try again.</div>';
-      return;
-    }
+      if (error) {
+        results.innerHTML = '<div class="empty-state">Couldn\'t load results. Please try again.</div>';
+        return;
+      }
 
-    // Blocked members never show up in search results.
-    data = filterOutBlocked(data || [], "id");
+      // Blocked members never show up in search results.
+      data = filterOutBlocked(data || [], "id");
 
-    if (!data || data.length === 0) {
-      results.innerHTML = '<div class="empty-state">No members found in ZIP ' + escapeHtml(zip) + (wakeFilter ? " with that wake-up time" : "") + ' yet. Try a nearby ZIP code or a different wake-up time, or check back later as more members join.</div>';
-      return;
-    }
+      if (!data || data.length === 0) {
+        results.innerHTML = '<div class="empty-state">No members found in ZIP ' + escapeHtml(zip) + (wakeFilter ? " with that wake-up time" : "") + ' yet. Try a nearby ZIP code or a different wake-up time, or check back later as more members join.</div>';
+        return;
+      }
 
-    results.innerHTML = "";
-    for (var i = 0; i < data.length; i++) {
-      var member = data[i];
-      var row = document.createElement("div");
-      row.className = "member-row member-row-clickable";
-      row.setAttribute("role", "button");
-      row.setAttribute("tabindex", "0");
-      row.setAttribute("aria-label", "View " + (member.display_name || "member") + "'s profile");
+      // Ken's ask (Oct 2026): fetch every row's avatar at once instead of
+      // one at a time in the loop below — see fitness-plus.html's
+      // loadMatches() for the same fix and the full explanation.
+      var avatarUrls = await Promise.all(data.map(function (member) { return avatarUrlFor(member.id); }));
 
-      var avatarUrl = await avatarUrlFor(member.id);
-      var initial = (member.display_name || "?").trim().charAt(0).toUpperCase() || "?";
-      var avatarInner = avatarUrl ? '<img src="' + avatarUrl + '" alt="' + escapeHtml(member.display_name || "Member") + '" />' : initial;
+      results.innerHTML = "";
+      for (var i = 0; i < data.length; i++) {
+        var member = data[i];
+        var row = document.createElement("div");
+        row.className = "member-row member-row-clickable";
+        row.setAttribute("role", "button");
+        row.setAttribute("tabindex", "0");
+        row.setAttribute("aria-label", "View " + (member.display_name || "member") + "'s profile");
 
-      var wakeLabel = wakeTimeLabel(member.wake_time_category);
-      var sameWakeTime = !!currentUserWakeTime && member.wake_time_category === currentUserWakeTime;
+        var avatarUrl = avatarUrls[i];
+        var initial = (member.display_name || "?").trim().charAt(0).toUpperCase() || "?";
+        var avatarInner = avatarUrl ? '<img src="' + avatarUrl + '" alt="' + escapeHtml(member.display_name || "Member") + '" />' : initial;
 
-      row.innerHTML =
-        '<div class="avatar-circle">' + avatarInner + '</div>' +
-        '<div class="member-row-meta">' +
-          '<strong>' + escapeHtml(member.display_name || "A member") + '</strong>' +
-          (member.bio ? '<p>' + escapeHtml(member.bio) + '</p>' : '') +
-          '<span>ZIP ' + escapeHtml(member.zip_code) + (wakeLabel ? ' · ' + escapeHtml(wakeLabel) : '') + '</span>' +
-          (sameWakeTime ? '<span style="display:block; color:var(--accent-2); font-weight:700; margin-top:3px;">🌞 Same wake-up time as you</span>' : '') +
-        '</div>';
+        var wakeLabel = wakeTimeLabel(member.wake_time_category);
+        var sameWakeTime = !!currentUserWakeTime && member.wake_time_category === currentUserWakeTime;
 
-      (function (memberId) {
-        row.addEventListener("click", function () {
-          window.location.href = "member.html?id=" + encodeURIComponent(memberId);
-        });
-        row.addEventListener("keydown", function (e) {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
+        row.innerHTML =
+          '<div class="avatar-circle">' + avatarInner + '</div>' +
+          '<div class="member-row-meta">' +
+            '<strong>' + escapeHtml(member.display_name || "A member") + '</strong>' +
+            (member.bio ? '<p>' + escapeHtml(member.bio) + '</p>' : '') +
+            '<span>ZIP ' + escapeHtml(member.zip_code) + (wakeLabel ? ' · ' + escapeHtml(wakeLabel) : '') + '</span>' +
+            (sameWakeTime ? '<span style="display:block; color:var(--accent-2); font-weight:700; margin-top:3px;">🌞 Same wake-up time as you</span>' : '') +
+          '</div>';
+
+        (function (memberId) {
+          row.addEventListener("click", function () {
             window.location.href = "member.html?id=" + encodeURIComponent(memberId);
-          }
-        });
-      })(member.id);
+          });
+          row.addEventListener("keydown", function (e) {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              window.location.href = "member.html?id=" + encodeURIComponent(memberId);
+            }
+          });
+        })(member.id);
 
-      results.appendChild(row);
+        results.appendChild(row);
+      }
+    } finally {
+      searchBtn.disabled = false;
     }
   }
 

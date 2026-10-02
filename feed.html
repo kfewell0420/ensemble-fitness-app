@@ -2303,10 +2303,20 @@
     if (error) {
       lastFetchError = error;
       console.error("fetchBatch error (mealPrepOnly=" + mealPrepOnly + "):", error);
-      return [];
+      return { rows: [], rawCount: 0 };
     }
-    if (!data) return [];
-    return filterOutBlocked(data);
+    if (!data) return { rows: [], rawCount: 0 };
+    // Ken's ask (Oct 2026): return BOTH the blocked-filtered rows (what
+    // actually renders) and the raw row count the server handed back for
+    // this page (what .range() actually matched), as two separate things.
+    // loadMoreReel needs the raw count to know whether it's really reached
+    // the end and where the next .range() should start — using the
+    // filtered count instead (as this used to) meant that as soon as a
+    // batch contained even one post from someone the member has blocked,
+    // the reel would think it hit the end early and stop infinite-scrolling
+    // well before the real end, while the next page's offset would also
+    // creep out of sync and start re-fetching posts already shown.
+    return { rows: filterOutBlocked(data), rawCount: data.length };
   }
 
   // Same filtering rules as fetchBatch's general-reel branch, but for the
@@ -3320,21 +3330,33 @@
   }
 
   async function toggleReaction(mediaId, type, btn) {
-    if (!currentUserId) return;
-    var isActive = btn.classList.contains("active");
-    var countEl = btn.querySelector(".rp-action-count");
-    var current = parseInt(countEl.textContent || "0", 10) || 0;
-    if (isActive) {
-      btn.classList.remove("active");
-      setReactionIcon(btn, type, false);
-      countEl.textContent = (current - 1) > 0 ? current - 1 : "";
-      await window.sb.from("media_reactions").delete()
-        .eq("media_id", mediaId).eq("user_id", currentUserId).eq("reaction_type", type);
-    } else {
-      btn.classList.add("active");
-      setReactionIcon(btn, type, true);
-      countEl.textContent = current + 1;
-      await window.sb.from("media_reactions").insert({ media_id: mediaId, user_id: currentUserId, reaction_type: type });
+    if (!currentUserId || btn.disabled) return;
+    // Ken's ask (Oct 2026): the optimistic UI update below still happens
+    // instantly (unlike toggleFollow, this never waits on the network to
+    // feel responsive) — but the button itself is now disabled for just
+    // the duration of the request, so a fast double-tap can't fire a
+    // second overlapping insert/delete before the first one lands. Without
+    // this, two rapid taps could resolve out of order and leave the
+    // button's visual state out of sync with what's actually saved.
+    btn.disabled = true;
+    try {
+      var isActive = btn.classList.contains("active");
+      var countEl = btn.querySelector(".rp-action-count");
+      var current = parseInt(countEl.textContent || "0", 10) || 0;
+      if (isActive) {
+        btn.classList.remove("active");
+        setReactionIcon(btn, type, false);
+        countEl.textContent = (current - 1) > 0 ? current - 1 : "";
+        await window.sb.from("media_reactions").delete()
+          .eq("media_id", mediaId).eq("user_id", currentUserId).eq("reaction_type", type);
+      } else {
+        btn.classList.add("active");
+        setReactionIcon(btn, type, true);
+        countEl.textContent = current + 1;
+        await window.sb.from("media_reactions").insert({ media_id: mediaId, user_id: currentUserId, reaction_type: type });
+      }
+    } finally {
+      btn.disabled = false;
     }
   }
 
@@ -3633,11 +3655,15 @@
       // "All" (and every specific workout-type filter) is media-only.
       // Journeys are their own dedicated tab now — see the branch above —
       // so a text journey never shows up mixed in among photos/videos here.
-      var mediaRows = reachedEnd ? [] : await fetchBatch(false, PAGE_SIZE, offset, activeFilter);
-      var combined = await buildItems(mediaRows);
+      var batch = reachedEnd ? { rows: [], rawCount: 0 } : await fetchBatch(false, PAGE_SIZE, offset, activeFilter);
+      var combined = await buildItems(batch.rows);
       if (!reachedEnd) {
-        offset += mediaRows.length;
-        reachedEnd = mediaRows.length < PAGE_SIZE;
+        // Advance by the RAW count the server matched for this page, not
+        // how many of those survived the blocked-member filter — otherwise
+        // a blocked post in the batch throws off every page after it. See
+        // fetchBatch()'s own comment for the full explanation.
+        offset += batch.rawCount;
+        reachedEnd = batch.rawCount < PAGE_SIZE;
       }
 
       if (!combined.length) {
@@ -3823,7 +3849,7 @@
     // strip and the main reel are independent content, so they fetch at the
     // same time instead of the reel waiting for the strip to finish first.
     await blockedPromise;
-    var mealPrepPromise = fetchBatch(true, MEAL_PREP_STRIP_SIZE, 0).then(function (rows) { return buildItems(rows); });
+    var mealPrepPromise = fetchBatch(true, MEAL_PREP_STRIP_SIZE, 0).then(function (batch) { return buildItems(batch.rows); });
     var reelPromise = loadMoreReel();
 
     mealPrepRealItems = await mealPrepPromise;
@@ -3874,18 +3900,35 @@
     var myZip = (mine && mine.zip_code) || "";
     var myWake = (mine && mine.wake_time_category) || "";
 
-    var { data: others, error } = await window.sb
-      .from("profiles")
-      .select("id, zip_code, wake_time_category")
-      .neq("id", currentUserId);
-
+    // Ken's ask (Oct 2026): this used to pull EVERY OTHER MEMBER's zip_code
+    // and wake_time_category to the browser just to count matches for this
+    // one sidebar teaser — on every desktop feed load, for every member,
+    // forever. As the member base grows into the thousands that becomes a
+    // full-table download on every page view. Three small, targeted count
+    // queries (now backed by the zip_code/wake_time_category indexes in
+    // sql/performance-indexes.sql) get the same two numbers — "great"
+    // matches (same zip AND same wake time) and "partial" matches (one or
+    // the other, not both) — without ever shipping another member's row to
+    // the client.
     var great = 0, partial = 0;
-    (!error && others ? others : []).forEach(function (m) {
-      var sameZip = !!myZip && m.zip_code === myZip;
-      var sameWake = !!myWake && m.wake_time_category === myWake;
-      if (sameZip && sameWake) great++;
-      else if (sameZip || sameWake) partial++;
-    });
+    if (myZip || myWake) {
+      var countQuery = function (filters) {
+        var q = window.sb.from("profiles").select("id", { count: "exact", head: true }).neq("id", currentUserId);
+        filters.forEach(function (f) { q = q.eq(f[0], f[1]); });
+        return q;
+      };
+      var countPromises = [
+        myZip && myWake ? countQuery([["zip_code", myZip], ["wake_time_category", myWake]]) : Promise.resolve({ count: 0 }),
+        myZip ? countQuery([["zip_code", myZip]]) : Promise.resolve({ count: 0 }),
+        myWake ? countQuery([["wake_time_category", myWake]]) : Promise.resolve({ count: 0 })
+      ];
+      var results = await Promise.all(countPromises);
+      var bothCount = results[0].count || 0;
+      var zipCount = results[1].count || 0;
+      var wakeCount = results[2].count || 0;
+      great = bothCount;
+      partial = Math.max(0, zipCount + wakeCount - 2 * bothCount);
+    }
 
     var headline, sub;
     if (!myZip || !myWake) {

@@ -249,9 +249,18 @@
     });
 
     results.innerHTML = "";
+    // Ken's ask (Oct 2026): this used to `await avatarUrlFor(member.id)`
+    // one match at a time inside the loop — a full network round-trip per
+    // card, strictly one after another, before the next card could even
+    // start rendering. Fetching them all at once with Promise.all lets
+    // those round-trips happen concurrently instead, so the page's total
+    // wait is roughly the slowest single lookup instead of the sum of all
+    // of them — the difference between a sub-second load and tens of
+    // seconds once Fitness+ has a few hundred members.
+    var avatarUrls = await Promise.all(data.map(function (member) { return avatarUrlFor(member.id); }));
     for (var i = 0; i < data.length; i++) {
       var member = data[i];
-      var avatarUrl = await avatarUrlFor(member.id);
+      var avatarUrl = avatarUrls[i];
       var initial = (member.display_name || "?").trim().charAt(0).toUpperCase() || "?";
       var thumbInner = avatarUrl
         ? '<img src="' + avatarUrl + '" alt="' + escapeHtml(member.display_name || "Member") + '" />'

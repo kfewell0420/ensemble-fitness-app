@@ -19,6 +19,7 @@
   var POLL_MS = 60000; // backstop only — also refreshes on window focus and right after opening the panel
   var currentUserId = null;
   var panelOpen = false;
+  var autoMarkReadTimeoutId = null;
 
   function escapeHtml(str) {
     var div = document.createElement("div");
@@ -229,6 +230,14 @@
     if (bell) bell.setAttribute("aria-expanded", "true");
     panelOpen = true;
 
+    // A fresh open always supersedes whatever the previous open's 1.5s
+    // timer was about to do (see below) — cancel it so re-opening the
+    // panel can't stack up more than one pending auto-mark-read call.
+    if (autoMarkReadTimeoutId) {
+      clearTimeout(autoMarkReadTimeoutId);
+      autoMarkReadTimeoutId = null;
+    }
+
     var rows = await fetchRows(userId);
     renderList(panel, rows);
 
@@ -236,6 +245,15 @@
     if (markAllBtn) {
       markAllBtn.addEventListener("click", function (e) {
         e.preventDefault();
+        // Ken's ask (Oct 2026): clicking this used to leave the 1.5s
+        // auto-mark-read timer below still pending, so it fired a second,
+        // redundant markAllRead call with the same ids a moment later —
+        // harmless (idempotent update), but an avoidable extra request on
+        // every single "Mark all read" click across the whole user base.
+        if (autoMarkReadTimeoutId) {
+          clearTimeout(autoMarkReadTimeoutId);
+          autoMarkReadTimeoutId = null;
+        }
         var unreadIds = rows.filter(function (r) { return !r.read_at; }).map(function (r) { return r.id; });
         markAllRead(userId, unreadIds);
         panel.querySelectorAll(".efit-notif-item.unread").forEach(function (el) { el.classList.remove("unread"); });
@@ -248,7 +266,10 @@
     // under someone still reading it.
     var unreadIds = rows.filter(function (r) { return !r.read_at; }).map(function (r) { return r.id; });
     if (unreadIds.length) {
-      setTimeout(function () { markAllRead(userId, unreadIds); }, 1500);
+      autoMarkReadTimeoutId = setTimeout(function () {
+        autoMarkReadTimeoutId = null;
+        markAllRead(userId, unreadIds);
+      }, 1500);
     }
   }
 

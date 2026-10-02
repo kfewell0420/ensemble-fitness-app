@@ -539,16 +539,16 @@
         ? '<div class="audio-card"><span class="audio-ico">🎙️</span><audio src="' + url + '" controls></audio></div>'
         : '<img src="' + url + '" alt="Pending upload" />';
 
-      var name = (item.profiles && item.profiles.display_name) || "Member";
+      var name = escapeHtmlAdmin((item.profiles && item.profiles.display_name) || "Member");
       var hasTrim = item.kind === "video" && (typeof item.trim_start === "number" || typeof item.trim_end === "number");
 
       row.innerHTML =
         '<div class="review-thumb">' + thumbInner + '</div>' +
         '<div class="review-meta">' +
           '<strong>' + name + (item.is_profile_photo ? " · wants as profile photo" : "") + '</strong>' +
-          '<span>' + item.kind + (item.workout_type ? " · " + categoryLabel(item.workout_type) : "") + (item.location ? " · " + item.location : "") + (narrationUrl ? " · 🎙️ has voiceover" : "") + (musicUrl ? " · 🎵 " + item.tracks.title + " — " + item.tracks.artist_name : "") + ' · ' + timeAgo(item.created_at) + '</span>' +
-          (item.caption ? '<div style="font-size:13px; color:var(--muted-invert); margin-top:4px;">“' + item.caption + '”</div>' : '') +
-          (item.product_tag ? '<div style="font-size:12px; color:var(--accent); font-weight:700; margin-top:4px;">🏷️ Tagged product: ' + item.product_tag + ' — approving this makes it eligible to show on Fit Marketplace</div>' : '') +
+          '<span>' + item.kind + (item.workout_type ? " · " + categoryLabel(item.workout_type) : "") + (item.location ? " · " + escapeHtmlAdmin(item.location) : "") + (narrationUrl ? " · 🎙️ has voiceover" : "") + (musicUrl ? " · 🎵 " + escapeHtmlAdmin(item.tracks.title) + " — " + escapeHtmlAdmin(item.tracks.artist_name) : "") + ' · ' + timeAgo(item.created_at) + '</span>' +
+          (item.caption ? '<div style="font-size:13px; color:var(--muted-invert); margin-top:4px;">“' + escapeHtmlAdmin(item.caption) + '”</div>' : '') +
+          (item.product_tag ? '<div style="font-size:12px; color:var(--accent); font-weight:700; margin-top:4px;">🏷️ Tagged product: ' + escapeHtmlAdmin(item.product_tag) + ' — approving this makes it eligible to show on Fit Marketplace</div>' : '') +
           (hasTrim ? '<div style="font-size:12px; color:var(--accent-2); font-weight:700; margin-top:4px;">✂️ Trimmed to ' + formatSeconds(item.trim_start) + '–' + formatSeconds(item.trim_end) + ' (shown here in full for review; the trim applies once it\'s live)</div>' : '') +
           (narrationUrl ? '<div style="font-size:12px; color:var(--faint-invert); margin-top:4px;">Press play on the video to hear the member\'s narration — it plays automatically in place of the video\'s own sound.</div>' : '') +
           (musicUrl ? '<div style="font-size:12px; color:var(--faint-invert); margin-top:4px;">Press play on the video to hear the chosen track — it plays automatically in place of the video\'s own sound.</div>' : '') +
@@ -617,7 +617,7 @@
 
     el.innerHTML = "";
     data.forEach(function (item) {
-      var name = (item.profiles && item.profiles.display_name) || "Member";
+      var name = escapeHtmlAdmin((item.profiles && item.profiles.display_name) || "Member");
       var row = document.createElement("div");
       row.className = "review-row";
       row.style.padding = "10px 0";
@@ -802,8 +802,8 @@
       var lifestyleText = lifestyleLabel(item.lifestyle);
       row.innerHTML =
         '<div class="review-meta" style="flex:1;">' +
-          '<strong>' + item.name + '</strong>' +
-          '<span>' + item.email + (item.zip ? " · " + item.zip : "") + (item.wants_tester ? " · wants to be an early tester" : "") + ' · ' + timeAgo(item.created_at) + '</span>' +
+          '<strong>' + escapeHtmlAdmin(item.name) + '</strong>' +
+          '<span>' + escapeHtmlAdmin(item.email) + (item.zip ? " · " + escapeHtmlAdmin(item.zip) : "") + (item.wants_tester ? " · wants to be an early tester" : "") + ' · ' + timeAgo(item.created_at) + '</span>' +
           (lifestyleText
             ? '<span>' + lifestyleText + '</span>'
             : '') +
@@ -864,7 +864,7 @@
       row.style.padding = "10px 0";
       row.innerHTML =
         '<div class="review-meta">' +
-          '<strong style="font-size:13.5px;">' + item.name + ' · ' + item.email + '</strong>' +
+          '<strong style="font-size:13.5px;">' + escapeHtmlAdmin(item.name) + ' · ' + escapeHtmlAdmin(item.email) + '</strong>' +
           '<span>' + timeAgo(item.reviewed_at) + '</span>' +
         '</div>' +
         '<span class="status-badge ' + item.status + '" style="position:static; width:auto; display:inline-block;">' + item.status + '</span>';
@@ -967,8 +967,8 @@
       row.className = "review-row";
       row.innerHTML =
         '<div class="review-meta" style="flex:1;">' +
-          '<strong style="font-size:13.5px;">' + (item.asker_name || "A member") + '</strong>' +
-          '<span style="color:#1d4ed8;">' + item.question_text + '</span>' +
+          '<strong style="font-size:13.5px;">' + escapeHtmlAdmin(item.asker_name || "A member") + '</strong>' +
+          '<span style="color:#1d4ed8;">' + escapeHtmlAdmin(item.question_text) + '</span>' +
           '<span>' + replyCount + ' repl' + (replyCount === 1 ? "y" : "ies") + ' · ' + reactionCount + ' reaction' + (reactionCount === 1 ? "" : "s") + ' · ' + timeAgo(item.created_at) + '</span>' +
         '</div>' +
         '<div class="review-actions">' +
@@ -1010,7 +1010,7 @@
     for (var i = 0; i < data.length; i++) {
       var item = data[i];
       var url = await signedUrlFor(item.storage_path);
-      var name = (item.profiles && item.profiles.display_name) || "A member";
+      var name = escapeHtmlAdmin((item.profiles && item.profiles.display_name) || "A member");
       var row = document.createElement("div");
       row.className = "review-row";
       row.innerHTML =
@@ -1058,12 +1058,11 @@
       '<div style="font-size:11px; font-weight:700; color:#ffb74d; margin-bottom:4px;">⚠️ Needs a category</div>';
     return flag + '<select class="admin-category-select" data-id="' + item.id + '">' + optionsHtml + '</select>';
   }
-  function showCategoryNudge(nudgeId, data) {
+  function showCategoryNudge(nudgeId, untaggedCount) {
     var el = document.getElementById(nudgeId);
     if (!el) return;
-    var untagged = (data || []).filter(function (it) { return !it.workout_type; }).length;
-    if (untagged > 0) {
-      el.textContent = "⚠️ " + untagged + " of these don't have a category yet (sorted to the top below) — pick one from the dropdown next to each so it shows up under the right filter tab on the Community feed.";
+    if (untaggedCount > 0) {
+      el.textContent = "⚠️ " + untaggedCount + " approved item" + (untaggedCount === 1 ? "" : "s") + " (across the whole library, not just what's shown below) " + (untaggedCount === 1 ? "doesn't" : "don't") + " have a category yet — any flagged \"Needs a category\" below, or found by scrolling further back, needs a pick from its dropdown so it shows up under the right filter tab on the Community feed.";
       el.className = "form-msg show error";
     } else {
       el.className = "form-msg";
@@ -1084,20 +1083,37 @@
 
   async function loadRecentVideos() {
     var el = document.getElementById("videoQueue");
-    var { data, error } = await window.sb
-      .from("media")
-      .select("id, storage_path, caption, workout_type, location, created_at, narration_path, trim_start, trim_end, music_track_id, tracks(storage_path, title, artist_name), profiles!media_user_id_fkey(display_name)")
-      .eq("kind", "video")
-      .eq("status", "approved")
-      .order("workout_type", { ascending: true, nullsFirst: true })
-      .order("created_at", { ascending: false })
-      .limit(30);
+    // Ken's scale ask (Oct 2026): this used to sort uncategorized items to
+    // the top (nullsFirst) ABOVE the limit(30) cutoff, which meant that
+    // once the uncategorized backlog passed 30 items, this "Recent Videos"
+    // tab could never show anything recent again — it'd be wall-to-wall
+    // old uncategorized videos forever. Now it sorts by true recency, and
+    // the "needs a category" count comes from its own unlimited count
+    // query below instead of from whatever happened to be in this page's
+    // 30 rows — so the nudge banner stays accurate even as that backlog
+    // grows past what's currently on screen (each item needing a category
+    // still gets its own ⚠️ flag inline via categorySelectHtml).
+    var [{ data, error }, { count: untaggedCount }] = await Promise.all([
+      window.sb
+        .from("media")
+        .select("id, storage_path, caption, workout_type, location, created_at, narration_path, trim_start, trim_end, music_track_id, tracks(storage_path, title, artist_name), profiles!media_user_id_fkey(display_name)")
+        .eq("kind", "video")
+        .eq("status", "approved")
+        .order("created_at", { ascending: false })
+        .limit(30),
+      window.sb
+        .from("media")
+        .select("id", { count: "exact", head: true })
+        .eq("kind", "video")
+        .eq("status", "approved")
+        .is("workout_type", null)
+    ]);
 
     if (error) {
       el.innerHTML = '<div class="empty-state">Couldn\'t load videos: ' + error.message + '</div>';
       return;
     }
-    showCategoryNudge("videoCategoryNudge", data);
+    showCategoryNudge("videoCategoryNudge", untaggedCount || 0);
     if (!data || data.length === 0) {
       el.innerHTML = '<div class="empty-state">No approved videos yet.</div>';
       return;
@@ -1111,7 +1127,7 @@
       var musicUrl = (!narrationUrl && item.music_track_id && item.tracks) ? await signedUrlFor(item.tracks.storage_path, "tracks") : "";
       var soundUrl = narrationUrl || musicUrl;
       var soundClass = narrationUrl ? "narration-track" : "music-track";
-      var name = (item.profiles && item.profiles.display_name) || "A member";
+      var name = escapeHtmlAdmin((item.profiles && item.profiles.display_name) || "A member");
       var row = document.createElement("div");
       row.className = "review-row";
       row.innerHTML =
@@ -1120,8 +1136,8 @@
         '</div>' +
         '<div class="review-meta">' +
           '<strong>' + name + '</strong>' +
-          '<span>' + (item.workout_type ? categoryLabel(item.workout_type) + " · " : "") + (item.location ? item.location + " · " : "") + timeAgo(item.created_at) + (musicUrl ? ' · 🎵 ' + item.tracks.title + ' — ' + item.tracks.artist_name : '') + '</span>' +
-          (item.caption ? '<div style="font-size:13px; color:var(--muted-invert); margin-top:4px;">“' + item.caption + '”</div>' : '') +
+          '<span>' + (item.workout_type ? categoryLabel(item.workout_type) + " · " : "") + (item.location ? escapeHtmlAdmin(item.location) + " · " : "") + timeAgo(item.created_at) + (musicUrl ? ' · 🎵 ' + escapeHtmlAdmin(item.tracks.title) + ' — ' + escapeHtmlAdmin(item.tracks.artist_name) : '') + '</span>' +
+          (item.caption ? '<div style="font-size:13px; color:var(--muted-invert); margin-top:4px;">“' + escapeHtmlAdmin(item.caption) + '”</div>' : '') +
         '</div>' +
         '<div class="review-actions">' +
           categorySelectHtml(item) +
@@ -1155,21 +1171,31 @@
 
   async function loadRecentPhotos() {
     var el = document.getElementById("photoQueue");
-    var { data, error } = await window.sb
-      .from("media")
-      .select("id, storage_path, caption, workout_type, location, created_at, profiles!media_user_id_fkey(display_name)")
-      .eq("kind", "photo")
-      .eq("is_profile_photo", false)
-      .eq("status", "approved")
-      .order("workout_type", { ascending: true, nullsFirst: true })
-      .order("created_at", { ascending: false })
-      .limit(30);
+    // See loadRecentVideos() above for why this is plain recency order
+    // plus a separate unlimited count, instead of nullsFirst + limit(30).
+    var [{ data, error }, { count: untaggedCount }] = await Promise.all([
+      window.sb
+        .from("media")
+        .select("id, storage_path, caption, workout_type, location, created_at, profiles!media_user_id_fkey(display_name)")
+        .eq("kind", "photo")
+        .eq("is_profile_photo", false)
+        .eq("status", "approved")
+        .order("created_at", { ascending: false })
+        .limit(30),
+      window.sb
+        .from("media")
+        .select("id", { count: "exact", head: true })
+        .eq("kind", "photo")
+        .eq("is_profile_photo", false)
+        .eq("status", "approved")
+        .is("workout_type", null)
+    ]);
 
     if (error) {
       el.innerHTML = '<div class="empty-state">Couldn\'t load photos: ' + error.message + '</div>';
       return;
     }
-    showCategoryNudge("photoCategoryNudge", data);
+    showCategoryNudge("photoCategoryNudge", untaggedCount || 0);
     if (!data || data.length === 0) {
       el.innerHTML = '<div class="empty-state">No approved photos yet.</div>';
       return;
@@ -1179,15 +1205,15 @@
     for (var i = 0; i < data.length; i++) {
       var item = data[i];
       var url = await signedUrlFor(item.storage_path);
-      var name = (item.profiles && item.profiles.display_name) || "A member";
+      var name = escapeHtmlAdmin((item.profiles && item.profiles.display_name) || "A member");
       var row = document.createElement("div");
       row.className = "review-row";
       row.innerHTML =
         '<div class="review-thumb"><img src="' + url + '" alt="Feed photo" /></div>' +
         '<div class="review-meta">' +
           '<strong>' + name + '</strong>' +
-          '<span>' + (item.workout_type ? categoryLabel(item.workout_type) + " · " : "") + (item.location ? item.location + " · " : "") + timeAgo(item.created_at) + '</span>' +
-          (item.caption ? '<div style="font-size:13px; color:var(--muted-invert); margin-top:4px;">“' + item.caption + '”</div>' : '') +
+          '<span>' + (item.workout_type ? categoryLabel(item.workout_type) + " · " : "") + (item.location ? escapeHtmlAdmin(item.location) + " · " : "") + timeAgo(item.created_at) + '</span>' +
+          (item.caption ? '<div style="font-size:13px; color:var(--muted-invert); margin-top:4px;">“' + escapeHtmlAdmin(item.caption) + '”</div>' : '') +
         '</div>' +
         '<div class="review-actions">' +
           categorySelectHtml(item) +
@@ -1219,6 +1245,18 @@
     var div = document.createElement("div");
     div.textContent = str || "";
     return div.innerHTML;
+  }
+
+  // escapeHtmlAdmin() is safe for TEXT NODE content (it escapes &, <, >),
+  // but it does NOT escape a double quote — the innerHTML serializer only
+  // quotes-escapes inside an attribute value, not inside text content. So
+  // anywhere user-submitted text is interpolated into an HTML ATTRIBUTE
+  // (e.g. data-email="' + value + '"), a plain " in that value would close
+  // the attribute early and let the rest of the string inject new
+  // attributes or break out of the tag entirely. Use this instead for any
+  // attribute-context interpolation of free text.
+  function escapeAttrAdmin(str) {
+    return escapeHtmlAdmin(str).replace(/"/g, "&quot;").replace(/'/g, "&#39;");
   }
 
   function formatTrackDuration(seconds) {
@@ -1306,7 +1344,12 @@
           (item.is_independent_artist ? '<div style="margin-top:4px;"><span style="font-size:11px; font-weight:700; color:var(--accent-2); background:rgba(219,31,82,0.14); padding:2px 8px; border-radius:999px;">100% Royalties</span></div>' : '') +
           (item.tagline ? '<div style="font-size:13px; color:var(--accent-2); font-style:italic; margin-top:4px;">“' + escapeHtmlAdmin(item.tagline) + '”</div>' : '') +
           (item.artist_bio ? '<div style="font-size:13px; color:var(--muted-invert); margin-top:4px;">' + escapeHtmlAdmin(item.artist_bio) + '</div>' : '') +
-          (item.artist_link ? '<div style="font-size:12.5px; margin-top:2px;"><a href="' + escapeHtmlAdmin(item.artist_link) + '" target="_blank" rel="noopener" style="color:var(--accent-2);">' + escapeHtmlAdmin(item.artist_link) + '</a></div>' : '') +
+          // escapeHtmlAdmin() doesn't escape a double quote (safe for text
+          // content, not for inside an attribute) — use escapeAttrAdmin()
+          // for the href itself so a stray " in a self-submitted artist
+          // link can't break out of the attribute. See escapeAttrAdmin's
+          // own comment above for why the two aren't interchangeable.
+          (item.artist_link ? '<div style="font-size:12.5px; margin-top:2px;"><a href="' + escapeAttrAdmin(item.artist_link) + '" target="_blank" rel="noopener" style="color:var(--accent-2);">' + escapeHtmlAdmin(item.artist_link) + '</a></div>' : '') +
           (item.artist_email ? '<div style="margin-top:4px;">' + payoutBadgeHtml(item.artist_email, statuses) + '</div>' : '') +
           (item.tip_count > 0
             ? '<div style="font-size:12.5px; color:var(--muted-invert); margin-top:4px;">💛 ' + item.tip_count + ' tip' + (item.tip_count === 1 ? '' : 's') +
@@ -1883,8 +1926,8 @@
           '<span>' + escapeHtmlAdmin(item.category) + (item.price ? " · " + escapeHtmlAdmin(item.price) : "") + '</span>' +
           (item.note ? '<div style="font-size:13px; color:var(--muted-invert); margin-top:4px;">' + escapeHtmlAdmin(item.note) + '</div>' : '') +
           '<div style="font-size:12.5px; margin-top:4px; display:flex; gap:12px; flex-wrap:wrap;">' +
-            (item.amazon_url ? '<a href="' + escapeHtmlAdmin(item.amazon_url) + '" target="_blank" rel="noopener" style="color:var(--accent-2);">View Amazon link →</a>' : '') +
-            (item.tiktok_url ? '<a href="' + escapeHtmlAdmin(item.tiktok_url) + '" target="_blank" rel="noopener" style="color:var(--accent-2);">View TikTok link →</a>' : '') +
+            (item.amazon_url ? '<a href="' + escapeAttrAdmin(item.amazon_url) + '" target="_blank" rel="noopener" style="color:var(--accent-2);">View Amazon link →</a>' : '') +
+            (item.tiktok_url ? '<a href="' + escapeAttrAdmin(item.tiktok_url) + '" target="_blank" rel="noopener" style="color:var(--accent-2);">View TikTok link →</a>' : '') +
           '</div>' +
         '</div>' +
         '<div class="review-actions">' +
@@ -2058,7 +2101,7 @@
     var sentBefore = status && status.onboarding_link_sent_at;
     return (
       '<span style="font-size:11.5px; font-weight:700; color:var(--amber);">⏳ Payout setup pending</span> ' +
-      '<button type="button" class="btn btn-ghost btn-sm resend-payout-btn" data-email="' + email + '" style="padding:2px 8px; font-size:11px;">' +
+      '<button type="button" class="btn btn-ghost btn-sm resend-payout-btn" data-email="' + escapeAttrAdmin(email) + '" style="padding:2px 8px; font-size:11px;">' +
       (sentBefore ? "Resend link" : "Send link") + '</button>'
     );
   }
@@ -2104,16 +2147,34 @@
         coverUrl = coverSigned ? coverSigned.signedUrl : "";
       }
 
+      // Author-submitted link: only ever rendered as a clickable href if it
+      // parses as a genuine http(s) URL — otherwise shown as plain escaped
+      // text. Using the parsed, re-serialized .href (not the raw string)
+      // for the attribute means stray characters (quotes, etc.) can't
+      // break out of the href="..." attribute, and a "javascript:" or
+      // other non-http(s) scheme can't be used to run script on click.
+      var authorLinkHtml = "";
+      if (item.author_link) {
+        var safeAuthorLink = null;
+        try {
+          var parsedLink = new URL(item.author_link);
+          if (parsedLink.protocol === "http:" || parsedLink.protocol === "https:") safeAuthorLink = parsedLink.href;
+        } catch (e) { /* not a valid absolute URL — fall through to plain text below */ }
+        authorLinkHtml = safeAuthorLink
+          ? '<div style="font-size:12.5px; margin-top:2px;"><a href="' + escapeAttrAdmin(safeAuthorLink) + '" target="_blank" rel="noopener" style="color:var(--accent-2);">' + escapeHtmlAdmin(item.author_link) + '</a></div>'
+          : '<div style="font-size:12.5px; margin-top:2px; color:var(--faint-invert);">' + escapeHtmlAdmin(item.author_link) + '</div>';
+      }
+
       var row = document.createElement("div");
       row.className = "review-row";
       row.innerHTML =
         '<div class="review-thumb">' + (coverUrl ? '<img src="' + coverUrl + '" alt="Cover" />' : '<div class="empty-state" style="padding:20px;">No cover</div>') + '</div>' +
         '<div class="review-meta">' +
-          '<strong>' + item.title + '</strong>' +
-          '<span>by ' + item.author_name + ' (' + item.author_email + ') · suggested $' + (item.suggested_price_cents / 100).toFixed(2) + ' · fee paid $' + (item.review_fee_cents / 100).toFixed(2) + ' · ' + timeAgo(item.created_at) + '</span>' +
-          (item.blurb ? '<div style="font-size:13px; color:var(--muted-invert); margin-top:4px;">' + item.blurb + '</div>' : '') +
-          (item.author_bio ? '<div style="font-size:12.5px; color:var(--faint-invert); margin-top:4px;">' + item.author_bio + '</div>' : '') +
-          (item.author_link ? '<div style="font-size:12.5px; margin-top:2px;"><a href="' + item.author_link + '" target="_blank" rel="noopener" style="color:var(--accent-2);">' + item.author_link + '</a></div>' : '') +
+          '<strong>' + escapeHtmlAdmin(item.title) + '</strong>' +
+          '<span>by ' + escapeHtmlAdmin(item.author_name) + ' (' + escapeHtmlAdmin(item.author_email) + ') · suggested $' + (item.suggested_price_cents / 100).toFixed(2) + ' · fee paid $' + (item.review_fee_cents / 100).toFixed(2) + ' · ' + timeAgo(item.created_at) + '</span>' +
+          (item.blurb ? '<div style="font-size:13px; color:var(--muted-invert); margin-top:4px;">' + escapeHtmlAdmin(item.blurb) + '</div>' : '') +
+          (item.author_bio ? '<div style="font-size:12.5px; color:var(--faint-invert); margin-top:4px;">' + escapeHtmlAdmin(item.author_bio) + '</div>' : '') +
+          authorLinkHtml +
           '<div style="margin-top:8px;"><a href="' + pdfUrl + '" target="_blank" rel="noopener" class="btn btn-ghost btn-sm">📄 Read manuscript PDF</a></div>' +
         '</div>' +
         '<div class="review-actions">' +
@@ -2247,8 +2308,8 @@
 
     el.innerHTML = "";
     data.forEach(function (order) {
-      var bookTitle = (order.books && order.books.title) || "Unknown book";
-      var authorName = (order.books && order.books.author_name) || "Unknown author";
+      var bookTitle = escapeHtmlAdmin((order.books && order.books.title) || "Unknown book");
+      var authorName = escapeHtmlAdmin((order.books && order.books.author_name) || "Unknown author");
       var authorEmail = order.books && order.books.author_email;
       if (authorEmail) resendLookup[authorEmail] = { email: authorEmail, name: authorName, context: "book", title: bookTitle };
 
@@ -2262,7 +2323,7 @@
       row.innerHTML =
         '<div class="review-meta" style="flex:1;">' +
           '<strong>' + bookTitle + '</strong>' +
-          '<span>by ' + authorName + ' · sold $' + (order.amount_cents / 100).toFixed(2) + ' to ' + order.buyer_email + ' · ' + timeAgo(order.created_at) + '</span>' +
+          '<span>by ' + authorName + ' · sold $' + (order.amount_cents / 100).toFixed(2) + ' to ' + escapeHtmlAdmin(order.buyer_email) + ' · ' + timeAgo(order.created_at) + '</span>' +
           '<div style="font-size:13px; font-weight:700; color:' + statusColor + '; margin-top:4px;">' + statusLabel + '</div>' +
           (authorEmail ? '<div style="margin-top:4px;">' + payoutBadgeHtml(authorEmail, statuses) + '</div>' : '') +
         '</div>' +
@@ -2308,8 +2369,8 @@
       row.className = "review-row";
       row.innerHTML =
         '<div class="review-meta" style="flex:1;">' +
-          '<strong>' + book.title + (book.is_active ? '' : ' · inactive') + '</strong>' +
-          '<span>by ' + book.author_name + ' · $' + (book.price_cents / 100).toFixed(2) + ' · ' + timeAgo(book.created_at) + '</span>' +
+          '<strong>' + escapeHtmlAdmin(book.title) + (book.is_active ? '' : ' · inactive') + '</strong>' +
+          '<span>by ' + escapeHtmlAdmin(book.author_name) + ' · $' + (book.price_cents / 100).toFixed(2) + ' · ' + timeAgo(book.created_at) + '</span>' +
         '</div>' +
         '<div class="review-actions">' +
           '<button class="btn btn-ghost btn-sm toggle-book-btn" data-id="' + book.id + '" data-active="' + book.is_active + '">' + (book.is_active ? "Deactivate" : "Reactivate") + '</button>' +
