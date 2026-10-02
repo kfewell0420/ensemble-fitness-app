@@ -3875,6 +3875,16 @@
       '<a class="rp-panel-link" href="fitness-plus.html">Find Your Person →</a>';
   }
 
+  // Ken's ask (Oct 2026): quotes are now entirely his own curated queue
+  // (he plans to add up to 50+) instead of anything member-facing — this
+  // used to just show whichever quote was added most recently. Now it picks
+  // ONE quote per CALENDAR DAY and automatically moves to the next one in
+  // the queue (oldest-added first) the next day, looping back to the start
+  // once it reaches the end. Using the number of days since the Unix epoch
+  // (UTC) modulo the queue length means every member sees the exact same
+  // quote on the same calendar day, with no extra database column or
+  // scheduled job to maintain — admin.html's Quote Library tab runs this
+  // same math to show Ken which quote is live today.
   async function loadQuotePanel() {
     var panel = document.getElementById("rpQuotePanel");
     if (!panel) return;
@@ -3882,11 +3892,11 @@
       .from("quotes")
       .select("quote_text, author")
       .eq("is_active", true)
-      .order("created_at", { ascending: false })
-      .limit(1);
-    var q = !error && data && data[0];
+      .order("created_at", { ascending: true });
+    var quotes = !error && data ? data : [];
+    var q = quotes.length ? quotes[Math.floor(Date.now() / 86400000) % quotes.length] : null;
     panel.innerHTML =
-      '<div class="rp-panel-head"><span class="rp-panel-icon">✨</span><span class="rp-panel-title">Daily Inspiration</span></div>' +
+      '<div class="rp-panel-head"><span class="rp-panel-icon">✨</span><span class="rp-panel-title">Daily Inspiration (Quote)</span></div>' +
       (q
         ? '<div class="rp-quote-text">“' + escapeHtml(q.quote_text) + '”</div>' +
           (q.author ? '<div class="rp-quote-author">— ' + escapeHtml(q.author) + '</div>' : '')

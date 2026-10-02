@@ -349,6 +349,13 @@
       </div>
 
       <div class="card">
+        <!-- Ken's ask (Oct 2026): "I will add up to at least 50. Each day
+             the daily inspiration will automatically populate the next
+             quote." This line tracks progress toward that and shows which
+             quote is live today (same day-index math as feed.html's
+             loadQuotePanel), so Ken can see the rotation is working without
+             needing to check the member site itself every day. -->
+        <div id="quoteSummary" class="card-sub" style="margin-bottom:14px;"></div>
         <div id="quoteList">
           <div class="empty-state">Loading…</div>
         </div>
@@ -1454,6 +1461,7 @@
   // ---- own reading of one, building a library of voices) -----------------
   async function loadQuotes() {
     var el = document.getElementById("quoteList");
+    var summaryEl = document.getElementById("quoteSummary");
     var { data, error } = await window.sb
       .from("quotes")
       .select("id, quote_text, author, is_active, created_at")
@@ -1461,21 +1469,41 @@
 
     if (error) {
       el.innerHTML = '<div class="empty-state">Couldn\'t load quotes: ' + error.message + '</div>';
+      summaryEl.textContent = "";
       return;
     }
     if (!data || data.length === 0) {
       el.innerHTML = '<div class="empty-state">No quotes added yet — add your first one above.</div>';
+      summaryEl.textContent = "";
       return;
     }
+
+    // Ken's ask (Oct 2026): "each day the daily inspiration will
+    // automatically populate the next quote." The member site
+    // (feed.html's loadQuotePanel) orders ACTIVE quotes oldest-added-first
+    // and picks one per calendar day via days-since-epoch modulo the count
+    // — this mirrors that exact math so "today's pick" shown here always
+    // matches what members actually see, without a day ever being special-
+    // cased or hard-coded.
+    var active = data.filter(function (q) { return q.is_active; });
+    var todayId = active.length
+      ? active.slice().sort(function (a, b) { return new Date(a.created_at) - new Date(b.created_at); })
+          [Math.floor(Date.now() / 86400000) % active.length].id
+      : null;
+    summaryEl.textContent = active.length
+      ? active.length + " active quote" + (active.length === 1 ? "" : "s") + " in the rotation" +
+        (active.length < 50 ? " (aiming for 50+)" : "")
+      : "No active quotes — members will see “New quotes coming soon.” until at least one is active.";
 
     el.innerHTML = "";
     for (var i = 0; i < data.length; i++) {
       var item = data[i];
+      var isToday = item.id === todayId;
       var row = document.createElement("div");
       row.className = "review-row";
       row.innerHTML =
         '<div class="review-meta">' +
-          '<strong>“' + escapeHtmlAdmin(item.quote_text) + '”</strong>' +
+          '<strong>' + (isToday ? '<span style="color:var(--accent-2);">Today ★</span> ' : '') + '“' + escapeHtmlAdmin(item.quote_text) + '”</strong>' +
           '<span>' + (item.author ? escapeHtmlAdmin(item.author) : "Unknown") + (item.is_active ? '' : ' · inactive') + '</span>' +
         '</div>' +
         '<div class="review-actions">' +
