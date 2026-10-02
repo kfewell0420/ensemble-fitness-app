@@ -876,19 +876,25 @@
      which always renders in its own fixed color — sizing it via font-size
      since width/height (above) only affects the svg-based icons. */
   .rp-action-icon { font-size: 18px; line-height: 1; }
-  /* Ken's ask (Nov 2026): thumbs-up and the muscle emoji read noticeably
-     bigger than the heart and comment icons even though every SVG here
-     shares the same 19px box — the heart and speech-bubble artwork just
-     don't fill their own 24x24 viewBox as fully as the thumbs-up path
-     does (real, visible padding baked into those two drawings), so at
-     matched box sizes they look smaller. Bumping just these two up
-     compensates for that built-in whitespace so all four read as the
-     same size at a glance. Same 30px circle for every icon, so this
-     doesn't shift any spacing — just the glyph inside it. */
+  /* Ken's ask (Nov 2026, follow-up Oct 2026 — still reading small): thumbs-up
+     (active: a bold solid fill) and the muscle emoji (a vivid, full-color
+     native drawing) read noticeably bigger/bolder than the heart and
+     comment icons even though every SVG here shares the same box — partly
+     the heart/speech-bubble artwork not filling their own 24x24 viewBox as
+     fully as the thumbs-up path (real, visible padding baked into those two
+     drawings), and partly that an unreacted heart/comment is a thin
+     1.8px-stroke OUTLINE while an active thumbs-up is a solid filled shape,
+     which always reads as "more ink" at the same box size. First pass
+     bumped the box 19px -> 24px; still not enough on its own, so this round
+     adds a thicker stroke on the heart/comment artwork itself (see
+     REACTION_ICONS.heart.outline and COMMENT_ICON/COMMENT_ICON_FILLED —
+     1.8 -> 2.3) plus another size bump here, and extends this same
+     compensation to the Meal Prep pills (.rp-mp-reaction) below, which
+     never had it at all before — same inconsistency, different-sized row. */
   .rp-action-btn[data-reaction="heart"] .rp-action-icon svg,
   .rp-comment-btn .rp-action-icon svg {
-    width: 24px;
-    height: 24px;
+    width: 26px;
+    height: 26px;
   }
   .rp-action-count {
     font-size: 12.5px;
@@ -1275,6 +1281,15 @@
     font-size: 16px;
   }
   .rp-mp-reaction .rp-action-icon svg { width: 17px; height: 17px; }
+  /* Same heart/comment-read-smaller compensation as the main reel's
+     .rp-action-icon rule above, scaled down to this pill's own smaller
+     17px base instead of the reel's 26px — these buttons never had any
+     version of that fix before. */
+  .rp-mp-reaction[data-reaction="heart"] .rp-action-icon svg,
+  .rp-mp-reaction[data-action="comments"] .rp-action-icon svg {
+    width: 19px;
+    height: 19px;
+  }
   /* The muscle pill's active state already uses a light tint (below, via
      the shared .rp-mp-reaction.active rule) rather than a solid color
      fill, so the emoji's own fixed color never clashes here. */
@@ -2113,7 +2128,7 @@
       active: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>'
     },
     heart: {
-      outline: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.2s-7.05-4.4-9.4-8.55C1.1 9.1 1.85 5.7 4.6 4.3c2.15-1.1 4.7-.5 6.15 1.35L12 7.05l1.25-1.4c1.45-1.85 4-2.45 6.15-1.35 2.75 1.4 3.5 4.8 2 7.35C19.05 15.8 12 20.2 12 20.2Z"/></svg>',
+      outline: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.2s-7.05-4.4-9.4-8.55C1.1 9.1 1.85 5.7 4.6 4.3c2.15-1.1 4.7-.5 6.15 1.35L12 7.05l1.25-1.4c1.45-1.85 4-2.45 6.15-1.35 2.75 1.4 3.5 4.8 2 7.35C19.05 15.8 12 20.2 12 20.2Z"/></svg>',
       active: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 20.2s-7.05-4.4-9.4-8.55C1.1 9.1 1.85 5.7 4.6 4.3c2.15-1.1 4.7-.5 6.15 1.35L12 7.05l1.25-1.4c1.45-1.85 4-2.45 6.15-1.35 2.75 1.4 3.5 4.8 2 7.35C19.05 15.8 12 20.2 12 20.2Z"/></svg>'
     },
     // A hand-drawn "flexed bicep" silhouette (fist + forearm + bulge, or
@@ -2137,7 +2152,7 @@
       outline: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>'
     }
   };
-  var COMMENT_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-8.4 8.4c-1.28 0-2.5-.28-3.6-.79L3 21l1.9-5.7a8.3 8.3 0 0 1-.8-3.6A8.4 8.4 0 0 1 12.5 3.2a8.4 8.4 0 0 1 8.5 8.3Z"/></svg>';
+  var COMMENT_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-8.4 8.4c-1.28 0-2.5-.28-3.6-.79L3 21l1.9-5.7a8.3 8.3 0 0 1-.8-3.6A8.4 8.4 0 0 1 12.5 3.2a8.4 8.4 0 0 1 8.5 8.3Z"/></svg>';
   // Ken's ask (Sept 2026): once a post HAS a comment on it, the comment
   // bubble should read as "filled in white" instead of a plain outline —
   // same idea as the reaction icons switching to a solid state once
@@ -2614,6 +2629,12 @@
     var commentBtn = container.querySelector('[data-action="comments"]');
     if (commentBtn) {
       commentBtn.querySelector(".rp-action-count").textContent = commentCount || 0;
+      // Ken's ask (Oct 2026): matches renderActions() elsewhere in the app —
+      // a post with comments on it shows the solid "filled" bubble instead
+      // of the plain outline, same as the main reel already does. This row
+      // never had that switch at all before, so its comment icon always
+      // looked like the faint outline even when there were comments.
+      commentBtn.querySelector(".rp-action-icon").innerHTML = commentCount > 0 ? COMMENT_ICON_FILLED : COMMENT_ICON;
       commentBtn.addEventListener("click", focusMealPrepComments);
     }
   }
@@ -2650,7 +2671,11 @@
         '<span class="rp-action-icon">' + reactionIconMarkup(r.type, !!mine[r.type]) + '</span><span class="rp-action-count">' + (counts[r.type] || 0) + '</span></button>';
     }).join("") +
       '<button type="button" class="rp-mp-reaction" data-action="comments">' +
-      '<span class="rp-action-icon">' + COMMENT_ICON + '</span><span class="rp-action-count">' + commentCount + '</span></button>';
+      // Ken's ask (Oct 2026): same filled-vs-outline switch as
+      // renderMealPrepReactions() just above — this illustrative-card
+      // version had the identical gap (always the plain outline bubble,
+      // even once a comment had been typed in).
+      '<span class="rp-action-icon">' + (commentCount > 0 ? COMMENT_ICON_FILLED : COMMENT_ICON) + '</span><span class="rp-action-count">' + commentCount + '</span></button>';
     REACTIONS.forEach(function (r) {
       var btn = container.querySelector('[data-reaction="' + r.type + '"]');
       if (btn) btn.addEventListener("click", function () { toggleIllustrativeReaction(item, r.type, btn); });
@@ -2692,8 +2717,14 @@
       renderIllustrativeMealPrepComments(item, container);
       var reactionsWrap = document.getElementById("rpMpReactions");
       if (reactionsWrap) {
-        var commentBtn = reactionsWrap.querySelector('[data-action="comments"] .rp-action-count');
-        if (commentBtn) commentBtn.textContent = item.illustrativeComments.length;
+        var commentBtn = reactionsWrap.querySelector('[data-action="comments"]');
+        if (commentBtn) {
+          commentBtn.querySelector(".rp-action-count").textContent = item.illustrativeComments.length;
+          // Same filled-icon switch as the initial render above — posting
+          // the first comment here should flip the bubble solid right away.
+          commentBtn.querySelector(".rp-action-icon").innerHTML =
+            item.illustrativeComments.length > 0 ? COMMENT_ICON_FILLED : COMMENT_ICON;
+        }
       }
     }
     inputRow.querySelector(".rp-comment-send").addEventListener("click", postIllustrativeComment);
