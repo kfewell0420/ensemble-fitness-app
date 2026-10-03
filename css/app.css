@@ -129,6 +129,26 @@ img { max-width: 100%; display: block; }
   display: block;
 }
 
+/* Ken's ask (Oct 2026): "I have forgot along the way that this site is a
+   fitness dating site... we want this site to be match.com for fitness" —
+   two overlapping hearts in the header of every page, website and app
+   alike, as a constant, low-key reminder (his words: a "subliminal"
+   message) that Ensemble Fitness is built to connect members with each
+   other, not just track workouts. Decorative only (aria-hidden), so it
+   never steals focus/tab order from the real nav. margin-left:auto pushes
+   it to the right end of the header on every layout that uses .app-nav —
+   next to the logo on a plain mobile header with nothing else in it, or
+   just before the page's own nav-links/Sign Out block on desktop pages
+   that have one (that block has its own margin-left:auto, so the two
+   simply land next to each other at the right edge either way). */
+.app-nav-connect {
+  margin-left: auto;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+}
+.app-nav-connect svg { display: block; }
+
 .app-nav-links {
   display: flex;
   align-items: center;

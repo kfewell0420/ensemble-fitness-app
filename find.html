@@ -181,6 +181,12 @@
   <a href="feed.html" class="app-brand">
     <span class="app-brand-mark"><img src="assets/logo.png" alt="Ensemble Fitness" /></span>Ensemble Fitness
   </a>
+  <span class="app-nav-connect" aria-hidden="true">
+    <svg viewBox="0 0 34 30" width="28" height="25" focusable="false">
+      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="var(--pink, #db1f52)" transform="translate(0,2)"/>
+      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="var(--pink-2, #ff3d68)" stroke="var(--navy-900, #0b0f1a)" stroke-width="2.2" paint-order="stroke" transform="translate(13,9) scale(0.62)"/>
+    </svg>
+  </span>
 </header>
 
 <div class="find-scroll">
@@ -188,8 +194,64 @@
   <!-- Nov 2026, Ken's ask: dropped the "Finder" heading + subtitle here —
        someone only sees this page after tapping "Finder" in the tab bar
        below, so restating the page name and what it does was pure
-       redundancy. "Browse by Activity" now leads straight off the nav
-       header instead. -->
+       redundancy. Explore now leads straight off the nav header instead
+       (see the Oct 2026 "match.com for fitness" comment below for why it's
+       Explore and not Browse by Activity leading). -->
+
+  <!-- Ken's ask (Oct 2026, "match.com for fitness"): Explore now leads,
+       Browse by Activity moved below it — this is a dating-first platform
+       that happens to be organized around fitness, not a workout tracker
+       first. Fitness+ (the paid matchmaking feature, "that's how we're
+       going to make money") now leads Explore itself, ahead of even My
+       Journey. Motivational Books wasn't in Ken's verbal lineup — left in
+       its prior relative spot (right after Daily Inspiration) rather than
+       dropped, per his "if I missed anyone, place it somewhere by
+       default." -->
+  <div class="find-section">
+    <div class="find-section-title">Explore</div>
+    <ul class="find-list">
+      <li><a class="find-row" href="fitness-plus.html">
+        <span class="find-icon">❤️</span>
+        <span class="find-text"><div class="find-title">Fitness+</div><div class="find-sub">Find your person</div></span>
+        <span class="find-chevron">›</span>
+      </a></li>
+      <li><a class="find-row" href="journey.html">
+        <span class="find-icon">🌱</span>
+        <span class="find-text"><div class="find-title">My Journey</div><div class="find-sub">Log a workout, track your own progress</div></span>
+        <span class="find-chevron">›</span>
+      </a></li>
+      <li><a class="find-row" href="music-library.html">
+        <span class="find-icon">🎧</span>
+        <span class="find-text"><div class="find-title">Music Library</div><div class="find-sub">Browse tracks, or by artist</div></span>
+        <span class="find-chevron">›</span>
+      </a></li>
+      <li><a class="find-row" href="fitness-journeys.html">
+        <span class="find-icon">📓</span>
+        <span class="find-text"><div class="find-title">Fitness Journeys</div><div class="find-sub">Members' long-form progress updates</div></span>
+        <span class="find-chevron">›</span>
+      </a></li>
+      <li><a class="find-row" href="quote-library.html">
+        <span class="find-icon">✨</span>
+        <span class="find-text"><div class="find-title">Daily Inspiration (Quote)</div></span>
+        <span class="find-chevron">›</span>
+      </a></li>
+      <li><a class="find-row" href="books.html">
+        <span class="find-icon">📚</span>
+        <span class="find-text"><div class="find-title">Motivational Books</div><div class="find-sub">Ensemble Reads — short books from independent authors</div></span>
+        <span class="find-chevron">›</span>
+      </a></li>
+      <li><a class="find-row" href="gear.html">
+        <span class="find-icon">🛒</span>
+        <span class="find-text"><div class="find-title">Ensemble Approved Products</div></span>
+        <span class="find-chevron">›</span>
+      </a></li>
+      <li><a class="find-row" href="members.html">
+        <span class="find-icon">🔎</span>
+        <span class="find-text"><div class="find-title">Members</div><div class="find-sub">Browse other members' profiles</div></span>
+        <span class="find-chevron">›</span>
+      </a></li>
+    </ul>
+  </div>
 
   <div class="find-section">
     <div class="find-section-title">Browse by activity</div>
@@ -227,52 +289,6 @@
       <li><a class="find-row" href="feed.html?filter=Other">
         <span class="find-icon">✨</span>
         <span class="find-text"><div class="find-title">Other</div></span>
-        <span class="find-chevron">›</span>
-      </a></li>
-    </ul>
-  </div>
-
-  <div class="find-section">
-    <div class="find-section-title">Explore</div>
-    <ul class="find-list">
-      <li><a class="find-row" href="fitness-journeys.html">
-        <span class="find-icon">📓</span>
-        <span class="find-text"><div class="find-title">Fitness Journeys</div><div class="find-sub">Members' long-form progress updates</div></span>
-        <span class="find-chevron">›</span>
-      </a></li>
-      <li><a class="find-row" href="journey.html">
-        <span class="find-icon">🌱</span>
-        <span class="find-text"><div class="find-title">My Journey</div><div class="find-sub">Log a workout, track your own progress</div></span>
-        <span class="find-chevron">›</span>
-      </a></li>
-      <li><a class="find-row" href="music-library.html">
-        <span class="find-icon">🎧</span>
-        <span class="find-text"><div class="find-title">Music Library</div><div class="find-sub">Browse tracks, or by artist</div></span>
-        <span class="find-chevron">›</span>
-      </a></li>
-      <li><a class="find-row" href="fitness-plus.html">
-        <span class="find-icon">❤️</span>
-        <span class="find-text"><div class="find-title">Fitness+</div><div class="find-sub">Find your person</div></span>
-        <span class="find-chevron">›</span>
-      </a></li>
-      <li><a class="find-row" href="quote-library.html">
-        <span class="find-icon">✨</span>
-        <span class="find-text"><div class="find-title">Daily Inspiration (Quote)</div></span>
-        <span class="find-chevron">›</span>
-      </a></li>
-      <li><a class="find-row" href="books.html">
-        <span class="find-icon">📚</span>
-        <span class="find-text"><div class="find-title">Motivational Books</div><div class="find-sub">Ensemble Reads — short books from independent authors</div></span>
-        <span class="find-chevron">›</span>
-      </a></li>
-      <li><a class="find-row" href="gear.html">
-        <span class="find-icon">🛒</span>
-        <span class="find-text"><div class="find-title">Ensemble Approved Products</div></span>
-        <span class="find-chevron">›</span>
-      </a></li>
-      <li><a class="find-row" href="members.html">
-        <span class="find-icon">🔎</span>
-        <span class="find-text"><div class="find-title">Members</div><div class="find-sub">Browse other members' profiles</div></span>
         <span class="find-chevron">›</span>
       </a></li>
     </ul>

@@ -1415,7 +1415,12 @@
       background: transparent;
     }
 
-    .rp-dash-header { display: block; grid-area: header; margin-bottom: 22px; }
+    .rp-dash-header { display: block; grid-area: header; margin-bottom: 22px; position: relative; }
+    /* The shared .app-nav-connect hearts badge (see app.css) assumes it's
+       sitting inside a flex row with margin-left:auto to push it right —
+       this header isn't a flex row, so it's pinned to the top-right corner
+       directly instead. Same spot, same hearts, just a different parent. */
+    .rp-dash-header .app-nav-connect { position: absolute; top: 2px; right: 0; margin-left: 0; }
     .rp-dash-eyebrow {
       display: inline-flex;
       align-items: center;
@@ -1677,6 +1682,12 @@
     <a href="feed.html" class="app-brand">
       <span class="app-brand-mark"><img src="assets/logo.png" alt="Ensemble Fitness" /></span>Ensemble Fitness
     </a>
+    <span class="app-nav-connect" aria-hidden="true">
+      <svg viewBox="0 0 34 30" width="28" height="25" focusable="false">
+        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="var(--pink, #db1f52)" transform="translate(0,2)"/>
+        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="var(--pink-2, #ff3d68)" stroke="var(--navy-900, #0b0f1a)" stroke-width="2.2" paint-order="stroke" transform="translate(13,9) scale(0.62)"/>
+      </svg>
+    </span>
   </header>
 
   <!-- Desktop-only — hidden entirely on the phone-frame layout below. A
@@ -1685,6 +1696,12 @@
   <div class="rp-dash-header" id="rpDashHeader">
     <span class="rp-dash-eyebrow"><span class="rp-dash-dot"></span>YOUR COMMUNITY</span>
     <h1 class="rp-dash-title">Welcome back<span id="rpDashName"></span></h1>
+    <span class="app-nav-connect" aria-hidden="true">
+      <svg viewBox="0 0 34 30" width="28" height="25" focusable="false">
+        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="var(--pink, #db1f52)" transform="translate(0,2)"/>
+        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="var(--pink-2, #ff3d68)" stroke="var(--navy-900, #0b0f1a)" stroke-width="2.2" paint-order="stroke" transform="translate(13,9) scale(0.62)"/>
+      </svg>
+    </span>
   </div>
 
   <!-- display:contents on mobile makes this wrapper invisible to layout —
