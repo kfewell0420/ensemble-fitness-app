@@ -564,7 +564,16 @@ select option {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  /* Ken's ask (Oct 2026): a real "+" badge, same spot/shape/size Instagram
+     uses on its own avatar for "add/change your photo" — the app's own
+     orange accent instead of Instagram's blue, to stay on-brand. Bold and
+     a touch larger than the old camera-emoji content so the plus itself
+     (not just the circle) reads clearly at this size; line-height:1 keeps
+     it vertically centered instead of sitting on the emoji's own baseline. */
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1;
+  color: #fff;
   border: 2px solid var(--navy-900, #10131c);
   pointer-events: none;
 }

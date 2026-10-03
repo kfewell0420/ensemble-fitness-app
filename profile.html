@@ -35,9 +35,15 @@
     <p class="card-sub">This is what shows once your account is live in the app.</p>
 
     <div class="avatar-row">
-      <div class="avatar-circle avatar-circle-uploadable" id="avatarCircle" role="button" tabindex="0" aria-label="Upload profile photo">
+      <!-- Ken's ask (Oct 2026): a real "+" badge, same pattern Instagram
+           uses on its own avatar, so it's obvious at a glance that tapping
+           this circle works any time — not just before a first photo is
+           set. The upload itself already worked this way (avatarFileInput's
+           change handler below always runs and always publishes a fresh
+           photo over whatever was there), this just makes that visible. -->
+      <div class="avatar-circle avatar-circle-uploadable" id="avatarCircle" role="button" tabindex="0" aria-label="Change profile photo">
         <span id="avatarInitialText">?</span>
-        <span class="avatar-upload-badge" id="avatarUploadBadge">📷</span>
+        <span class="avatar-upload-badge" id="avatarUploadBadge" aria-hidden="true">+</span>
       </div>
       <input type="file" id="avatarFileInput" accept="image/*" style="display:none;" />
       <div>
@@ -672,8 +678,11 @@
 
   function setAvatarPreview(url, statusLabel, statusSub) {
     var circle = document.getElementById("avatarCircle");
+    // Same "+" badge as the no-photo state above — stays on the circle
+    // once there's a real photo too, so it's always obvious this can be
+    // tapped again to swap in a new one, same as Instagram's own avatar.
     circle.innerHTML = '<img src="' + url + '" alt="Profile photo" />' +
-      '<span class="avatar-upload-badge" id="avatarUploadBadge">📷</span>';
+      '<span class="avatar-upload-badge" id="avatarUploadBadge" aria-hidden="true">+</span>';
     document.getElementById("avatarStatusLabel").textContent = statusLabel;
     if (statusSub) document.getElementById("avatarStatusSub").textContent = statusSub;
   }
