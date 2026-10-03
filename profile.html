@@ -41,8 +41,18 @@
            set. The upload itself already worked this way (avatarFileInput's
            change handler below always runs and always publishes a fresh
            photo over whatever was there), this just makes that visible. -->
-      <div class="avatar-circle avatar-circle-uploadable" id="avatarCircle" role="button" tabindex="0" aria-label="Change profile photo">
-        <span id="avatarInitialText">?</span>
+      <div class="avatar-wrap">
+        <div class="avatar-circle avatar-circle-uploadable" id="avatarCircle" role="button" tabindex="0" aria-label="Change profile photo">
+          <span id="avatarInitialText">?</span>
+        </div>
+        <!-- Ken's ask (Oct 2026, round 2): the badge used to live INSIDE
+             avatarCircle, which has overflow:hidden (so a photo fills the
+             circle without spilling out as a square corner) — that clipped
+             the badge itself since it's intentionally positioned half off
+             the circle's edge. Moved it out to this wrapper instead, which
+             has no overflow clipping, so the whole "+" is visible. Also
+             simplified per Ken's ask to a plain green "+" with no circle
+             behind it, rather than a filled badge. -->
         <span class="avatar-upload-badge" id="avatarUploadBadge" aria-hidden="true">+</span>
       </div>
       <input type="file" id="avatarFileInput" accept="image/*" style="display:none;" />
@@ -678,11 +688,12 @@
 
   function setAvatarPreview(url, statusLabel, statusSub) {
     var circle = document.getElementById("avatarCircle");
-    // Same "+" badge as the no-photo state above — stays on the circle
-    // once there's a real photo too, so it's always obvious this can be
-    // tapped again to swap in a new one, same as Instagram's own avatar.
-    circle.innerHTML = '<img src="' + url + '" alt="Profile photo" />' +
-      '<span class="avatar-upload-badge" id="avatarUploadBadge" aria-hidden="true">+</span>';
+    // The "+" badge now lives in the .avatar-wrap CSS, OUTSIDE this circle
+    // (see the Oct 2026 round-2 comment in the HTML/CSS) so it isn't
+    // clipped by the circle's own overflow:hidden — so swapping the
+    // circle's contents for a photo here no longer needs to also rebuild
+    // the badge; it was never touched.
+    circle.innerHTML = '<img src="' + url + '" alt="Profile photo" />';
     document.getElementById("avatarStatusLabel").textContent = statusLabel;
     if (statusSub) document.getElementById("avatarStatusSub").textContent = statusSub;
   }

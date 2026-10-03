@@ -542,8 +542,19 @@ select option {
 
 .avatar-circle img { width: 100%; height: 100%; object-fit: cover; }
 
-.avatar-circle-uploadable {
+/* Ken's ask (Oct 2026, round 2): the badge needs to visually cross the
+   circle's own edge (like the Instagram reference he sent — the "+" sits
+   astride the boundary, not floating fully inside or fully outside it).
+   avatar-circle itself has overflow:hidden (so a photo fills it as a
+   circle instead of spilling out square at the corners), which clipped
+   the badge whenever it lived inside that element. This wrapper gives the
+   badge its own positioning context OUTSIDE that clipped box, so it can
+   still sit astride the circle's bottom-right edge without being cut off. */
+.avatar-wrap {
   position: relative;
+  flex-shrink: 0;
+}
+.avatar-circle-uploadable {
   cursor: pointer;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
@@ -555,26 +566,17 @@ select option {
 }
 .avatar-upload-badge {
   position: absolute;
-  bottom: -2px;
-  right: -2px;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: var(--accent, #ff5a5f);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  /* Ken's ask (Oct 2026): a real "+" badge, same spot/shape/size Instagram
-     uses on its own avatar for "add/change your photo" — the app's own
-     orange accent instead of Instagram's blue, to stay on-brand. Bold and
-     a touch larger than the old camera-emoji content so the plus itself
-     (not just the circle) reads clearly at this size; line-height:1 keeps
-     it vertically centered instead of sitting on the emoji's own baseline. */
-  font-size: 15px;
-  font-weight: 800;
+  bottom: -4px;
+  right: -6px;
+  /* Ken's ask (Oct 2026, round 2): no filled circle behind it — just a
+     plain green "+", sized up since it's no longer sitting on a colored
+     disc to help it read. The dark drop-shadow keeps it legible whether
+     it's crossing a light photo or the app's own dark avatar background. */
+  font-size: 30px;
+  font-weight: 900;
   line-height: 1;
-  color: #fff;
-  border: 2px solid var(--navy-900, #10131c);
+  color: #22c55e;
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.85), 0 1px 3px rgba(0, 0, 0, 0.85);
   pointer-events: none;
 }
 
