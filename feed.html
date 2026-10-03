@@ -3608,9 +3608,23 @@
   // scrolls itself, so the root has to be the viewport (null) instead —
   // scoping it to #rpReel there would never fire since that element no
   // longer scrolls.
+  //
+  // Ken's ask (Oct 2026): a real device report — scrolling past the last
+  // post of a batch (originally reported as "between frame 8 and 9", i.e.
+  // exactly PAGE_SIZE=8) caused a split-second hiccup before scrolling
+  // would continue. Root cause: threshold:0.05 with no rootMargin meant
+  // loadMoreReel() (an async Supabase round-trip) didn't even START until
+  // the 1px sentinel had ALREADY scrolled into view — so for however long
+  // that fetch took, there was genuinely nothing left below the sentinel
+  // to scroll into, which a thumb mid-swipe feels as a stall/hiccup. The
+  // 900px bottom rootMargin below fires that same fetch while the sentinel
+  // is still ~a post and a half below the visible area, so by the time
+  // anyone actually scrolls that far the next batch has normally already
+  // arrived and appended — nothing left to wait for. Same idea on both
+  // roots: the inner-scroller on mobile, the page viewport on desktop.
   var loadMoreObserver = new IntersectionObserver(function (entries) {
     if (entries[0].isIntersecting) loadMoreReel();
-  }, { root: isWideLayout ? null : document.getElementById("rpReel"), threshold: 0.05 });
+  }, { root: isWideLayout ? null : document.getElementById("rpReel"), rootMargin: "0px 0px 900px 0px", threshold: 0 });
 
   function isReelExhausted() {
     if (activeFilter === "Journeys") return journalReachedEnd;

@@ -115,7 +115,13 @@
     border: 1.6px solid currentColor;
     font-size: 15px;
   }
-  .find-shell { max-width: 640px; margin: 0 auto; padding: 18px 14px 24px; }
+  /* Ken's ask (Oct 2026): "Explore" was sitting noticeably below the
+     header's dividing line — bring it up tight against it. The 18px here
+     was the same top padding every other page's content shell uses below
+     a FULL header (logo + desktop nav links); this page's header is just
+     the logo/hearts row with nothing else in it, so that much breathing
+     room read as a gap instead of a deliberate margin. */
+  .find-shell { max-width: 640px; margin: 0 auto; padding: 6px 14px 24px; }
   .find-intro { margin: 4px 2px 22px; }
   .find-intro h1 {
     font-family: 'Poppins', 'Inter', sans-serif;
