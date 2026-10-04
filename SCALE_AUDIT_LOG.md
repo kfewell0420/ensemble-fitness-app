@@ -12,6 +12,50 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-04, round 3 — Share Your Journey redesigned to match the old private journal's layout ⚠️ REQUIRES A SUPABASE STEP
+
+Same-day follow-up again. Ken sent a screenshot of the old private-journal
+form/history layout and asked for "Share Your Journey" to use that exact
+wording and layout: structured Date/Activity/How did it feel/Notes fields
+(date auto-fills to today) instead of one free-text box, a dark background
+instead of the white marketing-style page it had, a single button that
+posts immediately, and a "History" list of who's posted — capped at the
+latest 4.
+
+**⚠️ Action needed before this works: run `sql/run_this_first_journey_columns.sql`
+in the Supabase SQL editor.** The new composer inserts `entry_date`,
+`activity`, `mood`, and `notes` columns that don't exist on
+`community_questions` yet — until that migration runs, every new post will
+fail with a "column does not exist" error. It's additive and nullable
+(safe to run anytime, doesn't touch existing rows); the same statements are
+also folded into the main `sql/schema.sql` for the record.
+
+**Changed (`fitness-journeys.html`):**
+- Dropped the forced-white `.fj-page` theme entirely — this page now uses
+  the app's normal dark theme like everywhere else, built on the same
+  shared `.app-shell`/`.card`/`.eyebrow`/`.field`/`.review-row` classes the
+  old `journey.html` private journal used (Ken explicitly asked for "this
+  exact layout" from a screenshot of that page).
+- Removed the hero banner and the old "click to reveal the composer" step
+  — the form is just always on the page now, matching the private
+  journal's pattern. Posting still goes live instantly (no change to that
+  behavior, see the Oct 2026 composer entry above).
+- History list now shows every member's name (it's public now, so "who
+  posted" matters) and is capped at the latest 4 posts — fetches a few
+  extra under the hood so a member with some posters blocked still sees a
+  full 4 where possible, and shows the true total count ("N shared so far
+  — showing the latest 4") above the list.
+- Reactions and replies (👏❤️👍, inline reply box) are unchanged
+  functionally, just re-themed dark to match.
+- Own-post Delete button added to each history row (admins already had
+  this via admin.html's Journeys tab; members can now remove their own
+  post the same way they could in the old private journal).
+- The illustrative "not real" examples panel is unchanged other than a
+  dark re-theme — still clearly labeled as illustrative, still below the
+  real History list.
+
+Synced to the mobile app's `www/fitness-journeys.html`.
+
 ## 2026-10-04, round 2 — Merged the two "journey" features into one
 
 Same-day follow-up to the entry directly below. After seeing the new
