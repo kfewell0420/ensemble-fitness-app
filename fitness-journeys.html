@@ -22,7 +22,16 @@
     background: radial-gradient(circle at 18% 0%, #3a1206 0%, #0b0f1a 60%);
     padding: 56px 24px 48px;
   }
-  .fj-hero-inner { max-width: 880px; margin: 0 auto; }
+  /* Ken's ask (Oct 2026): the hero (eyebrow/headline/subtitle/buttons) was
+     centered in its own 880px-wide box while the section below it
+     ("What real progress looks like" and everything under it) centers in
+     a WIDER 1080px box — both boxes sit dead-center on the page, so two
+     different widths meant two different left edges once the browser is
+     wide enough for either to have room to spare: the hero visibly sat
+     further right than the real-journeys grid below it instead of lining
+     up with it. Matching the hero's max-width to .fj-section-inner's
+     fixes that — same box, same left edge, top to bottom. */
+  .fj-hero-inner { max-width: 1080px; margin: 0 auto; }
   .fj-eyebrow {
     color: var(--accent-2);
     font-family: 'Poppins', sans-serif;
