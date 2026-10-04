@@ -3,197 +3,29 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>My Journey — Ensemble Fitness</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&family=Caveat:wght@600;700&family=Dancing+Script:wght@600;700&display=swap">
+<title>Share Your Journey — Ensemble Fitness</title>
+<!-- Ken's ask (Oct 2026, round 2): "Share your journey and fitness journey
+     should be one and the same... there should be no fitness journey
+     anywhere... no private journal." This page used to be the private,
+     per-member workout journal (journal_entries table) — a separate
+     feature from the public "Share Your Journey" page (fitness-journeys.html)
+     that caused real confusion (Ken himself posted here expecting it to
+     show up there). Per Ken's explicit instruction, the private journal is
+     retired: there is now exactly one journey feature, it's public, and it
+     goes live the moment you post it. This file is kept (rather than
+     deleted outright) only as a redirect, so any old bookmark, nav
+     shortcut, or login-redirect that still points at journey.html lands
+     safely on the real page instead of a dead link. Nothing here reads or
+     writes journal_entries anymore. Old private entries already in that
+     table are untouched (they were written under a privacy promise) but
+     there is no more UI anywhere in the app to view or add to them. -->
+<meta http-equiv="refresh" content="0; url=fitness-journeys.html" />
 <link rel="stylesheet" href="css/app.css?v=2" />
 </head>
 <body>
-
-<!-- Ken's ask (Nov 2026): this page should NOT show the usual site-wide
-     header/nav (logo, Community/My Journey/Gear/etc. links, Sign Out) —
-     same treatment as quote-library.html and fitness-plus.html. The page
-     should start right at the orange "Private Journal" eyebrow / "Your
-     private journal" heading below, which is already first in the markup.
-     Nov 2026 follow-up: the header still needs to exist as an EMPTY shell
-     (no brand, no links) so js/notifications.js has an .app-nav to inject
-     the home icon + notification bell into — see quote-library.html's
-     comment on this same change for the full reasoning.
-     Nov 2026, round 2: tightened header/shell padding to match
-     books.html's established "icons only" pattern — see quote-library.html's
-     comment on this same follow-up for the full reasoning. -->
-<header class="app-nav">
-  <span class="app-nav-connect" aria-hidden="true">
-    <svg viewBox="0 0 34 30" width="28" height="25" focusable="false">
-      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="var(--pink, #db1f52)" transform="translate(0,2)"/>
-      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="var(--pink-2, #ff3d68)" stroke="var(--navy-900, #0b0f1a)" stroke-width="2.2" paint-order="stroke" transform="translate(13,9) scale(0.62)"/>
-    </svg>
-  </span>
-</header>
-<style>
-  .app-nav {
-    padding-top: calc(4px + env(safe-area-inset-top, 0px));
-    padding-bottom: 4px;
-  }
-  .efit-nav-utility { margin-left: 0; margin-top: 0; }
-  .app-shell { padding-top: 4px; }
-</style>
-
-<div class="app-shell">
-
-  <!-- Ken's ask (Oct 2026): the eyebrow used to say "Fitness Journey"
-       (singular) — close enough to "Fitness Journeys" (the separate,
-       PUBLIC long-form-story feature, fitness-journeys.html) that Ken
-       himself mixed the two up logging a real entry here and expecting it
-       to show up there. Renamed everything on this page away from the word
-       "journey" where it's the headline text, so there's no more visual
-       pattern-match between the two features. The body copy already said
-       "private" — it just wasn't loud enough on its own. -->
-  <div class="eyebrow">Private Journal</div>
-  <h2 style="margin-bottom:6px;">Your private journal</h2>
-  <p class="card-sub" style="margin-bottom:24px;">A private log of your workouts and progress — only you (and admins, for support) can see these entries. No pressure, no streak-shaming — just a record of showing up. (Want to post publicly instead? Try <a href="fitness-journeys.html" style="color:var(--accent-2);">Fitness Journeys</a>.)</p>
-
-  <div class="card" style="margin-bottom:28px;">
-    <form id="entryForm">
-      <div class="field">
-        <label for="je-date">Date</label>
-        <input type="date" id="je-date" required />
-      </div>
-      <div class="field">
-        <label for="je-activity">Activity</label>
-        <input type="text" id="je-activity" placeholder="e.g. Leg day, 5k run, rest day" maxlength="80" />
-      </div>
-      <div class="field">
-        <label for="je-mood">How did it feel?</label>
-        <input type="text" id="je-mood" placeholder="e.g. Strong, tired, great" maxlength="40" />
-      </div>
-      <div class="field">
-        <label for="je-notes">Notes</label>
-        <textarea id="je-notes" placeholder="Anything you want to remember about today…" maxlength="500"></textarea>
-      </div>
-      <button type="submit" class="btn btn-primary">Add Entry</button>
-    </form>
-  </div>
-
-  <div class="eyebrow">History</div>
-  <h2 style="font-size:18px; margin-bottom:16px;">Past entries</h2>
-  <div class="card">
-    <div id="entryList">
-      <div class="empty-state">Loading…</div>
-    </div>
-  </div>
-
-</div>
-
-<!-- Ken's ask (Oct 2026): the "self-hosted copy, fall back to CDN" setup
-     never actually had a self-hosted copy on disk (js/vendor/supabase.js
-     was never created), so EVERY page load was silently failing that first
-     request, then falling back to this exact CDN script via a blocking
-     document.write (which stalls the page while it reruns) -- on every
-     page, every load, website and app alike. That's the real reason things
-     have felt slower since that change went in, not the CDN itself. Loading
-     directly from the CDN, plainly, is both simpler and faster than the
-     broken fallback dance was. -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-<script src="js/config.js"></script>
-<script src="js/shared-session.js"></script>
-<script src="js/supabaseClient.js"></script>
-<script src="js/notifications.js"></script>
-<script>
-  var currentUser = null;
-
-  function escapeHtml(str) {
-    var div = document.createElement("div");
-    div.textContent = str || "";
-    return div.innerHTML;
-  }
-
-  function formatDate(dateStr) {
-    var d = new Date(dateStr + "T00:00:00");
-    return d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
-  }
-
-  async function loadEntries() {
-    var el = document.getElementById("entryList");
-    var { data, error } = await window.sb
-      .from("journal_entries")
-      .select("id, entry_date, activity, mood, notes, created_at")
-      .eq("user_id", currentUser.id)
-      .order("entry_date", { ascending: false })
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      el.innerHTML = '<div class="empty-state">Couldn\'t load your journey: ' + error.message + '</div>';
-      return;
-    }
-    if (!data || data.length === 0) {
-      el.innerHTML = '<div class="empty-state">No entries yet — add your first one above.</div>';
-      return;
-    }
-
-    el.innerHTML = "";
-    data.forEach(function (item) {
-      var row = document.createElement("div");
-      row.className = "review-row";
-      row.innerHTML =
-        '<div class="review-meta" style="flex:1;">' +
-          '<strong>' + formatDate(item.entry_date) + (item.activity ? " · " + escapeHtml(item.activity) : "") + '</strong>' +
-          (item.mood ? '<span>Felt: ' + escapeHtml(item.mood) + '</span>' : '') +
-          (item.notes ? '<div style="font-size:13px; color:var(--muted-invert); margin-top:4px;">' + escapeHtml(item.notes) + '</div>' : '') +
-        '</div>' +
-        '<div class="review-actions">' +
-          '<button class="btn btn-ghost btn-sm delete-entry-btn" data-id="' + item.id + '">Delete</button>' +
-        '</div>';
-      el.appendChild(row);
-    });
-
-    el.querySelectorAll(".delete-entry-btn").forEach(function (btn) {
-      btn.addEventListener("click", async function () {
-        if (!confirm("Delete this entry?")) return;
-        btn.disabled = true;
-        await window.sb.from("journal_entries").delete().eq("id", btn.getAttribute("data-id"));
-        await loadEntries();
-      });
-    });
-  }
-
-  document.getElementById("entryForm").addEventListener("submit", async function (e) {
-    e.preventDefault();
-    var date = document.getElementById("je-date").value;
-    var activity = document.getElementById("je-activity").value.trim();
-    var mood = document.getElementById("je-mood").value.trim();
-    var notes = document.getElementById("je-notes").value.trim();
-    if (!date) return;
-
-    var submitBtn = e.target.querySelector("button[type=submit]");
-    submitBtn.disabled = true;
-    submitBtn.textContent = "Saving…";
-
-    await window.sb.from("journal_entries").insert({
-      user_id: currentUser.id,
-      entry_date: date,
-      activity: activity || null,
-      mood: mood || null,
-      notes: notes || null
-    });
-
-    e.target.reset();
-    document.getElementById("je-date").value = new Date().toISOString().slice(0, 10);
-    submitBtn.disabled = false;
-    submitBtn.textContent = "Add Entry";
-    await loadEntries();
-  });
-
-  (async function init() {
-    currentUser = await requireAuth();
-    if (!currentUser) return;
-
-    // Ken's ask (Nov 2026): this page has no header/nav at all (see the
-    // markup above), so there's no admin "Queue" link or Sign Out link on
-    // this page to wire up — both were removed along with the header.
-    document.getElementById("je-date").value = new Date().toISOString().slice(0, 10);
-    await loadEntries();
-  })();
-</script>
-
+<script>window.location.replace("fitness-journeys.html");</script>
+<p style="padding:24px; font-family:Inter,sans-serif; color:#fff;">
+  Taking you to <a href="fitness-journeys.html" style="color:var(--accent-2,#ff3d68);">Share Your Journey</a>…
+</p>
 </body>
 </html>

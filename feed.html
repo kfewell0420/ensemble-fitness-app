@@ -1731,12 +1731,16 @@
          collided head-on with the separate, PUBLIC "Fitness Journeys"
          feature (fitness-journeys.html) — Ken logged a real entry here
          expecting it to post publicly like a Fitness Journey, since the
-         names were nearly identical. Nothing wrong with the feature
-         itself, just the label. -->
+         names were nearly identical.
+         Oct 2026, round 2 (Ken): "share your journey and fitness journey
+         should be one and the same... no private journal." The private
+         workout log is retired (journey.html now redirects to
+         fitness-journeys.html) and this panel now promotes the one
+         remaining journey feature, public and live the moment you post. -->
     <div class="rp-panel rp-panel-journey" id="rpJourneyPanel">
-      <div class="rp-panel-head"><span class="rp-panel-icon">🌱</span><span class="rp-panel-title">My Workout Journal</span></div>
-      <div class="rp-panel-empty">A private log just for you — jot a workout, note how you felt, and watch your record build.</div>
-      <a class="rp-panel-link" href="journey.html">Open My Journal →</a>
+      <div class="rp-panel-head"><span class="rp-panel-icon">🌱</span><span class="rp-panel-title">Share Your Journey</span></div>
+      <div class="rp-panel-empty">Post a win, a struggle, or a question — visible to the whole community, live the moment you share it.</div>
+      <a class="rp-panel-link" href="fitness-journeys.html">Share Your Journey →</a>
     </div>
     <div class="rp-panel rp-panel-quote" id="rpQuotePanel"></div>
     <div class="rp-panel rp-panel-gear" id="rpGearPanel"></div>
@@ -1919,8 +1923,11 @@
   // "Journeys" gets the same treatment (Ken's ask, Oct 2026): the internal
   // filter value ("Journeys" — used by data-filter, activeFilter, every
   // === "Journeys" branch below) is untouched, only the label shown on the
-  // chip now reads "Fitness Journeys" to match the marketing site's nav.
-  function categoryLabel(c) { return c === "Meal Prep" ? "Healthy Meal Prep" : c === "Journeys" ? "Fitness Journeys" : c; }
+  // chip changes. Oct 2026, round 2 (Ken): the private "My Journey" workout
+  // log and this public feature are now one and the same, renamed
+  // everywhere a member sees it to "Share Your Journey" — no more "Fitness
+  // Journeys" branding anywhere.
+  function categoryLabel(c) { return c === "Meal Prep" ? "Healthy Meal Prep" : c === "Journeys" ? "Share Your Journey" : c; }
 
   // Illustrative placeholders — the same six "not live posts yet" examples
   // already used on the public Healthy Meal Prep page on the marketing

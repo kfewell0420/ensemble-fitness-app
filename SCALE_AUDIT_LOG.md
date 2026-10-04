@@ -12,6 +12,111 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-04, round 2 — Merged the two "journey" features into one
+
+Same-day follow-up to the entry directly below. After seeing the new
+composer in place, Ken's call was to go further: "share your journey and
+fitness journey should be one and the same... there should be no fitness
+journey anywhere... no private journal... everyone can see it and then
+motivate you to continue." Combined the two features into exactly one,
+public, live-the-moment-you-post feature, branded "Share Your Journey"
+everywhere, on both the website and the mobile app.
+
+**Removed:**
+- The private per-member workout journal (`journal_entries` table,
+  previously `journey.html` / "My Workout Journal" / "My Journey") no
+  longer exists as a feature. `journey.html` is kept only as a redirect to
+  `fitness-journeys.html`, so any old bookmark, nav shortcut, or the
+  login-redirect allowlist in `login.html` that still points at it lands
+  safely on the real page instead of a dead link. Nothing anywhere reads or
+  writes `journal_entries` anymore.
+  - Members' old private entries are still sitting in that table,
+    untouched — they were written under a privacy promise, so they are
+    NOT surfaced anywhere now that the feature is public. No UI exists
+    anymore to view, add to, or delete them (Supabase dashboard only, same
+    as before).
+
+**Renamed "Fitness Journeys" → "Share Your Journey" everywhere a member
+can see it:**
+- `fitness-journeys.html`: page title, hero eyebrow.
+- `feed.html`: the "Journeys" filter chip's visible label; the sidebar
+  panel that used to promote the private journal now promotes this page
+  instead ("Share Your Journey →", links to `fitness-journeys.html`).
+- `find.html`: the Explore list used to have two separate rows ("My
+  Journey" and "Fitness Journeys") — collapsed into one "Share Your
+  Journey" row.
+- `books.html`, `member.html`, `music-library.html`, `profile.html`,
+  `admin.html`: top nav's "My Journey" link now reads "Share Your Journey"
+  and points at `fitness-journeys.html`.
+- `admin.html`'s Journeys tab already said "Share Your Journey" in its
+  eyebrow and already manages the public posts (`community_questions`) —
+  no change needed there besides the nav link above.
+
+**Unchanged (already matched what Ken asked for):** posting on
+`fitness-journeys.html` was already public and lived instantly with no
+moderation queue (see the in-app composer added earlier today) — that
+behavior didn't need to change, only the fact that it's now the only
+journey feature, and its name everywhere it's shown to a member.
+
+Synced to the mobile app's `www/` folder: `journey.html`,
+`fitness-journeys.html`, `feed.html`, `find.html`, `books.html`,
+`member.html`, `music-library.html`, `profile.html`. `admin.html` is
+internal-only and never ships to mobile, per the standing rule.
+
+## 2026-10-04 — Naming clarity, alignment fix, and in-app journey composer
+
+Not a scheduled weekly check — picking up same-day feature/bug work reported
+by Ken.
+
+**Fixed (naming collision, real-user confusion):**
+- The app had two different "journey" features with near-identical names:
+  "Start Your Journey" (private per-member log, `journal_entries` table,
+  `journey.html`) and "Fitness Journeys" (public long-form community
+  stories, `community_questions` table, `fitness-journeys.html`). Ken
+  himself posted to the private one expecting it to show up on the public
+  one. Renamed every headline/button on the private flow away from the word
+  "journey" (`journey.html`: eyebrow → "Private Journal", heading → "Your
+  private journal", submit button → "Add Entry", added an inline link over
+  to Fitness Journeys for anyone who meant to post publicly) and renamed the
+  public flow's duplicate "Start Your Journey" button to "Share Your
+  Journey" (`feed.html`, `fitness-journeys.html`) to match its sibling
+  link's existing text.
+
+**Fixed (layout):**
+- fitness-journeys.html: hero section used `max-width: 880px` while the
+  section below it used `1080px`, so the hero's left edge didn't line up
+  with the content beneath (Ken flagged via an annotated screenshot).
+  Matched the hero to `1080px`.
+
+**Fixed (cross-domain login bug, real bug report):**
+- Ken reported that clicking "Share Your Journey" while already logged into
+  the app sent him to a login page. Root cause: that button linked out to
+  the separate marketing site (`ensemblefitness.com/share-your-journey.html`),
+  a different domain that can't see the app's Supabase session — browsers
+  don't share localStorage/auth across origins, so an already-signed-in
+  member looked logged-out there. That page is a separate codebase outside
+  this workspace, so it can't be patched directly. Fix: built a real
+  composer right inside `fitness-journeys.html` — "Share Your Journey" and
+  "Share your own journey →" now open an in-page textarea that posts
+  straight to `community_questions` using the session already open in the
+  app (`status: "approved"`, matching the existing RLS insert policy), then
+  refreshes the list and scrolls to it. No more hand-off to another domain
+  for this flow.
+  - Also fixed a leftover bug from the same edit: `init()` still referenced
+    the old `EXTERNAL_SHARE_URL` variable removed when the composer was
+    added — would have thrown on every page load before the composer code
+    ever reached `requireAuth()`'s callers. Replaced with a `profiles`
+    lookup for the signer's display name (used as the post's `asker_name`)
+    and a call to wire up the composer's open/cancel/post handlers.
+
+**Still open, flagged not actioned:**
+- A separate ask ("all the members need to have their stuff visible when
+  they post," re: private `journal_entries`) had a draft RLS policy change
+  started in `sql/schema.sql` to make journal entries fully public, but it
+  was put on hold mid-edit pending whether the new Fitness Journeys composer
+  above already covers the real need. Not delivered, not applied — needs a
+  decision before continuing.
+
 ## 2026-10-03 — Branding pass (not a full weekly audit)
 
 Not a scheduled weekly check — picking up one incidental finding from
@@ -23,6 +128,16 @@ today's feature work so it doesn't get lost before next Monday's pass.
   this predates today's changes and wasn't introduced by them). Didn't
   track down which tag is unclosed yet since it wasn't part of what Ken
   asked for today; worth a real look on the next full audit pass.
+
+**Fixed (real-device bug report, same day):**
+- feed.html: Ken's Android phone hit a reproducible split-second scroll
+  hiccup right at the PAGE_SIZE boundary (reported as "between frame 8 and
+  9" — PAGE_SIZE is 8). Cause: `loadMoreObserver` had no `rootMargin`, so
+  the next batch's Supabase fetch didn't start until the 1px sentinel had
+  already scrolled fully into view — nothing left below it to scroll into
+  until that fetch resolved. Added `rootMargin: "0px 0px 900px 0px"` so the
+  fetch starts a post and a half early and is normally done before anyone
+  scrolls that far.
 
 ## 2026-10-02 — Initial audit
 

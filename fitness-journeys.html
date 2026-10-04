@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>Fitness Journeys — Ensemble Fitness</title>
+<title>Share Your Journey — Ensemble Fitness</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&family=Caveat:wght@600;700&family=Dancing+Script:wght@600;700&display=swap">
 <link rel="stylesheet" href="css/app.css?v=2" />
 <style>
@@ -122,6 +122,39 @@
     margin-bottom: 22px;
   }
   .fj-notice a { color: var(--accent-dark); font-weight: 700; text-decoration: underline; }
+
+  /* Ken's ask (Oct 2026): a real, in-app composer — "Share Your Journey"
+     used to send members out to a page on the marketing site that doesn't
+     recognize an already-signed-in app session (different site, browsers
+     don't share logins across domains), so it just asked everyone to sign
+     in again, a dead end Ken hit himself. This posts with the session the
+     member already has here, no detour. */
+  .fj-compose {
+    border: 1.5px solid var(--accent); border-radius: 14px;
+    padding: 20px 22px; background: #fff9f6; margin-bottom: 28px;
+    display: none;
+  }
+  .fj-compose.open { display: block; }
+  .fj-compose h3 { font-size: 16px; margin: 0 0 4px; color: #1a1d29; }
+  .fj-compose-sub { font-size: 13px; color: #6b7280; margin-bottom: 14px; }
+  .fj-compose textarea {
+    width: 100%; box-sizing: border-box; border: 1px solid #dfe1e6; border-radius: 10px;
+    padding: 12px 14px; font-size: 14px; font-family: inherit; color: #1a1d29;
+    resize: vertical; min-height: 90px;
+  }
+  .fj-compose-actions { display: flex; align-items: center; gap: 14px; margin-top: 12px; }
+  .fj-compose-post {
+    background: var(--accent); color: #fff; border: none; border-radius: 999px;
+    padding: 11px 22px; font-weight: 700; font-size: 13.5px; cursor: pointer; flex: 0 0 auto;
+  }
+  .fj-compose-post:disabled { opacity: 0.6; cursor: default; }
+  .fj-compose-cancel {
+    background: none; border: none; color: #6b7280; font-size: 13px;
+    font-weight: 600; cursor: pointer; padding: 0;
+  }
+  .fj-compose-msg { font-size: 13px; }
+  .fj-compose-msg.error { color: #c0392b; }
+  .fj-compose-msg.success { color: #1fae6e; }
   .fj-count-line { color: #6b7280; font-size: 13px; margin-bottom: 14px; }
 
   .fj-illustrative-panel {
@@ -168,11 +201,23 @@
 <body class="fj-page">
 
 <!-- Ken's ask (Nov 2026): this page should NOT show the usual site-wide
-     header/nav (logo, Community/My Journey/Gear/etc. links, Sign Out) —
-     same treatment as quote-library.html, fitness-plus.html, and
-     journey.html. The page should start right at the orange "Fitness
-     Journeys" eyebrow / "Progress you can look back on." hero below,
-     which is already first in the markup.
+     header/nav (logo, Community/Share Your Journey/Gear/etc. links, Sign
+     Out) — same treatment as quote-library.html and fitness-plus.html.
+     The page should start right at the orange "Share Your Journey"
+     eyebrow / "Progress you can look back on." hero below, which is
+     already first in the markup.
+     Oct 2026, round 2 (Ken): this page USED TO be the public half of two
+     separate "journey" features — this one public (community_questions),
+     plus a private per-member workout journal at journey.html
+     (journal_entries). Ken's call: "share your journey and fitness journey
+     should be one and the same... there should be no fitness journey
+     anywhere... no private journal." The private journal is retired
+     (journey.html now just redirects here) and this page is the one and
+     only journey feature, renamed from "Fitness Journeys" to "Share Your
+     Journey" everywhere a member can see it. Posting here was already
+     public and live-instantly (no moderation queue, see the composer
+     below) so no behavior changed, only the branding and the fact that
+     there's now only one of these.
      Nov 2026 follow-up: the header still needs to exist as an EMPTY shell
      (no brand, no links) so js/notifications.js has an .app-nav to inject
      the home icon + notification bell into — see quote-library.html's
@@ -208,19 +253,22 @@
   <div class="fj-hero-inner">
     <!-- Ken's ask (Oct 2026): this hero's subtitle used to say "A private
          journal built into your account" — that's actually describing the
-         OTHER feature (My Workout Journal / journal.html), not this one.
+         OTHER feature (My Workout Journal / journey.html), not this one.
          This page is the PUBLIC one: long-form posts, visible to the whole
          community, with reactions and replies. Also renamed the button
          from "Start Your Journey" (which collided with My Workout
          Journal's old button text, the actual source of Ken's mix-up) to
          "Share Your Journey," matching fjShareLink's text further down the
-         page exactly, since both buttons go to the same place. -->
-    <div class="fj-eyebrow">● Fitness Journeys</div>
+         page exactly, since both buttons go to the same place.
+         Oct 2026, round 2: the eyebrow itself ("Fitness Journeys") is now
+         retired too — this page is simply "Share Your Journey," the one
+         and only journey feature in the app. -->
+    <div class="fj-eyebrow">● Share Your Journey</div>
     <h1>Progress you can look back on.</h1>
     <p>Share your progress with the whole community — a long-form update, not just a quick log — and get real reactions and replies cheering you on.</p>
     <div class="fj-hero-actions">
       <a href="#fjReal" class="fj-btn fj-btn-primary">See Real Journeys</a>
-      <a id="fjStartLink" href="#" target="_blank" rel="noopener" class="fj-btn fj-btn-outline">Share Your Journey</a>
+      <a id="fjStartLink" href="#fjCompose" class="fj-btn fj-btn-outline">Share Your Journey</a>
     </div>
   </div>
 </section>
@@ -229,13 +277,25 @@
   <div class="fj-section-inner">
     <h2 id="fjReal">What real progress looks like →</h2>
     <p class="fj-sub" id="fjRealSub">Real posts from members, newest first.</p>
+
+    <div class="fj-compose" id="fjCompose">
+      <h3>Share Your Journey</h3>
+      <p class="fj-compose-sub">A win, a struggle, a question — whatever's true for you right now. Posts under your own name, visible to the whole community.</p>
+      <textarea id="fjComposeText" maxlength="600" placeholder="e.g. Down 12 lbs since January, and today was the first time a 5K didn't wreck me…"></textarea>
+      <div class="fj-compose-actions">
+        <button type="button" class="fj-compose-post" id="fjComposePost">Post</button>
+        <button type="button" class="fj-compose-cancel" id="fjComposeCancel">Cancel</button>
+        <span class="fj-compose-msg" id="fjComposeMsg"></span>
+      </div>
+    </div>
+
     <div class="fj-real-grid" id="fjRealGrid">
       <div class="fj-empty">Loading…</div>
     </div>
 
     <div class="fj-notice">
       The cards below are illustrative examples of the kind of thing members share — not real posts. As real members share their own journeys above, these examples are automatically replaced.
-      <a id="fjShareLink" href="#" target="_blank" rel="noopener">Share your own journey →</a>
+      <a id="fjShareLink" href="#fjCompose">Share your own journey →</a>
     </div>
 
     <p class="fj-count-line" id="fjCountLine"></p>
@@ -261,20 +321,17 @@
 <script src="js/notifications.js"></script>
 <script src="js/moderation.js"></script>
 <script>
-  // Points at the marketing site's real "Share Your Journey" page — that's
-  // where new community_questions rows actually get created; there's no
-  // in-app form for it yet. (Nov 2026: this used to point at a placeholder
-  // URL — ensemblefitness.com/fitness-journeys#share — that never matched
-  // any real page and 404'd. share-your-journey.html is the actual page,
-  // confirmed against every other link to it across the marketing site.)
-  // Using a new tab (target="_blank" above/below) rather than navigating
-  // this tab away is deliberate: this codebase has already hit "leaving
-  // the app to the marketing site logs the member out" once before (see
-  // feed.html's openJourneyReplyModal comment) — a new tab sidesteps that
-  // entirely since this app tab never navigates anywhere.
-  var EXTERNAL_SHARE_URL = "https://ensemblefitness.com/share-your-journey.html";
+  // Ken's ask (Oct 2026): "Share Your Journey" used to link out to the
+  // marketing site's share-your-journey.html, a different domain that
+  // doesn't share the app's login session — Ken hit this himself (signed
+  // into the app, "Share Your Journey" sent him to a separate sign-in
+  // form that didn't recognize him). Both buttons below (#fjStartLink,
+  // #fjShareLink) are now plain #fjCompose anchors that reveal the real
+  // composer further down this script instead, posting with the session
+  // this page already has.
 
   var currentUserId = null;
+  var currentDisplayName = "A member";
   var AVATAR_COLORS = ["#ff3d68", "#ff9a3d", "#3dd6ff", "#7a3dff", "#3dff9e", "#ffd23d"];
   function avatarColor(userId) {
     var hash = 0;
@@ -296,6 +353,68 @@
     var days = Math.floor(hrs / 24);
     if (days < 30) return days + "d ago";
     return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  }
+
+  // ---------------- Share Your Journey (in-app composer) ----------------
+  function wireComposer() {
+    var compose = document.getElementById("fjCompose");
+    var textarea = document.getElementById("fjComposeText");
+    var postBtn = document.getElementById("fjComposePost");
+    var cancelBtn = document.getElementById("fjComposeCancel");
+    var msg = document.getElementById("fjComposeMsg");
+
+    function openComposer() {
+      compose.classList.add("open");
+      textarea.focus();
+    }
+    function closeComposer() {
+      compose.classList.remove("open");
+      textarea.value = "";
+      msg.textContent = "";
+      msg.className = "fj-compose-msg";
+    }
+
+    document.getElementById("fjStartLink").addEventListener("click", function (e) {
+      e.preventDefault();
+      openComposer();
+    });
+    document.getElementById("fjShareLink").addEventListener("click", function (e) {
+      e.preventDefault();
+      openComposer();
+    });
+    cancelBtn.addEventListener("click", closeComposer);
+
+    postBtn.addEventListener("click", async function () {
+      var text = textarea.value.trim();
+      if (!text) {
+        msg.textContent = "Write something first.";
+        msg.className = "fj-compose-msg error";
+        return;
+      }
+      postBtn.disabled = true;
+      msg.textContent = "Posting…";
+      msg.className = "fj-compose-msg";
+      try {
+        // Matches the "members can post a story" RLS policy exactly
+        // (sql/schema.sql): auth.uid() = user_id AND status = 'approved' —
+        // these posts go live immediately, no admin review step.
+        var { error } = await window.sb.from("community_questions").insert({
+          user_id: currentUserId,
+          asker_name: currentDisplayName,
+          question_text: text,
+          status: "approved"
+        });
+        if (error) throw error;
+        closeComposer();
+        await loadRealJourneys();
+        document.getElementById("fjReal").scrollIntoView({ behavior: "smooth", block: "start" });
+      } catch (err) {
+        msg.textContent = (err && err.message) || "Couldn't post that — please try again.";
+        msg.className = "fj-compose-msg error";
+      } finally {
+        postBtn.disabled = false;
+      }
+    });
   }
 
   // ---------------- Real journeys (community_questions) ----------------
@@ -525,8 +644,19 @@
     // markup above), so there's no admin "Queue" link or Sign Out link on
     // this page to wire up — both were removed along with the header.
 
-    document.getElementById("fjStartLink").href = EXTERNAL_SHARE_URL;
-    document.getElementById("fjShareLink").href = EXTERNAL_SHARE_URL;
+    // Ken's ask (Oct 2026): "Share Your Journey" used to send people to a
+    // separate marketing-site page (share-your-journey.html) that doesn't
+    // know they're already logged into the app — different domain, so the
+    // app's session isn't visible there, and they'd land on a login form
+    // even though they were already signed in. Fixed by building the
+    // composer right here in the app, using the session we already have.
+    var { data: profileRow } = await window.sb
+      .from("profiles")
+      .select("display_name")
+      .eq("id", currentUserId)
+      .maybeSingle();
+    currentDisplayName = (profileRow && profileRow.display_name) || "A member";
+    wireComposer();
 
     await loadRealJourneys();
     renderIllustrative();
