@@ -12,8 +12,8 @@
 <!-- Ken's ask (Nov 2026): this page should NOT show the usual site-wide
      header/nav (logo, Community/My Journey/Gear/etc. links, Sign Out) —
      same treatment as quote-library.html and fitness-plus.html. The page
-     should start right at the orange "Fitness Journey" eyebrow / "Your
-     journal" heading below, which is already first in the markup.
+     should start right at the orange "Private Journal" eyebrow / "Your
+     private journal" heading below, which is already first in the markup.
      Nov 2026 follow-up: the header still needs to exist as an EMPTY shell
      (no brand, no links) so js/notifications.js has an .app-nav to inject
      the home icon + notification bell into — see quote-library.html's
@@ -40,9 +40,17 @@
 
 <div class="app-shell">
 
-  <div class="eyebrow">Fitness Journey</div>
-  <h2 style="margin-bottom:6px;">Your journal</h2>
-  <p class="card-sub" style="margin-bottom:24px;">A private log of your workouts and progress — only you (and admins, for support) can see these entries. No pressure, no streak-shaming — just a record of showing up.</p>
+  <!-- Ken's ask (Oct 2026): the eyebrow used to say "Fitness Journey"
+       (singular) — close enough to "Fitness Journeys" (the separate,
+       PUBLIC long-form-story feature, fitness-journeys.html) that Ken
+       himself mixed the two up logging a real entry here and expecting it
+       to show up there. Renamed everything on this page away from the word
+       "journey" where it's the headline text, so there's no more visual
+       pattern-match between the two features. The body copy already said
+       "private" — it just wasn't loud enough on its own. -->
+  <div class="eyebrow">Private Journal</div>
+  <h2 style="margin-bottom:6px;">Your private journal</h2>
+  <p class="card-sub" style="margin-bottom:24px;">A private log of your workouts and progress — only you (and admins, for support) can see these entries. No pressure, no streak-shaming — just a record of showing up. (Want to post publicly instead? Try <a href="fitness-journeys.html" style="color:var(--accent-2);">Fitness Journeys</a>.)</p>
 
   <div class="card" style="margin-bottom:28px;">
     <form id="entryForm">
@@ -62,7 +70,7 @@
         <label for="je-notes">Notes</label>
         <textarea id="je-notes" placeholder="Anything you want to remember about today…" maxlength="500"></textarea>
       </div>
-      <button type="submit" class="btn btn-primary">Add to Journey</button>
+      <button type="submit" class="btn btn-primary">Add Entry</button>
     </form>
   </div>
 
@@ -171,7 +179,7 @@
     e.target.reset();
     document.getElementById("je-date").value = new Date().toISOString().slice(0, 10);
     submitBtn.disabled = false;
-    submitBtn.textContent = "Add to Journey";
+    submitBtn.textContent = "Add Entry";
     await loadEntries();
   });
 
