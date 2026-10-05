@@ -12,6 +12,26 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-05, round 3 — added a real Edit to admin.html's Quote Library tab
+
+Ken spotted a double "!!" at the end of the live quote of the day and asked
+how to fix it. Turned out there was no way to — admin.html's Quote Library
+tab could only Add a new quote or Deactivate/Reactivate an existing one,
+nothing to fix a typo in place. The workaround (deactivate the broken one,
+add a corrected one) would also have reset that quote's `created_at` to
+now, bumping it to the back of the daily rotation and shifting which quote
+shows as "today's" for every member — not just a cosmetic side effect.
+
+Added a proper "Edit" button next to Deactivate/Reactivate: swaps the row
+into two text inputs (quote + author) with Save/Cancel. Save only updates
+`quote_text`/`author` — `created_at`, `is_active`, and the quote's spot in
+the rotation are all left alone. This is admin.html only, so there's
+nothing to sync to mobile (admin.html never ships there, per the standing
+rule).
+
+**To fix today's typo**: open admin.html → Quote Library tab, find the one
+marked "Today ★", hit Edit, remove the extra "!", hit Save.
+
 ## 2026-10-05, round 2 — quote-library.html renamed to "Daily Inspiration" and switched to one quote a day
 
 Ken's ask: the page was dumping every active quote in the `quotes` table at

@@ -333,7 +333,7 @@
     <div class="admin-tab-panel" data-tab="quotes" hidden>
       <div class="eyebrow">Quote Library</div>
       <h2>Quotes shown on the Quote Library page</h2>
-      <p class="card-sub" style="margin-bottom:24px;">Add a quote here and it instantly shows up on quote-library.html. "Deactivate" pulls a quote from that page without deleting it.</p>
+      <p class="card-sub" style="margin-bottom:24px;">Add a quote here and it instantly shows up on quote-library.html. "Edit" fixes a typo in place (without affecting its spot in the daily rotation); "Deactivate" pulls a quote from that page without deleting it.</p>
 
       <div class="card" style="margin-bottom:20px;">
         <div class="form-msg" id="quoteMsg"></div>
@@ -1544,12 +1544,14 @@
       var isToday = item.id === todayId;
       var row = document.createElement("div");
       row.className = "review-row";
+      row.setAttribute("data-quote-id", item.id);
       row.innerHTML =
         '<div class="review-meta">' +
           '<strong>' + (isToday ? '<span style="color:var(--accent-2);">Today ★</span> ' : '') + '“' + escapeHtmlAdmin(item.quote_text) + '”</strong>' +
           '<span>' + (item.author ? escapeHtmlAdmin(item.author) : "Unknown") + (item.is_active ? '' : ' · inactive') + '</span>' +
         '</div>' +
         '<div class="review-actions">' +
+          '<button class="btn btn-ghost btn-sm edit-quote-btn" data-id="' + item.id + '">Edit</button>' +
           '<button class="btn btn-ghost btn-sm toggle-quote-btn" data-id="' + item.id + '" data-active="' + item.is_active + '">' + (item.is_active ? "Deactivate" : "Reactivate") + '</button>' +
         '</div>';
       el.appendChild(row);
@@ -1561,6 +1563,46 @@
         var isActive = btn.getAttribute("data-active") === "true";
         await window.sb.from("quotes").update({ is_active: !isActive }).eq("id", btn.getAttribute("data-id"));
         await loadQuotes();
+      });
+    });
+
+    // Ken's ask (Oct 2026, round 3): a typo in a quote (he flagged a double
+    // "!!" he spotted on the live quote of the day) used to have no fix
+    // short of Deactivate-and-re-add — which also bumps the quote to the
+    // back of the rotation (created_at resets), shifting which quote shows
+    // as "today's" for everyone. A real inline Edit swaps the row's text
+    // for two inputs (quote + author) with Save/Cancel, and Save only
+    // updates quote_text/author in place — created_at, is_active, and the
+    // quote's position in the rotation are all untouched.
+    el.querySelectorAll(".edit-quote-btn").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var id = btn.getAttribute("data-id");
+        var item = data.find(function (q) { return q.id === id; });
+        var row = el.querySelector('[data-quote-id="' + id + '"]');
+        row.innerHTML =
+          '<div class="review-meta" style="flex:1;">' +
+            '<div class="field" style="margin-bottom:8px;">' +
+              '<input type="text" class="edit-quote-text" value="' + escapeAttrAdmin(item.quote_text) + '" maxlength="400" />' +
+            '</div>' +
+            '<div class="field" style="margin-bottom:0;">' +
+              '<input type="text" class="edit-quote-author" value="' + escapeAttrAdmin(item.author || "") + '" placeholder="Author (optional)" maxlength="120" />' +
+            '</div>' +
+          '</div>' +
+          '<div class="review-actions">' +
+            '<button class="btn btn-primary btn-sm save-quote-btn">Save</button>' +
+            '<button class="btn btn-ghost btn-sm cancel-quote-btn">Cancel</button>' +
+          '</div>';
+        row.querySelector(".cancel-quote-btn").addEventListener("click", function () { loadQuotes(); });
+        row.querySelector(".save-quote-btn").addEventListener("click", async function () {
+          var newText = row.querySelector(".edit-quote-text").value.trim();
+          var newAuthor = row.querySelector(".edit-quote-author").value.trim();
+          if (!newText) return;
+          var saveBtn = this;
+          saveBtn.disabled = true;
+          saveBtn.textContent = "Saving…";
+          await window.sb.from("quotes").update({ quote_text: newText, author: newAuthor || null }).eq("id", id);
+          await loadQuotes();
+        });
       });
     });
   }
