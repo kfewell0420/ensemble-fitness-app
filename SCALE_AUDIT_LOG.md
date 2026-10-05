@@ -12,6 +12,36 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-05 — Music Library's "How It Works" rewritten for listeners, not artists
+
+Ken's ask, prompted by a conversation with an artist: the "How It Works"
+card on `music-library.html` still explained how to UPLOAD a track (Prep
+your track / Give it a title / Upload it right here / You're live
+instantly) — left over from "when we first started our site." That's not
+what a typical member needs explained; it's how tipping/the wallet works.
+Rewritten from the listener's side:
+
+1. Add to Your Wallet — add $1/$2/$5+ so you're ready to tip.
+2. Listen & Discover — browse the Music Library for independent artists.
+3. Tip an Artist — send a tip straight from the wallet with one tap.
+4. 100% Goes to the Artist — Ensemble Fitness takes no cut.
+
+Plus one closing line under the four steps: "Good music moves us.
+Supporting the people who create it moves us forward."
+
+Deliberately no mention of Stripe or artist payout setup anywhere in these
+four steps — Ken's explicit call: a listener shouldn't need to understand
+Stripe, and payout setup is handled entirely on the artist side already.
+To a member it should just feel like add money → find music → tip artist →
+artist gets the support.
+
+Synced to the mobile app's `www/music-library.html`.
+
+**Still open:** Ken also wants the line directly under "Your Wallet" (the
+balance) reworded away from "Add to your wallet to tip artists" — his
+message cut off before the replacement text. Waiting on that before
+touching it.
+
 ## 2026-10-04, round 3 — Share Your Journey redesigned to match the old private journal's layout ⚠️ REQUIRES A SUPABASE STEP
 
 Same-day follow-up again. Ken sent a screenshot of the old private-journal

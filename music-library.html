@@ -162,20 +162,14 @@
 
   </div>
 
-  <!-- Ken's ask (Oct 2026): the "How it works" explainer for submitting
-       music only existed on the public marketing site (submit-music.html),
-       for artists who don't have an account yet. Signed-in members land
-       here without ever seeing that page, so there was nowhere in the app
-       itself explaining how their own upload actually works. This is the
-       in-app equivalent — same idea (4 numbered steps), but rewritten for
-       someone who's already a member: no mention of submitting for review
-       or emailing anything, since a member's own upload (via the Upload
-       Music button below, which goes straight to upload.html's Song flow)
-       publishes straight to the library the moment they do it — see
-       upload.html's own copy ("no waiting on approval"). Reuses the same solid dark
-       card look as the Browse Tracks / Wallet cards right above it (see
-       .ml-shell .card) so this reads as one consistent page, not a bolted-on
-       section.
+  <!-- Ken's ask (Oct 2026, original version): the "How it works" explainer
+       for submitting music only existed on the public marketing site
+       (submit-music.html), for artists who don't have an account yet.
+       Signed-in members land here without ever seeing that page, so there
+       was nowhere in the app itself explaining how their own upload
+       actually works. Reuses the same solid dark card look as the Browse
+       Tracks / Wallet cards right above it (see .ml-shell .card) so this
+       reads as one consistent page, not a bolted-on section.
 
        Nov 2026, Ken's ask: this used to sit ABOVE .ml-shell (Browse Tracks
        / Your Wallet), between the stats row and the two cards — meaning a
@@ -183,34 +177,48 @@
        anything clickable. Moved to here, after both cards, so the two
        things members actually tap (Browse Playlist, Upload Music) are the
        first thing they reach; this explainer is still right there for
-       anyone who wants it, just no longer in the way. -->
+       anyone who wants it, just no longer in the way.
+
+       Oct 2026, round 2 — rewritten for listeners, not artists: an artist
+       Ken spoke with flagged that this still explained how to UPLOAD a
+       track, left over from "when we first started our site" — not what
+       the typical member actually needs to understand, which is how
+       tipping/the wallet works. Rewritten from the listener's side:
+       add money → find music → tip an artist → the artist gets the
+       support. Deliberately says nothing about Stripe or artist payout
+       setup anywhere in these four steps — Ken's call: "the listener
+       shouldn't need to understand Stripe... it should feel as simple as"
+       that one sentence above. Stripe/payout stays entirely on the
+       infrastructure and artist-upload side (upload.html, sql/), never
+       surfaced to a member just looking to tip someone. -->
   <div class="ml-how">
     <div class="ml-how-head">
       <div class="eyebrow" style="margin-bottom:4px;">How It Works</div>
-      <h3>Get your own track in the library</h3>
+      <h3>Support the artists behind your workout</h3>
     </div>
     <div class="ml-how-grid">
       <div class="ml-how-step">
         <div class="ml-how-num">1</div>
-        <h4>Prep your track</h4>
-        <p>Export it as an MP3, M4A, or WAV file — keep the size reasonable so it loads quickly for other members.</p>
+        <h4>Add to Your Wallet</h4>
+        <p>Add $1, $2, $5 or more to your wallet so you're ready to support the artists you enjoy.</p>
       </div>
       <div class="ml-how-step">
         <div class="ml-how-num">2</div>
-        <h4>Give it a title</h4>
-        <p>You'll be asked for a song title when you upload it — that's what shows up here for everyone to see.</p>
+        <h4>Listen &amp; Discover</h4>
+        <p>Browse the Music Library and find independent artists and tracks that move you.</p>
       </div>
       <div class="ml-how-step">
         <div class="ml-how-num">3</div>
-        <h4>Upload it right here</h4>
-        <p>Tap "Upload Music" below and choose your audio file — no separate form or email, and nothing else on the page to get through.</p>
+        <h4>Tip an Artist</h4>
+        <p>Love a track? Send the artist a tip directly from your wallet with a simple tap.</p>
       </div>
       <div class="ml-how-step">
         <div class="ml-how-num">4</div>
-        <h4>You're live instantly</h4>
-        <p>Your track publishes to the Music Library right away under your name — no approval wait, unlike photos and videos.</p>
+        <h4>100% Goes to the Artist</h4>
+        <p>Your support goes directly to the artist. Ensemble Fitness doesn't take a percentage of your tip.</p>
       </div>
     </div>
+    <p class="ml-how-closing">Good music moves us. Supporting the people who create it moves us forward.</p>
   </div>
 
   <!-- Ken's ask (Sept 2026): these are unlicensed, independent artists —
@@ -466,6 +474,20 @@
   }
   .ml-how-step h4 { font-size: 14.5px; color: #fff; margin: 0 0 6px; }
   .ml-how-step p { font-size: 13px; line-height: 1.5; color: var(--muted-invert); margin: 0; }
+  /* Ken's ask (Oct 2026, round 2): "one strong closing statement" under the
+     four steps — set apart with a divider and bigger, warmer (accent)
+     text so it reads as the card's takeaway line, not one more body
+     paragraph. */
+  .ml-how-closing {
+    margin: 20px 0 0;
+    padding-top: 18px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    text-align: center;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--accent-2);
+  }
 
   /* ---- Browse Tracks header + button -------------------------------------- */
   /* Now that there's a busy photo behind the page instead of a soft glow,
