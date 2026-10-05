@@ -365,7 +365,7 @@
     <div class="admin-tab-panel" data-tab="gear" hidden>
       <div class="eyebrow">Fit Marketplace</div>
       <h2>Ensemble Approved Products — real picks</h2>
-      <p class="card-sub" style="margin-bottom:24px;">Paste a real Amazon and/or TikTok link, add a photo if you have one, and write your own one-line take. It goes live on the public Ensemble Approved Products page right away — no code, no waiting on a deploy. "Deactivate" pulls a pick from the page without losing it.</p>
+      <p class="card-sub" style="margin-bottom:24px;">Paste a real Amazon and/or TikTok link, add a photo if you have one, and write your own one-line take. It goes live on the public Ensemble Approved Products page right away — no code, no waiting on a deploy. "Edit" fixes any text field in place (the photo isn't editable there — re-add the pick if the photo needs to change); "Deactivate" pulls a pick from the page without losing it.</p>
 
       <div class="card" style="margin-bottom:20px;">
         <div class="form-msg" id="gearMsg"></div>
@@ -1961,6 +1961,7 @@
       var photoUrl = gearPhotoUrl(item.image_path);
       var row = document.createElement("div");
       row.className = "review-row";
+      row.setAttribute("data-gear-id", item.id);
       row.innerHTML =
         '<div class="review-thumb">' + (photoUrl ? '<img src="' + photoUrl + '" alt="" />' : '<div class="audio-card"><span class="audio-ico">🛍️</span></div>') + '</div>' +
         '<div class="review-meta">' +
@@ -1973,6 +1974,7 @@
           '</div>' +
         '</div>' +
         '<div class="review-actions">' +
+          '<button class="btn btn-ghost btn-sm edit-gear-btn" data-id="' + item.id + '">Edit</button>' +
           '<button class="btn btn-ghost btn-sm toggle-gear-btn" data-id="' + item.id + '" data-active="' + item.is_active + '">' + (item.is_active ? "Deactivate" : "Reactivate") + '</button>' +
         '</div>';
       el.appendChild(row);
@@ -1984,6 +1986,101 @@
         var isActive = btn.getAttribute("data-active") === "true";
         await window.sb.from("approved_gear_items").update({ is_active: !isActive }).eq("id", btn.getAttribute("data-id"));
         await loadGear();
+      });
+    });
+
+    // Ken's ask (Oct 2026): same reasoning as the Quote Library's Edit
+    // button — fixing a typo used to mean Deactivate-and-re-add, which also
+    // resets created_at (so the item jumps to the top/bottom of its list
+    // and loses its original add date). A real inline Edit swaps the row's
+    // text fields (name/category/note/price/the two links) for inputs with
+    // Save/Cancel; the photo itself isn't editable here — re-upload a new
+    // pick if a photo needs to change, everything else can be fixed in
+    // place. Amazon/TikTok links keep the same "at least one required"
+    // rule the Add form uses, so Save can't leave a pick with neither.
+    el.querySelectorAll(".edit-gear-btn").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var id = btn.getAttribute("data-id");
+        var item = data.find(function (g) { return g.id === id; });
+        var row = el.querySelector('[data-gear-id="' + id + '"]');
+        row.innerHTML =
+          '<div class="review-meta" style="flex:1;">' +
+            '<div class="form-msg" style="margin-bottom:10px;"></div>' +
+            '<div class="field" style="margin-bottom:8px;">' +
+              '<label style="font-size:11.5px;">Product name</label>' +
+              '<input type="text" class="edit-gear-name" value="' + escapeAttrAdmin(item.name) + '" maxlength="150" />' +
+            '</div>' +
+            '<div class="field" style="margin-bottom:8px;">' +
+              '<label style="font-size:11.5px;">Category</label>' +
+              '<input type="text" class="edit-gear-category" value="' + escapeAttrAdmin(item.category) + '" maxlength="40" />' +
+            '</div>' +
+            '<div class="field" style="margin-bottom:8px;">' +
+              '<label style="font-size:11.5px;">Your take</label>' +
+              '<input type="text" class="edit-gear-note" value="' + escapeAttrAdmin(item.note || "") + '" maxlength="200" />' +
+            '</div>' +
+            '<div class="field" style="margin-bottom:8px;">' +
+              '<label style="font-size:11.5px;">Price</label>' +
+              '<input type="text" class="edit-gear-price" value="' + escapeAttrAdmin(item.price || "") + '" maxlength="20" />' +
+            '</div>' +
+            '<div class="field" style="margin-bottom:8px;">' +
+              '<label style="font-size:11.5px;">Amazon link</label>' +
+              '<input type="text" class="edit-gear-amazon" value="' + escapeAttrAdmin(item.amazon_url || "") + '" maxlength="500" />' +
+            '</div>' +
+            '<div class="field" style="margin-bottom:0;">' +
+              '<label style="font-size:11.5px;">TikTok link</label>' +
+              '<input type="text" class="edit-gear-tiktok" value="' + escapeAttrAdmin(item.tiktok_url || "") + '" maxlength="500" />' +
+            '</div>' +
+          '</div>' +
+          '<div class="review-actions">' +
+            '<button class="btn btn-primary btn-sm save-gear-btn">Save</button>' +
+            '<button class="btn btn-ghost btn-sm cancel-gear-btn">Cancel</button>' +
+          '</div>';
+        row.querySelector(".cancel-gear-btn").addEventListener("click", function () { loadGear(); });
+        row.querySelector(".save-gear-btn").addEventListener("click", async function () {
+          var msg = row.querySelector(".form-msg");
+          var name = row.querySelector(".edit-gear-name").value.trim();
+          var category = row.querySelector(".edit-gear-category").value.trim();
+          var note = row.querySelector(".edit-gear-note").value.trim();
+          var price = row.querySelector(".edit-gear-price").value.trim();
+          var amazonUrl = row.querySelector(".edit-gear-amazon").value.trim();
+          var tiktokUrl = row.querySelector(".edit-gear-tiktok").value.trim();
+
+          if (!name || !category || (!amazonUrl && !tiktokUrl)) {
+            msg.textContent = "Product name, category, and at least one link (Amazon or TikTok) are required.";
+            msg.className = "form-msg show error";
+            return;
+          }
+          if (amazonUrl && !/^https?:\/\//i.test(amazonUrl)) {
+            msg.textContent = "That Amazon link doesn't look valid — it should start with https://";
+            msg.className = "form-msg show error";
+            return;
+          }
+          if (tiktokUrl && !/^https?:\/\//i.test(tiktokUrl)) {
+            msg.textContent = "That TikTok link doesn't look valid — it should start with https://";
+            msg.className = "form-msg show error";
+            return;
+          }
+
+          var saveBtn = this;
+          saveBtn.disabled = true;
+          saveBtn.textContent = "Saving…";
+          var { error } = await window.sb.from("approved_gear_items").update({
+            name: name,
+            category: category,
+            note: note || null,
+            price: price || null,
+            amazon_url: amazonUrl || null,
+            tiktok_url: tiktokUrl || null
+          }).eq("id", id);
+          if (error) {
+            msg.textContent = error.message || "Couldn't save that — please try again.";
+            msg.className = "form-msg show error";
+            saveBtn.disabled = false;
+            saveBtn.textContent = "Save";
+            return;
+          }
+          await loadGear();
+        });
       });
     });
   }

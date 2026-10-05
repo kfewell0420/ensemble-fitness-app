@@ -12,6 +12,22 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-05, round 4 — added a real Edit to admin.html's Approved Products tab
+
+Same fix as the Quote Library Edit, same day: Ken is about to bulk-load the
+Approved Products (Amazon/TikTok picks) tab today and asked for this ahead
+of time so a typo doesn't mean deactivating and re-adding a whole pick
+(which would also reset its `created_at` and its spot in the list).
+
+Added an "Edit" button next to Deactivate/Reactivate on each pick: swaps
+the row into editable fields for name, category, your take, price, and
+both links, with Save/Cancel. Save re-runs the same validation the Add form
+uses (name + category required, at least one of Amazon/TikTok required,
+both links must start with `https://`) so a save can't leave a pick
+broken. The product photo itself isn't editable here — re-adding the pick
+is still the way to change a photo, everything else can be fixed in place.
+This is admin.html only, so nothing to sync to mobile.
+
 ## 2026-10-05, round 3 — added a real Edit to admin.html's Quote Library tab
 
 Ken spotted a double "!!" at the end of the live quote of the day and asked
