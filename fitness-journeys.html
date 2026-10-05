@@ -67,9 +67,9 @@
   }
   .fj-hero-actions { display: flex; gap: 12px; flex-wrap: wrap; }
 
-  /* ---- How it works (toggled by the hero's "See How It Works" button) -- */
-  .fj-how { display: none; margin-bottom: 28px; }
-  .fj-how.show { display: block; }
+  /* ---- How it works (lives at the very bottom of the page — see the
+     round-6 comment by #fjHowCard's markup for why) ----------------------- */
+  .fj-how { margin-top: 28px; }
   .fj-how-steps {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -213,26 +213,8 @@
     <p>Every post here is from a real Ensemble Fitness member — the wins, the hard days, and everything in between. Share where you're at, and cheer someone else on.</p>
     <div class="fj-hero-actions">
       <button type="button" class="btn btn-primary" id="fjStartBtn">Start Your Journey</button>
+      <button type="button" class="btn btn-ghost" id="fjViewJourneysBtn">View Recent Journeys</button>
       <button type="button" class="btn btn-ghost" id="fjHowBtn">See How It Works</button>
-    </div>
-  </div>
-
-  <div class="card fj-how" id="fjHowCard">
-    <div class="eyebrow">How It Works</div>
-    <h2 style="font-size:18px; margin-bottom:0;">Three simple steps</h2>
-    <div class="fj-how-steps">
-      <div class="fj-how-step">
-        <strong>1. Pick a category</strong>
-        <span>Weight loss, building strength, running, nutrition, recovery, mental health, over 40, or just starting out.</span>
-      </div>
-      <div class="fj-how-step">
-        <strong>2. Share your update</strong>
-        <span>Today's date, what you did, how it felt, and a note if you want one. One button — it posts right away.</span>
-      </div>
-      <div class="fj-how-step">
-        <strong>3. Cheer each other on</strong>
-        <span>React, comment, and show up for someone else's post. No streaks, no pressure — just real support.</span>
-      </div>
     </div>
   </div>
 
@@ -269,7 +251,7 @@
     </form>
   </div>
 
-  <div class="eyebrow">Real Journeys</div>
+  <div class="eyebrow" id="fjJourneysAnchor">Real Journeys</div>
   <h2 style="font-size:18px; margin-bottom:4px;">What the community's up to</h2>
   <p class="card-sub fj-count-line" id="fjCountLine" style="margin-bottom:16px;">Loading…</p>
 
@@ -283,6 +265,36 @@
     <h3>Your journey matters.</h3>
     <p>Every step forward is worth celebrating — share yours, and cheer on someone else's.</p>
     <button type="button" class="btn btn-primary" id="fjCtaBtn">Share Your Journey</button>
+  </div>
+
+  <!-- Ken's ask (Oct 2026, round 6): "How It Works" moved down here, under
+       everything else — originally it sat right under the hero (revealed
+       by the hero's "See How It Works" button). Ken's call: "we're trying
+       to get people to click on the site, not be deterred from scrolling
+       and scrolling... it has to be quick access on the mobile." Posting
+       and the real journeys feed are the whole point of the page, so they
+       stay right under the hero; the explainer is a step below the fold
+       for anyone who wants it, reached instantly via the hero's own "See
+       How It Works" button (a scroll-to-anchor now, not a reveal/hide
+       toggle — nothing on the page is hidden anymore, it's just ordered by
+       what matters most first). -->
+  <div class="card fj-how" id="fjHowCard">
+    <div class="eyebrow">How It Works</div>
+    <h2 style="font-size:18px; margin-bottom:0;">Three simple steps</h2>
+    <div class="fj-how-steps">
+      <div class="fj-how-step">
+        <strong>1. Pick a category</strong>
+        <span>Weight loss, building strength, running, nutrition, recovery, mental health, over 40, or just starting out.</span>
+      </div>
+      <div class="fj-how-step">
+        <strong>2. Share your update</strong>
+        <span>Today's date, what you did, how it felt, and a note if you want one. One button — it posts right away.</span>
+      </div>
+      <div class="fj-how-step">
+        <strong>3. Cheer each other on</strong>
+        <span>React, comment, and show up for someone else's post. No streaks, no pressure — just real support.</span>
+      </div>
+    </div>
   </div>
 
 </div>
@@ -372,16 +384,23 @@
     });
   }
 
-  // ---------------- Hero buttons / How It Works ----------------------------
+  // ---------------- Hero buttons — quick-jump anchors, nothing hidden ------
+  // Ken's ask (Oct 2026, round 6): three buttons in the hero, each jumping
+  // straight to its own section of this one page — Start Your Journey (the
+  // composer), View Recent Journeys (the real-posts grid, "the page I
+  // provided you with... their profile outline and stuff"), and See How
+  // It Works (the explainer, now moved to the very bottom — see its own
+  // comment). Quick access on mobile without a lot of scrolling-to-find.
   function wireHeroButtons() {
-    function scrollToComposer() {
-      document.getElementById("fjComposerAnchor").scrollIntoView({ behavior: "smooth", block: "start" });
+    function scrollTo(id) {
+      return function () {
+        document.getElementById(id).scrollIntoView({ behavior: "smooth", block: "start" });
+      };
     }
-    document.getElementById("fjStartBtn").addEventListener("click", scrollToComposer);
-    document.getElementById("fjCtaBtn").addEventListener("click", scrollToComposer);
-    document.getElementById("fjHowBtn").addEventListener("click", function () {
-      document.getElementById("fjHowCard").classList.toggle("show");
-    });
+    document.getElementById("fjStartBtn").addEventListener("click", scrollTo("fjComposerAnchor"));
+    document.getElementById("fjCtaBtn").addEventListener("click", scrollTo("fjComposerAnchor"));
+    document.getElementById("fjViewJourneysBtn").addEventListener("click", scrollTo("fjJourneysAnchor"));
+    document.getElementById("fjHowBtn").addEventListener("click", scrollTo("fjHowCard"));
   }
 
   // ---------------- Share Your Journey (composer) ---------------------------

@@ -12,6 +12,26 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-05, round 6 — reordered the new journeys page so real content comes first
+
+Same-day follow-up to round 5, after Ken saw it live. Two changes:
+
+1. Added a third hero button, "View Recent Journeys," next to Start Your
+   Journey and See How It Works — jumps straight down to the real-posts
+   grid ("the page I provided you with... their profile outline and stuff
+   like that").
+2. Moved the "How It Works" explainer from right under the hero down to
+   the very bottom of the page, under the "Your journey matters" banner.
+   Ken's reasoning: "we're trying to get people to click on the site, not
+   be deterred from scrolling and scrolling... it has to be quick access
+   on the mobile." It's no longer a reveal/hide toggle either — nothing on
+   the page is hidden now, the hero's "See How It Works" button just
+   scrolls straight to it.
+
+Page order top to bottom is now: hero (3 quick-jump buttons) → composer →
+category pills + real-journeys grid → CTA banner → How It Works. Synced to
+the mobile app's `www/fitness-journeys.html` — same file both places.
+
 ## 2026-10-05, round 5 — "Share Your Journey" rebuilt as the full member feed ⚠️ REQUIRES A SUPABASE STEP
 
 Ken sent three screenshots: how `fitness-journeys.html` looks logged out
