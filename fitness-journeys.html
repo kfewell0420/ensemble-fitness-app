@@ -7,33 +7,153 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&family=Caveat:wght@600;700&family=Dancing+Script:wght@600;700&display=swap">
 <link rel="stylesheet" href="css/app.css?v=2" />
 <style>
-  /* Ken's ask (Oct 2026, round 3): this page used to force a white,
-     marketing-site-matching theme (see SCALE_AUDIT_LOG.md for that whole
-     history) — Ken's reversed that: "I like the dark background." It now
-     uses the app's normal dark theme like every other page (no .fj-page
-     override, no forced white), built on the same shared .app-shell /
-     .card / .eyebrow / .field / .review-row classes journey.html used for
-     the old private journal, since Ken explicitly asked for "this exact
-     layout" from a screenshot of that page. Only the handful of fj-
-     prefixed rules below are still needed, for the parts that don't exist
-     anywhere else: reactions, replies, and the illustrative examples
-     panel. All re-themed dark to match. */
-  .fj-avatar {
-    width: 38px; height: 38px; border-radius: 50%; flex: 0 0 auto;
-    display: flex; align-items: center; justify-content: center;
-    color: #fff; font-weight: 700; font-size: 14px;
+  /* Ken's ask (Oct 2026, round 4): "I would like to create something new...
+     that looks better, sounds better, and appears better for a marketing
+     standpoint... this is what I want it to look like when you're a member
+     of the website and you click on fitness journeys and you can see
+     actual people and their profiles of what they're doing." Replaces the
+     round-3 "plain private-journal layout" redesign entirely — see
+     SCALE_AUDIT_LOG.md for that whole history. The composer (Date/
+     Activity/How it felt/Notes, posts instantly) is kept exactly as Ken
+     asked for in round 3 — just a category field was added and it now
+     sits under a photo hero instead of being the whole page. The old
+     "illustrative, not-real" example grid is gone: Ken was explicit that
+     this page should show "actual people," so an empty state now takes
+     its place until real members have posted.
+
+  ---- Hero -----------------------------------------------------------
+  Photo supplied by Ken (Oct 2026): four members on a mountaintop at
+  sunset, assets/journeys-hero.jpg. Dark gradient overlay keeps the white
+  heading/button text readable against any photo. */
+  .fj-hero {
+    position: relative;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    min-height: 300px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 30px 26px 26px;
+    margin-bottom: 28px;
+    background: #07060a url('assets/journeys-hero.jpg') center 38% / cover no-repeat;
   }
-  .fj-reactions { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+  .fj-hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(5,8,16,0.12) 0%, rgba(5,8,16,0.45) 55%, rgba(5,8,16,0.92) 100%);
+  }
+  .fj-hero > * { position: relative; z-index: 1; }
+  .fj-hero-script {
+    font-family: 'Caveat', cursive;
+    font-weight: 700;
+    font-size: 26px;
+    color: var(--accent-2);
+    margin: 0 0 4px;
+  }
+  .fj-hero h1 {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 900;
+    font-size: clamp(26px, 4.8vw, 40px);
+    line-height: 1.1;
+    color: #fff;
+    margin: 0 0 10px;
+  }
+  .fj-hero p {
+    color: rgba(255,255,255,0.86);
+    max-width: 560px;
+    margin: 0 0 20px;
+    font-size: 14.5px;
+  }
+  .fj-hero-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+
+  /* ---- How it works (toggled by the hero's "See How It Works" button) -- */
+  .fj-how { display: none; margin-bottom: 28px; }
+  .fj-how.show { display: block; }
+  .fj-how-steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+  }
+  .fj-how-step strong { display: block; color: #fff; font-size: 14px; margin-bottom: 4px; }
+  .fj-how-step span { color: var(--muted-invert); font-size: 13px; line-height: 1.5; }
+
+  /* ---- Category select (composer) + filter pills ------------------------ */
+  .fj-pills { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+  .fj-pill {
+    background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.16);
+    border-radius: var(--radius-pill); padding: 8px 16px; font-size: 13px; font-weight: 600;
+    color: var(--muted-invert); cursor: pointer; white-space: nowrap; font-family: inherit;
+  }
+  .fj-pill.active { background: var(--accent-tint); border-color: var(--accent); color: #fff; }
+
+  /* ---- Post grid ---------------------------------------------------------
+     Gray per-post backgrounds, as Ken described: "a lot of grays in it.
+     Each member has a gray background." */
+  .fj-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px; }
+  .fj-card {
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 18px; padding: 20px;
+  }
+  .fj-card-head { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px; }
+  .fj-avatar {
+    width: 44px; height: 44px; border-radius: 50%; flex: 0 0 auto;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 700; font-size: 16px; overflow: hidden;
+  }
+  .fj-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+  .fj-card-name { font-weight: 700; font-size: 14.5px; color: #fff; }
+  .fj-card-sub { font-size: 12px; color: var(--faint-invert); margin-top: 2px; }
+  .fj-card-icon {
+    width: 30px; height: 30px; border-radius: 50%; background: rgba(255,255,255,0.08);
+    display: flex; align-items: center; justify-content: center; font-size: 15px; flex: 0 0 auto;
+  }
+  .fj-menu-wrap { position: relative; flex: 0 0 auto; }
+  .fj-menu-btn {
+    background: transparent; border: none; color: var(--muted-invert); font-size: 20px;
+    cursor: pointer; padding: 2px 6px; line-height: 1; font-family: inherit;
+  }
+  .fj-menu-btn:hover { color: #fff; }
+  .fj-menu-dropdown {
+    display: none; position: absolute; right: 0; top: 26px; min-width: 150px;
+    background: var(--navy-900); border: 1px solid rgba(255,255,255,0.16); border-radius: 12px;
+    padding: 6px; z-index: 6; box-shadow: 0 14px 34px rgba(0,0,0,0.45);
+  }
+  .fj-menu-dropdown.show { display: block; }
+  .fj-menu-item {
+    display: block; width: 100%; text-align: left; background: none; border: none;
+    color: #fff; padding: 9px 10px; border-radius: 8px; font-size: 13px; cursor: pointer;
+    font-family: inherit;
+  }
+  .fj-menu-item:hover { background: rgba(255,255,255,0.08); }
+  .fj-menu-item.danger { color: #ff9a8f; }
+
+  .fj-headline { font-family: 'Poppins', sans-serif; color: var(--accent-2); font-weight: 800; font-size: 15.5px; margin-bottom: 6px; }
+  .fj-cat-chip {
+    display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 700;
+    color: var(--muted-invert); background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.14);
+    border-radius: var(--radius-pill); padding: 3px 10px; margin-bottom: 10px;
+  }
+  .fj-quote { font-style: italic; color: var(--muted-invert); font-size: 13.5px; margin-bottom: 10px; line-height: 1.5; }
+  .fj-meta-line { color: var(--faint-invert); font-size: 12px; margin-bottom: 12px; }
+
+  .fj-reactions { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
   .fj-reaction-pill {
     display: inline-flex; align-items: center; gap: 5px;
     font-size: 12.5px; font-weight: 600; color: var(--muted-invert);
     background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14);
-    border-radius: 999px; padding: 5px 11px; cursor: pointer;
+    border-radius: 999px; padding: 5px 11px; cursor: pointer; font-family: inherit;
   }
   .fj-reaction-pill.active { background: var(--accent-tint); border-color: var(--accent); color: var(--accent-2); }
-  .fj-reply-item { font-size: 13px; color: var(--muted-invert); margin-bottom: 6px; }
-  .fj-reply-item strong { color: #fff; }
-  .fj-reply-row { display: flex; gap: 8px; margin-top: 10px; }
+
+  .fj-replies { margin-bottom: 10px; }
+  .fj-reply-item { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px; }
+  .fj-reply-item .fj-avatar { width: 26px; height: 26px; font-size: 11px; }
+  .fj-reply-text { font-size: 12.5px; color: var(--muted-invert); line-height: 1.4; padding-top: 3px; }
+  .fj-reply-text strong { color: #fff; }
+
+  .fj-reply-row { display: flex; gap: 8px; }
   .fj-reply-input {
     flex: 1; min-width: 0; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14);
     border-radius: 999px; padding: 9px 14px; font-size: 13px; font-family: inherit; color: #fff;
@@ -41,46 +161,25 @@
   .fj-reply-input::placeholder { color: var(--faint-invert); }
   .fj-reply-send {
     background: var(--accent); color: #fff; border: none; border-radius: 999px;
-    padding: 9px 18px; font-weight: 700; font-size: 13px; cursor: pointer; flex: 0 0 auto;
+    padding: 9px 18px; font-weight: 700; font-size: 13px; cursor: pointer; flex: 0 0 auto; font-family: inherit;
   }
   .fj-reply-send:disabled { opacity: 0.6; cursor: default; }
 
+  .fj-edit-row { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+  .fj-edit-row select, .fj-edit-row input, .fj-edit-row textarea {
+    background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.16); border-radius: 10px;
+    padding: 9px 12px; font-size: 13px; font-family: inherit; color: #fff;
+  }
+  .fj-edit-actions { display: flex; gap: 8px; }
+
+  .fj-cta-banner {
+    margin-top: 28px; background: linear-gradient(135deg, var(--accent-tint), rgba(255,255,255,0.03));
+    border: 1px solid rgba(255,90,31,0.32); border-radius: var(--radius-lg); padding: 30px; text-align: center;
+  }
+  .fj-cta-banner h3 { margin: 0 0 8px; color: #fff; font-size: 20px; }
+  .fj-cta-banner p { margin: 0 0 18px; color: var(--muted-invert); font-size: 14px; }
+
   .fj-count-line { color: var(--faint-invert); font-size: 13px; margin-bottom: 14px; }
-  .fj-illustrative-panel {
-    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px;
-    padding: 20px; max-height: 640px; overflow-y: auto;
-  }
-  .fj-illustrative-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 16px;
-  }
-  .fj-ex-card {
-    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px;
-  }
-  .fj-ex-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-  .fj-ex-name { font-weight: 700; font-size: 14px; color: #fff; }
-  .fj-ex-sub { font-size: 12px; color: var(--faint-invert); }
-  .fj-ex-icon { margin-left: auto; font-size: 16px; }
-  .fj-ex-headline { color: var(--accent-2); font-weight: 700; font-size: 13.5px; margin-bottom: 8px; }
-  .fj-ex-quote { font-style: italic; color: var(--muted-invert); font-size: 13px; margin-bottom: 12px; }
-  .fj-ex-reactions { display: flex; gap: 8px; margin-bottom: 10px; }
-  .fj-ex-reaction {
-    font-size: 12px; font-weight: 600; color: var(--muted-invert); background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.14); border-radius: 999px; padding: 4px 9px; cursor: pointer;
-  }
-  .fj-ex-reply { font-size: 12px; color: var(--muted-invert); margin-bottom: 5px; }
-  .fj-ex-reply strong { color: #fff; }
-  .fj-ex-encourage-row { display: flex; gap: 6px; margin-top: 8px; }
-  .fj-ex-select {
-    flex: 1; min-width: 0; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14);
-    border-radius: 8px; padding: 7px 8px; font-size: 12px; font-family: inherit; color: #fff;
-  }
-  .fj-ex-send {
-    background: var(--accent); color: #fff; border: none; border-radius: 8px;
-    padding: 7px 14px; font-weight: 700; font-size: 12px; cursor: pointer; flex: 0 0 auto;
-  }
-  .fj-empty { color: var(--faint-invert); font-size: 14px; padding: 20px 0; }
 </style>
 </head>
 <body>
@@ -88,34 +187,10 @@
 <!-- Ken's ask (Nov 2026): this page should NOT show the usual site-wide
      header/nav (logo, Community/Share Your Journey/Gear/etc. links, Sign
      Out) — same treatment as quote-library.html and fitness-plus.html.
-     The page should start right at the orange "Share Your Journey"
-     eyebrow below, which is already first in the markup.
-     Oct 2026, round 2 (Ken): this page USED TO be the public half of two
-     separate "journey" features — this one public (community_questions),
-     plus a private per-member workout journal at journey.html
-     (journal_entries). Ken's call: "share your journey and fitness journey
-     should be one and the same... there should be no fitness journey
-     anywhere... no private journal." The private journal is retired
-     (journey.html now just redirects here) and this page is the one and
-     only journey feature, renamed from "Fitness Journeys" to "Share Your
-     Journey" everywhere a member can see it.
-     Oct 2026, round 3 (Ken): reusing the old private journal's exact
-     layout and wording, straight from a screenshot — eyebrow, heading,
-     subtitle, a card with Date/Activity/How did it feel/Notes fields that
-     auto-fills today's date, a single submit button that posts
-     immediately (no separate "open composer" step), and a dark theme
-     ("I like the dark background") instead of the white marketing-style
-     page this used to be. The only real differences from the old private
-     form: posting here is PUBLIC, and it shows a History of every member's
-     posts (not just your own), capped at the latest 4, since Ken didn't
-     want more than that on screen at once.
      Nov 2026 follow-up: the header still needs to exist as an EMPTY shell
      (no brand, no links) so js/notifications.js has an .app-nav to inject
      the home icon + notification bell into — see quote-library.html's
-     comment on this same change for the full reasoning.
-     Nov 2026, round 2: tightened header padding to match books.html's
-     established "icons only" pattern — see quote-library.html's comment on
-     this same follow-up for the full reasoning. -->
+     comment on this same change for the full reasoning. -->
 <header class="app-nav">
   <span class="app-nav-connect" aria-hidden="true">
     <svg viewBox="0 0 34 30" width="28" height="25" focusable="false">
@@ -125,25 +200,57 @@
   </span>
 </header>
 <style>
-  .app-nav {
-    padding-top: calc(4px + env(safe-area-inset-top, 0px));
-    padding-bottom: 4px;
-  }
+  .app-nav { padding-top: calc(4px + env(safe-area-inset-top, 0px)); padding-bottom: 4px; }
   .efit-nav-utility { margin-left: 0; margin-top: 0; }
   .app-shell { padding-top: 4px; }
 </style>
 
 <div class="app-shell">
 
-  <div class="eyebrow">Share Your Journey</div>
-  <h2 style="margin-bottom:6px;">Share Your Journey</h2>
-  <p class="card-sub" style="margin-bottom:24px;">Post a win, a struggle, or just today's workout — visible to the whole community the moment you share it, so others can cheer you on. No pressure, no streak-shaming — just a record of showing up.</p>
+  <div class="fj-hero">
+    <div class="fj-hero-script">Stronger Together</div>
+    <h1>Real people. Real progress.</h1>
+    <p>Every post here is from a real Ensemble Fitness member — the wins, the hard days, and everything in between. Share where you're at, and cheer someone else on.</p>
+    <div class="fj-hero-actions">
+      <button type="button" class="btn btn-primary" id="fjStartBtn">Start Your Journey</button>
+      <button type="button" class="btn btn-ghost" id="fjHowBtn">See How It Works</button>
+    </div>
+  </div>
+
+  <div class="card fj-how" id="fjHowCard">
+    <div class="eyebrow">How It Works</div>
+    <h2 style="font-size:18px; margin-bottom:0;">Three simple steps</h2>
+    <div class="fj-how-steps">
+      <div class="fj-how-step">
+        <strong>1. Pick a category</strong>
+        <span>Weight loss, building strength, running, nutrition, recovery, mental health, over 40, or just starting out.</span>
+      </div>
+      <div class="fj-how-step">
+        <strong>2. Share your update</strong>
+        <span>Today's date, what you did, how it felt, and a note if you want one. One button — it posts right away.</span>
+      </div>
+      <div class="fj-how-step">
+        <strong>3. Cheer each other on</strong>
+        <span>React, comment, and show up for someone else's post. No streaks, no pressure — just real support.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="eyebrow" id="fjComposerAnchor">Share Your Journey</div>
+  <h2 style="margin-bottom:6px;">Post an update</h2>
+  <p class="card-sub" style="margin-bottom:20px;">Visible to the whole community the moment you share it. No pressure, no streak-shaming — just a record of showing up.</p>
 
   <div class="card" style="margin-bottom:28px;">
     <form id="fjForm">
       <div class="field">
         <label for="fj-date">Date</label>
         <input type="date" id="fj-date" required />
+      </div>
+      <div class="field">
+        <label for="fj-category">Category</label>
+        <select id="fj-category" required>
+          <option value="" disabled selected>Choose a category</option>
+        </select>
       </div>
       <div class="field">
         <label for="fj-activity">Activity</label>
@@ -162,18 +269,20 @@
     </form>
   </div>
 
-  <div class="eyebrow" id="fjHistoryAnchor">History</div>
-  <h2 style="font-size:18px; margin-bottom:4px;">Recent journeys</h2>
-  <p class="card-sub" id="fjRealSub" style="margin-bottom:16px;">Loading…</p>
-  <div class="card" style="margin-bottom:28px;">
-    <div id="fjHistoryList">
-      <div class="empty-state">Loading…</div>
-    </div>
+  <div class="eyebrow">Real Journeys</div>
+  <h2 style="font-size:18px; margin-bottom:4px;">What the community's up to</h2>
+  <p class="card-sub fj-count-line" id="fjCountLine" style="margin-bottom:16px;">Loading…</p>
+
+  <div class="fj-pills" id="fjPills"></div>
+
+  <div id="fjGrid" class="fj-grid">
+    <div class="empty-state">Loading…</div>
   </div>
 
-  <p class="fj-count-line" id="fjCountLine"></p>
-  <div class="fj-illustrative-panel">
-    <div class="fj-illustrative-grid" id="fjIllustrativeGrid"></div>
+  <div class="fj-cta-banner">
+    <h3>Your journey matters.</h3>
+    <p>Every step forward is worth celebrating — share yours, and cheer on someone else's.</p>
+    <button type="button" class="btn btn-primary" id="fjCtaBtn">Share Your Journey</button>
   </div>
 
 </div>
@@ -213,18 +322,73 @@
     var d = new Date(raw + "T00:00:00");
     return d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
   }
+  function formatMonthYear(iso) {
+    if (!iso) return "";
+    var d = new Date(iso);
+    return d.toLocaleDateString(undefined, { month: "short", year: "numeric" });
+  }
 
-  // ---------------- Share Your Journey (composer) ----------------
-  // Ken's ask (Oct 2026): this used to be a hidden composer revealed by a
-  // "Share Your Journey" link/button (built that way to fix an earlier bug
-  // where the button sent people to a marketing-site page that didn't
-  // recognize their app login — see SCALE_AUDIT_LOG.md). Oct 2026, round 3:
-  // Ken wants the old private journal's exact layout instead — the form is
-  // just always on the page, Date/Activity/How did it feel/Notes, one
-  // button, no open/close step.
+  // ---------------- Category taxonomy --------------------------------------
+  // Ken's ask (Oct 2026, round 4): the exact 8 categories + icons from his
+  // reference screenshot, used for both the composer's required Category
+  // field and the filter pills across the top of the real-journeys grid.
+  var CATEGORIES = [
+    { key: "Weight Loss", icon: "⚖️" },
+    { key: "Building Strength", icon: "💪" },
+    { key: "Running", icon: "🏃" },
+    { key: "Nutrition", icon: "🥗" },
+    { key: "Recovery", icon: "🧘" },
+    { key: "Mental Health", icon: "🧠" },
+    { key: "Over 40", icon: "🔥" },
+    { key: "Beginners", icon: "🌱" }
+  ];
+  var CATEGORY_ICON = {};
+  CATEGORIES.forEach(function (c) { CATEGORY_ICON[c.key] = c.icon; });
+  var activeCategory = "All";
+
+  function populateCategorySelect() {
+    var select = document.getElementById("fj-category");
+    CATEGORIES.forEach(function (c) {
+      var opt = document.createElement("option");
+      opt.value = c.key;
+      opt.textContent = c.icon + " " + c.key;
+      select.appendChild(opt);
+    });
+  }
+
+  function renderPills() {
+    var wrap = document.getElementById("fjPills");
+    var all = [{ key: "All", icon: "🌟" }].concat(CATEGORIES);
+    wrap.innerHTML = all.map(function (c) {
+      var label = c.key === "All" ? "All Journeys" : c.key;
+      return '<button type="button" class="fj-pill' + (activeCategory === c.key ? " active" : "") + '" data-cat="' + escapeHtml(c.key) + '">' + c.icon + " " + escapeHtml(label) + "</button>";
+    }).join("");
+    wrap.querySelectorAll(".fj-pill").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        activeCategory = btn.getAttribute("data-cat");
+        renderPills();
+        renderGrid();
+      });
+    });
+  }
+
+  // ---------------- Hero buttons / How It Works ----------------------------
+  function wireHeroButtons() {
+    function scrollToComposer() {
+      document.getElementById("fjComposerAnchor").scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    document.getElementById("fjStartBtn").addEventListener("click", scrollToComposer);
+    document.getElementById("fjCtaBtn").addEventListener("click", scrollToComposer);
+    document.getElementById("fjHowBtn").addEventListener("click", function () {
+      document.getElementById("fjHowCard").classList.toggle("show");
+    });
+  }
+
+  // ---------------- Share Your Journey (composer) ---------------------------
   function wireComposer() {
     var form = document.getElementById("fjForm");
     var dateInput = document.getElementById("fj-date");
+    var categoryInput = document.getElementById("fj-category");
     var activityInput = document.getElementById("fj-activity");
     var moodInput = document.getElementById("fj-mood");
     var notesInput = document.getElementById("fj-notes");
@@ -236,10 +400,16 @@
     form.addEventListener("submit", async function (e) {
       e.preventDefault();
       var date = dateInput.value;
+      var category = categoryInput.value;
       var activity = activityInput.value.trim();
       var mood = moodInput.value.trim();
       var notes = notesInput.value.trim();
       if (!date) return;
+      if (!category) {
+        msg.textContent = "Pick a category before sharing.";
+        msg.className = "form-msg show error";
+        return;
+      }
       if (!activity && !mood && !notes) {
         msg.textContent = "Add an activity, how it felt, or a note before sharing.";
         msg.className = "form-msg show error";
@@ -251,24 +421,18 @@
       msg.className = "form-msg";
       msg.textContent = "";
 
-      // question_text stays the single-line summary other surfaces (the
-      // Home feed's Journeys filter, admin's Journeys tab) already read —
-      // this page itself reads the separate activity/mood/notes columns
-      // instead, so nothing gets shown twice.
       var summaryParts = [];
       if (activity) summaryParts.push(activity);
       if (mood) summaryParts.push("felt " + mood.toLowerCase());
       var questionText = notes || (summaryParts.length ? summaryParts.join(" — ") : "Shared an update.");
 
       try {
-        // Matches the "members can post a story" RLS policy exactly
-        // (sql/schema.sql): auth.uid() = user_id AND status = 'approved' —
-        // these posts go live immediately, no admin review step.
         var { error } = await window.sb.from("community_questions").insert({
           user_id: currentUserId,
           asker_name: currentDisplayName,
           question_text: questionText,
           entry_date: date,
+          category: category,
           activity: activity || null,
           mood: mood || null,
           notes: notes || null,
@@ -279,8 +443,8 @@
         dateInput.value = new Date().toISOString().slice(0, 10);
         msg.className = "form-msg";
         msg.textContent = "";
-        await loadRealJourneys();
-        document.getElementById("fjHistoryAnchor").scrollIntoView({ behavior: "smooth", block: "start" });
+        await loadJourneys();
+        document.getElementById("fjPills").scrollIntoView({ behavior: "smooth", block: "start" });
       } catch (err) {
         msg.textContent = (err && err.message) || "Couldn't share that — please try again.";
         msg.className = "form-msg show error";
@@ -291,87 +455,228 @@
     });
   }
 
-  // ---------------- History (community_questions, latest 4) ----------------
+  // ---------------- Avatars / age — batched, reused for posts + replies ----
+  // Ken's ask (Oct 2026, round 4): post cards should show each member's
+  // real uploaded profile photo (the same one on their own profile/
+  // members directory), not just a colored-initial circle, and their age
+  // next to their name. Avatars come from the same `media` table every
+  // other page already reads (is_profile_photo=true, approved). Age comes
+  // from public.profiles_public — a view that hands back a computed number,
+  // never the raw date_of_birth (see sql/schema.sql's comment on that
+  // column for why that distinction matters).
+  async function attachAvatarUrls(items) {
+    var userIds = [];
+    var seen = {};
+    items.forEach(function (item) {
+      if (item.user_id && !seen[item.user_id]) { seen[item.user_id] = true; userIds.push(item.user_id); }
+    });
+    if (!userIds.length) return items;
+
+    try {
+      var { data, error } = await window.sb
+        .from("media")
+        .select("user_id, storage_path, created_at")
+        .in("user_id", userIds)
+        .eq("kind", "photo")
+        .eq("is_profile_photo", true)
+        .eq("status", "approved")
+        .order("created_at", { ascending: false });
+      if (error || !data) return items;
+
+      var pathByUserId = {};
+      data.forEach(function (row) {
+        if (!pathByUserId[row.user_id]) pathByUserId[row.user_id] = row.storage_path;
+      });
+
+      var paths = Object.keys(pathByUserId).map(function (uid) { return pathByUserId[uid]; });
+      var urlMap = {};
+      if (paths.length) {
+        var bucket = window.sb.storage.from("media");
+        if (typeof bucket.createSignedUrls === "function") {
+          var res = await bucket.createSignedUrls(paths, 3600);
+          (res.data || []).forEach(function (u) { if (u && u.path && u.signedUrl) urlMap[u.path] = u.signedUrl; });
+        } else {
+          await Promise.all(paths.map(async function (p) {
+            var one = await bucket.createSignedUrl(p, 3600);
+            if (one.data && one.data.signedUrl) urlMap[p] = one.data.signedUrl;
+          }));
+        }
+      }
+
+      items.forEach(function (item) {
+        var path = pathByUserId[item.user_id];
+        item.avatarUrl = path ? (urlMap[path] || "") : "";
+      });
+    } catch (e) {
+      // Leave avatarUrl unset — the colored-initial fallback still renders.
+    }
+    return items;
+  }
+
+  async function attachProfilePublicInfo(items) {
+    var ids = [];
+    var seen = {};
+    items.forEach(function (item) {
+      if (item.user_id && !seen[item.user_id]) { seen[item.user_id] = true; ids.push(item.user_id); }
+    });
+    if (!ids.length) return items;
+    try {
+      var { data, error } = await window.sb.from("profiles_public").select("id, age, created_at").in("id", ids);
+      if (error || !data) return items;
+      var byId = {};
+      data.forEach(function (row) { byId[row.id] = row; });
+      items.forEach(function (item) {
+        var p = byId[item.user_id];
+        item.age = p ? p.age : null;
+        item.memberSince = p ? p.created_at : null;
+      });
+    } catch (e) {
+      // Leave age/memberSince unset — the card just omits them.
+    }
+    return items;
+  }
+
+  function avatarHtml(item, size) {
+    size = size || 44;
+    if (item.avatarUrl) {
+      return '<div class="fj-avatar" style="width:' + size + 'px;height:' + size + 'px;"><img src="' + escapeHtml(item.avatarUrl) + '" alt="" /></div>';
+    }
+    var initial = (item.asker_name || item.name || "?").charAt(0).toUpperCase();
+    var fontSize = Math.round(size * 0.38);
+    return '<div class="fj-avatar" style="width:' + size + 'px;height:' + size + 'px;font-size:' + fontSize + 'px;background:' + avatarColor(item.user_id) + '">' + escapeHtml(initial) + '</div>';
+  }
+
+  // ---------------- Real Journeys grid --------------------------------------
   var STORY_REACTIONS = [
     { type: "clap", emoji: "👏" },
     { type: "heart", emoji: "❤️" },
     { type: "thumbs_up", emoji: "👍" }
   ];
 
-  async function loadRealJourneys() {
-    var list = document.getElementById("fjHistoryList");
-    // Fetch a little more than we'll show (12, not 4) since filterOutBlocked
-    // below can drop some — without the cushion, a member with a couple of
-    // blocked posters above them could see fewer than 4 even though more
-    // exist. The total count (for the subtitle) is a separate, unlimited
-    // query so it stays accurate even though the list itself is capped.
-    var [postsRes, countRes] = await Promise.all([
-      window.sb
-        .from("community_questions")
-        .select("id, user_id, asker_name, question_text, entry_date, activity, mood, notes, created_at")
-        .eq("status", "approved")
-        .order("created_at", { ascending: false })
-        .limit(12),
-      window.sb.from("community_questions").select("id", { count: "exact", head: true }).eq("status", "approved")
-    ]);
+  var allPosts = [];
 
-    if (postsRes.error) {
-      list.innerHTML = '<div class="empty-state">Couldn\'t load journeys right now — please refresh.</div>';
+  // One shared listener (not one per card) closes any open "⋮" menu on an
+  // outside click — a per-card {once:true} listener would only ever work
+  // for the very first menu opened on the page, since using it once
+  // removes it.
+  document.addEventListener("click", function (e) {
+    if (e.target.closest && e.target.closest(".fj-menu-wrap")) return;
+    document.querySelectorAll(".fj-menu-dropdown.show").forEach(function (m) { m.classList.remove("show"); });
+  });
+
+  async function loadJourneys() {
+    var grid = document.getElementById("fjGrid");
+    var { data, error } = await window.sb
+      .from("community_questions")
+      .select("id, user_id, asker_name, question_text, entry_date, activity, mood, notes, category, created_at")
+      .eq("status", "approved")
+      .order("created_at", { ascending: false })
+      .limit(60);
+
+    if (error) {
+      grid.innerHTML = '<div class="empty-state">Couldn\'t load journeys right now — please refresh.</div>';
       return;
     }
-    var visible = filterOutBlocked(postsRes.data || []).slice(0, 4);
-    var total = countRes.count || visible.length;
-    document.getElementById("fjRealSub").textContent = total
-      ? total + " shared so far — showing the latest " + Math.min(4, total) + "."
+
+    allPosts = filterOutBlocked(data || []);
+    await attachAvatarUrls(allPosts);
+    await attachProfilePublicInfo(allPosts);
+    renderGrid();
+  }
+
+  function renderGrid() {
+    var grid = document.getElementById("fjGrid");
+    var countLine = document.getElementById("fjCountLine");
+    var visible = activeCategory === "All" ? allPosts : allPosts.filter(function (p) { return p.category === activeCategory; });
+
+    countLine.textContent = allPosts.length
+      ? allPosts.length + " shared so far" + (activeCategory === "All" ? "." : " — showing " + visible.length + " in " + activeCategory + ".")
       : "Be the first to share.";
 
     if (!visible.length) {
-      list.innerHTML = '<div class="empty-state">No journeys shared yet — be the first!</div>';
+      grid.innerHTML = '<div class="empty-state">' + (allPosts.length ? "No journeys in this category yet — try another, or be the first!" : "No journeys shared yet — be the first!") + '</div>';
       return;
     }
 
-    list.innerHTML = visible.map(function (item) {
-      var dateLabel = formatEntryDate(item);
-      var headlineBits = [escapeHtml(item.asker_name || "A member")];
-      if (dateLabel) headlineBits.push(escapeHtml(dateLabel));
-      if (item.activity) headlineBits.push(escapeHtml(item.activity));
-      var isOwn = currentUserId && item.user_id === currentUserId;
-      return '<div class="review-row" data-id="' + item.id + '">' +
-        '<div class="fj-avatar" style="background:' + avatarColor(item.user_id) + '">' + escapeHtml((item.asker_name || "?").charAt(0).toUpperCase()) + '</div>' +
-        '<div class="review-meta" style="flex:1;">' +
-          '<strong>' + headlineBits.join(" · ") + '</strong>' +
-          (item.mood ? '<span>Felt: ' + escapeHtml(item.mood) + '</span>' : '') +
-          (item.notes ? '<div style="font-size:13px; color:var(--muted-invert); margin-top:4px;">' + escapeHtml(item.notes) + '</div>' : '') +
-          '<div class="fj-reactions" data-reactions style="margin-top:10px;"></div>' +
-          '<div class="fj-replies" data-replies></div>' +
-          '<div class="fj-reply-row">' +
-            '<input type="text" class="fj-reply-input" maxlength="500" placeholder="Reply with encouragement…" />' +
-            '<button type="button" class="fj-reply-send">Send</button>' +
-          '</div>' +
-        '</div>' +
-        '<div class="review-actions">' +
-          (isOwn ? '<button class="btn btn-ghost btn-sm delete-fj-btn" data-id="' + item.id + '">Delete</button>' : '') +
-        '</div>' +
-      '</div>';
-    }).join("");
+    grid.innerHTML = visible.map(buildCard).join("");
 
     visible.forEach(function (item) {
-      var row = list.querySelector('.review-row[data-id="' + item.id + '"]');
-      wireHistoryRow(item, row);
-    });
-
-    list.querySelectorAll(".delete-fj-btn").forEach(function (btn) {
-      btn.addEventListener("click", async function () {
-        if (!confirm("Delete this post? This removes it for everyone and can't be undone.")) return;
-        btn.disabled = true;
-        await window.sb.from("community_questions").delete().eq("id", btn.getAttribute("data-id"));
-        await loadRealJourneys();
-      });
+      var card = grid.querySelector('.fj-card[data-id="' + item.id + '"]');
+      wireCard(item, card);
     });
   }
 
-  async function wireHistoryRow(item, row) {
-    var reactionsEl = row.querySelector("[data-reactions]");
+  function buildCard(item) {
+    var isOwn = currentUserId && item.user_id === currentUserId;
+    var icon = CATEGORY_ICON[item.category] || "✨";
+    var nameLabel = escapeHtml(item.asker_name || "A member") + (item.age ? ", " + item.age : "");
+    var subBits = [];
+    if (item.memberSince) subBits.push("Member since " + formatMonthYear(item.memberSince));
+    var dateLabel = formatEntryDate(item);
+    var headline = item.activity ? item.activity : (item.mood ? "Felt " + item.mood : "Shared an update");
+
+    return '<div class="fj-card" data-id="' + item.id + '">' +
+      '<div class="fj-card-head">' +
+        avatarHtml(item, 44) +
+        '<div style="flex:1; min-width:0;">' +
+          '<div class="fj-card-name">' + nameLabel + '</div>' +
+          (subBits.length ? '<div class="fj-card-sub">' + escapeHtml(subBits.join(" · ")) + '</div>' : '') +
+        '</div>' +
+        '<div class="fj-card-icon" title="' + escapeHtml(item.category || "") + '">' + icon + '</div>' +
+        '<div class="fj-menu-wrap">' +
+          '<button type="button" class="fj-menu-btn" data-menu-toggle>⋮</button>' +
+          '<div class="fj-menu-dropdown" data-menu>' +
+            (isOwn
+              ? '<button type="button" class="fj-menu-item" data-action="edit">Edit</button><button type="button" class="fj-menu-item danger" data-action="delete">Delete</button>'
+              : '<button type="button" class="fj-menu-item danger" data-action="report">Report</button>') +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="fj-card-body" data-body>' +
+        '<div class="fj-headline">' + escapeHtml(headline) + '</div>' +
+        (item.category ? '<div class="fj-cat-chip">' + icon + ' ' + escapeHtml(item.category) + '</div>' : '') +
+        (item.notes ? '<div class="fj-quote">“' + escapeHtml(item.notes) + '”</div>' : '') +
+        '<div class="fj-meta-line">' + [dateLabel ? escapeHtml(dateLabel) : '', item.mood ? 'Felt ' + escapeHtml(item.mood) : ''].filter(Boolean).join(' · ') + '</div>' +
+      '</div>' +
+      '<div class="fj-reactions" data-reactions></div>' +
+      '<div class="fj-replies" data-replies></div>' +
+      '<div class="fj-reply-row">' +
+        '<input type="text" class="fj-reply-input" maxlength="500" placeholder="Add a comment…" />' +
+        '<button type="button" class="fj-reply-send">Send</button>' +
+      '</div>' +
+    '</div>';
+  }
+
+  async function wireCard(item, card) {
+    if (!card) return;
+
+    // ---- overflow menu ----
+    var menuBtn = card.querySelector("[data-menu-toggle]");
+    var menu = card.querySelector("[data-menu]");
+    menuBtn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      var wasShown = menu.classList.contains("show");
+      document.querySelectorAll(".fj-menu-dropdown.show").forEach(function (m) { m.classList.remove("show"); });
+      if (!wasShown) menu.classList.add("show");
+    });
+
+    var editBtn = menu.querySelector('[data-action="edit"]');
+    var deleteBtn = menu.querySelector('[data-action="delete"]');
+    var reportBtn = menu.querySelector('[data-action="report"]');
+    if (editBtn) editBtn.addEventListener("click", function () { menu.classList.remove("show"); openEditForm(item, card); });
+    if (deleteBtn) deleteBtn.addEventListener("click", async function () {
+      menu.classList.remove("show");
+      if (!confirm("Delete this post? This removes it for everyone and can't be undone.")) return;
+      await window.sb.from("community_questions").delete().eq("id", item.id);
+      await loadJourneys();
+    });
+    if (reportBtn) reportBtn.addEventListener("click", function () {
+      menu.classList.remove("show");
+      openReportModal({ type: "user", id: item.user_id, label: item.asker_name || "this member" });
+    });
+
+    // ---- reactions ----
+    var reactionsEl = card.querySelector("[data-reactions]");
     reactionsEl.innerHTML = STORY_REACTIONS.map(function (r) {
       return '<button type="button" class="fj-reaction-pill" data-reaction="' + r.type + '">' + r.emoji + ' <span class="fj-reaction-count"></span></button>';
     }).join("");
@@ -390,11 +695,12 @@
       btn.addEventListener("click", function () { toggleStoryReaction(item.id, r.type, btn); });
     });
 
-    await loadReplies(item, row);
-    var sendBtn = row.querySelector(".fj-reply-send");
-    var input = row.querySelector(".fj-reply-input");
-    sendBtn.addEventListener("click", function () { postReply(item, row); });
-    input.addEventListener("keydown", function (e) { if (e.key === "Enter") postReply(item, row); });
+    // ---- replies ----
+    await loadReplies(item, card);
+    var sendBtn = card.querySelector(".fj-reply-send");
+    var input = card.querySelector(".fj-reply-input");
+    sendBtn.addEventListener("click", function () { postReply(item, card); });
+    input.addEventListener("keydown", function (e) { if (e.key === "Enter") postReply(item, card); });
   }
 
   async function toggleStoryReaction(questionId, type, btn) {
@@ -414,117 +720,79 @@
     }
   }
 
-  async function loadReplies(item, row) {
-    var repliesEl = row.querySelector("[data-replies]");
+  async function loadReplies(item, card) {
+    var repliesEl = card.querySelector("[data-replies]");
     var { data: replies } = await window.sb
       .from("story_replies")
       .select("id, user_id, reply_text, created_at, profiles(display_name)")
       .eq("question_id", item.id)
       .order("created_at", { ascending: true });
     var visible = filterOutBlocked(replies || []);
+    await attachAvatarUrls(visible);
     repliesEl.innerHTML = visible.map(function (r) {
       var name = (r.profiles && r.profiles.display_name) || "A member";
-      return '<div class="fj-reply-item"><strong>' + escapeHtml(name) + '</strong> ' + escapeHtml(r.reply_text) + '</div>';
+      return '<div class="fj-reply-item">' + avatarHtml({ user_id: r.user_id, asker_name: name, avatarUrl: r.avatarUrl }, 26) +
+        '<div class="fj-reply-text"><strong>' + escapeHtml(name) + '</strong> ' + escapeHtml(r.reply_text) + '</div></div>';
     }).join("");
   }
 
-  async function postReply(item, row) {
-    var input = row.querySelector(".fj-reply-input");
+  async function postReply(item, card) {
+    var input = card.querySelector(".fj-reply-input");
     var body = input.value.trim();
     if (!body || !currentUserId) return;
-    var sendBtn = row.querySelector(".fj-reply-send");
+    var sendBtn = card.querySelector(".fj-reply-send");
     sendBtn.disabled = true;
     input.value = "";
     await window.sb.from("story_replies").insert({ question_id: item.id, user_id: currentUserId, reply_text: body });
-    await loadReplies(item, row);
+    await loadReplies(item, card);
     sendBtn.disabled = false;
   }
 
-  // ---------------- Illustrative examples ----------------
-  // Ken's ask (original): a grid of illustrative (not-real) example
-  // journeys for the page to not look empty before real members start
-  // posting. Still here, still clearly labeled as illustrative, just
-  // re-themed dark along with everything else.
-  var ILLUSTRATIVE_JOURNEYS = [
-    { name: "Melissa K.", age: 34, icon: "🏃", started: "Started Feb 2025", headline: "Running 3x/week, first 5K in April", quote: "I hated running for years. Turns out I just hated running alone.", reactions: { muscle: 66, heart: 44, thumbs_up: 75 }, replies: [{ name: "Chidi N.", body: "We've got your back! 🙌" }, { name: "Bree T.", body: "So proud of you!" }] },
-    { name: "David O.", age: 41, icon: "🏆", started: "Started Nov 2024", headline: "Down 22 lbs, lifting 4x/week", quote: "22 pounds down, but honestly the sleep improvement is the real win.", reactions: { muscle: 31, heart: 34, thumbs_up: 93 }, replies: [{ name: "Chidi N.", body: "One step at a time — you're doing great!" }, { name: "Aiden P.", body: "Don't give up — you've got this!" }] },
-    { name: "Priya S.", age: 27, icon: "🚶", started: "Started May 2025", headline: "Daily 20-minute walks, 6 weeks straight", quote: "Twenty minutes a day sounded too small to matter. Now it's the thing I look forward to most.", reactions: { muscle: 37, heart: 71, thumbs_up: 99 }, replies: [{ name: "Amina S.", body: "One step at a time — you're doing great!" }, { name: "Sam K.", body: "Keep going! 💪" }] },
-    { name: "Marcus T.", age: 52, icon: "🚴", started: "Started Jan 2025", headline: "Back in the gym after knee surgery", quote: "The knee still complains some days. I show up anyway.", reactions: { muscle: 32, heart: 89, thumbs_up: 52 }, replies: [{ name: "Marcus H.", body: "So proud of you!" }] },
-    { name: "Renata V.", age: 38, icon: "🏊", started: "Started Mar 2025", headline: "Swimming twice a week again", quote: "The pool used to intimidate me. Now it's the calmest hour of my week.", reactions: { muscle: 21, heart: 40, thumbs_up: 58 }, replies: [{ name: "Yusuf A.", body: "Love this for you!" }] },
-    { name: "Owen P.", age: 29, icon: "🥾", started: "Started Jun 2025", headline: "First real hike in 5 years", quote: "My legs hated me the next day. Worth it.", reactions: { muscle: 44, heart: 30, thumbs_up: 61 }, replies: [{ name: "Grace L.", body: "That first one is always the hardest!" }] },
-    { name: "Talia B.", age: 45, icon: "💪", started: "Started Aug 2024", headline: "Strength training, no more skipped Mondays", quote: "I used to dread Mondays at the gym. Now they're non-negotiable.", reactions: { muscle: 58, heart: 26, thumbs_up: 47 }, replies: [{ name: "Priya S.", body: "This is the energy!" }] },
-    { name: "Derek M.", age: 33, icon: "🏃", started: "Started Oct 2025", headline: "Couch to 5K, week 6", quote: "Never thought I'd say 'just a 5K' about anything, but here we are.", reactions: { muscle: 19, heart: 22, thumbs_up: 35 }, replies: [{ name: "Melissa K.", body: "You've got this — see you at the finish line!" }] },
-    { name: "Hannah C.", age: 24, icon: "✨", started: "Started Jul 2025", headline: "Stretching every morning, no exceptions", quote: "Ten minutes on the floor before coffee changed my whole day.", reactions: { muscle: 12, heart: 33, thumbs_up: 40 }, replies: [{ name: "Owen P.", body: "Small habits, huge difference." }] },
-    { name: "Ben R.", age: 48, icon: "🚴", started: "Started Sep 2025", headline: "Biking to work twice a week", quote: "Cheaper than the gas, and I show up to work already awake.", reactions: { muscle: 27, heart: 19, thumbs_up: 44 }, replies: [{ name: "Renata V.", body: "That's such a great swap." }] },
-    { name: "Ines D.", age: 31, icon: "🚶", started: "Started Apr 2025", headline: "10,000 steps, 40 days running", quote: "I stopped chasing the number and started just enjoying the walk. Funny how that worked better.", reactions: { muscle: 15, heart: 28, thumbs_up: 36 }, replies: [{ name: "Talia B.", body: "Love that mindset shift." }] },
-    { name: "Sam K.", age: 36, icon: "🏆", started: "Started Feb 2025", headline: "First pull-up ever", quote: "Eight months of hanging there like a sack of potatoes finally paid off.", reactions: { muscle: 71, heart: 38, thumbs_up: 64 }, replies: [{ name: "Derek M.", body: "LET'S GOOO 🎉" }] }
-  ];
-
-  var ENCOURAGEMENT_OPTIONS = [
-    "One step at a time — you're doing great!",
-    "So proud of you!",
-    "Keep going! 💪",
-    "This is inspiring — thank you for sharing.",
-    "Love this for you!"
-  ];
-
-  function renderIllustrative() {
-    document.getElementById("fjCountLine").textContent =
-      "Illustrative examples — not real posts. Showing " + ILLUSTRATIVE_JOURNEYS.length + ", scroll within the panel to see more ↓";
-    var grid = document.getElementById("fjIllustrativeGrid");
-    grid.innerHTML = ILLUSTRATIVE_JOURNEYS.map(function (ex, i) {
-      var color = AVATAR_COLORS[i % AVATAR_COLORS.length];
-      var initial = ex.name.charAt(0);
-      return '<div class="fj-ex-card" data-idx="' + i + '">' +
-        '<div class="fj-ex-head">' +
-          '<div class="fj-avatar" style="background:' + color + '">' + escapeHtml(initial) + '</div>' +
-          '<div><div class="fj-ex-name">' + escapeHtml(ex.name) + ', ' + ex.age + '</div>' +
-          '<div class="fj-ex-sub">' + escapeHtml(ex.started) + '</div></div>' +
-          '<div class="fj-ex-icon">' + ex.icon + '</div>' +
-        '</div>' +
-        '<div class="fj-ex-headline">' + escapeHtml(ex.headline) + '</div>' +
-        '<div class="fj-ex-quote">&ldquo;' + escapeHtml(ex.quote) + '&rdquo;</div>' +
-        '<div class="fj-ex-reactions">' +
-          '<button type="button" class="fj-ex-reaction" data-r="muscle">💪 <span>' + ex.reactions.muscle + '</span></button>' +
-          '<button type="button" class="fj-ex-reaction" data-r="heart">❤️ <span>' + ex.reactions.heart + '</span></button>' +
-          '<button type="button" class="fj-ex-reaction" data-r="thumbs_up">👍 <span>' + ex.reactions.thumbs_up + '</span></button>' +
-        '</div>' +
-        '<div class="fj-ex-replies">' + ex.replies.map(function (r) {
-          return '<div class="fj-ex-reply"><strong>' + escapeHtml(r.name) + '.</strong> ' + escapeHtml(r.body) + '</div>';
-        }).join("") + '</div>' +
-        '<div class="fj-ex-encourage-row">' +
-          '<select class="fj-ex-select">' + ENCOURAGEMENT_OPTIONS.map(function (o) { return '<option>' + escapeHtml(o) + '</option>'; }).join("") + '</select>' +
-          '<button type="button" class="fj-ex-send">Send</button>' +
+  // ---------------- Edit (own post) -----------------------------------------
+  // Mirrors admin.html's inline-Edit pattern (Quote Library / Approved
+  // Products): swap the card body into inputs with Save/Cancel, instead of
+  // delete-and-repost (which would lose the post's reactions/comments).
+  function openEditForm(item, card) {
+    var body = card.querySelector("[data-body]");
+    body.innerHTML =
+      '<div class="fj-edit-row">' +
+        '<select class="edit-fj-category">' + CATEGORIES.map(function (c) {
+          return '<option value="' + escapeHtml(c.key) + '"' + (item.category === c.key ? " selected" : "") + '>' + c.icon + ' ' + escapeHtml(c.key) + '</option>';
+        }).join("") + '</select>' +
+        '<input type="text" class="edit-fj-activity" maxlength="80" placeholder="Activity" value="' + escapeHtml(item.activity || "") + '" />' +
+        '<input type="text" class="edit-fj-mood" maxlength="40" placeholder="How did it feel?" value="' + escapeHtml(item.mood || "") + '" />' +
+        '<textarea class="edit-fj-notes" maxlength="600" placeholder="Notes">' + escapeHtml(item.notes || "") + '</textarea>' +
+        '<div class="form-msg" data-edit-msg></div>' +
+        '<div class="fj-edit-actions">' +
+          '<button type="button" class="btn btn-primary btn-sm" data-edit-save>Save</button>' +
+          '<button type="button" class="btn btn-ghost btn-sm" data-edit-cancel>Cancel</button>' +
         '</div>' +
       '</div>';
-    }).join("");
 
-    // Illustrative-only interactivity, same idea as the app's own
-    // illustrative Meal Prep examples — client-side only, nothing here
-    // writes to the database since there's no real row behind these.
-    grid.querySelectorAll(".fj-ex-card").forEach(function (card) {
-      var idx = parseInt(card.getAttribute("data-idx"), 10);
-      var ex = ILLUSTRATIVE_JOURNEYS[idx];
-      card.querySelectorAll(".fj-ex-reaction").forEach(function (btn) {
-        var type = btn.getAttribute("data-r");
-        var countEl = btn.querySelector("span");
-        var active = false;
-        btn.addEventListener("click", function () {
-          active = !active;
-          ex.reactions[type] += active ? 1 : -1;
-          countEl.textContent = ex.reactions[type];
-          btn.classList.toggle("active", active);
-        });
-      });
-      var sendBtn = card.querySelector(".fj-ex-send");
-      var select = card.querySelector(".fj-ex-select");
-      var repliesEl = card.querySelector(".fj-ex-replies");
-      sendBtn.addEventListener("click", function () {
-        var line = document.createElement("div");
-        line.className = "fj-ex-reply";
-        line.innerHTML = "<strong>You.</strong> " + escapeHtml(select.value);
-        repliesEl.appendChild(line);
-      });
+    body.querySelector("[data-edit-cancel]").addEventListener("click", function () { renderGrid(); });
+    body.querySelector("[data-edit-save]").addEventListener("click", async function () {
+      var category = body.querySelector(".edit-fj-category").value;
+      var activity = body.querySelector(".edit-fj-activity").value.trim();
+      var mood = body.querySelector(".edit-fj-mood").value.trim();
+      var notes = body.querySelector(".edit-fj-notes").value.trim();
+      var msg = body.querySelector("[data-edit-msg]");
+      if (!activity && !mood && !notes) {
+        msg.textContent = "Add an activity, how it felt, or a note.";
+        msg.className = "form-msg show error";
+        return;
+      }
+      var saveBtn = body.querySelector("[data-edit-save]");
+      saveBtn.disabled = true;
+      var { error } = await window.sb.from("community_questions").update({
+        category: category, activity: activity || null, mood: mood || null, notes: notes || null
+      }).eq("id", item.id);
+      if (error) {
+        msg.textContent = error.message || "Couldn't save — please try again.";
+        msg.className = "form-msg show error";
+        saveBtn.disabled = false;
+        return;
+      }
+      await loadJourneys();
     });
   }
 
@@ -544,10 +812,12 @@
       .eq("id", currentUserId)
       .maybeSingle();
     currentDisplayName = (profileRow && profileRow.display_name) || "A member";
-    wireComposer();
 
-    await loadRealJourneys();
-    renderIllustrative();
+    populateCategorySelect();
+    renderPills();
+    wireHeroButtons();
+    wireComposer();
+    await loadJourneys();
   })();
 </script>
 

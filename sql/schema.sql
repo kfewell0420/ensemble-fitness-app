@@ -66,6 +66,25 @@ create policy "users can update their own profile"
   using (auth.uid() = id)
   with check (auth.uid() = id);
 
+-- Ken's ask (Oct 2026, round 4): the "Share Your Journey" member page shows
+-- each poster's age next to their name ("Melissa K., 34") — but per the
+-- comment up at date_of_birth, raw date_of_birth should never reach another
+-- member's browser, only a computed age. This view is that computed value:
+-- any page that wants another member's age reads it from here, never from
+-- public.profiles.date_of_birth directly.
+create or replace view public.profiles_public as
+select
+  id,
+  display_name,
+  created_at,
+  case
+    when date_of_birth is null then null
+    else floor(extract(year from age(current_date, date_of_birth)))::int
+  end as age
+from public.profiles;
+
+grant select on public.profiles_public to authenticated, anon;
+
 -- Auto-create a profile row the moment someone signs up. Date of birth, ZIP code, and wake-up
 -- time are all required and enforced HERE, at the database layer — not just in the signup form's
 -- UI. The app passes them as signup metadata (options.data.date_of_birth / .zip_code /
@@ -446,6 +465,19 @@ alter table public.community_questions add column if not exists entry_date date;
 alter table public.community_questions add column if not exists activity text;
 alter table public.community_questions add column if not exists mood text;
 alter table public.community_questions add column if not exists notes text;
+
+-- Ken's ask (Oct 2026, round 4): the "actual people and their profiles"
+-- redesign of this page adds a category pill per post (Weight Loss /
+-- Building Strength / Running / Nutrition / Recovery / Mental Health /
+-- Over 40 / Beginners) — used for both the filter pills across the top of
+-- the page and the small activity-icon badge on each card.
+alter table public.community_questions add column if not exists category text;
+alter table public.community_questions drop constraint if exists community_questions_category_check;
+alter table public.community_questions add constraint community_questions_category_check
+  check (category is null or category in (
+    'Weight Loss', 'Building Strength', 'Running', 'Nutrition',
+    'Recovery', 'Mental Health', 'Over 40', 'Beginners'
+  ));
 
 alter table public.community_questions enable row level security;
 

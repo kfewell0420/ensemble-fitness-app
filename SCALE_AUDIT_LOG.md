@@ -12,6 +12,60 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-05, round 5 — "Share Your Journey" rebuilt as the full member feed ⚠️ REQUIRES A SUPABASE STEP
+
+Ken sent three screenshots: how `fitness-journeys.html` looks logged out
+(marketing-style, illustrative examples), and a third, much richer mockup —
+photo hero, "Real people. Real progress.", category filter pills, and post
+cards with real photo avatars, an age next to each name, an activity-icon
+badge, a "⋮" menu, a bold headline, an italic quote, reaction pills, named
+comment replies, and an "Add a comment…" bar. His ask: "this is what I want
+it to look like when you're a member... you can see actual people." He
+confirmed via follow-up questions that this should (1) replace the round-3
+redesign entirely, not sit alongside it, (2) apply to both the website and
+the mobile app, (3) use each member's real uploaded profile photo as their
+avatar, and (4) use his exact 9-pill category list. He also supplied the
+mountaintop hero photo directly — saved as `assets/journeys-hero.jpg`,
+matching the existing `assets/music-library-bg.jpg` convention rather than
+starting a new `img/` folder.
+
+What changed in `fitness-journeys.html`:
+- New photo hero ("Stronger Together" script overlay, "Real people. Real
+  progress." heading, Start Your Journey / See How It Works buttons).
+- The round-3 composer (Date/Activity/How it felt/Notes, posts instantly,
+  no separate open step) is kept as-is, just with a new required Category
+  field added, now sitting under the hero instead of being the whole page.
+- Category filter pills (All Journeys + the 8 real categories) filter the
+  grid client-side from one fetch — no extra round trip per pill click.
+- Post cards: real profile photo avatar (falls back to the existing
+  colored-initial circle if a member hasn't uploaded one), name + age,
+  "Member since [month/year]", a category icon badge, a "⋮" menu (Edit/
+  Delete on your own posts, Report on others', reusing the existing report
+  modal), bold headline, italic quote, the existing reactions, and comment
+  replies restyled with each replier's own avatar.
+- The old "illustrative, not real" 12-card example grid is gone from this
+  page — Ken was explicit members should see "actual people," so an empty
+  state ("be the first to share in this category") takes its place instead
+  of fake content once real posts exist.
+- A closing CTA banner ("Your journey matters.") scrolls back to the
+  composer, same as the hero's own Start Your Journey button.
+
+⚠️ **Needs a Supabase step before this goes live** — run
+`sql/run_this_next_journeys_upgrade.sql` once in the Supabase SQL Editor.
+It adds `community_questions.category` (checked against the 8 real category
+values) and a new view, `public.profiles_public`, that hands back a
+member's AGE as a plain computed number without ever exposing their raw
+`date_of_birth` to another member's browser — `profiles.date_of_birth` is
+already flagged in `schema.sql` as "never exposed to other members'
+clients, only a computed age should ever be," and this view is that
+boundary. Posts made before this step has run will have no category (shown
+under "All Journeys" only, no icon badge) until edited.
+
+Synced to the mobile app's `www/fitness-journeys.html` and
+`www/assets/journeys-hero.jpg` — same file both places, so a `cap sync` +
+rebuild picks it up with no separate mobile work needed. `admin.html` was
+not touched by this round.
+
 ## 2026-10-05, round 4 — added a real Edit to admin.html's Approved Products tab
 
 Same fix as the Quote Library Edit, same day: Ken is about to bulk-load the
