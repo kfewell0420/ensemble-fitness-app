@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>Quote Library — Ensemble Fitness</title>
+<title>Daily Inspiration — Ensemble Fitness</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&family=Caveat:wght@600;700&family=Dancing+Script:wght@600;700&display=swap">
 <link rel="stylesheet" href="css/app.css?v=2" />
 </head>
@@ -11,8 +11,7 @@
 
 <!-- Ken's ask (Sept 2026): this page should NOT show the usual site-wide
      header/nav (logo, Community/My Journey/Gear/etc. links, Sign Out) —
-     just the orange "Quote Library" label, the heading/subtext, and the
-     quotes themselves.
+     just the orange label, the heading/subtext, and the quote itself.
      Nov 2026 follow-up: the header still needs to exist as an EMPTY shell
      (no brand, no links) so js/notifications.js has an .app-nav to inject
      the home icon + notification bell into (see getUtilityGroup() there —
@@ -48,12 +47,29 @@
 
 <div class="app-shell">
 
-  <div class="eyebrow">Quote Library</div>
+  <!-- Ken's ask (Oct 2026): this used to be a "Quote Library" that dumped
+     every active quote on the page at once — on his own phone it read as
+     "it just literally spreads out everything I ever wrote," not the calm,
+     one-thought-at-a-time feel the rest of the inspiration side of the app
+     has. "This platform should be totally based on inspiration... it
+     should be consistent" — the dashboard's sidebar panel (feed.html,
+     rpQuotePanel) and the Explore list (find.html) both already say "Daily
+     Inspiration," so this page's own label changes to match instead of
+     calling itself something different ("Quote Library"). "Words to carry
+     with you" stays exactly as is — Ken's explicit call, that heading is
+     the part to keep. Below, the page now shows ONE quote — today's —
+     using the exact same "days since the Unix epoch, modulo the queue
+     length" math as feed.html's loadQuotePanel, so a member sees the same
+     line here as on the dashboard, not a different one. admin.html's
+     internal "Quote Library" tab name is unchanged — that's Ken's own
+     backend tool, not member-facing, so the naming cleanup doesn't touch
+     it. -->
+  <div class="eyebrow">Daily Inspiration</div>
   <h2 style="margin-bottom:6px;">Words to carry with you.</h2>
-  <p class="card-sub" style="margin-bottom:24px;">A few lines worth sitting with — new ones added regularly.</p>
+  <p class="card-sub" style="margin-bottom:24px;">One line each day — something to hold onto before, during, or after your workout.</p>
 
-  <div id="quoteCards">
-    <div class="card"><div class="empty-state">Loading…</div></div>
+  <div class="card" id="quoteCard" style="text-align:center; padding:40px 28px;">
+    <div class="empty-state">Loading…</div>
   </div>
 
 </div>
@@ -88,47 +104,42 @@
     // Ken's ask (Sept 2026): this page has no header/nav at all (see the
     // markup above), so there's no admin "Queue" link or Sign Out link on
     // this page to wire up — both were removed along with the header.
-    await loadQuotes();
+    await loadQuoteOfDay();
   }
 
-  // ---- Quotes ----------------------------------------------------------
-  // Ken's ask (Oct 2026): dropped the "record your own reading" feature
-  // entirely — the message itself is what's relevant to the brand, not a
-  // member's recording of it. This page is now just the quotes, plain and
-  // simple (see admin.html for the still-current "add a quote" tool,
-  // which this reads from the same way it always has).
-
-  async function loadQuotes() {
-    var wrap = document.getElementById("quoteCards");
+  // ---- Quote of the day --------------------------------------------------
+  // Ken's ask (Oct 2026, original): dropped the "record your own reading"
+  // feature entirely — the message itself is what's relevant to the brand,
+  // not a member's recording of it (see admin.html for the still-current
+  // "add a quote" tool, which this reads from the same way it always has).
+  //
+  // Ken's ask (Oct 2026, round 2): this used to show every active quote at
+  // once; now shows just today's, picked with the exact same math as
+  // feed.html's loadQuotePanel (days since the Unix epoch, UTC, modulo the
+  // number of quotes) — so a member gets the same single line here as on
+  // the dashboard, and a new one shows up automatically at midnight with no
+  // extra database column or scheduled job to maintain.
+  async function loadQuoteOfDay() {
+    var wrap = document.getElementById("quoteCard");
     var { data: quotes, error } = await window.sb
       .from("quotes")
-      .select("id, quote_text, author")
+      .select("quote_text, author")
       .eq("is_active", true)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: true });
 
     if (error) {
-      wrap.innerHTML = '<div class="card"><div class="empty-state">Couldn\'t load the Quote Library right now — please refresh.</div></div>';
+      wrap.innerHTML = '<div class="empty-state">Couldn\'t load today\'s line right now — please refresh.</div>';
       return;
     }
     if (!quotes || quotes.length === 0) {
-      wrap.innerHTML = '<div class="card"><div class="empty-state">No quotes yet — check back soon.</div></div>';
+      wrap.innerHTML = '<div class="empty-state">New quotes coming soon.</div>';
       return;
     }
 
-    wrap.innerHTML = "";
-    quotes.forEach(function (quote) {
-      wrap.appendChild(buildQuoteCard(quote));
-    });
-  }
-
-  function buildQuoteCard(quote) {
-    var card = document.createElement("div");
-    card.className = "card";
-    card.style.marginBottom = "20px";
-    card.innerHTML =
-      (quote.author ? '<div class="eyebrow">' + escapeHtml(quote.author) + "</div>" : "") +
-      '<p style="font-size:17px; font-weight:600; font-style:italic; margin:0; line-height:1.45;">“' + escapeHtml(quote.quote_text) + '”</p>';
-    return card;
+    var q = quotes[Math.floor(Date.now() / 86400000) % quotes.length];
+    wrap.innerHTML =
+      (q.author ? '<div class="eyebrow" style="margin-bottom:16px;">' + escapeHtml(q.author) + "</div>" : "") +
+      '<p style="font-size:22px; font-weight:600; font-style:italic; margin:0; line-height:1.5;">“' + escapeHtml(q.quote_text) + '”</p>';
   }
 
   init();

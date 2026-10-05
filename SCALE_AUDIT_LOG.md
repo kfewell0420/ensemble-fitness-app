@@ -12,6 +12,29 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-05, round 2 — quote-library.html renamed to "Daily Inspiration" and switched to one quote a day
+
+Ken's ask: the page was dumping every active quote in the `quotes` table at
+once — on his own phone it read as "it just literally spreads out
+everything I ever wrote," not the calm, one-thought feel the rest of the
+inspiration side of the app has. Two changes:
+
+- **Naming**: eyebrow and `<title>` changed from "Quote Library" to "Daily
+  Inspiration," matching what feed.html's dashboard panel and find.html's
+  Explore list already call it ("Daily Inspiration (Quote)") — "this
+  platform should be totally based on inspiration... it should be
+  consistent." The heading "Words to carry with you." stays exactly as is —
+  Ken's explicit call to keep that one. admin.html's internal "Quote
+  Library" tab name is untouched (Ken's own backend tool, not member-facing).
+- **Behavior**: now shows exactly one quote — today's — using the identical
+  "days since the Unix epoch (UTC), modulo the number of active quotes"
+  math feed.html's `loadQuotePanel` already used for its dashboard panel, so
+  a member sees the same single line here as on the dashboard, and a new
+  one shows up automatically at midnight. The old full-list view and its
+  `buildQuoteCard` helper are gone.
+
+Synced to the mobile app's `www/quote-library.html`.
+
 ## 2026-10-05 — Music Library's "How It Works" rewritten for listeners, not artists
 
 Ken's ask, prompted by a conversation with an artist: the "How It Works"
