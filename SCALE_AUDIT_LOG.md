@@ -12,6 +12,37 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-06, round 8 — mobile app's journeys page now diverges from the website's, on purpose
+
+⚠️ **Maintenance note for future rounds**: `fitness-journeys.html` was
+copied straight across to mobile, byte-for-byte, every round up through
+round 7. **That's no longer true for the top section of the page.** Ken,
+after seeing the mobile app's actual Share Your Journey screen: "we don't
+want our members scrolling at all... let's remove stronger together, real
+people, real progress, every post, the start your journey tab, the view
+recent journey tab, see how it works tab." His reasoning: the mobile app
+already has its own bottom-nav tab for Journeys, so the website's photo
+hero and 3 quick-jump buttons (useful on a long page with a nav bar at the
+top, not the bottom) are just extra scrolling to get through on mobile
+before reaching the actual form. Explicitly website-only for the hero:
+"this is for the mobile app only."
+
+So, mobile app's `www/fitness-journeys.html` now has NO photo hero and NO
+hero buttons. In their place: "Stronger Together" (same orange script
+style) directly above a bold "Share Your Journey" heading, then straight
+into the Date/Category/Activity/… form — no subtitle text either, per
+Ken's "we literally want them to have the date and category, activity, and
+so on" right under the heading. Everything else in the file — the composer
+form itself, the category pills, the real-journeys grid, the example
+cards, How It Works at the bottom, and every line of CSS and JavaScript —
+is still identical to the website's and still gets copied across the same
+way as always. Only that one top section is now hand-maintained separately
+for mobile. **Future rounds**: when editing `member-app/fitness-
+journeys.html`, do NOT blindly overwrite `ensemble-fitness-mobile/www/
+fitness-journeys.html` with a straight file copy anymore — diff the two
+first, re-apply this mobile-specific header swap on top of whatever
+changed, same as this entry describes.
+
 ## 2026-10-06, round 7 — hero subtitle: Ken sent the exact final wording
 
 Rounds 5 and 6 were both reasonable guesses at restructuring the sentence
