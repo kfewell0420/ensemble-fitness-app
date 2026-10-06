@@ -12,6 +12,20 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-06, round 5 — hero subtitle re-punctuated to drop the orphan "on."
+
+The hero subtitle was wrapping to 3 lines on Ken's screen, with "on." left
+alone on the third line — "looks a little odd." Re-split into two
+sentences instead of one long one: "Every post here is from a real
+Ensemble Fitness member — the wins, the hard days. And everything in
+between — share where you're at, and cheer someone else on." Same meaning,
+same words, just re-punctuated so it reads as two shorter sentences
+instead of one that runs long. Shorter text here also means the hero's own
+text block takes up less vertical room, so more of the hilltop photo (and
+the people in it) shows through above the buttons — the other thing Ken
+asked for ("pull all that down so we can actually see the heads of the
+people").
+
 ## 2026-10-06, round 4 — brought back example cards, one per category
 
 Ken, on the mostly-empty real-journeys grid: "it would be great... even
