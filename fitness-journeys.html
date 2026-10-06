@@ -7,6 +7,10 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&family=Caveat:wght@600;700&family=Dancing+Script:wght@600;700&display=swap">
 <link rel="stylesheet" href="css/app.css?v=2" />
 <style>
+  /* Belt-and-suspenders for the hero's quick-jump links (round 8): native
+     #hash navigation jumps instantly by default — this makes that jump
+     itself smooth even before the page's own inline script runs. */
+  html { scroll-behavior: smooth; }
   /* Ken's ask (Oct 2026, round 4): "I would like to create something new...
      that looks better, sounds better, and appears better for a marketing
      standpoint... this is what I want it to look like when you're a member
@@ -204,10 +208,19 @@
     <div class="fj-hero-script">Stronger Together</div>
     <h1>Real people. Real progress.</h1>
     <p>Every post here is from a real Ensemble Fitness member — the wins, the hard days, and everything in between. Share where you're at, and cheer someone else on.</p>
+    <!-- Ken's ask (Oct 2026, round 8): "View Recent Journeys" wasn't doing
+         anything when clicked. These were plain <button> elements wired
+         entirely by JavaScript — if anything on the page threw before
+         wireHeroButtons() ran, every one of these would silently do
+         nothing, with no visible sign why. They're real links now
+         (href="#fjJourneysAnchor" etc.), so clicking one jumps to that
+         section (and updates the URL's #hash) even with zero JavaScript —
+         the JS below only upgrades that jump to a smooth scroll on top of
+         a click that already works natively. -->
     <div class="fj-hero-actions">
-      <button type="button" class="btn btn-primary" id="fjStartBtn">Start Your Journey</button>
-      <button type="button" class="btn btn-ghost" id="fjViewJourneysBtn">View Recent Journeys</button>
-      <button type="button" class="btn btn-ghost" id="fjHowBtn">See How It Works</button>
+      <a href="#fjComposerAnchor" class="btn btn-primary" id="fjStartBtn" style="text-decoration:none;">Start Your Journey</a>
+      <a href="#fjJourneysAnchor" class="btn btn-ghost" id="fjViewJourneysBtn" style="text-decoration:none;">View Recent Journeys</a>
+      <a href="#fjHowCard" class="btn btn-ghost" id="fjHowBtn" style="text-decoration:none;">See How It Works</a>
     </div>
   </div>
 
@@ -388,14 +401,21 @@
   // It Works (the explainer, now moved to the very bottom — see its own
   // comment). Quick access on mobile without a lot of scrolling-to-find.
   function wireHeroButtons() {
-    function scrollTo(id) {
-      return function () {
-        document.getElementById(id).scrollIntoView({ behavior: "smooth", block: "start" });
-      };
+    // These are real href="#id" links now (see the markup comment above) —
+    // clicking one already jumps there with zero JavaScript. This just
+    // upgrades that jump to a smooth scroll, and does nothing else if the
+    // target element isn't found instead of throwing.
+    function smoothScroll(e) {
+      var id = this.getAttribute("href").slice(1);
+      var target = document.getElementById(id);
+      if (!target) return; // let the native #hash jump happen
+      e.preventDefault();
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
     }
-    document.getElementById("fjStartBtn").addEventListener("click", scrollTo("fjComposerAnchor"));
-    document.getElementById("fjViewJourneysBtn").addEventListener("click", scrollTo("fjJourneysAnchor"));
-    document.getElementById("fjHowBtn").addEventListener("click", scrollTo("fjHowCard"));
+    ["fjStartBtn", "fjViewJourneysBtn", "fjHowBtn"].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.addEventListener("click", smoothScroll);
+    });
   }
 
   // ---------------- Share Your Journey (composer) ---------------------------
@@ -858,10 +878,15 @@
       .maybeSingle();
     currentDisplayName = (profileRow && profileRow.display_name) || "A member";
 
-    populateCategorySelect();
-    renderPills();
-    wireHeroButtons();
-    wireComposer();
+    // Ken's ask (Oct 2026, round 8): each setup step runs independently now
+    // — a problem in one (say, building the category dropdown) used to be
+    // able to silently stop every step after it, including wiring up the
+    // hero's buttons and loading the real journeys. Isolating them means a
+    // single broken piece degrades gracefully instead of taking the whole
+    // page down with it.
+    [populateCategorySelect, renderPills, wireHeroButtons, wireComposer].forEach(function (fn) {
+      try { fn(); } catch (e) { /* that one piece stays broken; everything else still works */ }
+    });
     await loadJourneys();
   })();
 </script>

@@ -12,6 +12,34 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-06, round 3 — "View Recent Journeys" wasn't doing anything
+
+Ken: "The page does not come up. It doesn't load anything." The three hero
+buttons (Start Your Journey / View Recent Journeys / See How It Works)
+were plain `<button>` elements wired entirely by a JavaScript function
+(`wireHeroButtons()`) that ran partway through page setup — if anything
+earlier in that setup sequence threw an error, every button after it in
+the sequence would silently never get its click handler, with nothing on
+screen to explain why. Website-first per Ken's note — he's confirming the
+web page before moving to mobile, so this round (and the SQL/migration
+guidance) is being verified there first, though the file stays identical
+and synced to mobile as always.
+
+Two changes, both defensive rather than chasing one specific cause (since
+without seeing Ken's actual browser console, the exact trigger can't be
+confirmed from here):
+
+1. The three hero buttons are real links now (`<a href="#fjComposerAnchor">`
+   etc.), not JS-only buttons — clicking one jumps to that section natively,
+   with zero JavaScript required. The page's script still upgrades that
+   into a smooth scroll, but only as an enhancement on top of a click that
+   already works on its own.
+2. Page setup no longer runs as one unbroken chain. Each independent setup
+   step (building the category dropdown, the filter pills, the hero
+   buttons, the composer) now runs in its own try/catch, so one broken
+   piece can't silently take every step after it down too — including, as
+   apparently happened here, the hero buttons and the real-journeys load.
+
 ## 2026-10-06, round 2 — real posts weren't showing + dropped the redundant CTA banner
 
 Two fixes from Ken in the same message.
