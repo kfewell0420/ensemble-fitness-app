@@ -208,7 +208,29 @@
 <style>
   .app-nav { padding-top: calc(4px + env(safe-area-inset-top, 0px)); padding-bottom: 4px; }
   .efit-nav-utility { margin-left: 0; margin-top: 0; }
-  .app-shell { padding-top: 4px; }
+  /* Ken's ask (Oct 2026, round 10): "it goes from the left side of the site
+     all the way over to the right side... when you become a member, for
+     some reason it narrows... it's set up like a cell phone shot... we
+     need to widen this so that it reflects the front when you're not a
+     member." The shared .app-shell container (css/app.css) tops out at
+     720px everywhere else in the member app on purpose — that's the right
+     width for a single centered form/card page like profile.html or
+     feed.html. This page isn't that: it has a photo hero and a real-posts
+     grid that need to scale to "thousands of journals a day" (Ken's
+     words), so it gets its own wider container, scoped to this page only
+     — nothing else in the member app changes width.
+     Confirmed scope (Ken): "that narrow view may be perfect for the
+     mobile phone. But not for the website" — so this widening is for the
+     browser/website only. It has no effect on the mobile app wrapper
+     (ensemble-fitness-mobile) even though the same CSS is mirrored there
+     for consistency: a phone's own screen is already narrower than even
+     the old 720px cap, so max-width never kicks in there either way. */
+  .app-shell { padding-top: 4px; max-width: 1440px; }
+  /* The composer form and the How It Works steps read better at a normal
+     form width even inside the wider shell above — full-bleed text inputs
+     and a 6-across "how it works" grid both looked wrong in testing. Only
+     the real-journeys grid (and the hero) use the full wide shell. */
+  .fj-narrow { max-width: 760px; margin-left: auto; margin-right: auto; }
 </style>
 
 <div class="app-shell">
@@ -233,37 +255,39 @@
     </div>
   </div>
 
-  <div class="eyebrow" id="fjComposerAnchor">Share Your Journey</div>
-  <h2 style="margin-bottom:6px;">Post an update</h2>
-  <p class="card-sub" style="margin-bottom:20px;">Visible to the whole community the moment you share it. No pressure, no streak-shaming — just a record of showing up.</p>
+  <div class="fj-narrow">
+    <div class="eyebrow" id="fjComposerAnchor">Share Your Journey</div>
+    <h2 style="margin-bottom:6px;">Post an update</h2>
+    <p class="card-sub" style="margin-bottom:20px;">Visible to the whole community the moment you share it. No pressure, no streak-shaming — just a record of showing up.</p>
 
-  <div class="card" style="margin-bottom:28px;">
-    <form id="fjForm">
-      <div class="field">
-        <label for="fj-date">Date</label>
-        <input type="date" id="fj-date" required />
-      </div>
-      <div class="field">
-        <label for="fj-category">Category</label>
-        <select id="fj-category" required>
-          <option value="" disabled selected>Choose a category</option>
-        </select>
-      </div>
-      <div class="field">
-        <label for="fj-activity">Activity</label>
-        <input type="text" id="fj-activity" placeholder="e.g. Leg day, 5k run, rest day" maxlength="160" />
-      </div>
-      <div class="field">
-        <label for="fj-mood">How did it feel?</label>
-        <input type="text" id="fj-mood" placeholder="e.g. Strong, tired, great" maxlength="120" />
-      </div>
-      <div class="field">
-        <label for="fj-notes">Notes</label>
-        <textarea id="fj-notes" placeholder="Anything you want to share with the community…" maxlength="600"></textarea>
-      </div>
-      <div class="form-msg" id="fjFormMsg"></div>
-      <button type="submit" class="btn btn-primary">Share Your Journey</button>
-    </form>
+    <div class="card" style="margin-bottom:28px;">
+      <form id="fjForm">
+        <div class="field">
+          <label for="fj-date">Date</label>
+          <input type="date" id="fj-date" required />
+        </div>
+        <div class="field">
+          <label for="fj-category">Category</label>
+          <select id="fj-category" required>
+            <option value="" disabled selected>Choose a category</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="fj-activity">Activity</label>
+          <input type="text" id="fj-activity" placeholder="e.g. Leg day, 5k run, rest day" maxlength="160" />
+        </div>
+        <div class="field">
+          <label for="fj-mood">How did it feel?</label>
+          <input type="text" id="fj-mood" placeholder="e.g. Strong, tired, great" maxlength="120" />
+        </div>
+        <div class="field">
+          <label for="fj-notes">Notes</label>
+          <textarea id="fj-notes" placeholder="Anything you want to share with the community…" maxlength="600"></textarea>
+        </div>
+        <div class="form-msg" id="fjFormMsg"></div>
+        <button type="submit" class="btn btn-primary">Share Your Journey</button>
+      </form>
+    </div>
   </div>
 
   <div class="eyebrow" id="fjJourneysAnchor">Real Journeys</div>
@@ -296,7 +320,7 @@
        How It Works" button (a scroll-to-anchor now, not a reveal/hide
        toggle — nothing on the page is hidden anymore, it's just ordered by
        what matters most first). -->
-  <div class="card fj-how" id="fjHowCard">
+  <div class="card fj-how fj-narrow" id="fjHowCard">
     <div class="eyebrow">How It Works</div>
     <h2 style="font-size:18px; margin-bottom:0;">Three simple steps</h2>
     <div class="fj-how-steps">

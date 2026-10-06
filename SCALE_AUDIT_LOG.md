@@ -12,6 +12,48 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-06, round 10 — fitness-journeys.html widened for desktop/website
+
+Ken compared the member (logged-in) view of `fitness-journeys.html` against
+the public marketing site's own journeys page (`marketing-site/fitness-
+journey.html`, shown to visitors who aren't signed in) and flagged that the
+member version "narrows... it's set up like a cell phone shot" on a normal
+desktop browser, where the marketing page uses the site's full width. Two
+concrete asks: widen the page overall, and show the real-journeys grid 4
+cards across instead of 2 — "ultimately this could be thousands of
+journals a day... we need to widen our platform here once you're a member."
+
+Root cause: every member-app page shares one `.app-shell` container class
+(`css/app.css`) capped at `max-width: 720px` — right for a single centered
+form page like `profile.html` or `feed.html`, but too narrow for this
+page's photo hero and multi-card grid. `.fj-grid` was already
+`grid-template-columns: repeat(auto-fit, minmax(320px, 1fr))` — it was
+always capable of showing more columns, it just never had the room.
+
+Fix, scoped to this page only (did not touch the shared `css/app.css`, so
+no other member page changed width): `fitness-journeys.html` now overrides
+`.app-shell` to `max-width: 1440px` in its own `<style>` block. The hero
+and the real-journeys grid use the full new width (the grid now lays out
+4 columns at normal desktop widths, confirmed with a headless-browser
+check). The composer form and the "How It Works" card are wrapped in a new
+`.fj-narrow` class (`max-width: 760px`, centered) so form inputs don't
+stretch edge-to-edge and the 3-step "How It Works" grid doesn't fan out
+into 6+ skinny columns — both looked wrong at the full 1440px width in
+testing. `marketing-site/` itself was not touched; it was only the visual
+reference for what Ken wanted this page to resemble.
+
+Ken was explicit this is a website-only fix: "that narrow view may be
+perfect for the mobile phone. But not for the website." On an actual phone
+screen `.app-shell`'s max-width never kicks in anyway — the screen itself
+is already narrower than even the old 720px cap — so this change has zero
+visual effect on the mobile app. The same CSS was still mirrored into
+`ensemble-fitness-mobile/www/fitness-journeys.html` purely so the two
+files don't drift apart more than necessary; the mobile file's round-8
+hero divergence (no photo hero, no quick-jump buttons) is unchanged and
+is still the only thing that actually looks different on a phone.
+
+---
+
 ## 2026-10-06, round 9 — feed.html "Share Your Journey" sidebar panel copy update
 
 Small wording fix to the `rpJourneyPanel` sidebar panel on `feed.html` (the
