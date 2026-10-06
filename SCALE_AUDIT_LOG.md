@@ -12,6 +12,19 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-06, round 4 — brought back example cards, one per category
+
+Ken, on the mostly-empty real-journeys grid: "it would be great... even
+though they're dummy profiles for right now." Added back 8 placeholder
+example cards — one per category pill, so every filter shows something —
+clearly tagged "Example" in the corner (not pretending to be real members),
+dimmed slightly, and fully static: no clickable reactions, no comment box,
+nothing written to Supabase. Real posts always render first (already
+newest-first), examples fill in after, so anything a member actually posts
+lands above the placeholders, never mixed into them — and the "N shared so
+far" count only ever reflects real posts, so it stays honest as the
+community grows.
+
 ## 2026-10-06, round 3 — "View Recent Journeys" wasn't doing anything
 
 Ken: "The page does not come up. It doesn't load anything." The three hero

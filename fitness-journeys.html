@@ -113,6 +113,14 @@
     width: 30px; height: 30px; border-radius: 50%; background: rgba(255,255,255,0.08);
     display: flex; align-items: center; justify-content: center; font-size: 15px; flex: 0 0 auto;
   }
+  /* Placeholder example cards (round 9) — same card look, just dimmed
+     slightly and plainly labeled so they never read as a real member. */
+  .fj-card-example { opacity: 0.82; }
+  .fj-example-tag {
+    flex: 0 0 auto; font-size: 10.5px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+    color: var(--faint-invert); background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14);
+    border-radius: var(--radius-pill); padding: 4px 9px; align-self: center;
+  }
   .fj-menu-wrap { position: relative; flex: 0 0 auto; }
   .fj-menu-btn {
     background: transparent; border: none; color: var(--muted-invert); font-size: 20px;
@@ -598,6 +606,52 @@
 
   var allPosts = [];
 
+  // Ken's ask (Oct 2026, round 9): "even though they're dummy profiles for
+  // right now" — bring back example cards (one per category, so every
+  // filter pill shows something) so the page doesn't look empty while real
+  // posts are still sparse. Real posts always render first — newest on
+  // top, same as before — then these fill out the rest of the grid.
+  // Clearly tagged "Example" (not pretending to be real members), static
+  // (no reactions/replies/menu to click), and never written to Supabase.
+  var ILLUSTRATIVE_JOURNEYS = [
+    { name: "David O.", age: 41, category: "Weight Loss", memberSinceLabel: "Nov 2024", headline: "Down 22 lbs, lifting 4x/week", quote: "22 pounds down, but honestly the sleep improvement is the real win.", reactions: { clap: 31, heart: 34, thumbs_up: 93 }, replies: [{ name: "Chidi N.", body: "One step at a time — you're doing great!" }] },
+    { name: "Talia B.", age: 45, category: "Building Strength", memberSinceLabel: "Aug 2024", headline: "Strength training, no more skipped Mondays", quote: "I used to dread Mondays at the gym. Now they're non-negotiable.", reactions: { clap: 58, heart: 26, thumbs_up: 47 }, replies: [{ name: "Priya S.", body: "This is the energy!" }] },
+    { name: "Melissa K.", age: 34, category: "Running", memberSinceLabel: "Feb 2025", headline: "Running 3x/week, first 5K in April", quote: "I hated running for years. Turns out I just hated running alone.", reactions: { clap: 66, heart: 44, thumbs_up: 75 }, replies: [{ name: "Chidi N.", body: "We've got your back! 🙌" }, { name: "Bree T.", body: "So proud of you!" }] },
+    { name: "Ben R.", age: 48, category: "Nutrition", memberSinceLabel: "Sep 2025", headline: "Meal prepping Sundays, 10 weeks straight", quote: "Having lunch ready each day removed the one excuse I always used.", reactions: { clap: 27, heart: 19, thumbs_up: 44 }, replies: [{ name: "Renata V.", body: "That's such a great habit." }] },
+    { name: "Marcus T.", age: 52, category: "Recovery", memberSinceLabel: "Jan 2025", headline: "Back in the gym after knee surgery", quote: "The knee still complains some days. I show up anyway.", reactions: { clap: 32, heart: 89, thumbs_up: 52 }, replies: [{ name: "Marcus H.", body: "So proud of you!" }] },
+    { name: "Renata V.", age: 38, category: "Mental Health", memberSinceLabel: "Mar 2025", headline: "Swimming twice a week again", quote: "The pool used to intimidate me. Now it's the calmest hour of my week.", reactions: { clap: 21, heart: 40, thumbs_up: 58 }, replies: [{ name: "Yusuf A.", body: "Love this for you!" }] },
+    { name: "Grace L.", age: 44, category: "Over 40", memberSinceLabel: "Jun 2025", headline: "Proof 40 isn't a deadline", quote: "Stronger at 44 than I was at 30. Age was never the real obstacle.", reactions: { clap: 44, heart: 30, thumbs_up: 61 }, replies: [{ name: "Owen P.", body: "This is so motivating!" }] },
+    { name: "Priya S.", age: 27, category: "Beginners", memberSinceLabel: "May 2025", headline: "Daily 20-minute walks, 6 weeks straight", quote: "Twenty minutes a day sounded too small to matter. Now it's the thing I look forward to most.", reactions: { clap: 37, heart: 71, thumbs_up: 99 }, replies: [{ name: "Amina S.", body: "One step at a time — you're doing great!" }, { name: "Sam K.", body: "Keep going! 💪" }] }
+  ];
+
+  function buildIllustrativeCard(item) {
+    var icon = CATEGORY_ICON[item.category] || "✨";
+    var initial = item.name.charAt(0).toUpperCase();
+    return '<div class="fj-card fj-card-example">' +
+      '<div class="fj-card-head">' +
+        '<div class="fj-avatar" style="width:44px;height:44px;font-size:16px;background:' + avatarColor(item.name) + '">' + escapeHtml(initial) + '</div>' +
+        '<div style="flex:1; min-width:0;">' +
+          '<div class="fj-card-name">' + escapeHtml(item.name) + ', ' + item.age + '</div>' +
+          '<div class="fj-card-sub">Member since ' + escapeHtml(item.memberSinceLabel) + '</div>' +
+        '</div>' +
+        '<div class="fj-card-icon" title="' + escapeHtml(item.category) + '">' + icon + '</div>' +
+        '<span class="fj-example-tag">Example</span>' +
+      '</div>' +
+      '<div class="fj-card-body">' +
+        '<div class="fj-headline">' + escapeHtml(item.headline) + '</div>' +
+        '<div class="fj-cat-chip">' + icon + ' ' + escapeHtml(item.category) + '</div>' +
+        '<div class="fj-quote">“' + escapeHtml(item.quote) + '”</div>' +
+      '</div>' +
+      '<div class="fj-reactions">' + STORY_REACTIONS.map(function (r) {
+        return '<span class="fj-reaction-pill" style="cursor:default;">' + r.emoji + ' <span class="fj-reaction-count">' + (item.reactions[r.type] || 0) + '</span></span>';
+      }).join("") + '</div>' +
+      '<div class="fj-replies">' + item.replies.map(function (r) {
+        return '<div class="fj-reply-item">' + '<div class="fj-avatar" style="width:26px;height:26px;font-size:11px;background:' + avatarColor(r.name) + '">' + escapeHtml(r.name.charAt(0).toUpperCase()) + '</div>' +
+          '<div class="fj-reply-text"><strong>' + escapeHtml(r.name) + '</strong> ' + escapeHtml(r.body) + '</div></div>';
+      }).join("") + '</div>' +
+    '</div>';
+  }
+
   // One shared listener (not one per card) closes any open "⋮" menu on an
   // outside click — a per-card {once:true} listener would only ever work
   // for the very first menu opened on the page, since using it once
@@ -653,17 +707,23 @@
     var grid = document.getElementById("fjGrid");
     var countLine = document.getElementById("fjCountLine");
     var visible = activeCategory === "All" ? allPosts : allPosts.filter(function (p) { return p.category === activeCategory; });
+    var visibleExamples = activeCategory === "All" ? ILLUSTRATIVE_JOURNEYS : ILLUSTRATIVE_JOURNEYS.filter(function (p) { return p.category === activeCategory; });
 
+    // The count only ever reflects REAL posts — examples fill out the grid
+    // visually but don't get counted, so this number stays honest.
     countLine.textContent = allPosts.length
       ? allPosts.length + " shared so far" + (activeCategory === "All" ? "." : " — showing " + visible.length + " in " + activeCategory + ".")
       : "Be the first to share.";
 
-    if (!visible.length) {
+    if (!visible.length && !visibleExamples.length) {
       grid.innerHTML = '<div class="empty-state">' + (allPosts.length ? "No journeys in this category yet — try another, or be the first!" : "No journeys shared yet — be the first!") + '</div>';
       return;
     }
 
-    grid.innerHTML = visible.map(buildCard).join("");
+    // Real posts first (already newest-first from loadJourneys' own order),
+    // examples after — so anything a member actually posts always lands
+    // above the placeholder content, never mixed in with it.
+    grid.innerHTML = visible.map(buildCard).join("") + visibleExamples.map(buildIllustrativeCard).join("");
 
     visible.forEach(function (item) {
       var card = grid.querySelector('.fj-card[data-id="' + item.id + '"]');
