@@ -172,13 +172,6 @@
   }
   .fj-edit-actions { display: flex; gap: 8px; }
 
-  .fj-cta-banner {
-    margin-top: 28px; background: linear-gradient(135deg, var(--accent-tint), rgba(255,255,255,0.03));
-    border: 1px solid rgba(255,90,31,0.32); border-radius: var(--radius-lg); padding: 30px; text-align: center;
-  }
-  .fj-cta-banner h3 { margin: 0 0 8px; color: #fff; font-size: 20px; }
-  .fj-cta-banner p { margin: 0 0 18px; color: var(--muted-invert); font-size: 14px; }
-
   .fj-count-line { color: var(--faint-invert); font-size: 13px; margin-bottom: 14px; }
 </style>
 </head>
@@ -261,11 +254,14 @@
     <div class="empty-state">Loading…</div>
   </div>
 
-  <div class="fj-cta-banner">
-    <h3>Your journey matters.</h3>
-    <p>Every step forward is worth celebrating — share yours, and cheer on someone else's.</p>
-    <button type="button" class="btn btn-primary" id="fjCtaBtn">Share Your Journey</button>
-  </div>
+  <!-- Ken's ask (Oct 2026, round 7): dropped the "Your journey matters" CTA
+       banner (and its own "Share Your Journey" button) that used to sit
+       here — between the hero's "Start Your Journey" button, the
+       composer's own "Share Your Journey" submit button right above this
+       spot, and this banner, "Share Your Journey" appeared 3 times on one
+       screen. Ken's call: "that's super redundant... take out that whole
+       column." How It Works now follows directly after the real-journeys
+       grid. -->
 
   <!-- Ken's ask (Oct 2026, round 6): "How It Works" moved down here, under
        everything else — originally it sat right under the hero (revealed
@@ -398,7 +394,6 @@
       };
     }
     document.getElementById("fjStartBtn").addEventListener("click", scrollTo("fjComposerAnchor"));
-    document.getElementById("fjCtaBtn").addEventListener("click", scrollTo("fjComposerAnchor"));
     document.getElementById("fjViewJourneysBtn").addEventListener("click", scrollTo("fjJourneysAnchor"));
     document.getElementById("fjHowBtn").addEventListener("click", scrollTo("fjHowCard"));
   }
@@ -446,7 +441,7 @@
       var questionText = notes || (summaryParts.length ? summaryParts.join(" — ") : "Shared an update.");
 
       try {
-        var { error } = await window.sb.from("community_questions").insert({
+        var insertRow = {
           user_id: currentUserId,
           asker_name: currentDisplayName,
           question_text: questionText,
@@ -456,7 +451,16 @@
           mood: mood || null,
           notes: notes || null,
           status: "approved"
-        });
+        };
+        var { error } = await window.sb.from("community_questions").insert(insertRow);
+        if (error) {
+          // Same fallback as loadJourneys(): if the category column/
+          // migration hasn't been run in Supabase yet, don't block posting
+          // on it — save everything else and just drop category.
+          delete insertRow.category;
+          var retry = await window.sb.from("community_questions").insert(insertRow);
+          error = retry.error;
+        }
         if (error) throw error;
         form.reset();
         dateInput.value = new Date().toISOString().slice(0, 10);
@@ -583,21 +587,43 @@
     document.querySelectorAll(".fj-menu-dropdown.show").forEach(function (m) { m.classList.remove("show"); });
   });
 
+  // Ken's ask (Oct 2026, round 7): "can we reference the journeys that we
+  // do have there" — real posts weren't showing at all. The most likely
+  // cause: this page's very first query asks for the `category` column,
+  // which only exists once sql/run_this_next_journeys_upgrade.sql has been
+  // run in Supabase — until then, asking for a column that doesn't exist
+  // makes the WHOLE query fail, so every post disappears, not just the
+  // category badge. This now falls back to the same query minus `category`
+  // if the first one errors, so real posts (and the count) show up either
+  // way — with or without that migration having been run yet.
   async function loadJourneys() {
     var grid = document.getElementById("fjGrid");
-    var { data, error } = await window.sb
+    var baseColumns = "id, user_id, asker_name, question_text, entry_date, activity, mood, notes, created_at";
+
+    var res = await window.sb
       .from("community_questions")
-      .select("id, user_id, asker_name, question_text, entry_date, activity, mood, notes, category, created_at")
+      .select(baseColumns + ", category")
       .eq("status", "approved")
       .order("created_at", { ascending: false })
       .limit(60);
 
-    if (error) {
+    if (res.error) {
+      // Likely cause: the category column/migration hasn't been run yet.
+      // Retry without it so real posts still load.
+      res = await window.sb
+        .from("community_questions")
+        .select(baseColumns)
+        .eq("status", "approved")
+        .order("created_at", { ascending: false })
+        .limit(60);
+    }
+
+    if (res.error) {
       grid.innerHTML = '<div class="empty-state">Couldn\'t load journeys right now — please refresh.</div>';
       return;
     }
 
-    allPosts = filterOutBlocked(data || []);
+    allPosts = filterOutBlocked(res.data || []);
     await attachAvatarUrls(allPosts);
     await attachProfilePublicInfo(allPosts);
     renderGrid();

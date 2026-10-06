@@ -12,6 +12,34 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-06, round 2 — real posts weren't showing + dropped the redundant CTA banner
+
+Two fixes from Ken in the same message.
+
+**Real posts showing as "no journeys shared yet."** Ken had posted a
+journey or two himself and the page wasn't reflecting them — not even the
+count. Root cause: this page's very first query for the real-journeys grid
+asks for the `category` column, which only exists once
+`sql/run_this_next_journeys_upgrade.sql` has been run in Supabase. Asking
+for a column that doesn't exist yet fails the WHOLE query, so every real
+post disappeared, not just the category badge — that migration step
+matters more than the round-5 delivery note made clear. Fixed properly:
+both the real-journeys query and the composer's insert now try with
+`category` first, and silently retry without it if that fails, so real
+posts show (and can be posted) either way, with or without that SQL step
+having been run. The category badge/filter itself still won't work for a
+post saved before the migration runs — only visibility was the bug.
+
+**Dropped the "Your journey matters" CTA banner.** Ken: "we have share
+your journey in too many areas... that's super redundant." Between the
+hero's "Start Your Journey" button, the composer's own "Share Your
+Journey" submit button, and this banner's own "Share Your Journey" button
+right below it, the same call-to-action appeared 3 times on one screen.
+Removed the banner entirely; How It Works now follows directly after the
+real-journeys grid (it simply moves up one slot, same as Ken described).
+
+Synced to mobile — same file both places.
+
 ## 2026-10-06 — raised the character limits on Activity and How did it feel?
 
 Ken was writing full sentences into both fields ("Today I decided to go to
