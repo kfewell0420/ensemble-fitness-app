@@ -12,6 +12,23 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-06, round 7 — hero subtitle: Ken sent the exact final wording
+
+Rounds 5 and 6 were both reasonable guesses at restructuring the sentence
+to control the line break — Ken settled it by sending a screenshot of the
+exact text and line break he wanted, so this round just matches it exactly
+rather than guessing again. Final text, with the line break exactly where
+he placed it:
+
+"Every post here is from a real Ensemble Fitness member — the wins, the
+hard days, [line break] and everything in between. Share where you're at,
+and cheer someone else on."
+
+This is actually the same wording the page launched with in round 4/5 —
+the `<br>` just now sits at the exact point Ken wants the wrap to happen,
+same forced-break approach as round 6 so it doesn't depend on guessing
+screen width.
+
 ## 2026-10-06, round 6 — hero subtitle forced to exactly 2 lines
 
 Round 5's re-punctuation wasn't enough — the paragraph was still wrapping
