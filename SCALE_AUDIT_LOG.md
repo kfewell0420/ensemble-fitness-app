@@ -12,6 +12,30 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-06, round 9 — feed.html "Share Your Journey" sidebar panel copy update
+
+Small wording fix to the `rpJourneyPanel` sidebar panel on `feed.html` (the
+dark card with the 🌱 icon, "SHARE YOUR JOURNEY" heading, and the
+"Share Your Journey →" link to `fitness-journeys.html`). Ken sent a
+screenshot and asked to drop the "live the moment you share it" clause and
+split the line into two sentences instead.
+
+Old: "Post a win, a struggle, or a question — visible to the whole
+community, live the moment you share it."
+
+New: "Post a win, a struggle, or a question — visible to the whole
+community. Your journey may be exactly what someone else needs today."
+
+This panel has always been a straight byte-for-byte copy between
+`member-app/feed.html` and `ensemble-fitness-mobile/www/feed.html` (unlike
+`fitness-journeys.html`, which now intentionally diverges — see round 8
+below), so the same edit was applied to both files identically. Verified
+with a diff that the two files still match outside this one line, and ran
+the usual div-balance / inline-script-syntax / CSS-brace-balance checks on
+both — all clean.
+
+---
+
 ## 2026-10-06, round 8 — mobile app's journeys page now diverges from the website's, on purpose
 
 ⚠️ **Maintenance note for future rounds**: `fitness-journeys.html` was
