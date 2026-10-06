@@ -12,6 +12,23 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-06, round 6 — hero subtitle forced to exactly 2 lines
+
+Round 5's re-punctuation wasn't enough — the paragraph was still wrapping
+to 3 lines (the first sentence alone was long enough to wrap on its own).
+Ken gave the exact 2 sentences this time: "Every post here is from a real
+Ensemble Fitness member — the wins, the hard days." / "Everything in
+between — share where you're at, and cheer someone else on." — no "And" on
+the second one. Rather than keep guessing at wording that happens to wrap
+the right way at whatever width someone's viewing it, this now forces the
+break explicitly with a `<br>` between the two sentences, so it's always
+exactly those two lines regardless of screen width. Also widened the
+paragraph's max-width (560px → 640px, so each sentence has room to actually
+fit on one line) and tightened its margin and line-height — the shorter,
+tighter text block means more of the hero photo shows above the buttons,
+which was the other half of Ken's ask ("so we can see the heads of the
+characters and the horizon, the sunset").
+
 ## 2026-10-06, round 5 — hero subtitle re-punctuated to drop the orphan "on."
 
 The hero subtitle was wrapping to 3 lines on Ken's screen, with "on." left
