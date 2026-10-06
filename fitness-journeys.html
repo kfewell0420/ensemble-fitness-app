@@ -236,11 +236,11 @@
       </div>
       <div class="field">
         <label for="fj-activity">Activity</label>
-        <input type="text" id="fj-activity" placeholder="e.g. Leg day, 5k run, rest day" maxlength="80" />
+        <input type="text" id="fj-activity" placeholder="e.g. Leg day, 5k run, rest day" maxlength="160" />
       </div>
       <div class="field">
         <label for="fj-mood">How did it feel?</label>
-        <input type="text" id="fj-mood" placeholder="e.g. Strong, tired, great" maxlength="40" />
+        <input type="text" id="fj-mood" placeholder="e.g. Strong, tired, great" maxlength="120" />
       </div>
       <div class="field">
         <label for="fj-notes">Notes</label>
@@ -778,8 +778,8 @@
         '<select class="edit-fj-category">' + CATEGORIES.map(function (c) {
           return '<option value="' + escapeHtml(c.key) + '"' + (item.category === c.key ? " selected" : "") + '>' + c.icon + ' ' + escapeHtml(c.key) + '</option>';
         }).join("") + '</select>' +
-        '<input type="text" class="edit-fj-activity" maxlength="80" placeholder="Activity" value="' + escapeHtml(item.activity || "") + '" />' +
-        '<input type="text" class="edit-fj-mood" maxlength="40" placeholder="How did it feel?" value="' + escapeHtml(item.mood || "") + '" />' +
+        '<input type="text" class="edit-fj-activity" maxlength="160" placeholder="Activity" value="' + escapeHtml(item.activity || "") + '" />' +
+        '<input type="text" class="edit-fj-mood" maxlength="120" placeholder="How did it feel?" value="' + escapeHtml(item.mood || "") + '" />' +
         '<textarea class="edit-fj-notes" maxlength="600" placeholder="Notes">' + escapeHtml(item.notes || "") + '</textarea>' +
         '<div class="form-msg" data-edit-msg></div>' +
         '<div class="fj-edit-actions">' +

@@ -12,6 +12,19 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-06 — raised the character limits on Activity and How did it feel?
+
+Ken was writing full sentences into both fields ("Today I decided to go to
+a park and touch a tree, with both hands, barefooted." / "Excellent. I
+closed my eyes in hopes of...") and kept getting cut off well before
+filling the box, let alone finishing the thought. Activity was capped at
+80 characters, How did it feel? at 40 — fine for the one- or two-word
+answers the placeholders suggest ("Leg day" / "Strong, tired, great"), too
+short for members who want to actually say something there. Raised to 160
+and 120. Database side needed no change — both columns are already a plain
+`text` type with no length limit; this was a client-side cap only. Updated
+in both the composer and the inline Edit form, and synced to mobile.
+
 ## 2026-10-05, round 6 — reordered the new journeys page so real content comes first
 
 Same-day follow-up to round 5, after Ken saw it live. Two changes:
