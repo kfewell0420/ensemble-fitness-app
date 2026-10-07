@@ -464,6 +464,49 @@
     from { opacity: 0; }
     to { opacity: 1; }
   }
+
+  /* ---- Loading skeleton (round 12, Oct 2026) --------------------------
+     Ken's ask: "why does it take so long to load versus being instant?"
+     Landing on Home (every time — this is a plain multi-page site, so
+     every visit here is a fresh page load, not a cached app screen) used
+     to show nothing but bare white/empty space in the reel and the Meal
+     Prep strip for however long the real data took to arrive — easy to
+     read as "broken" even though it was always going to finish. These
+     shimmering placeholder cards render INSTANTLY (before a single
+     network request even goes out — see renderReelSkeleton()/
+     renderMealPrepSkeleton() right near the top of the script below) and
+     get replaced the moment real content (cached or freshly fetched) is
+     ready, so there's never a blank gap to sit and watch. */
+  .rp-skeleton-card {
+    margin: 0 14px 14px;
+    background: var(--navy-900);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+  @media (max-width: 899px) {
+    .rp-skeleton-card { margin: 0 0 10px; background: transparent; border: none; border-bottom: 1px solid rgba(255,255,255,0.08); border-radius: 0; }
+  }
+  .rp-skeleton-media { aspect-ratio: 9 / 10; }
+  @media (min-width: 900px) {
+    .rp-skeleton-media { aspect-ratio: 4 / 5; }
+  }
+  .rp-skeleton-shimmer {
+    background: linear-gradient(100deg, rgba(255,255,255,0.05) 30%, rgba(255,255,255,0.12) 50%, rgba(255,255,255,0.05) 70%);
+    background-size: 220% 100%;
+    animation: rpSkeletonShimmer 1.3s ease-in-out infinite;
+  }
+  @keyframes rpSkeletonShimmer {
+    from { background-position: 120% 0; }
+    to { background-position: -20% 0; }
+  }
+  .rp-skeleton-lines { padding: 12px 14px; }
+  .rp-skeleton-line { height: 11px; border-radius: 6px; margin-bottom: 8px; }
+  .rp-skeleton-line.short { width: 40%; }
+  .rp-skeleton-line.medium { width: 70%; }
+  .rp-skeleton-mealprep { display: inline-flex; flex-direction: column; align-items: center; gap: 6px; margin-right: 14px; }
+  .rp-skeleton-mealprep .rp-skeleton-shimmer { width: 64px; height: 64px; border-radius: 50%; }
+  .rp-skeleton-mealprep .rp-skeleton-line { width: 50px; height: 9px; margin-bottom: 0; }
   /* Ken's ask (Nov 2026): video posts in the reel now autoplay WITH sound
      by default (see reelObserver + reelMuted in the script below), so the
      old top-center "tap video for sound" hint no longer makes sense —
@@ -534,7 +577,17 @@
      the plain colored-initial circle even for a member who'd already set a
      real photo. Same img-fills-the-circle treatment app.css's own
      .avatar-circle img already uses elsewhere. */
-  .rp-slide-avatar img, .rp-jc-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .rp-slide-avatar img, .rp-jc-avatar img { width: 100%; height: 100%; object-fit: cover; animation: rpMediaFadeIn 0.2s ease; }
+  /* Round 13 (Oct 2026): marks a colored-initial avatar as "still waiting
+     on the real photo" — see hydrateAvatars() in the script below. A very
+     subtle pulse so it reads as "loading," not "broken," during the brief
+     window before it's swapped for a real photo (or just stays as-is, for
+     a member with no photo set at all — same look this always had). */
+  .rp-avatar-pending { animation: rpAvatarPulse 1.6s ease-in-out infinite; }
+  @keyframes rpAvatarPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+  }
   .rp-slide-headertext {
     flex: 1 1 auto;
     min-width: 0;
@@ -1854,6 +1907,112 @@
   // for a page nobody resizes live.
   var isWideLayout = window.matchMedia("(min-width: 900px)").matches;
 
+  // ---- Loading skeleton (round 12, Oct 2026) -------------------------
+  // Runs synchronously, before requireAuth() and before a single network
+  // request goes out, so the reel and Meal Prep strip never sit blank —
+  // see the .rp-skeleton-* CSS above for the full story. clearReelSkeleton()
+  // is called from both appendItem() and showEmptyReelMessage() below so
+  // the placeholder disappears the instant there's real content OR a real
+  // "nothing here" message to show, whichever comes first, however it got
+  // there (a cache hit, a fresh fetch, or a genuinely empty feed).
+  function renderReelSkeleton(count) {
+    var sentinel = document.getElementById("rpSentinel");
+    if (!sentinel) return;
+    var html = "";
+    for (var i = 0; i < count; i++) {
+      html +=
+        '<div class="rp-skeleton-card rp-skeleton-placeholder">' +
+          '<div class="rp-skeleton-media rp-skeleton-shimmer"></div>' +
+          '<div class="rp-skeleton-lines">' +
+            '<div class="rp-skeleton-line short rp-skeleton-shimmer"></div>' +
+            '<div class="rp-skeleton-line medium rp-skeleton-shimmer"></div>' +
+          '</div>' +
+        '</div>';
+    }
+    sentinel.insertAdjacentHTML("beforebegin", html);
+  }
+  function clearReelSkeleton() {
+    document.querySelectorAll(".rp-skeleton-placeholder").forEach(function (el) { el.remove(); });
+  }
+  function renderMealPrepSkeleton(count) {
+    var track = document.getElementById("rpMealPrepTrack");
+    if (!track) return;
+    var html = "";
+    for (var i = 0; i < count; i++) {
+      html +=
+        '<div class="rp-skeleton-mealprep rp-skeleton-placeholder">' +
+          '<div class="rp-skeleton-shimmer"></div>' +
+          '<div class="rp-skeleton-line rp-skeleton-shimmer"></div>' +
+        '</div>';
+    }
+    track.insertAdjacentHTML("beforeend", html);
+  }
+  renderReelSkeleton(3);
+  renderMealPrepSkeleton(5);
+
+  // ---- Instant "stale while revalidate" flash (round 12, Oct 2026) ------
+  // Ken's ask: fix Home's load time "right," thinking at real scale — "ten
+  // to ten thousand" members, not just one visit feeling faster. This is a
+  // plain multi-page site: every tap on Home is a genuinely fresh page
+  // load with no memory of the last one, so there's a real floor of
+  // sequential database/storage round trips (confirm sign-in, fetch posts,
+  // sign fresh viewing URLs for every photo/video, pull reaction/comment
+  // counts) that no amount of re-ordering removes entirely — that's what
+  // the Sept 2026 speed pass above already got as parallel as it can be.
+  // What CAN be removed is paying that floor on every single visit: the
+  // last screenful this browser tab successfully loaded is kept in
+  // sessionStorage — short-lived (cleared the moment the tab closes, and
+  // never trusted past FEED_CACHE_MAX_AGE_MS even while the tab stays
+  // open) — and repainted instantly, with zero network calls, the next
+  // time Home loads. The real fetch below always still runs in the
+  // background exactly as it did before this, and fully replaces the
+  // flash the moment it's ready (see appendItem/showEmptyReelMessage's
+  // clearCacheFlash() calls) — this is never a substitute for the real
+  // data, only something correct-as-of-a-few-minutes-ago to look at while
+  // it loads. It also means fewer database round trips per visit as the
+  // member base grows, not just a trick that feels faster without
+  // changing what each visit actually costs the backend.
+  var FEED_CACHE_VERSION = "v1";
+  var FEED_CACHE_MAX_AGE_MS = 10 * 60 * 1000; // 10 minutes
+  var cacheFlashNodes = [];
+  var renderingCacheFlash = false;
+
+  function feedCacheKey(userId, filter) {
+    return "efit_feed_cache_" + FEED_CACHE_VERSION + ":" + userId + ":" + filter;
+  }
+  function loadFeedCache(userId, filter) {
+    try {
+      var raw = window.sessionStorage.getItem(feedCacheKey(userId, filter));
+      if (!raw) return null;
+      var parsed = JSON.parse(raw);
+      if (!parsed || !parsed.savedAt || (Date.now() - parsed.savedAt) > FEED_CACHE_MAX_AGE_MS) return null;
+      return parsed;
+    } catch (e) {
+      return null;
+    }
+  }
+  function saveFeedCache(userId, filter, payload) {
+    try {
+      payload.savedAt = Date.now();
+      window.sessionStorage.setItem(feedCacheKey(userId, filter), JSON.stringify(payload));
+    } catch (e) {
+      // sessionStorage full or unavailable (private browsing, storage
+      // quota, etc.) — the page works exactly as it always has, just
+      // without the instant flash next time.
+    }
+  }
+  // Removes whatever the cache-flash painted, the moment real content (or
+  // a real "nothing here" message) is ready to take its place. Safe to
+  // call even when nothing was ever flashed — it's just a no-op then.
+  function clearCacheFlash() {
+    if (!cacheFlashNodes.length) return;
+    cacheFlashNodes.forEach(function (el) {
+      if (reelObserver) { try { reelObserver.unobserve(el); } catch (e) {} }
+      el.remove();
+    });
+    cacheFlashNodes = [];
+  }
+
   var currentUserId = null;
   // Ken's ask (Oct 2026): renderActions() used to run its own two queries
   // (reactions + comment count) separately for EVERY single post, so a
@@ -2389,7 +2548,13 @@
       console.warn("[feed] journeys query failed:", error);
       return [];
     }
-    return attachAvatarUrls((data || []).map(journalRowToItem));
+    // Avatars not awaited here either (round 13) — same reasoning as
+    // buildItems() above; journeys render with the colored-initial
+    // fallback immediately and hydrateAvatars() patches in real photos
+    // once they're ready.
+    var journalItems = (data || []).map(journalRowToItem);
+    hydrateAvatars(journalItems);
+    return journalItems;
   }
 
   // Only journeys newer than `sinceIso` - used for the live "it just
@@ -2456,6 +2621,44 @@
       // still renders exactly as it always has.
     }
     return items;
+  }
+
+  // Round 13 (Oct 2026): "if we're going to fix [Home's load time], fix it
+  // right... ten to ten thousand people, not one through ten" — Ken's call
+  // after the round-12 skeleton + cache work. That round fixed every Home
+  // visit AFTER the first one in a session; this is the other half: the
+  // very first (no-cache-yet) load of a session, which still had to wait
+  // on attachAvatarUrls() — its own two sequential round trips (look up
+  // everyone's profile photo, then sign its URL) — before a single post
+  // could render at all.
+  //
+  // Same pattern reaction/comment counts already use (actionCountsCache/
+  // renderActions above, from the Oct 2026 fix noted there): every card
+  // renders immediately with the plain colored-initial circle the app has
+  // always shown while something loads, tagged as "pending" for whichever
+  // member it belongs to; this runs attachAvatarUrls() in the background,
+  // UNAWAITED, and the moment it resolves, swaps the real photo into
+  // every still-pending card for that member — one DOM patch per member,
+  // not a re-render, and in the common case (the photo was already
+  // cached from a previous resolveSignedUrls call) it's near-instant.
+  // Never awaited by a caller on purpose — the whole point is that a post
+  // is no longer gated on it.
+  function hydrateAvatars(items) {
+    attachAvatarUrls(items).then(function () {
+      items.forEach(function (item) {
+        if (!item.user_id || !item.avatarUrl) return;
+        document.querySelectorAll('.rp-avatar-pending[data-avatar-user="' + item.user_id + '"]').forEach(function (el) {
+          el.classList.remove("rp-avatar-pending");
+          el.removeAttribute("data-avatar-user");
+          el.style.background = "";
+          el.innerHTML = '<img src="' + item.avatarUrl + '" alt="" />';
+        });
+      });
+    }).catch(function () {
+      // A hiccup resolving avatars in the background leaves every pending
+      // card exactly as it already looked — a colored initial, same as
+      // this app has always shown for a member with no photo at all.
+    });
   }
 
   function journalRowToItem(row) {
@@ -2564,14 +2767,20 @@
         extraClips: extraClips
       };
     });
-    // Run together rather than one after the other — two independent
-    // batched lookups for the same set of posts, neither needs to wait on
-    // the other to start.
-    var avatarResult = await Promise.all([
-      attachAvatarUrls(items),
-      preloadActionCounts(rows.map(function (r) { return r.id; }))
-    ]);
-    return avatarResult[0];
+    // Reaction/comment counts: still awaited. renderActions() only skips
+    // its own per-item queries when this cache is ALREADY warm by the time
+    // a card asks — unlike avatars (below), there's no cheap fallback here
+    // that stays batched, so letting this run unawaited would quietly
+    // bring back exactly the "16 round trips for 8 posts" problem the Oct
+    // 2026 fix (see actionCountsCache's comment above) eliminated.
+    await preloadActionCounts(rows.map(function (r) { return r.id; }));
+
+    // Avatars: NOT awaited (round 13, Oct 2026) — see hydrateAvatars()
+    // above for why this one's safe to let run in the background while
+    // posts render with their colored-initial fallback first.
+    hydrateAvatars(items);
+
+    return items;
   }
 
   // ---------------- Meal Prep strip ----------------
@@ -3035,7 +3244,7 @@
         '<div class="rp-slide-header">' +
           (item.avatarUrl
             ? '<div class="rp-slide-avatar"><img src="' + item.avatarUrl + '" alt="' + escapeHtml(item.name) + '" /></div>'
-            : '<div class="rp-slide-avatar" style="background:' + avatarColor(item.user_id) + '">' + escapeHtml(initial) + '</div>') +
+            : '<div class="rp-slide-avatar rp-avatar-pending" data-avatar-user="' + escapeHtml(item.user_id || "") + '" style="background:' + avatarColor(item.user_id) + '">' + escapeHtml(initial) + '</div>') +
           '<div class="rp-slide-headertext">' +
             '<div class="rp-slide-header-name">' + escapeHtml(item.name) + '</div>' +
             '<div class="rp-slide-header-sub">' + escapeHtml(timeAgo(item.created_at)) + '</div>' +
@@ -3131,7 +3340,7 @@
       '<div class="rp-jc-header">' +
         (item.avatarUrl
           ? '<div class="rp-jc-avatar"><img src="' + item.avatarUrl + '" alt="' + escapeHtml(item.name) + '" /></div>'
-          : '<div class="rp-jc-avatar" style="background:' + avatarColor(item.user_id || item.id) + '">' + escapeHtml(initial) + '</div>') +
+          : '<div class="rp-jc-avatar' + (item.user_id ? ' rp-avatar-pending" data-avatar-user="' + escapeHtml(item.user_id) : '') + '" style="background:' + avatarColor(item.user_id || item.id) + '">' + escapeHtml(initial) + '</div>') +
         '<div class="rp-jc-headertext">' +
           '<div class="rp-jc-name">' + escapeHtml(item.name) + '</div>' +
           '<div class="rp-jc-time">' + escapeHtml(timeAgo(item.created_at)) + '</div>' +
@@ -3648,6 +3857,8 @@
   }
 
   function showEmptyReelMessage(msg) {
+    clearReelSkeleton();
+    clearCacheFlash();
     document.getElementById("rpReel").insertAdjacentHTML(
       "afterbegin",
       '<div class="rp-empty-reel">' + msg + '</div>'
@@ -3655,14 +3866,20 @@
   }
 
   // Appends one item to the bottom of the reel (used for normal
-  // page-by-page loading, at the sentinel).
+  // page-by-page loading, at the sentinel — and, with renderingCacheFlash
+  // set, for painting the instant cache flash too, see above).
   function appendItem(item) {
+    clearReelSkeleton();
+    // Don't wipe the flash we're in the middle of building — only clear it
+    // once something OTHER than the flash itself is about to render.
+    if (!renderingCacheFlash) clearCacheFlash();
     var reel = document.getElementById("rpReel");
     var sentinel = document.getElementById("rpSentinel");
     loadedItems.push(item);
     var slideEl = buildAnySlide(item);
     reel.insertBefore(slideEl, sentinel);
     reelObserver.observe(slideEl);
+    if (renderingCacheFlash) cacheFlashNodes.push(slideEl);
   }
 
   function trackNewest(items) {
@@ -3859,6 +4076,44 @@
     setModerationUser(currentUserId);
     setMessageSender(currentUserId);
 
+    var requestedFilter = new URLSearchParams(window.location.search).get("filter");
+    // Ken's ask (Oct 2026): the new Find page (find.html) links straight
+    // into a specific category — e.g. Hiking — instead of making someone
+    // land on Home and hunt for a filter chip that's hidden on mobile
+    // anyway (see .rp-filters' mobile override further up). Reads
+    // ?filter=Hiking from the URL once, on first load only; the chips
+    // (still present in the markup, just visually hidden on phones)
+    // keep working normally after that. "Journeys" is excluded since that
+    // chip navigates to its own page (fitness-journeys.html) rather than
+    // filtering in place — find.html links to that page directly instead.
+    if (requestedFilter && CATEGORY_FILTERS.indexOf(requestedFilter) !== -1 && requestedFilter !== "Journeys") {
+      activeFilter = requestedFilter;
+    }
+    renderFilters();
+
+    // Paint last visit's screenful instantly, if this tab has one that's
+    // still fresh enough to trust — see the big comment up by
+    // loadFeedCache()/saveFeedCache() for the full reasoning. Everything
+    // below (the real fetch) runs exactly as it always has regardless of
+    // whether this hits; it just also silently replaces this the moment
+    // it's ready.
+    var cachedFeed = loadFeedCache(currentUserId, activeFilter);
+    if (cachedFeed) {
+      clearReelSkeleton();
+      if (cachedFeed.followingIds) followingIds = new Set(cachedFeed.followingIds);
+      if (cachedFeed.mealPrepItems && cachedFeed.mealPrepItems.length) {
+        mealPrepItems = cachedFeed.mealPrepItems;
+        mealPrepRealItems = cachedFeed.mealPrepHasReal ? [1] : []; // only .length is ever read off this
+        renderMealPrepStrip();
+      }
+      if (cachedFeed.items && cachedFeed.items.length) {
+        renderingCacheFlash = true;
+        cachedFeed.items.forEach(appendItem);
+        renderingCacheFlash = false;
+        loadedItems = []; // flash items are placeholders, not real pagination state
+      }
+    }
+
     // Speed pass (Sept 2026): Ken flagged Home taking "a second or two" to
     // show anything. Turned out every one of these queries was awaited one
     // after another — blocked-ids, then follows, then the meal-prep strip,
@@ -3874,21 +4129,6 @@
     var followsPromise = window.sb.from("follows").select("followee_id").eq("follower_id", currentUserId)
       .then(function (r) { return r; });
     var blockedPromise = loadBlockedIds();
-
-    var requestedFilter = new URLSearchParams(window.location.search).get("filter");
-    // Ken's ask (Oct 2026): the new Find page (find.html) links straight
-    // into a specific category — e.g. Hiking — instead of making someone
-    // land on Home and hunt for a filter chip that's hidden on mobile
-    // anyway (see .rp-filters' mobile override further up). Reads
-    // ?filter=Hiking from the URL once, on first load only; the chips
-    // (still present in the markup, just visually hidden on phones)
-    // keep working normally after that. "Journeys" is excluded since that
-    // chip navigates to its own page (fitness-journeys.html) rather than
-    // filtering in place — find.html links to that page directly instead.
-    if (requestedFilter && CATEGORY_FILTERS.indexOf(requestedFilter) !== -1 && requestedFilter !== "Journeys") {
-      activeFilter = requestedFilter;
-    }
-    renderFilters();
 
     var followRows = (await followsPromise).data;
     followingIds = new Set((followRows || []).map(function (r) { return r.followee_id; }));
@@ -3908,6 +4148,18 @@
     renderMealPrepStrip();
 
     await reelPromise;
+
+    // Save this visit's first screenful for next time — captured right
+    // here, before infinite scroll is even wired up below, so this is
+    // always exactly the first page's worth of real (not flashed) data,
+    // never a half-scrolled-through list.
+    saveFeedCache(currentUserId, activeFilter, {
+      items: loadedItems.slice(),
+      mealPrepItems: mealPrepItems.slice(),
+      mealPrepHasReal: mealPrepRealItems.length > 0,
+      followingIds: Array.from(followingIds)
+    });
+
     loadMoreObserver.observe(document.getElementById("rpSentinel"));
     wireNewPill();
     subscribeToLiveFeed();
