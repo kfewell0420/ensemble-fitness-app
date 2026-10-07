@@ -12,6 +12,62 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-07, round 14 — fixed the "loads quickly, black screen, loads again" glitch on Home
+
+Ken, after applying round 12/13: "I'm reloading the page on the website, and
+I'm also doing it on my cell phone... it loads quickly, but then black
+screen, then loads again. So it's doing a double load." Reproducible on both
+the website and the phone, which pointed at the shared feed.html logic, not
+anything platform-specific.
+
+Root cause: round 12's stale-while-revalidate cache flash shows a
+photo/video the browser already downloaded and decoded on a PRIOR visit, so
+it paints instantly. But Supabase signed URLs aren't stable across visits —
+the real fetch always gets a freshly-signed URL for the same storage file,
+so even the exact same photo has to be downloaded again from scratch. The
+swap from flash to real used to happen the instant the real DATA came back
+from the database, not the instant the real PICTURE had actually finished
+downloading — so for however long that fresh image took to load, the swap
+traded an already-loaded, visible flash card for a card whose <img>/<video>
+hadn't painted anything yet, showing nothing but the slide's own dark
+background. Right after the snappy flash, that reads exactly as Ken
+described it: quick load, then black, then load again.
+
+Confirmed this empirically before touching anything: wrote a Playwright
+harness that logs the exact frame-by-frame DOM state across a reload with
+the cache flash active — found ZERO frames where the reel's child count
+ever dropped to zero, which ruled out a DOM-removal-without-replacement bug
+and pointed specifically at image-paint timing (not something a DOM-count
+check alone would ever catch) as the real mechanism. Then built a second
+harness that simulates a slow-to-load "freshly signed" image distinct from
+an instant cached one, to directly measure when the swap happens relative
+to when the real image is actually ready.
+
+Fix (member-app/feed.html + ensemble-fitness-mobile/www/feed.html,
+byte-identical, no intentional divergence in this file): added
+`preloadFirstRealMedia(item)` — when there's an actual cache flash on
+screen to replace, the real fetch's first item's photo (or video poster) is
+preloaded and awaited before the flash is cleared, capped at 1.2s so a slow
+connection never leaves stale content on screen indefinitely. The swap now
+always trades one loaded picture for another loaded picture, never for a
+blank one. Verified with the second harness: swap now happens at the
+simulated image's actual ready time (~785ms with a 700ms simulated decode
+delay), not at data-arrival time (~250ms) as before. Re-ran the existing
+round-12/13 regression harnesses (cold load, cache-hit reload, genuinely-
+empty real result after a flash) — all still pass with no duplication, no
+leaked skeleton, no behavior change outside of the one timing fix.
+
+Also hardened, while in there (found via code audit, not a reported
+symptom, but worth closing while this file was already open): the cache-
+flash render loop (`cachedFeed.items.forEach(appendItem)`) now runs inside
+try/finally when resetting `renderingCacheFlash`. Previously, if a single
+cached item ever threw while rendering (e.g. a stale shape left over from
+an old `FEED_CACHE_VERSION`), that flag would stay stuck `true` for the
+rest of the session, silently disabling `clearCacheFlash()` forever — real
+new posts would start piling up below the stale flash instead of ever
+replacing it. Not something that was observed happening, just a real gap
+closed defensively.
+
 ## 2026-10-07, round 13 — squeezed the first (cold) Home load too
 
 Immediate follow-up to round 12. Ken, on hearing that one lever was left

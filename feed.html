@@ -2013,6 +2013,38 @@
     cacheFlashNodes = [];
   }
 
+  // Ken's ask (Oct 2026): "it loads quickly, but then black screen, then
+  // loads again." Root cause: the cache flash shows a photo/video the
+  // browser already loaded and decoded last visit, so it appears
+  // instantly. But the REAL fetch always signs a brand-new URL for the
+  // same storage file (signed URLs aren't stable across visits), so even
+  // though the data arrives fast, that fresh URL still has to actually
+  // download before anything paints — and the swap used to happen the
+  // moment the DATA was ready, not the moment the PICTURE was. For one
+  // split second that traded an already-loaded flash card for a real card
+  // whose <img>/<video> hadn't painted anything yet — just the slide's
+  // own dark background. Right after the snappy flash, that reads as a
+  // flash-to-black "double load," exactly what Ken described.
+  // preloadFirstRealMedia waits for that one photo (or video poster) to
+  // actually finish loading into the browser before the flash gets
+  // cleared, so the swap always trades one loaded picture for another —
+  // capped at 1.2s so a slow connection never leaves stale content on
+  // screen indefinitely; past that it just proceeds like before.
+  function preloadFirstRealMedia(item) {
+    return new Promise(function (resolve) {
+      if (!item || item.kind === "journal") { resolve(); return; }
+      var url = item.kind === "video" ? item.posterUrl : item.url;
+      if (!url) { resolve(); return; }
+      var done = false;
+      var finish = function () { if (!done) { done = true; resolve(); } };
+      var timer = setTimeout(finish, 1200);
+      var img = new Image();
+      img.onload = function () { clearTimeout(timer); finish(); };
+      img.onerror = function () { clearTimeout(timer); finish(); };
+      img.src = url;
+    });
+  }
+
   var currentUserId = null;
   // Ken's ask (Oct 2026): renderActions() used to run its own two queries
   // (reactions + comment count) separately for EVERY single post, so a
@@ -3942,6 +3974,9 @@
         }
         return;
       }
+      // See preloadFirstRealMedia's comment above — only matters (and only
+      // ever waits) when there's an actual flash on screen to replace.
+      if (cacheFlashNodes.length) await preloadFirstRealMedia(combined[0]);
       combined.forEach(appendItem);
       trackNewest(combined);
     } catch (e) {
@@ -4108,8 +4143,19 @@
       }
       if (cachedFeed.items && cachedFeed.items.length) {
         renderingCacheFlash = true;
-        cachedFeed.items.forEach(appendItem);
-        renderingCacheFlash = false;
+        // Ken's ask (Oct 2026): belt-and-suspenders — if a single cached
+        // item ever threw inside buildAnySlide (a stale shape from an old
+        // FEED_CACHE_VERSION, say), renderingCacheFlash would stay stuck
+        // true forever with no finally here, silently disabling
+        // clearCacheFlash() for the REST of the session — real new posts
+        // would just pile up below the stale flash instead of replacing
+        // it. try/finally guarantees the flag always resets even if a
+        // cached item is malformed.
+        try {
+          cachedFeed.items.forEach(appendItem);
+        } finally {
+          renderingCacheFlash = false;
+        }
         loadedItems = []; // flash items are placeholders, not real pagination state
       }
     }
