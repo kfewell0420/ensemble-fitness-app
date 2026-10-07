@@ -111,8 +111,9 @@
   .fj-card-name { font-weight: 700; font-size: 14.5px; color: #fff; }
   .fj-card-sub { font-size: 12px; color: var(--faint-invert); margin-top: 2px; }
   .fj-card-icon {
-    width: 30px; height: 30px; border-radius: 50%; background: rgba(255,255,255,0.08);
-    display: flex; align-items: center; justify-content: center; font-size: 15px; flex: 0 0 auto;
+    width: 30px; height: 30px; border-radius: 50%; background: rgba(255,255,255,0.16);
+    border: 1px solid rgba(255,255,255,0.26);
+    display: flex; align-items: center; justify-content: center; font-size: 16px; flex: 0 0 auto;
   }
   /* Placeholder example cards (round 9) — same card look, just dimmed
      slightly and plainly labeled so they never read as a real member. */
@@ -143,13 +144,23 @@
   .fj-menu-item.danger { color: #ff9a8f; }
 
   .fj-headline { font-family: 'Poppins', sans-serif; color: var(--accent-2); font-weight: 800; font-size: 15.5px; margin-bottom: 6px; }
+  /* Ken's ask (Oct 2026, round 11): "those icons need to be brighter. You
+     can't really make them out... the writing in bright white, just like
+     the member profile names... that light gray, you can't make it out."
+     Flagged on both the website and, worse, on an actual phone screen.
+     The category badge/pill and the post's own text (the italic quote on
+     example cards, and the date/mood line on real posts) all used to sit
+     at the same dim gray as secondary metadata like "Member since" — too
+     low-contrast for content that's the actual point of the card.
+     Brightened to near-white/white; "Member since" etc. stay as they
+     were, this was only ever about the post content itself. */
   .fj-cat-chip {
     display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 700;
-    color: var(--muted-invert); background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.14);
+    color: #fff; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.24);
     border-radius: var(--radius-pill); padding: 3px 10px; margin-bottom: 10px;
   }
-  .fj-quote { font-style: italic; color: var(--muted-invert); font-size: 13.5px; margin-bottom: 10px; line-height: 1.5; }
-  .fj-meta-line { color: var(--faint-invert); font-size: 12px; margin-bottom: 12px; }
+  .fj-quote { font-style: italic; color: #fff; font-size: 13.5px; margin-bottom: 10px; line-height: 1.5; }
+  .fj-meta-line { color: rgba(255,255,255,0.92); font-size: 12px; margin-bottom: 12px; }
 
   .fj-reactions { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
   .fj-reaction-pill {

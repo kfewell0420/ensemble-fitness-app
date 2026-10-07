@@ -12,6 +12,48 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-07, round 11 — Real Journeys card text brightened (website + mobile)
+
+Ken, comparing a desktop screenshot against an actual-phone screenshot of
+the same cards: "those icons need to be brighter. You can't really make
+them out... I also think we should do the writing in bright white, just
+like the member profile names... that light gray, you can't make it
+out... you can read it on a computer, but it would be better if it's just
+white, and you definitely can't make it out on a cell phone."
+
+Four elements in the Real Journeys cards were sitting at the same dim
+secondary-metadata gray as "Member since" — too low-contrast for content
+that's the actual point of the card, worse on a phone screen:
+
+- The small round category icon badge (e.g. the 🧠/⚖️/💪 circle next to
+  the ⋮ menu) — background bumped from `rgba(255,255,255,0.08)` with no
+  border to `rgba(255,255,255,0.16)` with a visible border, plus a
+  slightly larger icon, so the badge itself has enough contrast to read
+  against the dark card.
+- The category pill text ("Mental Health", "Weight Loss", etc., the
+  `.fj-cat-chip`) — text color `var(--muted-invert)` → `#fff`, to match
+  the brightness of the member's name as Ken asked, plus a slightly
+  stronger pill background/border.
+- The italic quote on illustrative example cards (`.fj-quote`, e.g. "22
+  pounds down, but honestly the sleep improvement is the real win.") —
+  `var(--muted-invert)` → `#fff`.
+- The date/mood line on real posts (`.fj-meta-line`, e.g. "Tue, Oct 6 ·
+  Felt Excellent...") — `var(--faint-invert)` → `rgba(255,255,255,0.92)`.
+
+Scoped to just these four classes inside `fitness-journeys.html`'s own
+`<style>` block — didn't touch the shared `--muted-invert`/`--faint-invert`
+variables in `css/app.css`, so secondary metadata elsewhere ("Member
+since", reply timestamps, etc.) is unchanged, on this page and everywhere
+else in the member app. This part of the file is shared between web and
+mobile (it's outside the round-8 hero divergence), so the same fix was
+applied to both `member-app/fitness-journeys.html` and `ensemble-fitness-
+mobile/www/fitness-journeys.html` identically. Verified by injecting
+sample real + example cards into a headless-browser render of the updated
+file — icon badge, category pill, quote, and meta line all render clearly
+brighter than before.
+
+---
+
 ## 2026-10-06, round 10 — fitness-journeys.html widened for desktop/website
 
 Ken compared the member (logged-in) view of `fitness-journeys.html` against
