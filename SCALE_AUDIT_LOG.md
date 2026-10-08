@@ -12,6 +12,73 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-08, round 17 — "Working Out" filter's heavy video loading, investigated and fixed
+
+Ken, following up on the item flagged at the end of round 16: the "Working
+Out" filter's Network tab showed 206 requests, 47.4MB, over a 2.5 minute
+browsing session, with a lot of entries showing a cancelled status (one
+specific request Ken pointed to, "under a BB8D4564 code," had several
+cancels). Asked to dig in properly this time rather than leave it flagged.
+
+Built a Playwright harness that serves a real, range-seekable test video
+through the exact same code path (not a screenshot guess) to see what's
+actually happening at the network level when this page loads videos.
+
+First finding, and important to say plainly: a SINGLE cancelled request per
+video turned out to be completely normal browser behavior, not a bug in
+this code at all. Every `<video>` tag on the open web does this — Chrome
+makes an initial plain request, notices the server supports byte-range
+requests (any Supabase Storage signed URL does), cancels that first one,
+and immediately reissues a real range request instead. That's almost
+certainly most of what Ken saw next to each individual video in the
+Network tab, and it would show up identically on Instagram, YouTube, or
+any other video-heavy site. Confirmed this with the harness: it happens
+every single time, from a correctly-working page, with nothing to fix.
+
+Second finding, and this part WAS a real, worth-fixing issue: every
+video's real `src` was being set the instant its card was inserted into
+the reel, not the instant it was actually about to be seen. loadMoreReel
+fetches a fresh page of 8 posts somewhat ahead of the user actually
+scrolling there (by design — see round "Oct 2026" hiccup fix elsewhere in
+this file), and when that batch of 8 lands, ALL 8 cards' videos used to
+immediately start their metadata fetch (and the cancel/range dance above)
+together, regardless of whether a given card was right in front of the
+user or three screens below. Confirmed with a focused test: loaded the
+first page of 8 "Working Out" posts with zero scrolling, and checked
+network activity against each card's actual on-screen position — before
+this fix, all 8 cards fired a video request immediately, including ones
+sitting 500-1100px below the fold; after, only the 4 cards actually
+on-screen fired immediately, with the other 4 correctly waiting.
+
+Fix (member-app/feed.html + ensemble-fitness-mobile/www/feed.html, byte-
+identical, no intentional divergence in this file): `buildSlide()` now
+puts a video's real URL in a `data-src` attribute instead of `src`, so
+the browser has nothing to fetch yet. A new `videoSrcObserver`
+(IntersectionObserver, 400px margin) assigns the real `src` — once, the
+first time a card gets within 400px of the viewport — then stops
+watching that card. This only changes WHEN a video's first network
+request happens, not how many videos can play at once simultaneously
+once visible, which Ken already confirmed is intentional (several cards
+legitimately playing together on the wide desktop grid, see the existing
+comment by `reelObserver`). Confirmed via the same harness that playback
+and looping behave identically once a card is actually visible — nothing
+about the play/pause/mute logic changed.
+
+Deliberately NOT touched: the Meal Prep strip's own small video grid
+(`renderMealPrepSkeleton`, a separate markup path) — it only ever shows 5
+items, a much smaller blast radius, and this fix was scoped to the one
+place Ken actually flagged.
+
+Verified: static checks (div balance, JS syntax with HTML comments
+stripped — same false-alarm note as round 16 applies here too, the
+checker still trips on literal "<script>"-looking text inside long
+comments — and CSS braces) all clean. Re-ran every existing regression
+harness from rounds 12-16 (cold load, cache-hit reload, slow-image swap
+timing, the hoisted-skeleton timing check) — all still pass unchanged.
+Built a before/after comparison (a scratch copy with this fix reverted,
+run through the identical test) specifically to make sure this write-up
+isn't just asserting an improvement without showing it.
+
 ## 2026-10-08, round 16 — the "black screen, then loads again" glitch was back, for a different reason than round 14
 
 Ken, after round 14 shipped: "I'm sending you this screenshot because we're

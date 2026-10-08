@@ -3198,6 +3198,44 @@
   // a real, separate thing worth doing properly later (e.g. real captured
   // poster thumbnails, or a server-side preview clip) rather than a
   // client-side attribute toggle like this.
+  // Ken's ask (Oct 2026, round 17): "Working Out" filter Network tab showed
+  // 206 requests / 47.4MB in one browsing session, with a lot of cancelled
+  // requests for videos. Checked with a real (range-seekable) test video
+  // through a Playwright harness: a SINGLE cancelled request per video
+  // turned out to be completely normal Chrome behavior, unrelated to this
+  // code — the browser always makes an initial plain request, sees the
+  // server allows byte ranges, cancels that one, and reissues a real range
+  // request instead. That happens for every <video> on the open web; it's
+  // not a bug here. What IS this page's own doing: every video's real
+  // `src` used to be set the instant its card was inserted into the reel
+  // (buildSlide, below), which is the moment the Supabase page of 8 posts
+  // arrives — NOT the moment that card is actually close to being seen.
+  // Scroll quickly through a long, nearly-all-video filter like "Working
+  // Out" (the 900px loadMoreObserver below fetches the next page well
+  // ahead of the user reaching it) and every one of those videos starts
+  // its metadata fetch immediately, even ones many screens below the fold
+  // that may never actually get watched — that's where the real, avoidable
+  // chunk of the 206 requests / 47.4MB came from, not the single-cancel
+  // dance. Fix: buildSlide now puts the real URL in data-src instead of
+  // src, so the browser has nothing to fetch yet; this new observer
+  // assigns the real src (one time, then stops watching) once a card gets
+  // within 400px of actually being on screen. This is NOT the same thing
+  // as the preload="auto" idea noted just above (and correctly reverted) —
+  // that reassigned an attribute on a video already mid-fetch, which is
+  // what broke playback. This sets `src` for the very first time, on a
+  // video that has made zero requests yet, same as any ordinary lazy-
+  // loaded image or video — nothing to discard, nothing already in flight.
+  var videoSrcObserver = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (!entry.isIntersecting) return;
+      var video = entry.target.querySelector("video");
+      videoSrcObserver.unobserve(entry.target);
+      if (!video || !video.dataset.src) return;
+      video.src = video.dataset.src;
+      delete video.dataset.src;
+    });
+  }, { rootMargin: "400px 0px 400px 0px", threshold: 0 });
+
   var reelObserver = new IntersectionObserver(function (entries) {
     entries.forEach(function (entry) {
       var video = entry.target.querySelector("video");
@@ -3277,8 +3315,14 @@
     // background.)
     var BLANK_VIDEO_POSTER = "data:image/gif;base64,R0lGODdhAQABAIEAAAAAAAAAAAAAAAAAACwAAAAAAQABAAAIBAABBAQAOw==";
     var videoPoster = item.posterUrl || BLANK_VIDEO_POSTER;
+    // data-src, not src (round 17): leaves the browser with nothing to
+    // fetch until videoSrcObserver (above) assigns the real src once this
+    // card is actually close to being seen — see that observer's comment
+    // for why. poster stays eager either way; it's either a tiny data URI
+    // or an already-captured image, never a fresh network fetch of the
+    // video itself.
     var mediaHtml = item.kind === "video"
-      ? '<video src="' + item.url + '" poster="' + videoPoster + '"' + (reelMuted ? ' muted' : '') + ' loop playsinline preload="metadata"></video>'
+      ? '<video data-src="' + item.url + '" poster="' + videoPoster + '"' + (reelMuted ? ' muted' : '') + ' loop playsinline preload="metadata"></video>'
       : '<img src="' + item.url + '" alt="Workout post" loading="lazy" decoding="async" />';
 
     var badgeParts = [];
@@ -3949,6 +3993,7 @@
     var slideEl = buildAnySlide(item);
     reel.insertBefore(slideEl, sentinel);
     reelObserver.observe(slideEl);
+    videoSrcObserver.observe(slideEl);
     if (renderingCacheFlash) cacheFlashNodes.push(slideEl);
   }
 
