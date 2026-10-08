@@ -12,6 +12,73 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-08, round 20 — the fourth (and, by elimination, most-hit) spot with the same bug: the cache flash's own first paint
+
+Ken: "Yes, unfortunately, it is still doing it. It is a bug that we have
+not found yet" — no new recording this time. Rather than ask him for
+another one right away, I did the full top-to-bottom pass over every
+place this page transitions the reel between states that I flagged as
+overdue at the end of round 19, searching the code directly for every
+`clearReelSkeleton()` call site instead of waiting on another video.
+
+Found a fourth one, in `init()`'s "paint last visit's screenful instantly"
+block — the cache-flash mechanism round 12 originally built. It called
+`clearReelSkeleton()` unconditionally, the instant there was ANY cache
+hit for this user+filter, before ever checking whether the cached item's
+own picture was actually ready to paint. This is the exact same bug
+shape as round 14 (which fixed the FLASH-TO-REAL swap) and round 19's fix
+B (which fixed plain first-loads and filter switches) — just one step
+earlier in the sequence: painting the flash itself, not replacing it.
+
+This one matters more than the other three, structurally: it's the
+code path that runs on every Home visit where the cache is still fresh
+(the common case for anyone clicking Home repeatedly within the same
+browser tab, which is exactly Ken's pattern). In the typical case the
+browser still has that picture's bytes hot from the prior visit and this
+is invisible — which is almost certainly why round 12 never caught it.
+But the signed URL baked into the cache has its own expiry
+(`SIGNED_URL_TTL_SECONDS`), and separately the browser can simply evict
+image bytes it decoded a while ago under memory pressure — either way,
+the skeleton vanished first regardless, with nothing checking whether
+there was actually a picture ready to replace it with.
+
+Fix (member-app/feed.html + ensemble-fitness-mobile/www/feed.html, byte-
+identical, no intentional divergence in this file): `init()` now calls
+`await preloadFirstRealMedia(cachedFeed.items[0])` before clearing the
+skeleton for the cache-flash path, same 1.2s cap as everywhere else this
+pattern is used. The sub-case where a cache hit has Meal Prep items but
+no main reel items still clears immediately, same as before — nothing to
+wait for there.
+
+Verified with a new, isolated harness: seeds `sessionStorage` directly
+with a crafted cache entry (so this exact path can be tested without
+needing to organically build up a cache first) pointing the cached
+item's photo at a deliberately slow-loading URL, standing in for "the
+browser no longer has this one hot." Confirmed via a revert-first check
+that the test genuinely catches the bug (without the fix: skeleton
+clears and the flash paints immediately, before the image is ready, at
+~300ms; with the fix: both wait for the image, landing together around
+900ms). Re-ran every regression harness from rounds 12-19 — all still
+pass, including `run.js`'s own cache-flash check, which still lands in
+~60ms in the normal case (confirming this doesn't add any real delay
+when the image is already warm, which is the common case).
+
+With four of these found and fixed across rounds 14, 16, 19 and 20, I
+looked specifically for a fifth and didn't find one: I traced every
+`clearReelSkeleton()` / skeleton-related call site in the file
+(`resetReel`, `loadMoreReel`, `showEmptyReelMessage`, `appendItem`,
+`checkForLiveUpdates`, and this cache-flash block) and the live-update
+poll (`checkForLiveUpdates`) is the only other thing that touches the
+reel's contents outside a full reload or filter switch — it only ever
+inserts new items ABOVE existing content without removing or clearing
+anything, so it has no equivalent gap to close. If this exact symptom
+comes back a fifth time, it's likely either a genuinely new mechanism or
+something specific to Ken's own network/device conditions that a
+sandboxed test can't reach — at that point the most useful next thing
+from Ken would be the Network tab's **timing** waterfall for one slow
+load (not just a screen recording) so I can see which particular request
+is actually the slow one in production.
+
 ## 2026-10-08, round 19 — the real cause of "loads, black screen, loads again" on Home: two more mechanisms, both different from rounds 14 and 16
 
 Ken sent a fresh screen recording (desktop, the wide grid view) after

@@ -4276,7 +4276,6 @@
     // it's ready.
     var cachedFeed = loadFeedCache(currentUserId, activeFilter);
     if (cachedFeed) {
-      clearReelSkeleton();
       if (cachedFeed.followingIds) followingIds = new Set(cachedFeed.followingIds);
       if (cachedFeed.mealPrepItems && cachedFeed.mealPrepItems.length) {
         mealPrepItems = cachedFeed.mealPrepItems;
@@ -4284,6 +4283,25 @@
         renderMealPrepStrip();
       }
       if (cachedFeed.items && cachedFeed.items.length) {
+        // Ken's ask (Oct 2026, round 20): still seeing "loads, black
+        // screen, loads again" after round 19 fixed the filter-switch and
+        // first-load cases — this is a THIRD, separate spot with the same
+        // underlying problem, and almost certainly the one he kept hitting
+        // most: clearReelSkeleton() used to fire right here, completely
+        // unconditionally, the instant there was ANY cache to flash —
+        // before this very call even checked whether the cached item's
+        // picture was actually ready to paint. On a true repeat visit
+        // within the same tab the browser usually still has that image
+        // decoded and this is invisible; but the signed URL baked into the
+        // cache can be stale (SIGNED_URL_TTL_SECONDS) or the browser can
+        // have evicted the actual image bytes since the cache was written,
+        // and either way the skeleton vanished first regardless. Round 14
+        // already solved exactly this shape of bug for the FLASH-TO-REAL
+        // swap; this is the same fix one step earlier, for painting the
+        // flash itself. Capped the same way (1.2s) so a cold cache can
+        // never hang the page.
+        await preloadFirstRealMedia(cachedFeed.items[0]);
+        clearReelSkeleton();
         renderingCacheFlash = true;
         // Ken's ask (Oct 2026): belt-and-suspenders — if a single cached
         // item ever threw inside buildAnySlide (a stale shape from an old
@@ -4299,6 +4317,10 @@
           renderingCacheFlash = false;
         }
         loadedItems = []; // flash items are placeholders, not real pagination state
+      } else {
+        // Nothing cached to wait for (e.g. only the Meal Prep strip had a
+        // cache hit) — clear immediately, same as before.
+        clearReelSkeleton();
       }
     }
 
