@@ -12,6 +12,52 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-08, round 15 — Fitness+ switched to a free "Coming Soon" waitlist
+
+Ken, after researching how other apps handle this: "Keep the Fitness+ tab
+visible, but instead of immediately asking for $14.99, present this
+invitation" — a free early-access waitlist card instead of a live payment
+ask, preserving the $14.99 founding price as what people are signing up
+for later rather than abandoning it. Same underlying decision as round 13's
+check-in (don't restrict/charge before there's a real population), applied
+to the one place on the site that was already asking for money today.
+
+Before this, fitness-plus.html opened with a live Stripe "Get the Founding
+Rate" button for every non-subscriber, every time — and if they paid,
+there was a real chance of an empty or near-empty matches grid waiting for
+them, by far the worst version of this feature's first impression.
+
+Changes (member-app/fitness-plus.html + ensemble-fitness-mobile/www/
+fitness-plus.html, byte-identical, no intentional divergence in this
+file):
+
+- An already-active (paid) Fitness+ member sees NO change at all — same
+  upgrade card, same live Stripe link, same real matches grid. Checked via
+  `profiles.fitness_plus_active`, same flag the page already gated on.
+- Everyone else now sees a "❤️ FITNESS+ · COMING SOON" card (adapted from
+  Ken's reference screenshot, restyled to match the site's existing card
+  language) with a free "Join the waitlist — it's free" button — no
+  Stripe link anywhere on the page for them. The $14.99 founding price is
+  still shown, framed as "locked in when Fitness+ opens."
+- The "Your matches" section is hidden entirely for non-subscribers
+  instead of showing the old "Subscribe above to unlock" message, since
+  there's no subscribe button left on the page to point at.
+- New table `fitness_plus_waitlist` (sql/fitness-plus-waitlist.sql, Ken
+  needs to run this once in the Supabase SQL Editor — same as every other
+  new-table migration in this folder) captures signups. Deliberately
+  separate from `fitness_plus_active` — joining the waitlist is pure
+  interest capture, it never grants real paid access. RLS: a member can
+  insert/see only their own row; admins can see all rows (no admin UI for
+  this yet, just leaving the door open the way other admin-gated tables
+  here already do). A returning waitlisted member sees "You're on the
+  list" instead of the button again.
+
+Verified with a Playwright harness covering all three states (active
+paying member / new visitor joining live / returning already-joined
+visitor) before delivery — each renders exactly the intended card, the
+live Stripe link is absent whenever it should be, and the join click
+correctly writes `{ user_id }` and flips to the confirmed state.
+
 ## 2026-10-07, round 14 — fixed the "loads quickly, black screen, loads again" glitch on Home
 
 Ken, after applying round 12/13: "I'm reloading the page on the website, and

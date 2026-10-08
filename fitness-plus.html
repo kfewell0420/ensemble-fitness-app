@@ -43,7 +43,17 @@
 
 <div class="app-shell">
 
-  <div class="fp-upgrade-card">
+  <!-- Ken's ask (Oct 2026): until there's a real population to match
+       against, this card should invite free early-access signups instead
+       of asking for the $14.99 founding rate — see renderComingSoonCard()
+       below, which replaces everything inside this wrapper for anyone
+       who isn't already an active (paid) Fitness+ member. This markup is
+       only what a brand-new page load shows for the split second before
+       init() below decides which version to render; an ALREADY-active
+       member keeps seeing exactly this (unchanged — someone who already
+       paid should never see a "coming soon" pitch for something they
+       already have). -->
+  <div class="fp-upgrade-card" id="fpUpgradeCard">
     <div class="fp-upgrade-eyebrow">❤️ ENSEMBLE FITNESS+ · FOUNDING RATE</div>
     <h3 class="fp-upgrade-title">Find Someone Who Wants to Do Life Together.</h3>
     <p class="fp-upgrade-copy">Fitness Plus is about more than finding a date. It's about finding someone who shares your desire to live healthier, happier, and together. Because the best relationships begin when there's a natural connection. Why do it alone?</p>
@@ -61,17 +71,24 @@
     </div>
   </div>
 
-  <div class="eyebrow" style="margin-top:24px;">Fitness+</div>
-  <h2 style="margin-bottom:6px;">Find Your Person</h2>
-  <p class="card-sub" style="margin-bottom:24px;">Dating, without the pressure — matched on your ZIP code and the time you naturally wake up, so you start with someone whose life actually fits yours.</p>
+  <!-- Ken's ask (Oct 2026): the matches grid (real or "locked") is the
+       paid perk — while the page is in Coming Soon mode there's nothing
+       to show here at all, so init() below hides this whole section
+       rather than show a now-irrelevant "Subscribe above to unlock"
+       message with no subscribe button left on the page. -->
+  <div id="fpMatchesSection">
+    <div class="eyebrow" style="margin-top:24px;">Fitness+</div>
+    <h2 style="margin-bottom:6px;">Find Your Person</h2>
+    <p class="card-sub" style="margin-bottom:24px;">Dating, without the pressure — matched on your ZIP code and the time you naturally wake up, so you start with someone whose life actually fits yours.</p>
 
-  <h3 style="margin:28px 0 4px;">Your matches</h3>
-  <p class="card-sub" style="margin-bottom:16px;">This fills in automatically as members join — everyone here will be matched by ZIP code and wake-up time.</p>
+    <h3 style="margin:28px 0 4px;">Your matches</h3>
+    <p class="card-sub" style="margin-bottom:16px;">This fills in automatically as members join — everyone here will be matched by ZIP code and wake-up time.</p>
 
-  <div class="form-msg" id="fpMsg"></div>
+    <div class="form-msg" id="fpMsg"></div>
 
-  <div id="fpResults" class="fp-match-grid">
-    <div class="empty-state">Loading…</div>
+    <div id="fpResults" class="fp-match-grid">
+      <div class="empty-state">Loading…</div>
+    </div>
   </div>
 
 </div>
@@ -98,6 +115,28 @@
   .fp-upgrade-price span { font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 26px; margin-right: 4px; }
   .fp-upgrade-actions { display: flex; flex-direction: column; gap: 10px; max-width: 340px; }
   .fp-upgrade-link { font-size: 13px; color: var(--faint-invert); text-align: center; text-decoration: underline; }
+
+  /* Ken's ask (Oct 2026): the "Coming Soon" waitlist box nested inside the
+     upgrade card — same family as the card it sits in, just a shade
+     lighter so it reads as a distinct "do this" panel within the pitch,
+     matching the reference screenshot's layout. */
+  .fp-waitlist-box {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin: 4px 0 16px;
+  }
+  .fp-waitlist-title { font-size: 14.5px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+  .fp-waitlist-sub { font-size: 12.5px; color: var(--faint-invert); line-height: 1.5; }
+  .fp-waitlist-confirmed {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+  }
 
   /* Dense enough for 4-5 tiles per row on a phone, scaling to many more
      across a wide screen — built for a community that could grow to
@@ -164,9 +203,62 @@
   // Fitness+ yet — the upgrade card above is always visible to every member,
   // but the matches themselves (real or placeholder) are the paid perk, so a
   // non-subscriber shouldn't see them just by opening this page.
+  // No longer called now that a non-member sees renderComingSoonCard()
+  // instead (the whole #fpMatchesSection is hidden for them, so there's no
+  // "Subscribe above to unlock" message left to show) — kept as-is rather
+  // than deleted, same as this page's other superseded-but-not-removed
+  // sections, in case the free-waitlist approach ever gets reverted.
   function renderLockedState() {
     var results = document.getElementById("fpResults");
     results.innerHTML = '<div class="empty-state">Subscribe to Fitness+ above to unlock your matches.</div>';
+  }
+
+  // Ken's ask (Oct 2026): "I don't want people joining our site and
+  // instantly being able to contact people... but we also don't have
+  // enough members yet for restricting anything to make sense." Until
+  // there's a real population, this card replaces the $14.99 ask with a
+  // free waitlist signup — same founding price mentioned, just not
+  // charged yet. See sql/fitness-plus-waitlist.sql for the table this
+  // writes to; joining it never sets profiles.fitness_plus_active, it's
+  // interest capture only.
+  function renderComingSoonCard(alreadyJoined) {
+    var card = document.getElementById("fpUpgradeCard");
+    card.innerHTML =
+      '<div class="fp-upgrade-eyebrow">❤️ FITNESS+ · COMING SOON</div>' +
+      '<h3 class="fp-upgrade-title">Find someone who moves like you.</h3>' +
+      '<p class="fp-upgrade-copy">Great connections start with shared interests. Join our founding Fitness+ community and be among the first to meet singles who share your healthy lifestyle.</p>' +
+      '<div class="fp-waitlist-box" id="fpWaitlistBox"></div>' +
+      '<div class="fp-upgrade-price"><span>$14.99</span>/month founding price — locked in when Fitness+ opens</div>';
+    renderWaitlistBox(alreadyJoined);
+  }
+
+  function renderWaitlistBox(alreadyJoined) {
+    var box = document.getElementById("fpWaitlistBox");
+    if (!box) return;
+    if (alreadyJoined) {
+      box.innerHTML = '<div class="fp-waitlist-confirmed">✅ You\'re on the list — we\'ll let you know the moment Fitness+ opens.</div>';
+      return;
+    }
+    box.innerHTML =
+      '<div class="fp-waitlist-title">Free early access registration</div>' +
+      '<div class="fp-waitlist-sub">18+ only. Dating participation is optional. No payment required to join the waitlist.</div>' +
+      '<button type="button" class="btn btn-primary btn-block" id="fpWaitlistBtn" style="margin-top:14px;">Join the waitlist — it\'s free</button>';
+    var btn = document.getElementById("fpWaitlistBtn");
+    btn.addEventListener("click", async function () {
+      btn.disabled = true;
+      btn.textContent = "Joining…";
+      // A duplicate insert (already joined, e.g. a second tab) just hits
+      // the primary key and errors — treated the same as success below,
+      // since either way the end state is "they're on the list."
+      var { error } = await window.sb.from("fitness_plus_waitlist").insert({ user_id: currentUser.id });
+      if (error && error.code !== "23505") {
+        btn.disabled = false;
+        btn.textContent = "Join the waitlist — it's free";
+        box.insertAdjacentHTML("beforeend", '<div class="form-msg show error" style="margin-top:10px;">Couldn\'t join the waitlist — please try again.</div>');
+        return;
+      }
+      renderWaitlistBox(true);
+    });
   }
 
   function escapeHtml(str) {
@@ -314,8 +406,20 @@
       .maybeSingle();
     var isFitnessPlusMember = !!(myProfile && myProfile.fitness_plus_active);
 
+    // Ken's ask (Oct 2026): an already-active (paid) member keeps the
+    // normal experience untouched — real matches, the standard upgrade
+    // card. Everyone else sees the free "Coming Soon" waitlist card
+    // instead of a $14.99 ask, and the matches section (which would have
+    // nothing real to show them yet anyway) doesn't render at all.
     if (!isFitnessPlusMember) {
-      renderLockedState();
+      var matchesSection = document.getElementById("fpMatchesSection");
+      if (matchesSection) matchesSection.style.display = "none";
+      var { data: waitlistRow } = await window.sb
+        .from("fitness_plus_waitlist")
+        .select("user_id")
+        .eq("user_id", currentUser.id)
+        .maybeSingle();
+      renderComingSoonCard(!!waitlistRow);
       return;
     }
 
