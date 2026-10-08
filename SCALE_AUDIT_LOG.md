@@ -12,6 +12,93 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-08, round 16 — the "black screen, then loads again" glitch was back, for a different reason than round 14
+
+Ken, after round 14 shipped: "I'm sending you this screenshot because we're
+having some load issues again... I don't think we've debugged that glitch
+on refreshing correctly. I think something else is still missing." Same
+symptom description as round 14 (loads, black screen, loads again), but
+this time it was a genuinely different bug wearing the same costume —
+round 14's fix was confirmed still live and working throughout this
+investigation.
+
+Ruled out the obvious suspects one at a time with Ken's help, each via a
+specific DevTools check: no JS errors in Console (clean); not a literal
+double page load (Network showed exactly 1 request for feed.html, not 2);
+not a stale/undeployed fix (searched the live page's source for
+`preloadFirstRealMedia` and found it exactly where round 14 put it). None
+of that explained a real, visible black stretch, which meant the bug had
+to be something a screenshot can't capture — a timing issue that needed to
+be watched happening. Asked Ken for a short screen recording of the glitch.
+
+Analyzed that recording with `ffmpeg`'s `blackdetect` filter (frame-by-
+frame, not by eye) and found a genuine ~290ms fully-black window in the
+reel area, starting the moment Ken navigated back to Home. Pulled the
+individual frames from that window and confirmed something more specific
+than "no real content yet": the loading skeleton itself — the gray
+shimmer cards built in round 12 specifically so the reel never sits
+blank — was completely absent during that window, even though other
+static parts of the page (header, sidebar copy) had already painted.
+
+Root cause, found by reading the code with that clue in hand:
+feed.html's skeleton-painting code
+(`renderReelSkeleton()`/`clearReelSkeleton()`/`renderMealPrepSkeleton()`,
+plus the initial calls that fire them) lived inside the page's main inline
+`<script>` block, which comes AFTER a run of plain (non-`defer`/`async`)
+`<script src>` tags — including the Supabase SDK, fetched fresh from a
+CDN every load. A plain `<script src>` blocks the HTML parser from running
+anything after it until that script finishes downloading and executing, so
+on any load where the CDN fetch wasn't instant (slower connection, nothing
+cached), the skeleton — built to run "instantly, before a single network
+request goes out" — was itself stuck waiting on a network call it never
+actually needed. That's the real mechanism behind "quick load, black
+screen, load again": the skeleton's own code hadn't run yet.
+
+Fix (member-app/feed.html + ensemble-fitness-mobile/www/feed.html, byte-
+identical, no intentional divergence in this file): moved the skeleton
+function definitions and their initial `renderReelSkeleton(3)` /
+`renderMealPrepSkeleton(5)` calls into their own `<script>` block, placed
+before the Supabase CDN `<script src>` tag (and every other `<script
+src>` on the page). Confirmed via code read that these functions touch
+nothing from the blocked scripts — no `window.sb`, no Supabase client, just
+plain DOM calls — so nothing downstream breaks by them running earlier.
+Everything that calls them later (`appendItem`, `showEmptyReelMessage`, the
+cache-flash check in `init()`) still finds them exactly as before, since
+plain global function declarations work the same regardless of which
+`<script>` tag defines them. Left a marker comment at the old location
+pointing to the new one, so a future search for "round 12" or "skeleton"
+in that spot doesn't look like the code vanished.
+
+Verified three ways before delivery: (1) static checks — div-tag balance,
+JS-syntax-parse of every inline `<script>` block (with HTML comments
+stripped first, since my own explanatory comment happens to contain the
+literal text `<script>` and tripped the naive check otherwise — a false
+alarm from the checker, not a real bug, confirmed by re-running the check
+with comments stripped), and CSS brace balance — all clean. (2) A new
+Playwright harness that intercepts the Supabase CDN request and delays it
+by 800ms on purpose, then timestamps exactly when the skeleton first
+appears in the DOM versus when that delayed script finally executes: the
+skeleton now paints at ~280ms, a full ~550ms before the delayed CDN script
+even finishes — proof the skeleton is no longer blocked behind it. (3)
+Re-ran every existing regression harness from rounds 12-14 (cold load,
+cache-hit reload, slow-image swap timing) — all still pass unchanged,
+confirming this fix didn't disturb the earlier ones.
+
+Also fixed in the same pass: the first version of this edit only added the
+new, earlier copy of the skeleton code without removing the original copy
+further down the file — caught before any testing or delivery, since
+leaving both in would have painted the skeleton correctly the first time
+but then inserted a second, duplicate set of skeleton cards once the
+(now-unblocked) external scripts finished loading a moment later. Removed
+the stale duplicate; only one copy of this code exists now.
+
+**Still open, not yet investigated** — flagged by Ken in the same batch of
+screenshots but set aside to focus on the black-screen glitch first: the
+"Working Out" filter view showed unusually heavy video loading in the
+Network tab (206 requests, 47.4MB, repeated cancelled range-requests for
+what looked like the same video). Worth a dedicated look next, once
+confirmed with Ken that it's still happening.
+
 ## 2026-10-08, round 15 — Fitness+ switched to a free "Coming Soon" waitlist
 
 Ken, after researching how other apps handle this: "Keep the Fitness+ tab

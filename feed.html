@@ -1883,38 +1883,41 @@
   </div>
 </div>
 
-<!-- Ken's ask (Oct 2026): the "self-hosted copy, fall back to CDN" setup
-     never actually had a self-hosted copy on disk (js/vendor/supabase.js
-     was never created), so EVERY page load was silently failing that first
-     request, then falling back to this exact CDN script via a blocking
-     document.write (which stalls the page while it reruns) -- on every
-     page, every load, website and app alike. That's the real reason things
-     have felt slower since that change went in, not the CDN itself. Loading
-     directly from the CDN, plainly, is both simpler and faster than the
-     broken fallback dance was. -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-<script src="js/config.js"></script>
-<script src="js/shared-session.js"></script>
-<script src="js/supabaseClient.js"></script>
-<script src="js/moderation.js"></script>
-<script src="js/social.js"></script>
+<!-- Ken's ask (Oct 2026, round 16): "it loads quickly, then black screen,
+     then loads again" — happening again, this time with the reel showing
+     solid black (not even the loading skeleton) for a real, visible
+     stretch before anything appears. Confirmed from a screen recording:
+     the page header and sidebar panels (plain static HTML, just below)
+     paint immediately, but the reel and filter chips stayed completely
+     empty until everything else was ready. Root cause: this page's own
+     skeleton-painting code (renderReelSkeleton()/renderMealPrepSkeleton(),
+     moved up here) used to live in the BIG inline <script> block further
+     down, AFTER the <script src> tags below — including the Supabase SDK,
+     loaded fresh from a CDN. A plain (non-deferred) <script src> blocks
+     the parser from running anything after it until it finishes
+     downloading and executing, so on any load where that CDN fetch took a
+     moment (slower connection, nothing cached yet), EVERYTHING after it —
+     including the skeleton that was specifically built to never let the
+     reel sit blank — was stuck waiting on a network call it never
+     actually needed. The skeleton functions don't touch window.sb or
+     anything else from those scripts, so there's no reason they can't run
+     first: moving just this block up here, before any <script src>, means
+     the skeleton paints the instant the browser reaches this point in the
+     HTML, never blocked behind a CDN round-trip again. Everything these
+     functions are called by later (appendItem, showEmptyReelMessage, the
+     cache-flash check in init()) still finds them exactly as before —
+     plain global function declarations work the same regardless of which
+     <script> tag defines them. -->
 <script>
-  // The phone-frame column (mobile / Simulator) is "the cell phone app" and
-  // is untouched by any of this — this flag only steers the desktop grid
-  // behavior (no autoplay-everything, infinite-scroll watches the whole
-  // page instead of a fixed-height inner scroller). Checked once at load;
-  // resizing across the breakpoint mid-session isn't handled, which is fine
-  // for a page nobody resizes live.
-  var isWideLayout = window.matchMedia("(min-width: 900px)").matches;
-
-  // ---- Loading skeleton (round 12, Oct 2026) -------------------------
-  // Runs synchronously, before requireAuth() and before a single network
-  // request goes out, so the reel and Meal Prep strip never sit blank —
-  // see the .rp-skeleton-* CSS above for the full story. clearReelSkeleton()
-  // is called from both appendItem() and showEmptyReelMessage() below so
-  // the placeholder disappears the instant there's real content OR a real
-  // "nothing here" message to show, whichever comes first, however it got
-  // there (a cache hit, a fresh fetch, or a genuinely empty feed).
+  // ---- Loading skeleton (round 12, Oct 2026; moved up here round 16) ---
+  // Runs synchronously, before a single network request goes out (not even
+  // the Supabase SDK has loaded yet at this point — see the comment above)
+  // so the reel and Meal Prep strip never sit blank — see the .rp-skeleton-*
+  // CSS above for the full story. clearReelSkeleton() is called from both
+  // appendItem() and showEmptyReelMessage() further down so the placeholder
+  // disappears the instant there's real content OR a real "nothing here"
+  // message to show, whichever comes first, however it got there (a cache
+  // hit, a fresh fetch, or a genuinely empty feed).
   function renderReelSkeleton(count) {
     var sentinel = document.getElementById("rpSentinel");
     if (!sentinel) return;
@@ -1949,6 +1952,41 @@
   }
   renderReelSkeleton(3);
   renderMealPrepSkeleton(5);
+</script>
+
+<!-- Ken's ask (Oct 2026): the "self-hosted copy, fall back to CDN" setup
+     never actually had a self-hosted copy on disk (js/vendor/supabase.js
+     was never created), so EVERY page load was silently failing that first
+     request, then falling back to this exact CDN script via a blocking
+     document.write (which stalls the page while it reruns) -- on every
+     page, every load, website and app alike. That's the real reason things
+     have felt slower since that change went in, not the CDN itself. Loading
+     directly from the CDN, plainly, is both simpler and faster than the
+     broken fallback dance was. -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="js/config.js"></script>
+<script src="js/shared-session.js"></script>
+<script src="js/supabaseClient.js"></script>
+<script src="js/moderation.js"></script>
+<script src="js/social.js"></script>
+<script>
+  // The phone-frame column (mobile / Simulator) is "the cell phone app" and
+  // is untouched by any of this — this flag only steers the desktop grid
+  // behavior (no autoplay-everything, infinite-scroll watches the whole
+  // page instead of a fixed-height inner scroller). Checked once at load;
+  // resizing across the breakpoint mid-session isn't handled, which is fine
+  // for a page nobody resizes live.
+  var isWideLayout = window.matchMedia("(min-width: 900px)").matches;
+
+  // ---- Loading skeleton (round 12, Oct 2026) -------------------------
+  // Moved up above the <script src> tags in round 16 — see the big comment
+  // and the early <script> block right after the comments modal, just
+  // before the Supabase CDN tag. renderReelSkeleton()/clearReelSkeleton()/
+  // renderMealPrepSkeleton() and the initial renderReelSkeleton(3) +
+  // renderMealPrepSkeleton(5) calls used to live here; kept this marker
+  // comment so anyone searching "round 12" or "skeleton" in this block
+  // gets pointed to where the code actually is now, instead of finding
+  // nothing and wondering if it was deleted outright.
 
   // ---- Instant "stale while revalidate" flash (round 12, Oct 2026) ------
   // Ken's ask: fix Home's load time "right," thinking at real scale — "ten
