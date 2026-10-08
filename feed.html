@@ -2349,6 +2349,24 @@
     newestSeenAt = null;
     reel.scrollTop = 0;
     if (sentinel) reel.appendChild(sentinel); // keep sentinel last so infinite-scroll still fires
+    // Ken's ask (Oct 2026, round 19): a screen recording caught the reel
+    // going solid black for close to 2 full seconds right after tapping a
+    // filter chip (Walking, then back to Working Out) — no skeleton, no
+    // spinner, nothing, just the bare dark background while the new
+    // filter's posts were being fetched. Round 12's loading skeleton only
+    // ever got painted once, by the page's very first inline <script>
+    // block, for the FIRST load — switching filters later never re-shows
+    // it, because resetReel() only ever cleared the reel and went straight
+    // to loadMoreReel() with nothing in between. This is a completely
+    // separate bug from round 16's (that one was about the skeleton being
+    // delayed on the very first page load; this one is about it never
+    // appearing at all on every load AFTER the first). Showing it again
+    // here means every filter switch gets the same "something is loading"
+    // feedback the first visit already had, instead of going dark.
+    // (Only the video/photo skeleton — Meal Prep's own strip doesn't
+    // change per filter, so it has nothing to re-show here.)
+    clearReelSkeleton();
+    renderReelSkeleton(3);
     loadMoreReel();
   }
 
@@ -4084,9 +4102,23 @@
         }
         return;
       }
-      // See preloadFirstRealMedia's comment above — only matters (and only
-      // ever waits) when there's an actual flash on screen to replace.
-      if (cacheFlashNodes.length) await preloadFirstRealMedia(combined[0]);
+      // Ken's ask (Oct 2026, round 19): round 14 only ever waited for the
+      // first real item's image here when there was a cache FLASH on
+      // screen to replace (cacheFlashNodes.length) — but a loading
+      // SKELETON on screen is exactly the same situation: appendItem()
+      // below clears it the instant the first item starts rendering,
+      // whether or not that item's own photo/video has actually finished
+      // downloading yet. On a first-ever visit (nothing cached) or right
+      // after resetReel() repaints the skeleton for a filter switch (see
+      // its comment), that cleared the skeleton's visible "something is
+      // loading" shimmer and replaced it with a plain dark, empty-looking
+      // box for however long the real image took — caught on video as a
+      // ~180ms black flash between the skeleton and the first real post
+      // actually painting. Same fix as round 14, just no longer gated to
+      // the one specific case it originally shipped for.
+      if (cacheFlashNodes.length || document.querySelector(".rp-skeleton-placeholder")) {
+        await preloadFirstRealMedia(combined[0]);
+      }
       combined.forEach(appendItem);
       trackNewest(combined);
     } catch (e) {

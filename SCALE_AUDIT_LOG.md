@@ -12,6 +12,87 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-08, round 19 — the real cause of "loads, black screen, loads again" on Home: two more mechanisms, both different from rounds 14 and 16
+
+Ken sent a fresh screen recording (desktop, the wide grid view) after
+asking whether round 16 was actually deployed before he last saw this.
+Rather than guess at the deployment question, I analyzed the new
+recording the same way as round 16 — frame-by-frame, `ffmpeg blackdetect`
+for exact timestamps — and it answered the question directly: this is
+real, reproducible behavior in the current code, not a stale-deployment
+illusion. It's also NOT the same bug as before — two further, genuinely
+different mechanisms behind the same "loads, black screen, loads again"
+description Ken keeps (accurately) using for what are turning out to be
+several distinct causes.
+
+**Mechanism 1 — switching filter chips shows nothing at all while the new
+filter loads.** The recording shows Ken tapping "Walking" then back to
+"Working Out," and the entire reel area going solid black for close to 2
+full seconds — not even the loading skeleton, just bare background.
+Reading the code confirmed why: round 12's skeleton only ever gets
+painted once, by the page's very first script block, for the initial
+load. `resetReel()` (called every time a filter chip is clicked) clears
+the reel and goes straight to re-fetching — nothing ever re-shows the
+skeleton for a filter switch, so the reel just sits empty for however
+long that fetch takes. This is a plain gap in coverage, not a timing
+race like the other rounds' bugs.
+
+**Mechanism 2 — the skeleton clears the instant data arrives, not the
+instant the picture is actually ready.** The same recording shows a
+second, shorter (~180ms) black flash right as Home first loads (after
+navigating from Fitness Journeys): the skeleton disappears and the real
+card's photo visibly pops in a beat later. This is the SAME underlying
+problem round 14 already solved — swapping away a visible loading state
+before the real image has actually painted — but round 14's fix
+(`preloadFirstRealMedia`) was only ever wired to run `if
+(cacheFlashNodes.length)`, i.e. only when replacing a stale cache flash
+from a previous visit. On a genuinely fresh load (or right after a
+filter switch, once mechanism 1 above is fixed and a skeleton is on
+screen again), that condition is false, so the wait never happens and
+`appendItem()` clears the skeleton and inserts the real card the moment
+the DATA is back — picture loaded or not.
+
+Fix (member-app/feed.html + ensemble-fitness-mobile/www/feed.html, byte-
+identical, no intentional divergence in this file):
+
+- `resetReel()` now calls `clearReelSkeleton(); renderReelSkeleton(3);`
+  right before `loadMoreReel()`, so every filter switch shows the same
+  "something is loading" skeleton the first visit already gets, instead
+  of going blank. (Meal Prep's own skeleton isn't touched here — that
+  strip doesn't change per filter, so there's nothing to re-show.)
+- `loadMoreReel()`'s preload guard is now `if (cacheFlashNodes.length ||
+  document.querySelector(".rp-skeleton-placeholder"))` instead of just
+  `cacheFlashNodes.length` — covers the cache-flash-replacement case
+  exactly as before, PLUS any other moment a skeleton is genuinely on
+  screen about to be cleared (first load, or a filter switch now that
+  the fix above puts one back up).
+
+Verified with two new, separately-reasoned harnesses (not combined into
+one, since they test different mechanisms): one drives an actual filter
+chip click with a slowed-down fetch and confirms the reel never goes
+fully blank (confirmed this test genuinely catches the bug by reverting
+just this fix in a scratch copy first — it does, a clean ~380ms blank
+window appears without it); the other drives a plain first load with a
+deliberately slow-loading image and confirms `preloadFirstRealMedia` is
+actually invoked and waited on before the first real card lands — same
+revert-first check, same result (without the fix, the preload is never
+even attempted; the swap happens immediately on data-arrival instead).
+Re-ran every regression harness from rounds 12-18 — all still pass.
+Static checks (div balance, JS syntax, CSS braces) clean.
+
+I want to be upfront about something here: three "rounds" in a row now
+(16, 18, 19) have each turned out to be a different bug wearing the same
+"loads, black screen, loads again" description, which is a genuinely
+confusing pattern to be on the receiving end of as someone not reading
+the code. Each one has been real and independently confirmed (video
+evidence plus a reproducible test, not just a guess), and each fix has
+held up under re-test against every prior round's own test suite — but
+I'm flagging the pattern itself in case another black-screen report comes
+in: at this point it's worth a fresh, full top-to-bottom pass over every
+place this reel transitions between states (skeleton / cache flash / real
+content / empty message) rather than chasing another one-off instance,
+since this is now the fourth distinct mechanism found in that same area.
+
 ## 2026-10-08, round 18 — round 17 itself introduced a frozen-video regression; fixed
 
 Ken, immediately after round 17 shipped: "when I click on workout videos,
