@@ -3241,6 +3241,33 @@
       var video = entry.target.querySelector("video");
       if (!video) return;
       if (entry.isIntersecting && entry.intersectionRatio > 0.6) {
+        // Ken's ask (Oct 2026, round 18): "when I click on workout videos,
+        // all those videos are frozen" — a real regression from round 17's
+        // lazy-src fix, found via the DevTools Elements screenshot Ken
+        // sent (a video sitting there fully formed, poster showing, just
+        // never playing). Root cause: two separate IntersectionObservers
+        // now watch the same card — this one (plays it once it's 60%+
+        // visible) and videoSrcObserver (assigns the real src once it's
+        // within 400px). The browser doesn't guarantee which of two
+        // different observers fires first for the same element, and for
+        // any card that's ALREADY on screen the moment it's added (the
+        // first visible row after switching filters, exactly what Ken was
+        // looking at), both can fire on the very same frame. If this one
+        // happened to run first, it called .play() on a video with no src
+        // at all yet (still sitting in data-src) — play() on an empty
+        // video silently does nothing, and since this observer only fires
+        // on a NEW visibility-threshold crossing, nothing ever called
+        // .play() again once videoSrcObserver assigned the src a moment
+        // later. The video was stuck showing its poster, permanently,
+        // until scrolled away and back. Fix: make sure the real src is in
+        // place before ever calling .play() here, regardless of which
+        // observer happened to run first — removes the race entirely
+        // instead of just making it less likely.
+        if (video.dataset.src) {
+          video.src = video.dataset.src;
+          delete video.dataset.src;
+          videoSrcObserver.unobserve(entry.target);
+        }
         if (reelMuted) {
           video.muted = true;
         } else {

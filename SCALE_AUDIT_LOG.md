@@ -12,6 +12,78 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-08, round 18 — round 17 itself introduced a frozen-video regression; fixed
+
+Ken, immediately after round 17 shipped: "when I click on workout videos,
+all those videos are frozen," plus an Elements-panel screenshot showing a
+`<video>` with a perfectly normal-looking `poster` and `src` — nothing
+visibly wrong in the markup, which is exactly what a race condition looks
+like from the outside. (He also reported Home still double-loading; see
+the note at the end of this entry on that.)
+
+This one was a real regression I introduced, not a pre-existing bug Ken
+was newly spotting — worth saying plainly. Root cause: round 17 split one
+job across two separate IntersectionObservers watching the same card —
+the existing `reelObserver` (plays a video once it's 60%+ visible) and
+the new `videoSrcObserver` (assigns the real `src` once it's within
+400px). Two different observer instances firing on the same element have
+no guaranteed order between them. For any card already on screen the
+instant it's added — the first row the user sees right after switching
+filters, exactly what Ken was looking at — both can fire on the same
+frame. When `reelObserver` happened to run first, it called `.play()` on
+a video that still only had `data-src` (no real `src` yet), which the
+browser silently does nothing with — no error, just never starts. Because
+`reelObserver` only fires again on a NEW visibility-threshold crossing,
+nothing ever came back to call `.play()` once `videoSrcObserver` assigned
+the real `src` a moment later. The video sat there fully formed —
+poster, correct src, no console error — just permanently paused.
+
+Reproduced this directly rather than guessing: a Playwright harness that
+loads the "Working Out" filter fresh (same conditions as switching
+filters) and checks every well-visible (>60%) video's actual play state
+a couple seconds later. Against round 17 alone, it intermittently (not
+every run — exactly the "no guaranteed order between two observers"
+signature) found fully-visible cards stuck paused despite having a valid
+`src` and a fully-loaded `readyState`; digging one level deeper by
+instrumenting `.play()` itself caught the actual browser error on the
+frozen card: `AbortError: The play() request was interrupted by a new
+load request` — the smoking gun for "`.play()` was called while `src`
+was still being swapped in."
+
+Fix (member-app/feed.html + ensemble-fitness-mobile/www/feed.html, byte-
+identical, no intentional divergence in this file): `reelObserver`'s
+play-triggering branch now assigns the real `src` itself first (pulling
+it from `data-src` if it's still sitting there) before ever calling
+`.play()`, regardless of which observer happened to run first. This
+closes the race outright instead of just making it less likely —
+whichever of the two observers fires first for a given card, the video
+always has its real source in place before playback is attempted.
+`videoSrcObserver` still does the actual early-loading work for the
+common case (a card approaching the viewport during normal scrolling,
+well before it crosses 60%) — this is purely a safety net for the
+simultaneous-on-load case.
+
+Verified: ran the same harness 6 times against round 17 alone (intermittently
+reproduced the frozen state, confirming the test is meaningful and not a
+false alarm) and 6 times against this fix (zero frozen videos, every run).
+Re-ran round 17's own lazy-loading proof (cards below the fold still don't
+fire a network request until they're actually close) to confirm this fix
+didn't quietly undo that savings. Re-ran every regression harness from
+rounds 12-16 — all still pass. Static checks (div balance, JS syntax,
+CSS braces) clean.
+
+**On "Home still double-loads":** I tested this specific mechanism
+thoroughly in round 16 and it held up again in this round's regression
+pass — so before assuming the round 16 fix itself is incomplete, I need
+to rule out a simpler explanation first: whether the round 16 zip was
+actually merged into the combined repo and pushed (so Netlify rebuilt
+and it's genuinely live) before that retest happened, versus Ken testing
+against a browser/CDN cache of what was there before. Flagging this
+rather than guessing further — will ask directly and, if it's confirmed
+deployed and still happening, treat it as a fresh investigation (another
+screen recording, same methodology as round 16) rather than assume
+round 16's fix was wrong.
+
 ## 2026-10-08, round 17 — "Working Out" filter's heavy video loading, investigated and fixed
 
 Ken, following up on the item flagged at the end of round 16: the "Working
