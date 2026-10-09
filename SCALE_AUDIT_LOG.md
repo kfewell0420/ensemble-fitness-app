@@ -12,6 +12,15 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-09, fitness-plus.html — empty-matches wording
+
+Ken asked whether "No other members yet — check back as more people join
+Ensemble Fitness" is right for an active member. It's accurate but
+misleading: the grid only lists OTHER ACTIVE FITNESS+ members, and there
+are plenty of other Ensemble members — just none subscribed yet. Reworded
+to "You're one of the first Fitness+ founding members — matches will show
+up here as more members join Fitness+."
+
 ## 2026-10-09, fitness-plus.html — already-active members were shown the sign-up pitch
 
 Ken (an existing member, with `profiles.fitness_plus_active` true) asked
