@@ -12,6 +12,23 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-09, fitness-plus.html — already-active members were shown the sign-up pitch
+
+Ken (an existing member, with `profiles.fitness_plus_active` true) asked
+why "Find your person" sent him back to sign up: the page treated an
+active Fitness+ member exactly like a stranger — "Get the Founding Rate"
+opened Stripe checkout again (risking a duplicate subscription), and
+"Read the full Fitness+ story" opened the public marketing site in a new
+tab with no way back inside the app.
+
+Fix (`fitness-plus.html` + mobile mirror): active members now get a plain
+"Founding Member" status card (perks list, locked-in rate, no purchase
+button, no outbound links); the matches grid below is unchanged. The static
+pitch markup stays in the file but is hidden until `init()` decides which
+card applies (4s safety reveal), so the pitch never flashes first.
+Non-active members still see the waitlist card as before. Verified with a
+Playwright harness (`run_fplus.js`) for both states.
+
 ## 2026-10-09, round 23 — small leftover: cards flashing empty for a frame or two after the swap
 
 Ken: round 22 "was much better." The follow-up recording (7:27 PM) shows

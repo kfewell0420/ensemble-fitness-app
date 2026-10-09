@@ -53,7 +53,7 @@
        member keeps seeing exactly this (unchanged — someone who already
        paid should never see a "coming soon" pitch for something they
        already have). -->
-  <div class="fp-upgrade-card" id="fpUpgradeCard">
+  <div class="fp-upgrade-card" id="fpUpgradeCard" style="visibility:hidden;">
     <div class="fp-upgrade-eyebrow">❤️ ENSEMBLE FITNESS+ · FOUNDING RATE</div>
     <h3 class="fp-upgrade-title">Find Someone Who Wants to Do Life Together.</h3>
     <p class="fp-upgrade-copy">Fitness Plus is about more than finding a date. It's about finding someone who shares your desire to live healthier, happier, and together. Because the best relationships begin when there's a natural connection. Why do it alone?</p>
@@ -211,6 +211,35 @@
   function renderLockedState() {
     var results = document.getElementById("fpResults");
     results.innerHTML = '<div class="empty-state">Subscribe to Fitness+ above to unlock your matches.</div>';
+  }
+
+  // Ken's ask (Oct 2026): "I'm already an Ensemble member, so why does Find
+  // Your Person send me back to sign up again?" An ALREADY-active Fitness+
+  // member was being shown the exact same pitch as a stranger — "Get the
+  // Founding Rate" (which opens Stripe checkout again, risking a second
+  // subscription) and "Read the full Fitness+ story" (opened the public
+  // marketing site in a new tab, with no way back inside the app). Active
+  // members now get a plain status card instead: no purchase button, no
+  // outbound links, just confirmation of what they have.
+  function renderActiveMemberCard() {
+    var card = document.getElementById("fpUpgradeCard");
+    card.innerHTML =
+      '<div class="fp-upgrade-eyebrow">\u2764\uFE0F FITNESS+ \u00B7 FOUNDING MEMBER</div>' +
+      '<h3 class="fp-upgrade-title">You\'re in \u2014 thank you for being a charter member.</h3>' +
+      '<p class="fp-upgrade-copy">Your Fitness+ membership is active. Matches below fill in automatically as more members join.</p>' +
+      '<ul class="fp-upgrade-list">' +
+        '<li>Expanded search radius &amp; travel mode</li>' +
+        '<li>See who\'s interested in you</li>' +
+        '<li>Advanced compatibility filters</li>' +
+        '<li>Advanced schedule matching</li>' +
+        '<li>Enhanced dating visibility</li>' +
+      '</ul>' +
+      '<div class="fp-upgrade-price"><span>$14.99</span>/month \u2014 your founding rate is locked in</div>';
+  }
+
+  function revealUpgradeCard() {
+    var card = document.getElementById("fpUpgradeCard");
+    if (card) card.style.visibility = "visible";
   }
 
   // Ken's ask (Oct 2026): "I don't want people joining our site and
@@ -389,6 +418,9 @@
   }
 
   (async function init() {
+    // Safety net: if anything below stalls, still show the card after a
+    // few seconds rather than leaving the page's top blank.
+    setTimeout(revealUpgradeCard, 4000);
     currentUser = await requireAuth();
     if (!currentUser) return;
 
@@ -420,8 +452,12 @@
         .eq("user_id", currentUser.id)
         .maybeSingle();
       renderComingSoonCard(!!waitlistRow);
+      revealUpgradeCard();
       return;
     }
+
+    renderActiveMemberCard();
+    revealUpgradeCard();
 
     if (SHOW_REAL_MATCHES) {
       await loadMatches();
