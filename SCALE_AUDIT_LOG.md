@@ -12,6 +12,17 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-09, feed.html — brighter gold Like + 20% bigger comment icon
+
+Ken: Like thumb needs to be a "super bright gold" and the comment icon 20%
+larger. Like icon + count and the Strong count now use vivid gold #ffd000
+(ring tints too), replacing the app's orange accent for those three spots.
+Comment bubble artwork: 26px -> 31.2px on the phone layout and an effective
+22px -> 26.4px on desktop (the old 26px rule was being squeezed to the 22px
+icon box on desktop by flex-shrink; fixed with flex-shrink:0 plus an explicit
+desktop size). Layout boxes unchanged so count labels stay aligned. Measured
+in Playwright at 1400px and 430px.
+
 ## 2026-10-09, feed.html — reaction row colors/order redone (green dropped)
 
 Ken tried the green Like thumb and rejected it. Redone per his spec: Like
