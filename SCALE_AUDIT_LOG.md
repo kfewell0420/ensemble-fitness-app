@@ -12,14 +12,16 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
-## 2026-10-09, feed.html — Like thumb is green
+## 2026-10-09, feed.html — reaction row colors/order redone (green dropped)
 
-Ken: the liked thumbs-up should be green (website and mobile app); the
-number under it can stay red. Changed the active Like icon (and its soft
-background tint) from brand orange to the app's existing green (`--green`,
-same as the Strong muscle) in the main feed action bar and in the Meal
-Prep reaction pills. The count underneath keeps its existing orange-red.
-CSS only; verified the computed icon color in a Playwright check.
+Ken tried the green Like thumb and rejected it. Redone per his spec: Like
+icon + count gold (the brand gold-orange `--accent` it always had), Love
+heart + count red, Strong muscle (native gold emoji) + count gold with its
+ring tint changed from green to the same gold, Comment unchanged. Order
+changed to Like, Love, Strong so the colors alternate gold / red / gold
+(`REACTIONS` array order only; everything keys off `type`). Meal Prep pills
+get the new order too. The green Meal Prep thumb rule from the abandoned
+attempt was removed. Verified computed colors + a screenshot of the row.
 
 ## 2026-10-09, feed.html — website videos all talking at once (desktop grid)
 

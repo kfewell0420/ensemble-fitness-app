@@ -986,14 +986,17 @@
      and other primary actions, so an "active" thumb reads as consistent
      with the rest of the app rather than introducing a one-off color. */
   .rp-action-btn.active[data-reaction="thumbs_up"] { color: var(--accent); }
-  /* Ken's ask (Oct 2026): the Like thumb itself should be GREEN once liked
-     (matching the Strong muscle's green); the count underneath keeps the
-     button's own orange-red color set on the line above. */
-  .rp-action-btn.active[data-reaction="thumbs_up"] .rp-action-icon { color: var(--green); background: rgba(31, 174, 110, 0.16); }
+  /* Ken's ask (Oct 2026, redo): green looked wrong, so Like goes back to
+     the gold/orange it always had. The row now reads: Like icon + count
+     gold, Love heart + count red, Strong muscle (native gold emoji) + count
+     gold, Comment unchanged — same gold on the Like count and the Strong
+     count so the three reaction counts alternate gold / red / gold. */
+  .rp-action-btn.active[data-reaction="thumbs_up"] { color: var(--accent); }
+  .rp-action-btn.active[data-reaction="thumbs_up"] .rp-action-icon { color: var(--accent); background: rgba(255, 90, 31, 0.16); }
   .rp-action-btn.active[data-reaction="heart"] { color: var(--red); }
   .rp-action-btn.active[data-reaction="heart"] .rp-action-icon { color: var(--red); background: rgba(226, 72, 58, 0.16); }
-  .rp-action-btn.active[data-reaction="muscle"] { color: var(--green); }
-  .rp-action-btn.active[data-reaction="muscle"] .rp-action-icon { background: rgba(31, 174, 110, 0.18); }
+  .rp-action-btn.active[data-reaction="muscle"] { color: var(--accent); }
+  .rp-action-btn.active[data-reaction="muscle"] .rp-action-icon { background: rgba(255, 90, 31, 0.16); }
 
   /* Comments modal — fixed over the whole viewport, completely decoupled
      from any card's box, so opening it (on any post, with any number of
@@ -1352,7 +1355,6 @@
   .rp-mp-reaction.active { border-color: var(--accent-2); background: #fff4ed; }
   .rp-mp-reaction.active .rp-action-icon { color: var(--accent-2); }
   .rp-mp-reaction[data-reaction="heart"].active .rp-action-icon { color: var(--red); }
-  .rp-mp-reaction[data-reaction="thumbs_up"].active .rp-action-icon { color: var(--green); }
   .rp-mp-reaction .rp-action-count { font-size: 11.5px; font-weight: 700; color: #33343a; }
 
   /* Inline comments — loadComments()/postComment() are reused exactly as
@@ -2401,9 +2403,12 @@
   // renderActions) — Journeys/meal-prep keep their existing plain
   // icon+count treatment, so this doesn't touch STORY_REACTIONS below.
   var REACTIONS = [
+    // Order (Ken, Oct 2026): Like, Love, Strong — so the colors alternate
+    // gold / red / gold instead of two golds side by side. Everything keys
+    // off `type`, never position, so reordering only changes display order.
     { type: "thumbs_up", label: "Like" },
-    { type: "muscle", label: "Strong" },
-    { type: "heart", label: "Love" }
+    { type: "heart", label: "Love" },
+    { type: "muscle", label: "Strong" }
   ];
 
   // Journey (community_questions) posts use their own reactions table —
