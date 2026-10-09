@@ -12,6 +12,32 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-09, round 22 — the black flash is the swap for cards AFTER the first; round 21's font change reverted
+
+Ken, after round 21: "it is now slower. See video." A desktop screen
+recording (frame-by-frame at 4fps) shows the real sequence on Home after
+Share Your Journey: skeleton, then the cached flash paints with pictures,
+then ~0.75-1s where the top-right video card and the bottom-left card
+turn solid black while the first card stays fine, then everything fills in.
+Nothing in the recording shows a stall before first paint, and his Network
+tab shows the Google Fonts file at 0 ms (cached) — so round 21's font
+theory was not supported by the evidence and I reverted it on both pages
+(`feed.html`, `fitness-journeys.html`), since a swapped-in font after
+first paint can only add visible movement.
+
+Root cause of the black cards: `preloadFirstRealMedia()` (round 14, widened
+in 19 and 20) only ever waited for `items[0]`'s picture. The desktop grid
+shows ~6 cards at once and each gets a fresh signed URL on the real fetch,
+so cards 2..n swap in as empty dark boxes until their own picture arrives.
+
+Fix: `preloadFirstRealMedia()` now takes the whole batch and waits for the
+first screenful in parallel (8 on wide layout, 3 on phone layout) under
+one shared 1.2s cap. Both call sites (cache flash in `init()`, and
+`loadMoreReel()`) pass the full list. Verified with a 6-post, 1400px-wide
+harness (`run_round22_wide.js`): old code preloads 1 image, new code
+preloads 6 and the swap lands only after all settle. Rounds 19 first-load,
+19 filter-switch, 20 cache-flash and the base cache harness still pass.
+
 ## 2026-10-08, round 21 — a render-blocking third-party stylesheet, not a reel-level race, on full page navigations
 
 Ken, after round 20: "I hate to disappoint, but that didn't fix it
