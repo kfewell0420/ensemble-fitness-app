@@ -986,7 +986,10 @@
      and other primary actions, so an "active" thumb reads as consistent
      with the rest of the app rather than introducing a one-off color. */
   .rp-action-btn.active[data-reaction="thumbs_up"] { color: var(--accent); }
-  .rp-action-btn.active[data-reaction="thumbs_up"] .rp-action-icon { color: var(--accent); background: rgba(255, 90, 31, 0.16); }
+  /* Ken's ask (Oct 2026): the Like thumb itself should be GREEN once liked
+     (matching the Strong muscle's green); the count underneath keeps the
+     button's own orange-red color set on the line above. */
+  .rp-action-btn.active[data-reaction="thumbs_up"] .rp-action-icon { color: var(--green); background: rgba(31, 174, 110, 0.16); }
   .rp-action-btn.active[data-reaction="heart"] { color: var(--red); }
   .rp-action-btn.active[data-reaction="heart"] .rp-action-icon { color: var(--red); background: rgba(226, 72, 58, 0.16); }
   .rp-action-btn.active[data-reaction="muscle"] { color: var(--green); }
@@ -1349,6 +1352,7 @@
   .rp-mp-reaction.active { border-color: var(--accent-2); background: #fff4ed; }
   .rp-mp-reaction.active .rp-action-icon { color: var(--accent-2); }
   .rp-mp-reaction[data-reaction="heart"].active .rp-action-icon { color: var(--red); }
+  .rp-mp-reaction[data-reaction="thumbs_up"].active .rp-action-icon { color: var(--green); }
   .rp-mp-reaction .rp-action-count { font-size: 11.5px; font-weight: 700; color: #33343a; }
 
   /* Inline comments — loadComments()/postComment() are reused exactly as
@@ -3197,9 +3201,21 @@
     var storedReelMute = localStorage.getItem("efit_reel_muted");
     if (storedReelMute !== null) reelMuted = storedReelMute === "true";
   } catch (e) {}
+  // Ken's ask (Oct 2026): on the website's desktop grid several videos play
+  // at once (unlike the phone, which shows one at a time), and a member who
+  // opens "Working Out" heard them all talking over each other with no clue
+  // why. On the wide layout every video now starts MUTED, every time, and
+  // sound is something you turn on for the ONE card you want by clicking its
+  // speaker (which silences every other card). The phone layout is untouched:
+  // sound on by default, one video at a time, exactly as before. The desktop
+  // choice is deliberately NOT saved to localStorage, so a stored phone-style
+  // "sound on" setting can never bring the pile-up back on the website.
+  var desktopAudibleVideo = null;
+  if (isWideLayout) reelMuted = true;
 
   function setReelMuted(value) {
     reelMuted = value;
+    if (isWideLayout) return;
     try { localStorage.setItem("efit_reel_muted", value ? "true" : "false"); } catch (e) {}
   }
 
@@ -3309,7 +3325,9 @@
           delete video.dataset.src;
           videoSrcObserver.unobserve(entry.target);
         }
-        if (reelMuted) {
+        if (isWideLayout) {
+          video.muted = (video !== desktopAudibleVideo);
+        } else if (reelMuted) {
           video.muted = true;
         } else {
           if (currentlyAudibleVideo && currentlyAudibleVideo !== video) {
@@ -3468,6 +3486,22 @@
       // other video in the reel muted too, and remembers the choice next
       // time the app opens.
       function toggleReelMute() {
+        if (isWideLayout) {
+          var turningOn = videoEl.muted;
+          document.querySelectorAll("#rpReel .rp-slide").forEach(function (slide) {
+            var v = slide.querySelector("video");
+            if (!v) return;
+            v.muted = true;
+            var b = slide.querySelector(".rp-mute-btn");
+            if (b) { b.textContent = "\uD83D\uDD07"; b.setAttribute("aria-label", "Unmute video"); }
+          });
+          desktopAudibleVideo = turningOn ? videoEl : null;
+          if (turningOn) {
+            videoEl.muted = false;
+            if (muteBtn) { muteBtn.textContent = "\uD83D\uDD0A"; muteBtn.setAttribute("aria-label", "Mute video"); }
+          }
+          return;
+        }
         setReelMuted(!videoEl.muted);
         videoEl.muted = reelMuted;
         if (muteBtn) {

@@ -12,6 +12,31 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-09, feed.html — Like thumb is green
+
+Ken: the liked thumbs-up should be green (website and mobile app); the
+number under it can stay red. Changed the active Like icon (and its soft
+background tint) from brand orange to the app's existing green (`--green`,
+same as the Strong muscle) in the main feed action bar and in the Meal
+Prep reaction pills. The count underneath keeps its existing orange-red.
+CSS only; verified the computed icon color in a Playwright check.
+
+## 2026-10-09, feed.html — website videos all talking at once (desktop grid)
+
+Ken: on the website's "Working Out" view several videos play sound at the
+same time; phones are fine (one video at a time). He suggested defaulting
+to muted on the website. I could not reproduce several audible videos in a
+sandbox (the existing "one audible at a time" guard held in my harness),
+so rather than chase an unreproducible path, the model was simplified for
+the wide layout: every video starts MUTED on every load, the speaker on a
+card turns sound on for THAT card only (silencing all others), clicking it
+again mutes it. The desktop choice is not saved to localStorage, so an old
+"sound on" setting from phone-style use can't bring it back. Phone layout
+untouched (sound on by default). Verified with `run_audio.js` at 1400px
+(0 audible on load, never more than 1 after clicking speakers in any order,
+even with localStorage forced to "sound on") and 430px (unchanged). Frozen-
+video and filter-switch harnesses still pass.
+
 ## 2026-10-09, fitness-plus.html — empty-matches wording
 
 Ken asked whether "No other members yet — check back as more people join
