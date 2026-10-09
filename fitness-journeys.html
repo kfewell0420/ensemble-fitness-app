@@ -4,7 +4,13 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>Share Your Journey — Ensemble Fitness</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&family=Caveat:wght@600;700&family=Dancing+Script:wght@600;700&display=swap">
+<!-- Ken's ask (Oct 2026, round 21): same fix as feed.html — this page sits
+     right in the middle of his latest repro (Working Out -> Share Your
+     Journey -> Home), and it was blocking its own first paint on the exact
+     same third-party font stylesheet. See feed.html's head for the full
+     explanation; this is the same preload-then-promote swap. -->
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&family=Caveat:wght@600;700&family=Dancing+Script:wght@600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&family=Caveat:wght@600;700&family=Dancing+Script:wght@600;700&display=swap"></noscript>
 <link rel="stylesheet" href="css/app.css?v=2" />
 <style>
   /* Belt-and-suspenders for the hero's quick-jump links (round 8): native

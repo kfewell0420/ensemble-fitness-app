@@ -12,6 +12,75 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-08, round 21 — a render-blocking third-party stylesheet, not a reel-level race, on full page navigations
+
+Ken, after round 20: "I hate to disappoint, but that didn't fix it
+either." I asked for deployment confirmation plus a fresh, precisely-
+targeted recording. What came back instead was two DevTools Network-tab
+screenshots with: "Here's from the latest launch going from workout,
+share your journey back to that home button." I don't actually have
+those two screenshots in view in this session — they didn't carry over
+through a context handoff on my end — so rather than guess at what they
+showed, I used the one fact in that sentence I could verify directly:
+the trigger is "Working Out -> Share Your Journey -> Home," and every
+leg of that is a full page navigation (`fitness-journeys.html` and a
+plain `<a href="feed.html">` Home link), not an in-page filter switch.
+
+That's a meaningfully different situation from everything rounds 14-20
+fixed. Those were all races INSIDE one already-loaded page (the cache
+flash, a filter click, `resetReel()`). A full navigation tears the whole
+document down and starts over — and I found something upstream of all
+of that reel logic: both `feed.html` and `fitness-journeys.html` load
+their custom fonts with a plain `<link rel="stylesheet"
+href="https://fonts.googleapis.com/...">`. A `<link rel="stylesheet">`
+to any origin, including a third party like Google Fonts, is render-
+blocking by default — the browser won't paint anything on the new
+document, not even the skeleton that round 16 hoisted all the way above
+the Supabase script tag specifically so it couldn't be blocked by a slow
+network call, until that external CSS fetch finishes. Round 16 solved
+"blocked by a slow script tag"; it never touched this earlier, equally
+blocking stylesheet link sitting two lines above it. On a cold cache or
+a flaky connection (which the screen recording evidence across rounds
+has consistently suggested is part of what Ken's hitting — Working Out
+videos specifically being a heavier load than photos), that's a real,
+visible stall on every single full page load, immune to any in-page JS
+fix because it happens before this page's own script ever gets to run.
+
+Fix (`member-app/feed.html`, `member-app/fitness-journeys.html`, mirrored
+byte-identical into `ensemble-fitness-mobile/www/`): switched both
+pages' Google Fonts link to the standard "preload, then promote to
+stylesheet on load" pattern (`<link rel="preload" as="style" ...
+onload="this.onload=null;this.rel='stylesheet'">` plus a `<noscript>`
+fallback) — the same technique web.dev recommends for exactly this. The
+page now paints immediately with fallback fonts and swaps to the real
+ones the moment that stylesheet arrives, instead of blocking first paint
+on a third-party round trip. `display=swap` (already in that URL) only
+ever covered the font FILES once the stylesheet was already applied; it
+never made the stylesheet fetch itself non-blocking, which is the actual
+gap this closes.
+
+Verified with a new isolated harness (`run_round21_fontblock.js`):
+intercepts the `fonts.googleapis.com` request and delays its response by
+2.5s, then measures when the skeleton is actually laid out on screen
+(non-zero size via `getBoundingClientRect`, not just present in the
+DOM). Revert-checked first: with the old plain blocking `<link>`, the
+skeleton doesn't paint until ~2527ms — visibly waiting on the delayed
+font request. With the fix, it paints at ~28ms regardless of the font
+delay. Also re-ran every prior round's regression harness (12 through
+20) — all still pass.
+
+Flagged honestly: this explains the exact trigger Ken's last message
+described (a full navigation chain), but it's independent of — not a
+replacement for — rounds 14/16/19/20's reel-level fixes, which address a
+different class of race inside an already-loaded page and remain
+necessary for filter-switch and cache-flash scenarios. If the symptom
+persists after this round deploys, the next most useful thing isn't
+another guess here: it's that same screen recording ask from last round
+(Network tab visible, narrated trigger), resent, since the screenshots
+didn't make it into this session.
+
+---
+
 ## 2026-10-08, round 20 — the fourth (and, by elimination, most-hit) spot with the same bug: the cache flash's own first paint
 
 Ken: "Yes, unfortunately, it is still doing it. It is a bug that we have

@@ -4,7 +4,29 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>Community — Ensemble Fitness</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&family=Caveat:wght@600;700&family=Dancing+Script:wght@600;700&display=swap">
+<!-- Ken's ask (Oct 2026, round 21): still seeing "loads, black screen,
+     loads again" even after rounds 16-20 closed every in-page JS race we
+     could find — and this latest report's trigger (Working Out -> Share
+     Your Journey -> Home) is a plain full-page navigation, not a filter
+     switch. That matters: a `<link rel="stylesheet">` to a THIRD-PARTY
+     origin (fonts.googleapis.com) is render-blocking — the browser won't
+     paint ANYTHING on the new document, not even the skeleton hoisted all
+     the way up here in round 16, until that external fetch finishes. On a
+     cold cache or a flaky connection that's a real, visible stall that no
+     amount of in-page JS timing fixes can touch, because it happens before
+     any of this page's own script has a chance to run at all. Switched to
+     the standard "preload, then promote to stylesheet on load" pattern
+     (what Google's own web.dev guidance recommends for exactly this):
+     the page now paints immediately using fallback fonts, and swaps to the
+     real ones the moment that stylesheet arrives, instead of blocking the
+     very first paint on it. display=swap (already in the URL) keeps this
+     safe for the font FILES themselves; this just stops the small CSS
+     file that lists them from blocking the page too. <noscript> keeps this
+     working exactly as before for anyone without JS. Not a guess at a sixth
+     reel-level race — a real, independently-found rendering bottleneck that
+     can only help, on every single page load. -->
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&family=Caveat:wght@600;700&family=Dancing+Script:wght@600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&family=Caveat:wght@600;700&family=Dancing+Script:wght@600;700&display=swap"></noscript>
 <link rel="stylesheet" href="css/app.css?v=2" />
 <style>
   /* ============================================================
