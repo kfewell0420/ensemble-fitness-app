@@ -12,6 +12,18 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-09, feed.html — reaction row simplified (all counts white, Like is outline-only)
+
+Ken: "I'm getting way too creative" — all numbers under the reaction icons
+should be white, and the Like thumb should be un-highlighted (outline only).
+Done: counts are white in every state; the liked thumb keeps the outline
+markup (`REACTION_ICONS.thumbs_up.active` = outline) with no color/ring; ring
+tints removed from Like/Love/Strong; Love keeps its red filled heart and
+Strong the native gold muscle emoji. Superseded the brighter-gold change
+below (kept for history). Open point put to Ken: with Like outline-only
+there is no visual "you liked this" cue — suggested a filled white thumb
+(Instagram-style fill on liked) as the one-line follow-up if he wants it.
+
 ## 2026-10-09, feed.html — brighter gold Like + 20% bigger comment icon
 
 Ken: Like thumb needs to be a "super bright gold" and the comment icon 20%

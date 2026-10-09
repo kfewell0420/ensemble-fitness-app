@@ -989,21 +989,24 @@
      brand orange (--accent) instead — same color already used for Follow
      and other primary actions, so an "active" thumb reads as consistent
      with the rest of the app rather than introducing a one-off color. */
-  .rp-action-btn.active[data-reaction="thumbs_up"] { color: var(--accent); }
   /* Ken's ask (Oct 2026, redo): green looked wrong, so Like goes back to
      the gold/orange it always had. The row now reads: Like icon + count
      gold, Love heart + count red, Strong muscle (native gold emoji) + count
      gold, Comment unchanged — same gold on the Like count and the Strong
      count so the three reaction counts alternate gold / red / gold. */
-  /* Ken's follow-up: the gold needs to be SUPER bright — this is
-     a vivid pure gold #ffd000 (not the app's orange accent) shared by the Like
-     icon + count and the Strong count so the gold reads as one color. */
-  .rp-action-btn.active[data-reaction="thumbs_up"] { color: #ffd000; }
-  .rp-action-btn.active[data-reaction="thumbs_up"] .rp-action-icon { color: #ffd000; background: rgba(255, 208, 0, 0.18); }
-  .rp-action-btn.active[data-reaction="heart"] { color: var(--red); }
-  .rp-action-btn.active[data-reaction="heart"] .rp-action-icon { color: var(--red); background: rgba(226, 72, 58, 0.16); }
-  .rp-action-btn.active[data-reaction="muscle"] { color: #ffd000; }
-  .rp-action-btn.active[data-reaction="muscle"] .rp-action-icon { background: rgba(255, 208, 0, 0.18); }
+  /* Ken's ask (Oct 2026, round of "I'm getting way too creative"): back to
+     uniform. Every count under the reaction icons is plain white, no matter
+     the state. Like is just the thumb OUTLINE even once liked (the icon
+     markup itself stays the outline, see REACTION_ICONS.thumbs_up.active),
+     with no ring/tint behind it. Love keeps its red filled heart (the one
+     "you reacted" cue, like Instagram) and Strong keeps the native gold
+     muscle emoji; neither gets a colored ring or colored number. */
+  .rp-action-btn.active[data-reaction="thumbs_up"],
+  .rp-action-btn.active[data-reaction="heart"],
+  .rp-action-btn.active[data-reaction="muscle"] { color: #fff; }
+  .rp-action-btn.active[data-reaction="thumbs_up"] .rp-action-icon { color: rgba(255,255,255,0.85); background: none; }
+  .rp-action-btn.active[data-reaction="heart"] .rp-action-icon { color: var(--red); background: none; }
+  .rp-action-btn.active[data-reaction="muscle"] .rp-action-icon { background: none; }
 
   /* Comments modal — fixed over the whole viewport, completely decoupled
      from any card's box, so opening it (on any post, with any number of
@@ -2447,7 +2450,8 @@
     // toggling fill vs. stroke) so the linework is actually clean.
     thumbs_up: {
       outline: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>',
-      active: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>'
+      // Ken (Oct 2026): liked thumb stays an outline — same markup as outline.
+      active: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>'
     },
     heart: {
       outline: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.2s-7.05-4.4-9.4-8.55C1.1 9.1 1.85 5.7 4.6 4.3c2.15-1.1 4.7-.5 6.15 1.35L12 7.05l1.25-1.4c1.45-1.85 4-2.45 6.15-1.35 2.75 1.4 3.5 4.8 2 7.35C19.05 15.8 12 20.2 12 20.2Z"/></svg>',
