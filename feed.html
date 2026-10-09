@@ -2093,7 +2093,13 @@
       urls.forEach(function (url) {
         var img = new Image();
         var settle = function () { remaining -= 1; if (remaining <= 0) finish(); };
-        img.onload = settle;
+        // onload only means the bytes are here; decode() (where supported)
+        // also finishes turning them into a paintable bitmap, so the card
+        // doesn't flash empty for a frame or two while the browser decodes
+        // it after the swap (round 23, from the next recording).
+        img.onload = function () {
+          if (img.decode) { img.decode().then(settle, settle); } else { settle(); }
+        };
         img.onerror = settle;
         img.src = url;
       });
@@ -3385,7 +3391,7 @@
     // video itself.
     var mediaHtml = item.kind === "video"
       ? '<video data-src="' + item.url + '" poster="' + videoPoster + '"' + (reelMuted ? ' muted' : '') + ' loop playsinline preload="metadata"></video>'
-      : '<img src="' + item.url + '" alt="Workout post" loading="lazy" decoding="async" />';
+      : '<img src="' + item.url + '" alt="Workout post" loading="' + (loadedItems.length <= 8 ? 'eager' : 'lazy') + '" decoding="async" />';
 
     var badgeParts = [];
     if (item.workout_type) {

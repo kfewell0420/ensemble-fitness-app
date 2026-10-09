@@ -12,6 +12,23 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-09, round 23 — small leftover: cards flashing empty for a frame or two after the swap
+
+Ken: round 22 "was much better." The follow-up recording (7:27 PM) shows
+the long black stretch gone; what remains is one or two frames (~0.25s at
+most) where a card's header and reaction bar are painted but its picture
+isn't yet — on a filter switch to Working Out and on the Home landing.
+Cause: the pictures are downloaded by then (round 22 waits for them) but
+not yet decoded, and first-screen photos were still `loading="lazy"`.
+
+Fix (`feed.html` + mobile mirror): `preloadFirstRealMedia()` now also
+awaits `img.decode()` after each picture loads (falls back to plain load
+where unsupported), and the first 8 cards' photos use `loading="eager"`
+instead of lazy; later cards stay lazy. Regression harnesses for rounds
+19, 20, 22 and the frozen-video check all pass. Honest limit: this
+shrinks the gap, but I can't prove from a sandbox it reaches zero on
+Ken's real devices.
+
 ## 2026-10-09, round 22 — the black flash is the swap for cards AFTER the first; round 21's font change reverted
 
 Ken, after round 21: "it is now slower. See video." A desktop screen
