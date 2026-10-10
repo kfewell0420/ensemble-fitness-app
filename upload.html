@@ -283,6 +283,7 @@
         <div class="trim-layout" id="trimLayout">
           <div class="trim-media">
             <video id="trimPreviewVideo" muted playsinline class="trim-preview-video"></video>
+            <div id="previewSoundNote" style="font-size:12px; color:var(--faint-invert); margin-top:6px; line-height:1.4;">🔊 Press Preview to hear your video with its own sound. Adding music or a voice narration replaces it.</div>
           </div>
 
           <div class="trim-controls">
@@ -1316,6 +1317,15 @@
   // mutually exclusive, see syncMusicNarrationExclusivity), it now plays
   // alongside the trimmed clip automatically; there's no longer a second
   // preview button to wonder about.
+  function updatePreviewSoundNote() {
+    var note = document.getElementById("previewSoundNote");
+    if (!note) return;
+    var usingMusic = !!musicTrackSelect.value && !musicTrackSelect.disabled;
+    note.textContent = (usingMusic || narrationBlob)
+      ? "🎵 Your chosen " + (narrationBlob ? "narration" : "music") + " plays instead of the video's own sound."
+      : "🔊 Playing your video with its own sound. Adding music or a voice narration replaces it.";
+  }
+
   previewTrimBtn.addEventListener("click", async function () {
     var start = parseFloat(trimStartRange.value);
     var end = parseFloat(trimEndRange.value);
@@ -1324,6 +1334,15 @@
     var trackId = musicTrackSelect.value;
     var hasMusic = !!trackId && !musicTrackSelect.disabled;
     await playTrackPreview(hasMusic ? trackId : "");
+
+    // Artist report (Oct 2026): a video that already had music + talking in it
+    // played in total silence here, because this preview element is `muted` in
+    // the markup and nothing ever turned it back on — so he thought the sound
+    // had been lost. The video's own sound is kept on upload; it should be heard
+    // here unless the member picked music or recorded a narration, which replace
+    // it (the chosen music/narration plays instead).
+    trimPreviewVideo.muted = hasMusic || !!narrationBlob;
+    updatePreviewSoundNote();
 
     trimPreviewVideo.currentTime = start;
     trimPreviewVideo.play().catch(function () {});

@@ -12,6 +12,53 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-10, upload.html — preview now plays the video's own sound
+
+An artist's workout video (already has music + him talking) played in silence on
+the upload page, so he believed the sound was lost. Cause: the trim preview
+`<video id="trimPreviewVideo" muted>` is muted in the markup and nothing ever
+unmuted it. The file itself is stored untouched, so the original audio was never
+lost — only the preview was silent. Fix: pressing "Preview trimmed clip" now sets
+`trimPreviewVideo.muted = hasMusic || !!narrationBlob` (silent only when a chosen
+track or recorded narration is meant to replace the original sound), and a small
+note under the video says which sound will be heard. Verified in a harness with
+a real video file: muted=true before, false after Preview with no music, true when
+a track is chosen; no errors. Next (separate round): optional "keep my video's
+sound and add music" mix — needs a DB column and feed/member/profile playback.
+
+---
+
+## 2026-10-10, admin.html — Profile Photos tab now has the category dropdown (correction)
+
+Ken pushed back on my earlier answer ("Feed Photos only has 2 because the rest
+are videos/profile photos"): his Profile Photos tab shows 5 approved photos that
+he wants to categorize. He is right and my answer was incomplete: feed.html's
+`fetchBatch` selects ALL approved `kind in (video, photo)` rows with no
+`is_profile_photo` filter, so profile photos DO appear in the community feed —
+yet only the Feed Photos tab (is_profile_photo=false) had the category
+dropdown, leaving profile photos with no way to be categorized. Fixed:
+`loadProfilePhotos` now selects `workout_type`, shows "Category · time ago", and
+renders the same dropdown (wired with `wireCategorySelects`). Tested in a
+harness: untagged and tagged rows render; picking "Strike a Pose" saves and
+updates the line. Website only. (Open question for later: whether profile
+photos should appear in the community feed at all.)
+
+---
+
+## 2026-10-10, admin.html — category line now updates after changing the dropdown
+
+Ken's screenshot of Admin > Feed Photos showed only 2 photos, and one read
+"Working Out · 50d ago" while its dropdown already said "Strike a Pose".
+(1) Only 2 rows: that tab is `kind=photo`, `is_profile_photo=false`,
+`status=approved` — the other feed posts are videos (Videos tab) or profile
+photos (Profile Photos tab), so this is correct, not a bug. (2) Stale line:
+real — the dropdown saved but the grey "Category · time ago" text only refreshed
+on reload. Fixed in `wireCategorySelects` (tracks `data-current`, rewrites the
+first segment). Tested in a harness: Working Out -> Strike a Pose -> No
+category gives "Strike a Pose · 50d ago" then "50d ago". Website only.
+
+---
+
 ## 2026-10-10, new category "Strike a Pose" (📸) for photos
 
 Ken: the site is mostly photos, so add a fun category to name them under —
