@@ -12,6 +12,20 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-10, feed.html — category/location pills moved to bottom-left of the video
+
+Ken, after seeing the pill beside the time: it still takes up the top of the
+video, so move "💪 Working Out" (horizontal, as-is) to the bottom-left of the
+video frame. Supersedes the "beside the time" entry below. Done: pills are now
+`.rp-media-badges` inside `.rp-media`, absolutely positioned bottom-left
+(12px/12px, mirroring the mute button bottom-right, max-width leaves room for
+it), dark translucent background for legibility over any video,
+`pointer-events:none` so tapping the video still toggles mute. The header is
+back to just name + badge and time. Verified phone + wide: pill 12px from the
+left/bottom edges of the video, header 38px tall, no errors.
+
+---
+
 ## 2026-10-10, login.html — Connection Status is now REQUIRED at sign-up
 
 Ken: it must be part of joining, and a choice must be made — but a member may

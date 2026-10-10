@@ -612,25 +612,29 @@
   /* Context badges — workout type / location surfaced as small tappable-
      looking pills rather than plain text glued after a timestamp, so a
      post's context is legible at a glance instead of buried in a caption. */
-  /* Ken's ask (Oct 2026): the category pill (e.g. "Working Out") now sits on the
-     same line as the "50d ago" time, right under the member's name, instead of on
-     its own line below. If a post also has a location pill and the row runs out of
-     room, the pills wrap to the next line rather than being cut off. */
-  .rp-slide-header-meta {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    column-gap: 8px;
-    row-gap: 4px;
-    margin-top: 1px;
-  }
-  .rp-slide-header-meta .rp-slide-header-sub { flex: 0 0 auto; }
+  /* Ken's ask (Oct 2026): the category pill (e.g. "Working Out") and location pill
+     now sit in the bottom-left corner of the video frame — mirrors the mute button
+     in the bottom-right — so the top of the video is just the name and time.
+     pointer-events:none lets taps/clicks fall through to the video (tap = mute). */
   .rp-context-badges {
     display: flex;
     gap: 5px;
-    margin-top: 0;
     min-width: 0;
     flex-wrap: wrap;
+  }
+  .rp-media-badges {
+    position: absolute;
+    left: 12px;
+    bottom: 12px;
+    max-width: calc(100% - 64px);
+    z-index: 5;
+    pointer-events: none;
+  }
+  .rp-media-badges .rp-context-badge,
+  .rp-media-badges .rp-context-badge.rp-badge-type {
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
   }
   .rp-context-badge {
     flex: 0 0 auto;
@@ -3494,16 +3498,14 @@
         (item.kind === "video"
           ? '<button type="button" class="rp-mute-btn" data-action="mute" aria-label="' + (reelMuted ? "Unmute video" : "Mute video") + '">' + (reelMuted ? "🔇" : "🔊") + '</button>'
           : "") +
+        (badgeParts.length ? '<div class="rp-context-badges rp-media-badges">' + badgeParts.join("") + '</div>' : "") +
         '<div class="rp-slide-header">' +
           (item.avatarUrl
             ? '<div class="rp-slide-avatar"><img src="' + item.avatarUrl + '" alt="' + escapeHtml(item.name) + '" /></div>'
             : '<div class="rp-slide-avatar rp-avatar-pending" data-avatar-user="' + escapeHtml(item.user_id || "") + '" style="background:' + avatarColor(item.user_id) + '">' + escapeHtml(initial) + '</div>') +
           '<div class="rp-slide-headertext">' +
             '<div class="rp-slide-header-name">' + escapeHtml(item.name) + connectionBadgeHtml(item.connectionStatus) + '</div>' +
-            '<div class="rp-slide-header-meta">' +
-              '<div class="rp-slide-header-sub">' + escapeHtml(timeAgo(item.created_at)) + '</div>' +
-              (badgeParts.length ? '<div class="rp-context-badges">' + badgeParts.join("") + '</div>' : "") +
-            '</div>' +
+            '<div class="rp-slide-header-sub">' + escapeHtml(timeAgo(item.created_at)) + '</div>' +
           '</div>' +
           (isOwnPost ? "" :
             '<button type="button" class="rp-follow-btn' + (isFollowing ? " following" : "") + '" data-action="follow">' +
