@@ -72,9 +72,9 @@
         <span style="font-size:12px; color:var(--faint-invert);">Helps match you with members whose schedule fits yours — required to create an account.</span>
       </div>
       <div class="field" id="connectionStatusField" style="display:none;">
-        <label for="connectionStatus">Connection status (optional)</label>
+        <label for="connectionStatus">Connection status</label>
         <select id="connectionStatus" name="connectionStatus"></select>
-        <span style="font-size:12px; color:var(--faint-invert);">A tiny badge beside your name. Leave blank for no badge — you can change it anytime on your Profile.</span>
+        <span style="font-size:12px; color:var(--faint-invert);">Required — pick one. It shows as a tiny badge beside your name. Prefer not to share? Choose "No badge." You can change it anytime on your Profile.</span>
         <div id="connectionStatusLegend" style="font-size:12px; color:var(--faint-invert); line-height:1.7; margin-top:6px;"></div>
       </div>
       <div class="field" id="artistField" style="display:none;">
@@ -136,7 +136,10 @@
   wakeTimeInput.innerHTML = buildWakeTimeOptionsHtml("Choose one…");
   var connectionStatusField = document.getElementById("connectionStatusField");
   var connectionStatusInput = document.getElementById("connectionStatus");
-  connectionStatusInput.innerHTML = buildConnectionStatusOptionsHtml("No badge");
+  // Required on sign-up: a blank "Choose one…" must be replaced by a real pick. "No badge"
+  // is a real pick (value "none") for members who'd rather not display a status.
+  connectionStatusInput.innerHTML = buildConnectionStatusOptionsHtml("Choose one…").replace("</select>", "") +
+    '<option value="none">No badge \u2014 I\'d rather not show a status</option>';
   document.getElementById("connectionStatusLegend").innerHTML = buildConnectionStatusLegendHtml();
   var artistField = document.getElementById("artistField");
   var isArtistInput = document.getElementById("isArtist");
@@ -186,6 +189,7 @@
     wakeTimeField.style.display = mode === "signup" ? "block" : "none";
     wakeTimeInput.required = mode === "signup";
     connectionStatusField.style.display = mode === "signup" ? "block" : "none";
+    connectionStatusInput.required = mode === "signup";
     artistField.style.display = mode === "signup" ? "block" : "none";
     if (mode === "signin") { isArtistInput.checked = false; artistTypeWrap.style.display = "none"; }
     hideMsg();
@@ -270,6 +274,10 @@
           throw new Error("Please choose the time you naturally wake up.");
         }
 
+        if (!connectionStatusInput.value) {
+          throw new Error("Please choose a connection status — or choose \"No badge\" if you'd rather not show one.");
+        }
+
         var { error } = await withTimeout(window.sb.auth.signUp({
           email: email,
           password: password,
@@ -278,7 +286,7 @@
               date_of_birth: dobValue,
               zip_code: zipValue,
               wake_time_category: wakeTimeValue,
-              connection_status: connectionStatusInput.value || null,
+              connection_status: connectionStatusInput.value === "none" ? null : connectionStatusInput.value,
               is_artist: isArtistInput.checked,
               artist_type: isArtistInput.checked ? artistTypeInput.value : null
             }

@@ -12,6 +12,19 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-10, login.html — Connection Status is now REQUIRED at sign-up
+
+Ken: it must be part of joining, and a choice must be made — but a member may
+choose not to display one. Done: the Create Account select starts on
+"Choose one…" (blank, `required`, plus a JS check with a friendly message) and
+includes an explicit "No badge — I'd rather not show a status" option (value
+`none`, sent as null, so no SQL change). Verified: blank blocks submit; `none`
+sends null; `taken` sends `taken`. Existing members are NOT forced to pick
+(their badge stays blank until they choose one on Profile) — raise with Ken if
+he wants a one-time prompt for current members.
+
+---
+
 ## 2026-10-10, feed.html — category pill moved up beside the time
 
 Ken: the "💪 Working Out" pill sat on its own line under "50d ago" and read as
