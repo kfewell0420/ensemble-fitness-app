@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>Community — Ensemble Fitness</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&family=Caveat:wght@600;700&family=Dancing+Script:wght@600;700&display=swap">
-<link rel="stylesheet" href="css/app.css?v=2" />
+<link rel="stylesheet" href="css/app.css?v=4" />
 <style>
   /* ============================================================
      The app's real home screen: a horizontal "Meal Prep" strip up
@@ -1767,6 +1767,7 @@
   <div class="rp-dash-header" id="rpDashHeader">
     <span class="rp-dash-eyebrow"><span class="rp-dash-dot"></span>YOUR COMMUNITY</span>
     <h1 class="rp-dash-title">Welcome back<span id="rpDashName"></span></h1>
+    <div id="rpDashKey" style="margin-top:8px;" class="rp-dash-keywrap"><button type="button" class="conn-key-open conn-key-link">💗 💍 🤝 What do these mean?</button></div>
     <span class="app-nav-connect" aria-hidden="true">
       <svg viewBox="0 0 34 30" width="28" height="25" focusable="false">
         <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="var(--pink, #db1f52)" transform="translate(0,2)"/>
@@ -2855,6 +2856,18 @@
     });
   }
 
+  var connStatusCache = {};
+  async function loadConnectionStatusesFor(userIds) {
+    var missing = [];
+    userIds.forEach(function (id) {
+      if (id && !(id in connStatusCache) && missing.indexOf(id) === -1) missing.push(id);
+    });
+    if (!missing.length) return;
+    var found = {};
+    try { found = await fetchConnectionStatuses(missing); } catch (e) { found = {}; }
+    missing.forEach(function (id) { connStatusCache[id] = found[id] || ""; });
+  }
+
   async function buildItems(rows) {
     var videoIds = rows.filter(function (r) { return r.kind === "video"; }).map(function (r) { return r.id; });
     var clipsByMediaId = await fetchClipsForMediaIds(videoIds);
@@ -2906,7 +2919,15 @@
     // that stays batched, so letting this run unawaited would quietly
     // bring back exactly the "16 round trips for 8 posts" problem the Oct
     // 2026 fix (see actionCountsCache's comment above) eliminated.
-    await preloadActionCounts(rows.map(function (r) { return r.id; }));
+    //
+    // Connection-status badges (💗/💍/🤝) ride along in parallel with that
+    // same wait — one small batched query for only the authors we haven't
+    // already looked up — so they add no extra round trip to a feed load.
+    await Promise.all([
+      preloadActionCounts(rows.map(function (r) { return r.id; })),
+      loadConnectionStatusesFor(items.map(function (it) { return it.user_id; }))
+    ]);
+    items.forEach(function (it) { it.connectionStatus = connStatusCache[it.user_id] || ""; });
 
     // Avatars: NOT awaited (round 13, Oct 2026) — see hydrateAvatars()
     // above for why this one's safe to let run in the background while
@@ -3464,7 +3485,7 @@
             ? '<div class="rp-slide-avatar"><img src="' + item.avatarUrl + '" alt="' + escapeHtml(item.name) + '" /></div>'
             : '<div class="rp-slide-avatar rp-avatar-pending" data-avatar-user="' + escapeHtml(item.user_id || "") + '" style="background:' + avatarColor(item.user_id) + '">' + escapeHtml(initial) + '</div>') +
           '<div class="rp-slide-headertext">' +
-            '<div class="rp-slide-header-name">' + escapeHtml(item.name) + '</div>' +
+            '<div class="rp-slide-header-name">' + escapeHtml(item.name) + connectionBadgeHtml(item.connectionStatus) + '</div>' +
             '<div class="rp-slide-header-sub">' + escapeHtml(timeAgo(item.created_at)) + '</div>' +
             (badgeParts.length ? '<div class="rp-context-badges">' + badgeParts.join("") + '</div>' : "") +
           '</div>' +
@@ -3481,6 +3502,7 @@
                 '<button type="button" class="danger" data-action="delete-post">🗑️ Delete post</button>'
                 :
                 '<button type="button" data-action="message">Message ' + escapeHtml(item.name) + '</button>' +
+                '<button type="button" class="conn-key-open">💗 What do the badges mean?</button>' +
                 '<button type="button" data-action="report">Report post</button>' +
                 '<button type="button" class="danger" data-action="block">' + (isBlocked(item.user_id) ? "Unblock" : "Block") + " " + escapeHtml(item.name) + '</button>'
               ) +

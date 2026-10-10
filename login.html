@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>Sign In — Ensemble Fitness</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&family=Caveat:wght@600;700&family=Dancing+Script:wght@600;700&display=swap">
-<link rel="stylesheet" href="css/app.css?v=2" />
+<link rel="stylesheet" href="css/app.css?v=4" />
 </head>
 <body>
 
@@ -71,6 +71,12 @@
         <select id="wakeTime" name="wakeTime"></select>
         <span style="font-size:12px; color:var(--faint-invert);">Helps match you with members whose schedule fits yours — required to create an account.</span>
       </div>
+      <div class="field" id="connectionStatusField" style="display:none;">
+        <label for="connectionStatus">Connection status (optional)</label>
+        <select id="connectionStatus" name="connectionStatus"></select>
+        <span style="font-size:12px; color:var(--faint-invert);">A tiny badge beside your name. Leave blank for no badge — you can change it anytime on your Profile.</span>
+        <div id="connectionStatusLegend" style="font-size:12px; color:var(--faint-invert); line-height:1.7; margin-top:6px;"></div>
+      </div>
       <div class="field" id="artistField" style="display:none;">
         <label style="display:flex; align-items:center; gap:8px; font-weight:600;">
           <input type="checkbox" id="isArtist" style="width:auto;" />
@@ -128,6 +134,10 @@
   var wakeTimeField = document.getElementById("wakeTimeField");
   var wakeTimeInput = document.getElementById("wakeTime");
   wakeTimeInput.innerHTML = buildWakeTimeOptionsHtml("Choose one…");
+  var connectionStatusField = document.getElementById("connectionStatusField");
+  var connectionStatusInput = document.getElementById("connectionStatus");
+  connectionStatusInput.innerHTML = buildConnectionStatusOptionsHtml("No badge");
+  document.getElementById("connectionStatusLegend").innerHTML = buildConnectionStatusLegendHtml();
   var artistField = document.getElementById("artistField");
   var isArtistInput = document.getElementById("isArtist");
   var artistTypeWrap = document.getElementById("artistTypeWrap");
@@ -175,6 +185,7 @@
     zipInput.required = mode === "signup";
     wakeTimeField.style.display = mode === "signup" ? "block" : "none";
     wakeTimeInput.required = mode === "signup";
+    connectionStatusField.style.display = mode === "signup" ? "block" : "none";
     artistField.style.display = mode === "signup" ? "block" : "none";
     if (mode === "signin") { isArtistInput.checked = false; artistTypeWrap.style.display = "none"; }
     hideMsg();
@@ -267,6 +278,7 @@
               date_of_birth: dobValue,
               zip_code: zipValue,
               wake_time_category: wakeTimeValue,
+              connection_status: connectionStatusInput.value || null,
               is_artist: isArtistInput.checked,
               artist_type: isArtistInput.checked ? artistTypeInput.value : null
             }

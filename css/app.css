@@ -2245,3 +2245,47 @@ select option {
 .efit-notif-item:hover { background: rgba(255, 255, 255, 0.04); }
 .efit-notif-item.unread { background: var(--accent-tint); color: #fff; }
 .efit-notif-item-time { display: block; color: var(--faint-invert); font-size: 11px; margin-top: 3px; }
+
+/* Connection Status badge (Ken's ask, Oct 2026) — a tiny emoji right after a
+   member's name. Deliberately small and inline so it never dominates a header. */
+.conn-badge {
+  display: inline-block;
+  margin-left: 5px;
+  font-size: 0.82em;
+  line-height: 1;
+  vertical-align: baseline;
+  cursor: pointer;
+}
+.conn-key-link {
+  background: none; border: 0; padding: 4px 0; margin: 0;
+  font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer;
+  color: var(--muted-invert, #a9b0c0); text-align: left;
+}
+.conn-key-link:hover { color: #fff; }
+.conn-key-inline {
+  font-size: 12.5px; line-height: 1.65; color: var(--muted-invert, #a9b0c0);
+  border: 1px solid rgba(255,255,255,0.10); border-radius: 12px; padding: 10px 14px;
+  background: rgba(255,255,255,0.03);
+}
+.conn-key-inline-title { font-weight: 700; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint-invert, #7d8496); margin-bottom: 2px; }
+.conn-key-inline strong { color: #fff; font-weight: 600; }
+.conn-key-inline-icon { display: inline-block; width: 22px; }
+.conn-key-overlay {
+  position: fixed; inset: 0; z-index: 100000; background: rgba(0,0,0,0.65);
+  display: flex; align-items: center; justify-content: center; padding: 16px;
+}
+.conn-key-sheet {
+  width: 100%; max-width: 380px; background: #11151f; color: #fff;
+  border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; padding: 20px 20px 16px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+}
+.conn-key-title { font-family: 'Poppins','Inter',sans-serif; font-weight: 700; font-size: 17px; margin-bottom: 4px; }
+.conn-key-sub { font-size: 12.5px; color: rgba(255,255,255,0.65); margin-bottom: 14px; }
+.conn-key-row { display: flex; gap: 12px; align-items: flex-start; padding: 8px 0; font-size: 13.5px; line-height: 1.4; }
+.conn-key-row span:last-child { color: rgba(255,255,255,0.8); }
+.conn-key-row strong { color: #fff; }
+.conn-key-icon { width: 26px; text-align: center; font-size: 20px; flex-shrink: 0; }
+.conn-key-close {
+  display: block; width: 100%; margin-top: 12px; padding: 11px; border: 0; border-radius: 999px;
+  background: var(--accent, #ff5a1f); color: #fff; font-weight: 700; font-size: 14px; cursor: pointer;
+}

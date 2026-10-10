@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>Member Profile — Ensemble Fitness</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&family=Caveat:wght@600;700&family=Dancing+Script:wght@600;700&display=swap">
-<link rel="stylesheet" href="css/app.css?v=2" />
+<link rel="stylesheet" href="css/app.css?v=4" />
 </head>
 <body>
 
@@ -123,6 +123,7 @@
     }
 
     var wakeLabel = wakeTimeLabel(member.wake_time_category);
+    var memberConnStatuses = await fetchConnectionStatuses([memberId]);
 
     var { count: followerCount } = await window.sb
       .from("follows")
@@ -135,13 +136,14 @@
       '<div style="display:flex; gap:18px; align-items:center; flex-wrap:wrap;">' +
         '<div class="avatar-circle" style="width:84px; height:84px; font-size:26px; margin:0;">' + avatarInner + '</div>' +
         '<div style="flex:1; min-width:200px;">' +
-          '<h1 style="font-size:22px; margin-bottom:4px;">' + escapeHtml(member.display_name || "A member") + '</h1>' +
+          '<h1 style="font-size:22px; margin-bottom:4px;">' + escapeHtml(member.display_name || "A member") + connectionBadgeHtml(memberConnStatuses[memberId]) + '</h1>' +
           (member.bio ? '<p style="font-size:14px; color:var(--muted-invert); margin-bottom:6px;">' + escapeHtml(member.bio) + '</p>' : '') +
           '<span style="font-size:12.5px; color:var(--faint-invert);">' +
             (member.zip_code ? 'ZIP ' + escapeHtml(member.zip_code) : '') +
             (wakeLabel ? ' · ' + escapeHtml(wakeLabel) : '') +
             ' · ' + (followerCount || 0) + (followerCount === 1 ? ' follower' : ' followers') +
           '</span>' +
+          (memberConnStatuses[memberId] ? '<div style="margin-top:4px;">' + connectionKeyLinkHtml() + '</div>' : '') +
         '</div>' +
       '</div>' +
       (isOwnProfile ? '' : '<div class="follow-actions-row" style="justify-content:flex-start; margin-top:16px;" id="memberActions"></div>');

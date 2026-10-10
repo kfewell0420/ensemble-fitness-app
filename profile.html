@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>My Profile — Ensemble Fitness</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&family=Caveat:wght@600;700&family=Dancing+Script:wght@600;700&display=swap">
-<link rel="stylesheet" href="css/app.css?v=2" />
+<link rel="stylesheet" href="css/app.css?v=4" />
 </head>
 <body>
 
@@ -94,6 +94,12 @@
         <label for="relationshipIntent">What are you looking for? (optional)</label>
         <select id="relationshipIntent" name="relationshipIntent"></select>
         <span style="font-size:12px; color:var(--faint-invert);">Only shown to help match you on Fitness+ — leave blank if you'd rather not say.</span>
+      </div>
+      <div class="field">
+        <label for="connectionStatus">Connection status (optional)</label>
+        <select id="connectionStatus" name="connectionStatus"></select>
+        <span style="font-size:12px; color:var(--faint-invert);">A tiny badge shown beside your name. Choose one, or leave it blank for no badge.</span>
+        <div id="connectionStatusLegend" style="font-size:12px; color:var(--faint-invert); line-height:1.7; margin-top:6px;"></div>
       </div>
       <button type="submit" class="btn btn-primary" id="saveProfileBtn">Save Profile</button>
     </form>
@@ -522,6 +528,17 @@
   async function loadProfile() {
     document.getElementById("wakeTimeCategory").innerHTML = buildWakeTimeOptionsHtml("Choose one…");
     document.getElementById("relationshipIntent").innerHTML = buildRelationshipIntentOptionsHtml("Prefer not to say");
+    document.getElementById("connectionStatus").innerHTML = buildConnectionStatusOptionsHtml("No badge");
+    document.getElementById("connectionStatusLegend").innerHTML = buildConnectionStatusLegendHtml();
+
+    // Connection status lives in its own best-effort query so this page keeps
+    // working even before sql/connection-status.sql has been run.
+    try {
+      var csRes = await window.sb.from("profiles").select("connection_status").eq("id", currentUser.id).maybeSingle();
+      if (csRes && !csRes.error && csRes.data) {
+        document.getElementById("connectionStatus").value = csRes.data.connection_status || "";
+      }
+    } catch (csErr) { /* column not there yet — ignore */ }
 
     var { data, error } = await window.sb
       .from("profiles")
@@ -855,13 +872,25 @@
       relationship_intent: relationshipIntentValue || null
     });
 
+    // Connection status is saved separately and best-effort: if the column
+    // doesn't exist yet (SQL not run), the rest of the profile still saves.
+    var connectionStatusSaveFailed = false;
+    if (!error) {
+      try {
+        var csUpd = await window.sb.from("profiles")
+          .update({ connection_status: document.getElementById("connectionStatus").value || null })
+          .eq("id", currentUser.id);
+        if (csUpd && csUpd.error) connectionStatusSaveFailed = true;
+      } catch (csSaveErr) { connectionStatusSaveFailed = true; }
+    }
+
     btn.disabled = false;
     btn.textContent = "Save Profile";
 
     if (error) {
       showMsg(msg, error.message, "error");
     } else {
-      showMsg(msg, "Saved.", "success");
+      showMsg(msg, connectionStatusSaveFailed ? "Saved (connection status isn't available yet)." : "Saved.", "success");
       // Ken's ask (Oct 2026): this used to set the whole avatarCircle's
       // .textContent, which wipes out ALL of its children — including the
       // 📷 upload badge span that's only in the markup when there's no

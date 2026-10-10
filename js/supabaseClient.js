@@ -121,6 +121,112 @@ function buildRelationshipIntentOptionsHtml(placeholderLabel) {
   return html;
 }
 
+/* Connection Status (Ken's ask, Oct 2026) — an optional, tiny badge beside a member's
+   name saying how they're here, so nobody has to message a stranger to find out. NULL /
+   empty means "no badge". The same list drives the profile dropdown, the join form's
+   dropdown and its legend, and every badge shown next to a name. */
+window.CONNECTION_STATUS_OPTIONS = [
+  { value: "open_to_connect", icon: "\uD83D\uDC97", label: "Open to Connect", hint: "Single and open to meeting someone" },
+  { value: "taken", icon: "\uD83D\uDC8D", label: "Taken", hint: "Married or in a relationship" },
+  { value: "community", icon: "\uD83E\uDD1D", label: "Here for Community", hint: "Friends, workout partners, motivation only" }
+];
+
+function connectionStatusOption(value) {
+  return window.CONNECTION_STATUS_OPTIONS.filter(function (o) { return o.value === value; })[0] || null;
+}
+
+/* <option> markup for a status <select>; the blank first option means "show no badge". */
+function buildConnectionStatusOptionsHtml(placeholderLabel) {
+  var html = '<option value="">' + (placeholderLabel || "No badge") + '</option>';
+  window.CONNECTION_STATUS_OPTIONS.forEach(function (o) {
+    html += '<option value="' + o.value + '">' + o.icon + " " + o.label + '</option>';
+  });
+  return html;
+}
+
+/* A small reference list of every badge and what it means (shown under the join/profile
+   dropdowns so members know what each one signals before choosing). */
+function buildConnectionStatusLegendHtml() {
+  return window.CONNECTION_STATUS_OPTIONS.map(function (o) {
+    return '<div>' + o.icon + ' <strong>' + o.label + '</strong> \u2014 ' + o.hint + '</div>';
+  }).join("") + '<div>No badge \u2014 you\'d rather not show a status</div>';
+}
+
+/* The tiny badge itself, to drop right after a name. Returns "" for no/unknown status. */
+function connectionBadgeHtml(status) {
+  var o = connectionStatusOption(status);
+  if (!o) return "";
+  return '<span class="conn-badge" role="img" title="' + o.label + '" aria-label="' + o.label + '">' + o.icon + '</span>';
+}
+
+/* The "what do these mean?" key. Opens when anyone taps a badge or any element with class
+   .conn-key-open (the small "What do these mean?" links on the pages). Same wording everywhere. */
+function showConnectionKey() {
+  if (document.getElementById("connKeyOverlay")) return;
+  var rows = window.CONNECTION_STATUS_OPTIONS.map(function (o) {
+    return '<div class="conn-key-row"><span class="conn-key-icon">' + o.icon + '</span><span><strong>' + o.label + '</strong><br>' + o.hint + '</span></div>';
+  }).join("") +
+    '<div class="conn-key-row"><span class="conn-key-icon">\u2014</span><span><strong>No badge</strong><br>Member chooses not to display a status</span></div>';
+  var overlay = document.createElement("div");
+  overlay.id = "connKeyOverlay";
+  overlay.className = "conn-key-overlay";
+  overlay.innerHTML = '<div class="conn-key-sheet" role="dialog" aria-modal="true" aria-label="What the badges mean">' +
+    '<div class="conn-key-title">Connection status</div>' +
+    '<div class="conn-key-sub">The tiny badge beside a member\'s name. It\'s optional, and members choose their own.</div>' +
+    rows +
+    '<button type="button" class="conn-key-close">Got it</button></div>';
+  function close() { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); document.removeEventListener("keydown", onKey); }
+  function onKey(e) { if (e.key === "Escape") close(); }
+  overlay.addEventListener("click", function (e) { if (e.target === overlay || (e.target.closest && e.target.closest(".conn-key-close"))) close(); });
+  document.addEventListener("keydown", onKey);
+  document.body.appendChild(overlay);
+}
+/* Capture phase + stopPropagation so tapping a badge inside a clickable row or card shows
+   the key instead of navigating away. */
+document.addEventListener("click", function (e) {
+  var t = e.target && e.target.closest ? e.target.closest(".conn-badge, .conn-key-open") : null;
+  if (!t) return;
+  e.preventDefault();
+  e.stopPropagation();
+  showConnectionKey();
+}, true);
+/* Always-visible compact key printed right on the page. Any element with a data-conn-key
+   attribute gets it filled in automatically. */
+function connectionKeyBlockHtml() {
+  return '<div class="conn-key-inline"><div class="conn-key-inline-title">Connection status key</div>' +
+    window.CONNECTION_STATUS_OPTIONS.map(function (o) {
+      return '<div><span class="conn-key-inline-icon">' + o.icon + '</span><strong>' + o.label + '</strong> \u2014 ' + o.hint + '</div>';
+    }).join("") +
+    '<div><span class="conn-key-inline-icon">\u2014</span><strong>No badge</strong> \u2014 member chooses not to display a status</div></div>';
+}
+function fillConnectionKeys() {
+  Array.prototype.forEach.call(document.querySelectorAll("[data-conn-key]"), function (el) { el.innerHTML = connectionKeyBlockHtml(); });
+}
+if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", fillConnectionKeys);
+else fillConnectionKeys();
+/* Small always-visible link row for pages that show badges. */
+function connectionKeyLinkHtml(extraStyle) {
+  return '<button type="button" class="conn-key-open conn-key-link"' + (extraStyle ? ' style="' + extraStyle + '"' : '') + '>' +
+    window.CONNECTION_STATUS_OPTIONS.map(function (o) { return o.icon; }).join(" ") + ' What do these mean?</button>';
+}
+
+/* Looks up the Connection Status for a batch of members in ONE query and returns a
+   { userId: status } map (members with no badge are simply absent). Best-effort by design:
+   before sql/connection-status.sql has been run the column doesn't exist, so any error —
+   or any other failure — just returns an empty map and the page renders with no badges
+   instead of breaking. */
+async function fetchConnectionStatuses(userIds) {
+  var map = {};
+  try {
+    var ids = Array.from(new Set((userIds || []).filter(Boolean)));
+    if (!ids.length || !window.sb) return map;
+    var { data, error } = await window.sb.from("profiles").select("id, connection_status").in("id", ids);
+    if (error || !data) return map;
+    data.forEach(function (r) { if (r.connection_status) map[r.id] = r.connection_status; });
+  } catch (e) {}
+  return map;
+}
+
 /* Turns the total-inches integer stored on profiles.height_inches (set by
    stripe-webhook.js's handleFitnessPlusSignup when someone pays for
    Fitness+) into a friendly "5'8"" for display on the profile page and

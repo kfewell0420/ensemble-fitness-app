@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>Fitness Plus — Ensemble Fitness</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&family=Caveat:wght@600;700&family=Dancing+Script:wght@600;700&display=swap">
-<link rel="stylesheet" href="css/app.css?v=2" />
+<link rel="stylesheet" href="css/app.css?v=4" />
 </head>
 <body>
 
@@ -83,6 +83,8 @@
 
     <h3 style="margin:28px 0 4px;">Your matches</h3>
     <p class="card-sub" style="margin-bottom:16px;">This fills in automatically as members join — everyone here will be matched by ZIP code and wake-up time.</p>
+
+    <div data-conn-key style="margin-bottom:16px;"></div>
 
     <div class="form-msg" id="fpMsg"></div>
 
@@ -385,7 +387,12 @@
     // wait is roughly the slowest single lookup instead of the sum of all
     // of them — the difference between a sub-second load and tens of
     // seconds once Fitness+ has a few hundred members.
-    var avatarUrls = await Promise.all(data.map(function (member) { return avatarUrlFor(member.id); }));
+    var fetched = await Promise.all([
+      Promise.all(data.map(function (member) { return avatarUrlFor(member.id); })),
+      fetchConnectionStatuses(data.map(function (m) { return m.id; }))
+    ]);
+    var avatarUrls = fetched[0];
+    var connStatuses = fetched[1];
     for (var i = 0; i < data.length; i++) {
       var member = data[i];
       var avatarUrl = avatarUrls[i];
@@ -408,7 +415,7 @@
       card.innerHTML =
         '<div class="feed-card-thumb">' + thumbInner + matchBadgeFor(member) + '</div>' +
         '<div class="feed-card-meta">' +
-          '<div class="feed-card-name">' + escapeHtml(member.display_name || "A member") + '</div>' +
+          '<div class="feed-card-name">' + escapeHtml(member.display_name || "A member") + connectionBadgeHtml(connStatuses[member.id]) + '</div>' +
           (subParts.length ? '<div class="feed-card-sub">' + subParts.join(" · ") + '</div>' : '') +
           (member.bio ? '<p class="feed-card-caption">' + escapeHtml(member.bio) + '</p>' : '') +
         '</div>';
