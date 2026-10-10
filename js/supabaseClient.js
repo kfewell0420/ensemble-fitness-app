@@ -261,8 +261,13 @@ function wirePasswordToggle(button, input) {
    "My uploads", and the admin review queue). The video's own sound is muted
    so only the narration plays. Best-effort: if the browser's autoplay policy
    blocks audio.play(), it fails silently rather than throwing. */
-function wireNarrationSync(video, audio, keepOriginal) {
+function wireNarrationSync(video, audio, keepOriginal, musicStart, trimStart) {
   if (!video || !audio) return;
+  // musicStart: where in the SONG playback begins (seconds; 0 for narration or an unset post).
+  // trimStart: the clip's own trim point, so the song lines up with the clip's first frame.
+  var offset = typeof musicStart === "number" && musicStart > 0 ? musicStart : 0;
+  var tStart = typeof trimStart === "number" && trimStart > 0 ? trimStart : 0;
+  function expected() { return offset + Math.max(0, video.currentTime - tStart); }
   if (keepOriginal) {
     // "Keep my video's own sound too": the video stays audible and the track plays
     // softly underneath. The video's own mute/volume controls drive the track too.
@@ -273,14 +278,14 @@ function wireNarrationSync(video, audio, keepOriginal) {
     video.muted = true;
   }
   video.addEventListener("play", function () {
-    audio.currentTime = video.currentTime;
+    audio.currentTime = expected();
     audio.play().catch(function () {});
   });
   video.addEventListener("pause", function () { audio.pause(); });
-  video.addEventListener("seeking", function () { audio.currentTime = video.currentTime; });
+  video.addEventListener("seeking", function () { audio.currentTime = expected(); });
   video.addEventListener("ended", function () {
     audio.pause();
-    audio.currentTime = 0;
+    audio.currentTime = offset;
   });
 }
 
@@ -293,10 +298,11 @@ function wireNarrationSync(video, audio, keepOriginal) {
      applies it to the track instead (video.volume = 0 would not work — iOS ignores it).
    - keepOriginal: video keeps its own sound; the track plays at low volume and simply
      follows the video's muted state.
-   The track starts where the clip's trim starts, mirroring the upload preview. */
-function wireFeedSound(video, audio, keepOriginal, trimStart) {
+   The track starts where the clip's trim starts (at `musicStart` seconds into the song), mirroring the upload preview. */
+function wireFeedSound(video, audio, keepOriginal, trimStart, musicStart) {
   if (!video || !audio) return;
   var start = typeof trimStart === "number" ? trimStart : 0;
+  var offset = typeof musicStart === "number" && musicStart > 0 ? musicStart : 0; // where in the song playback begins
   var protoMuted = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "muted");
   var intentMuted = !!video.muted;
 
@@ -318,7 +324,7 @@ function wireFeedSound(video, audio, keepOriginal, trimStart) {
     });
   }
 
-  function expected() { return Math.max(0, video.currentTime - start); }
+  function expected() { return offset + Math.max(0, video.currentTime - start); }
   function sync() {
     if (Math.abs(audio.currentTime - expected()) > 0.4) {
       try { audio.currentTime = expected(); } catch (e) {}
@@ -428,4 +434,74 @@ function wireReelPlayback(video, clips) {
   });
   // A clip with no trim_end just plays to its own natural end instead.
   video.addEventListener("ended", advance);
+}
+
+
+function formatSongTime(sec) {
+  sec = Math.max(0, Math.round(sec || 0));
+  var m = Math.floor(sec / 60), r = sec % 60;
+  return m + ":" + (r < 10 ? "0" : "") + r;
+}
+
+/* "Start the song at 0:15" — a small slider plus a "Hear it" button, so an artist can skip a long
+   intro and begin the song where the vocals/beat start. Used on the upload page and in a post's
+   Edit menu. opts: { audio: an <audio> element whose src is the song (created if omitted),
+   initial: seconds, duration: seconds if already known, onChange(seconds) }.
+   Returns { el, getValue, setValue, setDuration, stop }. */
+function createMusicStartPicker(opts) {
+  opts = opts || {};
+  var audio = opts.audio || new Audio();
+  var value = Math.max(0, Number(opts.initial) || 0);
+  var el = document.createElement("div");
+  el.className = "music-start";
+  el.innerHTML =
+    '<div class="music-start-top">' +
+      '<span class="music-start-label">Start the song at <b class="ms-time">0:00</b></span>' +
+      '<button type="button" class="music-start-play">▶ Hear it</button>' +
+    '</div>' +
+    '<input type="range" class="ms-range" min="0" max="0" step="1" value="0" aria-label="Where the song starts" />';
+  var range = el.querySelector(".ms-range");
+  var timeEl = el.querySelector(".ms-time");
+  var playBtn = el.querySelector(".music-start-play");
+  var stopTimer = null;
+
+  function paint() { timeEl.textContent = formatSongTime(value); range.value = String(value); }
+  function setDuration(d) {
+    d = Math.floor(Number(d) || 0);
+    if (d > 0) { range.max = String(Math.max(0, d - 1)); if (value > d - 1) value = Math.max(0, d - 1); paint(); }
+  }
+  function stop() {
+    if (stopTimer) { clearTimeout(stopTimer); stopTimer = null; }
+    try { audio.pause(); } catch (e) {}
+    playBtn.textContent = "▶ Hear it";
+  }
+  if (opts.duration) setDuration(opts.duration);
+  audio.addEventListener("loadedmetadata", function () { if (isFinite(audio.duration)) setDuration(audio.duration); });
+  if (isFinite(audio.duration) && audio.duration > 0) setDuration(audio.duration);
+  // A saved start point can be beyond a not-yet-known duration; keep it until we do know.
+  range.max = String(Math.max(Number(range.max) || 0, value));
+  paint();
+
+  range.addEventListener("input", function () {
+    value = Number(range.value) || 0;
+    paint();
+    if (opts.onChange) opts.onChange(value);
+  });
+  playBtn.addEventListener("click", function () {
+    if (stopTimer) { stop(); return; }
+    try { audio.currentTime = value; } catch (e) {}
+    audio.volume = 1;
+    audio.muted = false;
+    audio.play().catch(function () {});
+    playBtn.textContent = "■ Stop";
+    stopTimer = setTimeout(stop, 10000); // a 10-second taste is enough to judge the start
+  });
+
+  return {
+    el: el,
+    getValue: function () { return value; },
+    setValue: function (v) { value = Math.max(0, Number(v) || 0); range.max = String(Math.max(Number(range.max) || 0, value)); paint(); },
+    setDuration: setDuration,
+    stop: stop
+  };
 }

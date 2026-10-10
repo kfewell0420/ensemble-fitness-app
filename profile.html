@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>My Profile — Ensemble Fitness</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&family=Caveat:wght@600;700&family=Dancing+Script:wght@600;700&display=swap">
-<link rel="stylesheet" href="css/app.css?v=4" />
+<link rel="stylesheet" href="css/app.css?v=5" />
 </head>
 <body>
 
@@ -209,6 +209,13 @@
     </div>
   </div>
 
+  <div class="card" id="myMusicCard" style="display:none;">
+    <div class="eyebrow">Your Music</div>
+    <h2>My music</h2>
+    <p class="card-sub">Songs you've added to the Music Library. Fix a title, or swap in a better audio file — videos already using the song pick up the new version.</p>
+    <div id="myMusicList"></div>
+  </div>
+
   <div class="card">
     <div class="eyebrow">Your Content</div>
     <h2>My uploads</h2>
@@ -296,6 +303,124 @@
     return "photo";
   }
 
+  // ---- My music: an artist edits the songs they added to the Music Library ----
+  // Needs sql/music-start-and-my-music.sql (an update policy on tracks). Until it's run,
+  // saving explains that instead of failing silently. The card only appears for members
+  // who actually have songs.
+  var MM_MIME = { mp3: "audio/mpeg", m4a: "audio/mp4", aac: "audio/aac", wav: "audio/wav", ogg: "audio/ogg", flac: "audio/flac" };
+  function mmDuration(file) {
+    return new Promise(function (resolve) {
+      try {
+        var url = URL.createObjectURL(file), probe = new Audio();
+        probe.preload = "metadata";
+        var done = function (v) { URL.revokeObjectURL(url); resolve(v); };
+        probe.addEventListener("loadedmetadata", function () { done(isFinite(probe.duration) ? Math.round(probe.duration) : null); });
+        probe.addEventListener("error", function () { done(null); });
+        probe.src = url;
+      } catch (e) { resolve(null); }
+    });
+  }
+  async function loadMyMusic() {
+    var card = document.getElementById("myMusicCard");
+    var list = document.getElementById("myMusicList");
+    var res = await window.sb.from("tracks")
+      .select("id, title, tagline, storage_path, duration_seconds")
+      .eq("submitted_by", currentUser.id).eq("is_active", true)
+      .order("created_at", { ascending: false });
+    if (res.error) {
+      res = await window.sb.from("tracks").select("id, title, storage_path, duration_seconds")
+        .eq("submitted_by", currentUser.id).eq("is_active", true).order("created_at", { ascending: false });
+    }
+    var rows = (res && !res.error && res.data) || [];
+    if (!rows.length) { card.style.display = "none"; return; }
+    card.style.display = "";
+    list.innerHTML = "";
+    rows.forEach(function (t) { list.appendChild(buildMyMusicRow(t)); });
+  }
+  function buildMyMusicRow(t) {
+    var row = document.createElement("div");
+    row.style.cssText = "border-top:1px solid rgba(255,255,255,0.1); padding:12px 0;";
+    var audio = null;
+    function head() {
+      row.innerHTML =
+        '<div style="display:flex; align-items:center; gap:10px;">' +
+          '<button type="button" class="btn btn-ghost btn-sm mm-play" aria-label="Play">▶</button>' +
+          '<div style="flex:1; min-width:0;"><div class="mm-name" style="font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></div>' +
+          '<div class="mm-sub" style="font-size:12.5px; color:var(--faint-invert);"></div></div>' +
+          '<button type="button" class="btn btn-ghost btn-sm mm-edit">Edit</button>' +
+        '</div>';
+      row.querySelector(".mm-name").textContent = t.title;
+      var sub = [];
+      if (t.duration_seconds) sub.push(formatSongTime(t.duration_seconds));
+      if (t.tagline) sub.push("“" + t.tagline + "”");
+      row.querySelector(".mm-sub").textContent = sub.join(" · ");
+      row.querySelector(".mm-play").addEventListener("click", async function () {
+        var btn = this;
+        if (audio && !audio.paused) { audio.pause(); btn.textContent = "▶"; return; }
+        if (!audio) {
+          var signed = await window.sb.storage.from("tracks").createSignedUrl(t.storage_path, 600);
+          if (!signed.data) return;
+          audio = new Audio(signed.data.signedUrl);
+          audio.addEventListener("ended", function () { btn.textContent = "▶"; });
+        }
+        audio.play().catch(function () {});
+        btn.textContent = "■";
+      });
+      row.querySelector(".mm-edit").addEventListener("click", editForm);
+    }
+    function editForm() {
+      if (audio) { audio.pause(); audio = null; }
+      row.innerHTML =
+        '<div class="form-msg mm-msg"></div>' +
+        '<label>Song title</label><input type="text" class="mm-title" maxlength="120" />' +
+        '<label>Tagline (optional)</label><input type="text" class="mm-tagline" maxlength="140" placeholder="A short, motivating line about the song" />' +
+        '<label>Replace the audio file (optional)</label><input type="file" class="mm-file" accept="audio/*,.mp3,.m4a,.aac,.wav,.ogg,.flac" />' +
+        '<div style="display:flex; gap:8px; margin-top:12px;"><button type="button" class="btn btn-primary btn-sm mm-save">Save</button>' +
+        '<button type="button" class="btn btn-ghost btn-sm mm-cancel">Cancel</button></div>';
+      row.querySelector(".mm-title").value = t.title || "";
+      row.querySelector(".mm-tagline").value = t.tagline || "";
+      row.querySelector(".mm-cancel").addEventListener("click", head);
+      row.querySelector(".mm-save").addEventListener("click", save);
+    }
+    async function save() {
+      var msg = row.querySelector(".mm-msg"), btn = row.querySelector(".mm-save");
+      var title = row.querySelector(".mm-title").value.trim();
+      var tagline = row.querySelector(".mm-tagline").value.trim();
+      var file = row.querySelector(".mm-file").files[0];
+      function fail(text) { msg.textContent = text; msg.className = "form-msg mm-msg show error"; btn.disabled = false; btn.textContent = "Save"; }
+      if (!title) return fail("Please give the song a title.");
+      btn.disabled = true; btn.textContent = file ? "Uploading…" : "Saving…";
+      var update = { title: title, tagline: tagline || null };
+      var newPath = null, oldPath = t.storage_path;
+      if (file) {
+        var ext = getExt(file.name);
+        newPath = currentUser.id + "/" + crypto.randomUUID() + "." + ext;
+        var up = await window.sb.storage.from("tracks").upload(newPath, file, {
+          cacheControl: "3600", upsert: false,
+          contentType: MM_MIME[ext] || (file.type && file.type.indexOf("audio") === 0 ? file.type : "audio/mpeg")
+        });
+        if (up.error) return fail(up.error.message || "Couldn't upload that file.");
+        update.storage_path = newPath;
+        update.duration_seconds = await mmDuration(file);
+      }
+      var upd = await window.sb.from("tracks").update(update).eq("id", t.id).select("id");
+      if (upd.error && /tagline/.test(upd.error.message || "")) {
+        delete update.tagline;
+        upd = await window.sb.from("tracks").update(update).eq("id", t.id).select("id");
+      }
+      if (upd.error || !upd.data || !upd.data.length) {
+        if (newPath) { try { await window.sb.storage.from("tracks").remove([newPath]); } catch (e) {} }
+        return fail(upd.error ? (upd.error.message || "Couldn't save.") : "Editing songs isn't switched on yet — please try again later.");
+      }
+      if (newPath) { try { await window.sb.storage.from("tracks").remove([oldPath]); } catch (e) {} }
+      t.title = title; t.tagline = tagline;
+      if (newPath) { t.storage_path = newPath; t.duration_seconds = update.duration_seconds; }
+      head();
+    }
+    head();
+    return row;
+  }
+
   async function init() {
     currentUser = await requireAuth();
     if (!currentUser) return;
@@ -309,6 +434,7 @@
     await loadProfile();
     await loadAvatar();
     await loadMyMedia();
+    try { await loadMyMusic(); } catch (e) { console.error("loadMyMusic", e); }
     await loadFollowCounts();
     await loadInbox();
     await loadBlockedMembers();
@@ -944,14 +1070,18 @@
     var videoIds = data.filter(function (item) { return item.kind === "video"; }).map(function (item) { return item.id; });
     // "Keep my video's own sound" flags — own best-effort query so this page keeps
     // working before sql/keep-original-audio.sql has been run.
-    var keepOriginalById = {};
+    var keepOriginalById = {}, musicStartById = {};
     if (videoIds.length) {
       try {
-        var keepRes = await window.sb.from("media").select("id, keep_original_audio").in("id", videoIds);
+        var keepRes = await window.sb.from("media").select("id, keep_original_audio, music_start_seconds").in("id", videoIds);
+        if (keepRes && keepRes.error) keepRes = await window.sb.from("media").select("id, keep_original_audio").in("id", videoIds);
         if (keepRes && !keepRes.error && keepRes.data) {
-          keepRes.data.forEach(function (r) { if (r.keep_original_audio) keepOriginalById[r.id] = true; });
+          keepRes.data.forEach(function (r) {
+            if (r.keep_original_audio) keepOriginalById[r.id] = true;
+            if (r.music_start_seconds) musicStartById[r.id] = Number(r.music_start_seconds) || 0;
+          });
         }
-      } catch (keepErr) { /* column not there yet — ignore */ }
+      } catch (keepErr) { /* columns not there yet — ignore */ }
     }
     var clipsByMediaId = {};
     if (videoIds.length) {
@@ -1058,7 +1188,7 @@
       grid.appendChild(wrap);
 
       if (soundUrl) {
-        wireNarrationSync(tile.querySelector("video"), tile.querySelector("audio." + soundClass), keepOriginal);
+        wireNarrationSync(tile.querySelector("video"), tile.querySelector("audio." + soundClass), keepOriginal, musicUrl ? musicStartById[item.id] : 0, musicUrl ? item.trim_start : 0);
       }
       if (item.kind === "video") {
         var extraClips = resolved[i].extraClips || [];

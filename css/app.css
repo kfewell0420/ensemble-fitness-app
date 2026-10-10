@@ -2289,3 +2289,9 @@ select option {
   display: block; width: 100%; margin-top: 12px; padding: 11px; border: 0; border-radius: 999px;
   background: var(--accent, #ff5a1f); color: #fff; font-weight: 700; font-size: 14px; cursor: pointer;
 }
+
+/* "Start the song at …" picker (upload page + Edit post). Small by design. */
+.music-start { margin-top: 12px; padding: 10px 12px; border: 1px solid rgba(255,255,255,0.14); border-radius: 12px; }
+.music-start-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 13.5px; font-weight: 600; }
+.music-start-play { border: 1px solid rgba(255,255,255,0.28); background: transparent; color: inherit; border-radius: 999px; padding: 5px 12px; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+.music-start .ms-range { width: 100%; margin: 10px 0 0; padding: 0; accent-color: #ff6a1a; }

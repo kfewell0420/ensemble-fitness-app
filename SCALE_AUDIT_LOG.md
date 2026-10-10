@@ -12,6 +12,31 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-10, "Start the song at…" + artists edit their own music
+
+Ken's ask: songs often have a long intro before the vocals, so an artist should be able to
+choose where in the song a post's music begins, change it later, and fix a song they uploaded.
+
+New: `media.music_start_seconds numeric default 0`; update policy `members edit their own
+track` (own + still-active songs only, so nobody can take over a song or re-activate one an
+admin pulled); storage delete policy for a member's own tracks folder
+(`sql/music-start-and-my-music.sql`). supabaseClient.js: `createMusicStartPicker` (slider +
+"Hear it", 10-second taste), `formatSongTime`; `wireFeedSound`/`wireNarrationSync` take a
+`musicStart` (and member/profile now line the song up with the clip's trim point, like the
+feed). upload.html: slider under the track picker (resets only when the track changes);
+insert drops whichever optional column is missing and retries. feed.html: "Edit post" now also
+shows the slider for posts with a music track, plus "Remove the music from this post"; music
+changes are a separate best-effort update so a missing column never blocks category/location.
+profile.html: new "My music" card (only for members who have songs): edit title/tagline, replace
+the audio file (old file removed best-effort; videos using the song pick up the new file since
+they join by track id). Verified in Playwright harnesses: song starts at the saved offset in the
+feed (30s test song, HTTP range), column-missing fallback, edit-modal saves and messages,
+upload slider visibility/reset, My Music edit + denied-policy message; no page errors.
+Known limits: multi-clip posts still get no feed music; a replaced song keeps each post's saved
+start point even if the new file is shorter.
+
+---
+
 ## 2026-10-10, keep-original-sound option + music/narration now play in the feed
 
 Follow-up to the silent-preview fix. Two gaps: (1) choosing a track or recording

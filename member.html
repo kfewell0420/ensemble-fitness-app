@@ -240,14 +240,18 @@
 
     // "Keep my video's own sound" flags — own best-effort query so this page keeps
     // working before sql/keep-original-audio.sql has been run.
-    var keepOriginalById = {};
+    var keepOriginalById = {}, musicStartById = {};
     try {
-      var keepRes = await window.sb.from("media").select("id, keep_original_audio")
-        .in("id", items.filter(function (it) { return it.kind === "video"; }).map(function (it) { return it.id; }));
+      var vidIds = items.filter(function (it) { return it.kind === "video"; }).map(function (it) { return it.id; });
+      var keepRes = await window.sb.from("media").select("id, keep_original_audio, music_start_seconds").in("id", vidIds);
+      if (keepRes && keepRes.error) keepRes = await window.sb.from("media").select("id, keep_original_audio").in("id", vidIds);
       if (keepRes && !keepRes.error && keepRes.data) {
-        keepRes.data.forEach(function (r) { if (r.keep_original_audio) keepOriginalById[r.id] = true; });
+        keepRes.data.forEach(function (r) {
+          if (r.keep_original_audio) keepOriginalById[r.id] = true;
+          if (r.music_start_seconds) musicStartById[r.id] = Number(r.music_start_seconds) || 0;
+        });
       }
-    } catch (keepErr) { /* column not there yet — ignore */ }
+    } catch (keepErr) { /* columns not there yet — ignore */ }
 
     grid.innerHTML = "";
     // Ken's ask (Oct 2026): this used to await each item's signed URL(s) —
@@ -311,7 +315,7 @@
       grid.appendChild(card);
 
       if (soundUrl) {
-        wireNarrationSync(card.querySelector("video"), card.querySelector("audio." + soundClass), keepOriginal);
+        wireNarrationSync(card.querySelector("video"), card.querySelector("audio." + soundClass), keepOriginal, musicUrl ? musicStartById[item.id] : 0, musicUrl ? item.trim_start : 0);
       }
       if (item.kind === "video") {
         wireTrimPlayback(card.querySelector("video"), item.trim_start, item.trim_end);

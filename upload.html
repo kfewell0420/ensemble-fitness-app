@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>Upload — Ensemble Fitness</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&family=Caveat:wght@600;700&family=Dancing+Script:wght@600;700&display=swap">
-<link rel="stylesheet" href="css/app.css?v=2" />
+<link rel="stylesheet" href="css/app.css?v=5" />
 <style>
   /* Category picker — the "pick a type first" screen that replaces landing
      straight in one long, everything-at-once form. Scoped to this page only. */
@@ -361,6 +361,7 @@
                 <input type="checkbox" id="keepOriginalAudio" style="width:auto; margin-top:3px;" />
                 <span>Keep my video's own sound too<br><span style="font-weight:400; font-size:12px; color:var(--faint-invert);">Your track plays softly underneath. Leave unchecked to replace the video's sound with the track.</span></span>
               </label>
+              <div id="musicStartRow" style="display:none;"></div>
               <audio id="musicPreviewAudio" style="display:none;"></audio>
             </div>
           </div>
@@ -1350,6 +1351,7 @@
     // here unless the member picked music or recorded a narration, which replace
     // it (the chosen music/narration plays instead).
     musicPreviewAudio.volume = (hasMusic && keepOriginalAudio.checked) ? MIX_MUSIC_VOLUME : 1;
+    if (hasMusic) { try { musicPreviewAudio.currentTime = musicStartPicker.getValue(); } catch (e) {} }
     trimPreviewVideo.muted = (hasMusic && !keepOriginalAudio.checked) || !!narrationBlob;
     updatePreviewSoundNote();
 
@@ -1521,7 +1523,7 @@
     tracksLoaded = true;
     var { data, error } = await window.sb
       .from("tracks")
-      .select("id, title, artist_name, is_independent_artist, storage_path")
+      .select("id, title, artist_name, is_independent_artist, storage_path, duration_seconds")
       .eq("is_active", true)
       .order("title", { ascending: true });
     if (error || !data) {
@@ -1554,6 +1556,21 @@
     keepOriginalRow.style.display = hasMusic ? "flex" : "none";
     if (!hasMusic) keepOriginalAudio.checked = false;
   }
+  // "Start the song at …" — lets the artist skip a long intro. Saved as media.music_start_seconds.
+  var musicStartRow = document.getElementById("musicStartRow");
+  var musicStartPicker = createMusicStartPicker({ audio: musicPreviewAudio, initial: 0 });
+  musicStartRow.appendChild(musicStartPicker.el);
+  var lastMusicStartTrack = "";
+  function updateMusicStartRow() {
+    var hasMusic = !!musicTrackSelect.value && !musicTrackSelect.disabled;
+    musicStartRow.style.display = hasMusic ? "block" : "none";
+    // Start over at 0:00 only when the track itself changes (tapping the same card again keeps it).
+    var trackChanged = (musicTrackSelect.value || "") !== lastMusicStartTrack;
+    lastMusicStartTrack = hasMusic ? musicTrackSelect.value : "";
+    if (!hasMusic || trackChanged) { musicStartPicker.stop(); musicStartPicker.setValue(0); }
+    var t = tracksById[musicTrackSelect.value];
+    if (hasMusic && t && t.duration_seconds) musicStartPicker.setDuration(t.duration_seconds);
+  }
   keepOriginalAudio.addEventListener("change", function () {
     musicPreviewAudio.volume = keepOriginalAudio.checked ? MIX_MUSIC_VOLUME : 1;
     updatePreviewSoundNote();
@@ -1562,6 +1579,7 @@
   function resetMusicUI() {
     musicTrackSelect.value = "";
     updateKeepOriginalRow();
+    updateMusicStartRow();
     updateSelectedTrackCard();
     musicPreviewAudio.pause();
     musicPreviewAudio.removeAttribute("src");
@@ -1607,6 +1625,7 @@
     updateSelectedTrackCard();
     syncMusicNarrationExclusivity();
     updateKeepOriginalRow();
+    updateMusicStartRow();
     updatePreviewSoundNote();
   });
 
@@ -1927,15 +1946,25 @@
       // SQL hasn't been run yet, retry without the flag so the post still goes
       // through — the video just won't keep its own sound under the music.
       var wantsKeepOriginal = kind === "video" && !!musicTrackValue && keepOriginalAudio.checked;
+      var musicStartValue = kind === "video" && !!musicTrackValue ? musicStartPicker.getValue() : 0;
       delete insertRow.keep_original_audio;
+      delete insertRow.music_start_seconds;
       if (wantsKeepOriginal) insertRow.keep_original_audio = true;
+      if (musicStartValue > 0) insertRow.music_start_seconds = musicStartValue;
       var { data: insertedRow, error: insertError } = await window.sb.from("media").insert(insertRow).select().single();
-      if (insertError && wantsKeepOriginal && /keep_original_audio/.test(insertError.message || "")) {
-        delete insertRow.keep_original_audio;
-        var retry = await window.sb.from("media").insert(insertRow).select().single();
-        insertedRow = retry.data;
-        insertError = retry.error;
-        if (!insertError) mixFlagNotSaved = true;
+      // Either optional column may not exist yet (its SQL not run) — drop whichever one the
+      // error names and retry so the post still goes through.
+      var optionalCols = ["keep_original_audio", "music_start_seconds"];
+      for (var oi = 0; insertError && oi < optionalCols.length; oi++) {
+        var col = optionalCols[oi];
+        if (col in insertRow && (insertError.message || "").indexOf(col) !== -1) {
+          delete insertRow[col];
+          var retry = await window.sb.from("media").insert(insertRow).select().single();
+          insertedRow = retry.data;
+          insertError = retry.error;
+          if (!insertError) mixFlagNotSaved = true;
+          oi = -1; // recheck the other column against any new error
+        }
       }
       if (insertError) throw insertError;
 
@@ -1987,7 +2016,7 @@
         ? "Uploaded with your voiceover attached! It'll show as \"Pending\" until it's reviewed."
         : musicTrackValue
         ? (mixFlagNotSaved
-            ? "Uploaded with your chosen track attached, but \"keep my video's own sound\" isn't switched on yet — the track will replace the video's sound for now. It'll show as \"Pending\" until it's reviewed."
+            ? "Uploaded with your chosen track attached, but \"keep my video's own sound\" or \"start the song at\" isn't switched on yet — the track will replace the video's sound and start from the beginning for now. It'll show as \"Pending\" until it's reviewed."
             : "Uploaded with your chosen track attached! It'll show as \"Pending\" until it's reviewed.")
         : "Uploaded! It'll show as \"Pending\" until it's reviewed.") + extraClipNote, "success");
       fileInput.value = "";

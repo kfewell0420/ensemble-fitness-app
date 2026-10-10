@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>Community — Ensemble Fitness</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&family=Caveat:wght@600;700&family=Dancing+Script:wght@600;700&display=swap">
-<link rel="stylesheet" href="css/app.css?v=4" />
+<link rel="stylesheet" href="css/app.css?v=5" />
 <style>
   /* ============================================================
      The app's real home screen: a horizontal "Meal Prep" strip up
@@ -2893,11 +2893,16 @@
     if (!ids.length) return;
     var found = {};
     try {
-      var res = await window.sb.from("media")
-        .select("id, narration_path, music_track_id, keep_original_audio, tracks(storage_path)").in("id", ids);
-      if (res && res.error) {
-        res = await window.sb.from("media")
-          .select("id, narration_path, music_track_id, tracks(storage_path)").in("id", ids);
+      // Newest optional columns first; fall back one step at a time if a column doesn't exist yet.
+      var colSets = [
+        "id, narration_path, music_track_id, keep_original_audio, music_start_seconds, tracks(storage_path)",
+        "id, narration_path, music_track_id, keep_original_audio, tracks(storage_path)",
+        "id, narration_path, music_track_id, tracks(storage_path)"
+      ];
+      var res = null;
+      for (var ci = 0; ci < colSets.length; ci++) {
+        res = await window.sb.from("media").select(colSets[ci]).in("id", ids);
+        if (res && !res.error) break;
       }
       var data = res && !res.error && res.data ? res.data : [];
       var narrationPaths = [], trackPaths = [];
@@ -2914,13 +2919,15 @@
       }
       var signed = await Promise.all([sign("media", narrationPaths), sign("tracks", trackPaths)]);
       data.forEach(function (r) {
-        var url = "", keep = false;
+        var url = "", keep = false, isMusic = false, mStart = 0;
         if (r.narration_path) url = signed[0][r.narration_path] || "";
         else if (r.music_track_id && r.tracks && r.tracks.storage_path) {
           url = signed[1][r.tracks.storage_path] || "";
           keep = !!r.keep_original_audio;
+          isMusic = true;
+          mStart = Number(r.music_start_seconds) || 0;
         }
-        if (url) found[r.id] = { url: url, keep: keep };
+        if (url) found[r.id] = { url: url, keep: keep, isMusic: isMusic, start: mStart };
       });
     } catch (e) { found = {}; }
     ids.forEach(function (id) { postSoundCache[id] = found[id] || null; });
@@ -3003,6 +3010,8 @@
       var snd = postSoundCache[it.id];
       it.soundUrl = snd ? snd.url : "";
       it.keepOriginalAudio = snd ? snd.keep : false;
+      it.isMusicSound = snd ? !!snd.isMusic : false;
+      it.musicStart = snd ? (snd.start || 0) : 0;
     });
 
     // Avatars: NOT awaited (round 13, Oct 2026) — see hydrateAvatars()
@@ -3574,7 +3583,7 @@
             '<button type="button" class="rp-more-btn" data-action="more">•••</button>' +
             '<div class="rp-more-menu" id="rpMore-' + item.id + '">' +
               (isOwnPost ?
-                '<button type="button" data-action="edit-post">✏️ Edit category &amp; location</button>' +
+                '<button type="button" data-action="edit-post">✏️ Edit post</button>' +
                 '<button type="button" class="danger" data-action="delete-post">🗑️ Delete post</button>'
                 :
                 '<button type="button" data-action="message">Message ' + escapeHtml(item.name) + '</button>' +
@@ -3647,7 +3656,7 @@
         var postAudio = new Audio();
         postAudio.preload = "none";
         postAudio.src = item.soundUrl;
-        wireFeedSound(videoEl, postAudio, !!item.keepOriginalAudio, item.trim_start);
+        wireFeedSound(videoEl, postAudio, !!item.keepOriginalAudio, item.trim_start, item.musicStart);
       }
     }
 
@@ -3752,6 +3761,8 @@
   // posts (and anything mis-tagged) can still land in the right filter. ----
   var EDIT_CATEGORY_OPTIONS = ["Working Out", "Walking", "Hiking", "Biking", "Running", "Swimming", "Strike a Pose", "Meal Prep", "Other"];
   var editPostTarget = null; // { item, slideEl }
+  var editMusicPicker = null;
+  var editMusicRemoved = false;
 
   function injectEditPostModal() {
     if (document.getElementById("rpEditPostOverlay")) return;
@@ -3769,6 +3780,11 @@
           '<select id="rpEditPostCategory">' + optionsHtml + '</select>' +
           '<label for="rpEditPostLocation">Location (optional)</label>' +
           '<input type="text" id="rpEditPostLocation" maxlength="80" placeholder="e.g. Riverside Park" />' +
+          '<div id="rpEditMusicWrap" style="display:none; margin-top:14px;">' +
+            '<label style="margin-bottom:0;">🎵 Music</label>' +
+            '<div id="rpEditMusicPicker"></div>' +
+            '<button type="button" id="rpEditMusicRemove" style="margin-top:8px; background:none; border:none; padding:0; color:var(--faint-invert); font-size:12.5px; text-decoration:underline; cursor:pointer;">Remove the music from this post</button>' +
+          '</div>' +
           '<button type="button" class="btn btn-primary btn-block" id="rpEditPostSaveBtn" style="margin-top:12px;">Save</button>' +
         '</div>' +
       '</div>';
@@ -3779,6 +3795,14 @@
       if (e.target.id === "rpEditPostOverlay") closeEditPostModal();
     });
     document.getElementById("rpEditPostSaveBtn").addEventListener("click", saveEditPost);
+    document.getElementById("rpEditMusicRemove").addEventListener("click", function () {
+      if (!confirm("Remove the music from this post? The video's own sound will play instead.")) return;
+      editMusicRemoved = true;
+      if (editMusicPicker) editMusicPicker.stop();
+      document.getElementById("rpEditMusicPicker").style.display = "none";
+      this.textContent = "Music will be removed when you tap Save";
+      this.disabled = true;
+    });
   }
 
   function openEditPostModal(item, slideEl) {
@@ -3786,6 +3810,26 @@
     editPostTarget = { item: item, slideEl: slideEl };
     document.getElementById("rpEditPostCategory").value = item.workout_type || "";
     document.getElementById("rpEditPostLocation").value = item.location || "";
+    // Post has a music track attached → let its owner move where the song starts, or remove it.
+    var musicWrap = document.getElementById("rpEditMusicWrap");
+    var musicHost = document.getElementById("rpEditMusicPicker");
+    if (editMusicPicker) { editMusicPicker.stop(); editMusicPicker = null; }
+    musicHost.innerHTML = "";
+    editMusicRemoved = false;
+    var rmBtn = document.getElementById("rpEditMusicRemove");
+    rmBtn.disabled = false;
+    rmBtn.textContent = "Remove the music from this post";
+    if (item.isMusicSound && item.soundUrl) {
+      var pa = new Audio();
+      pa.preload = "metadata";
+      pa.src = item.soundUrl;
+      editMusicPicker = createMusicStartPicker({ audio: pa, initial: item.musicStart || 0 });
+      musicHost.appendChild(editMusicPicker.el);
+      musicWrap.style.display = "block";
+      musicHost.style.display = "block";
+    } else {
+      musicWrap.style.display = "none";
+    }
     var msg = document.getElementById("rpEditPostMsg");
     msg.className = "form-msg";
     document.getElementById("rpEditPostOverlay").classList.add("show");
@@ -3793,6 +3837,7 @@
   }
 
   function closeEditPostModal() {
+    if (editMusicPicker) editMusicPicker.stop();
     var overlay = document.getElementById("rpEditPostOverlay");
     if (overlay) overlay.classList.remove("show");
     document.body.style.overflow = "";
@@ -3819,24 +3864,58 @@
       .update({ workout_type: category, location: location || null })
       .eq("id", item.id);
 
-    btn.disabled = false;
-    btn.textContent = "Save";
-
     if (error) {
+      btn.disabled = false;
+      btn.textContent = "Save";
       msg.textContent = error.message || "Couldn't save — please try again.";
       msg.className = "form-msg show error";
       return;
     }
 
+    // Music changes are a separate best-effort update, so a missing column (SQL not run yet)
+    // can never block the category/location save above.
+    var musicNote = "";
+    if (item.isMusicSound && (editMusicRemoved || editMusicPicker)) {
+      var musicUpdate = null;
+      if (editMusicRemoved) musicUpdate = { music_track_id: null, keep_original_audio: false, music_start_seconds: 0 };
+      else if (editMusicPicker.getValue() !== (item.musicStart || 0)) musicUpdate = { music_start_seconds: editMusicPicker.getValue() };
+      if (musicUpdate) {
+        var mres = await window.sb.from("media").update(musicUpdate).eq("id", item.id);
+        if (mres.error && editMusicRemoved) {
+          // keep_original_audio / music_start_seconds may not exist yet — removing the track is what matters.
+          mres = await window.sb.from("media").update({ music_track_id: null }).eq("id", item.id);
+        }
+        if (mres.error) {
+          musicNote = /music_start_seconds/.test(mres.error.message || "") ? "Saved, but the song start point isn't switched on yet." : "Saved, but the music change didn't go through.";
+        } else if (editMusicRemoved) {
+          item.soundUrl = ""; item.isMusicSound = false; item.keepOriginalAudio = false; item.musicStart = 0;
+          if (postSoundCache[item.id]) postSoundCache[item.id] = null;
+        } else {
+          item.musicStart = editMusicPicker.getValue();
+          if (postSoundCache[item.id]) postSoundCache[item.id].start = item.musicStart;
+        }
+      }
+    }
+
+    btn.disabled = false;
+    btn.textContent = "Save";
+
     item.workout_type = category;
     item.location = location;
 
+    if (musicNote) {
+      msg.textContent = musicNote;
+      msg.className = "form-msg show error";
+    }
+
+    var oldVideo = editPostTarget.slideEl.querySelector("video");
+    if (oldVideo) { try { oldVideo.pause(); } catch (e) {} } // also stops its attached song
     var newEl = buildSlide(item);
     editPostTarget.slideEl.replaceWith(newEl);
     reelObserver.observe(newEl);
     editPostTarget.slideEl = newEl;
 
-    closeEditPostModal();
+    if (!musicNote) closeEditPostModal();
   }
 
   document.addEventListener("click", function () {
