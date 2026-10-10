@@ -238,6 +238,17 @@
       return;
     }
 
+    // "Keep my video's own sound" flags — own best-effort query so this page keeps
+    // working before sql/keep-original-audio.sql has been run.
+    var keepOriginalById = {};
+    try {
+      var keepRes = await window.sb.from("media").select("id, keep_original_audio")
+        .in("id", items.filter(function (it) { return it.kind === "video"; }).map(function (it) { return it.id; }));
+      if (keepRes && !keepRes.error && keepRes.data) {
+        keepRes.data.forEach(function (r) { if (r.keep_original_audio) keepOriginalById[r.id] = true; });
+      }
+    } catch (keepErr) { /* column not there yet — ignore */ }
+
     grid.innerHTML = "";
     // Ken's ask (Oct 2026): this used to await each item's signed URL(s) —
     // photo/video, then narration, then music — one item at a time, so a
@@ -270,12 +281,13 @@
       var musicUrl = resolved[i].musicUrl;
       var soundUrl = narrationUrl || musicUrl;
       var soundClass = narrationUrl ? "narration-track" : "music-track";
+      var keepOriginal = !!keepOriginalById[item.id] && !!musicUrl && !narrationUrl;
 
       // muted only when there's a narration/music track to sync instead
       // (wireNarrationSync below) — a plain video plays with its own real
       // sound the moment someone presses play, no separate unmute needed.
       var mediaEl = item.kind === "video"
-        ? '<video src="' + url + '"' + (soundUrl ? " muted" : "") + ' controls playsinline></video>' + (soundUrl ? '<audio class="' + soundClass + '" src="' + soundUrl + '" preload="auto"></audio>' : '')
+        ? '<video src="' + url + '"' + (soundUrl && !keepOriginal ? " muted" : "") + ' controls playsinline></video>' + (soundUrl ? '<audio class="' + soundClass + '" src="' + soundUrl + '" preload="auto"></audio>' : '')
         : item.kind === "audio"
         ? '<div class="audio-card"><span class="audio-ico">🎙️</span><audio src="' + url + '" controls></audio></div>'
         : '<img src="' + url + '" alt="Workout photo" />';
@@ -299,7 +311,7 @@
       grid.appendChild(card);
 
       if (soundUrl) {
-        wireNarrationSync(card.querySelector("video"), card.querySelector("audio." + soundClass));
+        wireNarrationSync(card.querySelector("video"), card.querySelector("audio." + soundClass), keepOriginal);
       }
       if (item.kind === "video") {
         wireTrimPlayback(card.querySelector("video"), item.trim_start, item.trim_end);

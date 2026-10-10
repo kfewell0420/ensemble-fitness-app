@@ -12,6 +12,28 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-10, keep-original-sound option + music/narration now play in the feed
+
+Follow-up to the silent-preview fix. Two gaps: (1) choosing a track or recording
+narration always silenced the video's own audio (an artist whose video already had
+music + talking couldn't layer anything on it); (2) a post's attached music/narration
+was only played on the member/profile pages, never in the feed.
+
+Changes: new optional `media.keep_original_audio boolean default false`
+(`sql/keep-original-audio.sql`). upload.html adds a "Keep my video's own sound too"
+checkbox (only visible when a track is attached to a video; default off = old
+behaviour; track plays at ~35% underneath). Insert retries without the column if the
+SQL hasn't been run. supabaseClient.js: `wireNarrationSync(video, audio, keepOriginal)`
+and new `wireFeedSound(video, audio, keepOriginal, trimStart)` (iOS ignores
+`video.volume`, so replace-mode pins the video's real `muted` true and shadows
+`video.muted` to drive the track). feed.html: best-effort `loadPostSounds` (separate
+query, signs URLs, falls back if column missing) wires single-clip posts. member.html
+and profile.html honour the flag. Multi-clip reels do not get feed music yet.
+Verified in Playwright harnesses (replace, keep, column-missing, total-failure; upload
+checkbox visibility/preview logic); no page errors.
+
+---
+
 ## 2026-10-10, upload.html — preview now plays the video's own sound
 
 An artist's workout video (already has music + him talking) played in silence on

@@ -261,9 +261,17 @@ function wirePasswordToggle(button, input) {
    "My uploads", and the admin review queue). The video's own sound is muted
    so only the narration plays. Best-effort: if the browser's autoplay policy
    blocks audio.play(), it fails silently rather than throwing. */
-function wireNarrationSync(video, audio) {
+function wireNarrationSync(video, audio, keepOriginal) {
   if (!video || !audio) return;
-  video.muted = true;
+  if (keepOriginal) {
+    // "Keep my video's own sound too": the video stays audible and the track plays
+    // softly underneath. The video's own mute/volume controls drive the track too.
+    audio.volume = 0.35;
+    audio.muted = video.muted;
+    video.addEventListener("volumechange", function () { audio.muted = video.muted; });
+  } else {
+    video.muted = true;
+  }
   video.addEventListener("play", function () {
     audio.currentTime = video.currentTime;
     audio.play().catch(function () {});
@@ -274,6 +282,59 @@ function wireNarrationSync(video, audio) {
     audio.pause();
     audio.currentTime = 0;
   });
+}
+
+/* Plays a post's attached music/narration track alongside its <video> in the FEED, where
+   the reel's own code constantly flips video.muted to follow the viewer's sound choice.
+   Two modes:
+   - replace (default): the video's own sound must stay silent no matter what, but the feed's
+     mute logic should still decide whether the TRACK is heard. So the real muted flag is
+     pinned to true and a per-element `muted` accessor remembers the intended state and
+     applies it to the track instead (video.volume = 0 would not work — iOS ignores it).
+   - keepOriginal: video keeps its own sound; the track plays at low volume and simply
+     follows the video's muted state.
+   The track starts where the clip's trim starts, mirroring the upload preview. */
+function wireFeedSound(video, audio, keepOriginal, trimStart) {
+  if (!video || !audio) return;
+  var start = typeof trimStart === "number" ? trimStart : 0;
+  var protoMuted = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "muted");
+  var intentMuted = !!video.muted;
+
+  if (keepOriginal) {
+    audio.volume = 0.35;
+    audio.muted = intentMuted;
+    video.addEventListener("volumechange", function () { audio.muted = video.muted; });
+  } else {
+    protoMuted.set.call(video, true);
+    audio.muted = intentMuted;
+    Object.defineProperty(video, "muted", {
+      configurable: true,
+      get: function () { return intentMuted; },
+      set: function (v) {
+        intentMuted = !!v;
+        audio.muted = intentMuted;
+        protoMuted.set.call(video, true); // original sound never plays in replace mode
+      }
+    });
+  }
+
+  function expected() { return Math.max(0, video.currentTime - start); }
+  function sync() {
+    if (Math.abs(audio.currentTime - expected()) > 0.4) {
+      try { audio.currentTime = expected(); } catch (e) {}
+    }
+  }
+  video.addEventListener("play", function () {
+    try { audio.currentTime = expected(); } catch (e) {}
+    audio.play().catch(function () {});
+  });
+  video.addEventListener("pause", function () { audio.pause(); });
+  video.addEventListener("seeked", sync);
+  video.addEventListener("timeupdate", function () {
+    sync();
+    if (audio.paused && !video.paused) audio.play().catch(function () {}); // track ended before the clip looped
+  });
+  video.addEventListener("ended", function () { audio.pause(); });
 }
 
 /* Applies a member's chosen trim points to a <video> WITHOUT re-encoding the

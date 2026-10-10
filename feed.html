@@ -2880,6 +2880,52 @@
     });
   }
 
+  // Attached music / voice-over tracks (Oct 2026): the feed used to ignore them entirely
+  // (only the member/profile pages played them). Looked up in its own best-effort
+  // query — NOT added to fetchBatch's select — so a missing column (before
+  // sql/keep-original-audio.sql is run) or any failure can never break the feed itself.
+  var postSoundCache = {};
+  async function loadPostSounds(rows) {
+    var ids = [];
+    rows.forEach(function (r) {
+      if (r.kind === "video" && r.id && !(r.id in postSoundCache) && ids.indexOf(r.id) === -1) ids.push(r.id);
+    });
+    if (!ids.length) return;
+    var found = {};
+    try {
+      var res = await window.sb.from("media")
+        .select("id, narration_path, music_track_id, keep_original_audio, tracks(storage_path)").in("id", ids);
+      if (res && res.error) {
+        res = await window.sb.from("media")
+          .select("id, narration_path, music_track_id, tracks(storage_path)").in("id", ids);
+      }
+      var data = res && !res.error && res.data ? res.data : [];
+      var narrationPaths = [], trackPaths = [];
+      data.forEach(function (r) {
+        if (r.narration_path) narrationPaths.push(r.narration_path);
+        else if (r.music_track_id && r.tracks && r.tracks.storage_path) trackPaths.push(r.tracks.storage_path);
+      });
+      async function sign(bucket, paths) {
+        var map = {};
+        if (!paths.length) return map;
+        var out = await window.sb.storage.from(bucket).createSignedUrls(paths, 3600);
+        ((out && out.data) || []).forEach(function (x) { if (x && x.signedUrl) map[x.path] = x.signedUrl; });
+        return map;
+      }
+      var signed = await Promise.all([sign("media", narrationPaths), sign("tracks", trackPaths)]);
+      data.forEach(function (r) {
+        var url = "", keep = false;
+        if (r.narration_path) url = signed[0][r.narration_path] || "";
+        else if (r.music_track_id && r.tracks && r.tracks.storage_path) {
+          url = signed[1][r.tracks.storage_path] || "";
+          keep = !!r.keep_original_audio;
+        }
+        if (url) found[r.id] = { url: url, keep: keep };
+      });
+    } catch (e) { found = {}; }
+    ids.forEach(function (id) { postSoundCache[id] = found[id] || null; });
+  }
+
   var connStatusCache = {};
   async function loadConnectionStatusesFor(userIds) {
     var missing = [];
@@ -2949,9 +2995,15 @@
     // already looked up — so they add no extra round trip to a feed load.
     await Promise.all([
       preloadActionCounts(rows.map(function (r) { return r.id; })),
-      loadConnectionStatusesFor(items.map(function (it) { return it.user_id; }))
+      loadConnectionStatusesFor(items.map(function (it) { return it.user_id; })),
+      loadPostSounds(rows)
     ]);
-    items.forEach(function (it) { it.connectionStatus = connStatusCache[it.user_id] || ""; });
+    items.forEach(function (it) {
+      it.connectionStatus = connStatusCache[it.user_id] || "";
+      var snd = postSoundCache[it.id];
+      it.soundUrl = snd ? snd.url : "";
+      it.keepOriginalAudio = snd ? snd.keep : false;
+    });
 
     // Avatars: NOT awaited (round 13, Oct 2026) — see hydrateAvatars()
     // above for why this one's safe to let run in the background while
@@ -3590,6 +3642,12 @@
           item.extraClips.map(function (c) { return { url: c.url, start: c.trim_start, end: c.trim_end }; })
         );
         wireReelPlayback(videoEl, reelClips);
+      } else if (item.soundUrl) {
+        // Attached music/voice-over (single-clip posts only). See wireFeedSound.
+        var postAudio = new Audio();
+        postAudio.preload = "none";
+        postAudio.src = item.soundUrl;
+        wireFeedSound(videoEl, postAudio, !!item.keepOriginalAudio, item.trim_start);
       }
     }
 

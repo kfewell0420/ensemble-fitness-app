@@ -942,6 +942,17 @@
     // table isn't there yet in some environment, this just comes back
     // empty and every post still shows and plays exactly as it does today.
     var videoIds = data.filter(function (item) { return item.kind === "video"; }).map(function (item) { return item.id; });
+    // "Keep my video's own sound" flags — own best-effort query so this page keeps
+    // working before sql/keep-original-audio.sql has been run.
+    var keepOriginalById = {};
+    if (videoIds.length) {
+      try {
+        var keepRes = await window.sb.from("media").select("id, keep_original_audio").in("id", videoIds);
+        if (keepRes && !keepRes.error && keepRes.data) {
+          keepRes.data.forEach(function (r) { if (r.keep_original_audio) keepOriginalById[r.id] = true; });
+        }
+      } catch (keepErr) { /* column not there yet — ignore */ }
+    }
     var clipsByMediaId = {};
     if (videoIds.length) {
       try {
@@ -1009,12 +1020,13 @@
 
       var soundUrl = narrationUrl || musicUrl;
       var soundClass = narrationUrl ? "narration-track" : "music-track";
+      var keepOriginal = !!keepOriginalById[item.id] && !!musicUrl && !narrationUrl;
 
       // muted only when there's a narration/music track to sync instead
       // (wireNarrationSync below) — a plain video plays with its own real
       // sound the moment someone presses play, no separate unmute needed.
       var mediaEl = item.kind === "video"
-        ? '<video src="' + url + '"' + (posterUrl ? ' poster="' + posterUrl + '"' : '') + (soundUrl ? " muted" : "") + ' controls playsinline></video>' + (soundUrl ? '<audio class="' + soundClass + '" src="' + soundUrl + '" preload="auto"></audio>' : '')
+        ? '<video src="' + url + '"' + (posterUrl ? ' poster="' + posterUrl + '"' : '') + (soundUrl && !keepOriginal ? " muted" : "") + ' controls playsinline></video>' + (soundUrl ? '<audio class="' + soundClass + '" src="' + soundUrl + '" preload="auto"></audio>' : '')
         : item.kind === "audio"
         ? '<div class="audio-card"><span class="audio-ico">🎙️</span><audio src="' + url + '" controls></audio></div>'
         : '<img src="' + url + '" alt="Upload" />';
@@ -1046,7 +1058,7 @@
       grid.appendChild(wrap);
 
       if (soundUrl) {
-        wireNarrationSync(tile.querySelector("video"), tile.querySelector("audio." + soundClass));
+        wireNarrationSync(tile.querySelector("video"), tile.querySelector("audio." + soundClass), keepOriginal);
       }
       if (item.kind === "video") {
         var extraClips = resolved[i].extraClips || [];

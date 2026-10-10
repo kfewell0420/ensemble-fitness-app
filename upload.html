@@ -357,6 +357,10 @@
               <select id="musicTrackSelect" style="display:none;" aria-hidden="true" tabindex="-1">
                 <option value="">Select music track</option>
               </select>
+              <label id="keepOriginalRow" style="display:none; align-items:flex-start; gap:8px; margin-top:12px; font-size:13.5px; font-weight:600; cursor:pointer;">
+                <input type="checkbox" id="keepOriginalAudio" style="width:auto; margin-top:3px;" />
+                <span>Keep my video's own sound too<br><span style="font-weight:400; font-size:12px; color:var(--faint-invert);">Your track plays softly underneath. Leave unchecked to replace the video's sound with the track.</span></span>
+              </label>
               <audio id="musicPreviewAudio" style="display:none;"></audio>
             </div>
           </div>
@@ -1321,6 +1325,10 @@
     var note = document.getElementById("previewSoundNote");
     if (!note) return;
     var usingMusic = !!musicTrackSelect.value && !musicTrackSelect.disabled;
+    if (usingMusic && !narrationBlob && keepOriginalAudio && keepOriginalAudio.checked) {
+      note.textContent = "🔊🎵 Your video's own sound plays, with your chosen music softly underneath.";
+      return;
+    }
     note.textContent = (usingMusic || narrationBlob)
       ? "🎵 Your chosen " + (narrationBlob ? "narration" : "music") + " plays instead of the video's own sound."
       : "🔊 Playing your video with its own sound. Adding music or a voice narration replaces it.";
@@ -1341,7 +1349,8 @@
     // had been lost. The video's own sound is kept on upload; it should be heard
     // here unless the member picked music or recorded a narration, which replace
     // it (the chosen music/narration plays instead).
-    trimPreviewVideo.muted = hasMusic || !!narrationBlob;
+    musicPreviewAudio.volume = (hasMusic && keepOriginalAudio.checked) ? MIX_MUSIC_VOLUME : 1;
+    trimPreviewVideo.muted = (hasMusic && !keepOriginalAudio.checked) || !!narrationBlob;
     updatePreviewSoundNote();
 
     trimPreviewVideo.currentTime = start;
@@ -1536,8 +1545,23 @@
     });
   }
 
+  // "Keep my video's own sound too" only makes sense once a track is picked.
+  var keepOriginalRow = document.getElementById("keepOriginalRow");
+  var keepOriginalAudio = document.getElementById("keepOriginalAudio");
+  var MIX_MUSIC_VOLUME = 0.35; // track level when it plays underneath the video's own sound
+  function updateKeepOriginalRow() {
+    var hasMusic = !!musicTrackSelect.value && !musicTrackSelect.disabled;
+    keepOriginalRow.style.display = hasMusic ? "flex" : "none";
+    if (!hasMusic) keepOriginalAudio.checked = false;
+  }
+  keepOriginalAudio.addEventListener("change", function () {
+    musicPreviewAudio.volume = keepOriginalAudio.checked ? MIX_MUSIC_VOLUME : 1;
+    updatePreviewSoundNote();
+  });
+
   function resetMusicUI() {
     musicTrackSelect.value = "";
+    updateKeepOriginalRow();
     updateSelectedTrackCard();
     musicPreviewAudio.pause();
     musicPreviewAudio.removeAttribute("src");
@@ -1582,6 +1606,8 @@
     if (musicTrackSelect.value) resetNarrationUI();
     updateSelectedTrackCard();
     syncMusicNarrationExclusivity();
+    updateKeepOriginalRow();
+    updatePreviewSoundNote();
   });
 
   // Healthy Meal Prep gets its own longer write-up + an optional signature —
@@ -1869,6 +1895,7 @@
         } catch (e) { /* no poster — the video itself still uploads fine */ }
       }
 
+      var mixFlagNotSaved = false;
       var insertRow = {
         user_id: currentUser.id,
         kind: kind,
@@ -1895,7 +1922,21 @@
       // .select().single() added so insertedRow.id is available below for
       // any extra clips (they need this post's own id as their media_id) —
       // the insert itself is otherwise unchanged from before this feature.
+      // Only sent when ticked (and a track is attached) so every other upload is
+      // byte-for-byte what it was before sql/keep-original-audio.sql existed. If that
+      // SQL hasn't been run yet, retry without the flag so the post still goes
+      // through — the video just won't keep its own sound under the music.
+      var wantsKeepOriginal = kind === "video" && !!musicTrackValue && keepOriginalAudio.checked;
+      delete insertRow.keep_original_audio;
+      if (wantsKeepOriginal) insertRow.keep_original_audio = true;
       var { data: insertedRow, error: insertError } = await window.sb.from("media").insert(insertRow).select().single();
+      if (insertError && wantsKeepOriginal && /keep_original_audio/.test(insertError.message || "")) {
+        delete insertRow.keep_original_audio;
+        var retry = await window.sb.from("media").insert(insertRow).select().single();
+        insertedRow = retry.data;
+        insertError = retry.error;
+        if (!insertError) mixFlagNotSaved = true;
+      }
       if (insertError) throw insertError;
 
       // Extra clips (2nd file onward) — only ever present for a video post
@@ -1945,7 +1986,9 @@
         : narrationPath
         ? "Uploaded with your voiceover attached! It'll show as \"Pending\" until it's reviewed."
         : musicTrackValue
-        ? "Uploaded with your chosen track attached! It'll show as \"Pending\" until it's reviewed."
+        ? (mixFlagNotSaved
+            ? "Uploaded with your chosen track attached, but \"keep my video's own sound\" isn't switched on yet — the track will replace the video's sound for now. It'll show as \"Pending\" until it's reviewed."
+            : "Uploaded with your chosen track attached! It'll show as \"Pending\" until it's reviewed.")
         : "Uploaded! It'll show as \"Pending\" until it's reviewed.") + extraClipNote, "success");
       fileInput.value = "";
       selectedFile = null;
