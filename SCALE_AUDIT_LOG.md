@@ -12,6 +12,17 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-10, feed.html — "🔔 1 new" pill sat mid-video on notched iPhones
+
+Ken (iPhone 17 Pro, phone app): the pill landed in the middle of the video instead of just
+under the poster's name. Cause: `.rp-new-pill` is sticky inside the reel at
+`top: env(safe-area-inset-top) + 76px`, but the reel already starts BELOW the notch (header,
+stories, Meal Prep come first), so the ~59px notch inset was added twice. Fix: `top: 76px`.
+Measured in a harness with a simulated 59px inset: pill now ~54px into the post, directly
+under name/time (was ~113px). Desktop and non-notched phones unchanged (inset was 0 there).
+
+---
+
 ## 2026-10-10, "Start the song at…" + artists edit their own music
 
 Ken's ask: songs often have a long intro before the vocals, so an artist should be able to

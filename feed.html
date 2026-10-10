@@ -359,7 +359,11 @@
        instead of centered lower in the photo - "above their head", not
        over it - as close to that header block as it can sit without
        actually covering the name text itself. */
-    top: calc(env(safe-area-inset-top, 0px) + 76px);
+    /* The reel itself already sits BELOW the phone's notch/status bar (the header,
+       stories and Meal Prep banner come first), so no safe-area inset is added here —
+       adding it pushed the pill ~59px lower on notched iPhones, into the middle of the
+       video instead of just under the name. */
+    top: 76px;
     left: 14px;
     z-index: 20;
     margin: 0;
