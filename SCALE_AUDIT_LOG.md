@@ -12,6 +12,18 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-10, black videos — format check + admin thumbnails now show the preview picture
+
+Ken saw many of the artist's workout videos stay black on the artist's (Windows) computer, photos fine;
+Ken's own admin Videos tab also showed 3 of 5 thumbnails solid black. Check run in Supabase: all 5 videos
+are `.mp4` and all 5 have a `poster_path`, so "iPhone .mov / no preview picture" is NOT the cause. The feed
+already uses the saved poster; the admin list did not (it shows a bare `<video>`), which explains the black
+admin boxes. Fix: admin Videos tab now loads `poster_path` and sets `poster` (+ preload="metadata").
+Still open for the "black forever in the feed": an `.mp4` can still hold HEVC video that Windows Chrome won't
+decode; next test is the artist trying TikTok/Instagram on the same computer, and Chrome vs Edge on ours.
+
+---
+
 ## 2026-10-10, admin.html — new videos missing from Videos tab; "Queue" naming; history order
 
 Ken: the artist's new video (found in the Queue) wasn't in the Videos tab. Cause: Videos / Feed
