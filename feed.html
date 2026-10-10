@@ -2189,7 +2189,7 @@
   // (community_questions), not the private "My Journey" workout log
   // elsewhere in this app (journal_entries) - different feature, kept
   // deliberately unambiguous here as "Journeys".
-  var CATEGORY_FILTERS = ["All", "Journeys", "Working Out", "Walking", "Hiking", "Biking", "Running", "Swimming", "Other"];
+  var CATEGORY_FILTERS = ["All", "Journeys", "Working Out", "Walking", "Hiking", "Biking", "Running", "Swimming", "Strike a Pose", "Other"];
   // The Walking chip's icon used to be the plain 🚶 emoji, same as every
   // other chip here — but Ken couldn't make out the little figure at this
   // size ("I'm not sure I could see the walking character," Sept 2026).
@@ -2207,7 +2207,7 @@
 
   var CATEGORY_ICONS = {
     "Journeys": "📓", "Working Out": "💪", "Walking": WALKING_ICON, "Hiking": "🥾", "Biking": "🚴",
-    "Running": "🏃", "Swimming": "🏊", "Meal Prep": "🍱", "Other": "✨"
+    "Running": "🏃", "Swimming": "🏊", "Strike a Pose": "📸", "Meal Prep": "🍱", "Other": "✨"
   };
   var activeFilter = "All";
 
@@ -3692,7 +3692,7 @@
   // ---- Edit post (category / location) — lets a member fix or add the
   // workout-type tag on their own posts after the fact, so older untagged
   // posts (and anything mis-tagged) can still land in the right filter. ----
-  var EDIT_CATEGORY_OPTIONS = ["Working Out", "Walking", "Hiking", "Biking", "Running", "Swimming", "Meal Prep", "Other"];
+  var EDIT_CATEGORY_OPTIONS = ["Working Out", "Walking", "Hiking", "Biking", "Running", "Swimming", "Strike a Pose", "Meal Prep", "Other"];
   var editPostTarget = null; // { item, slideEl }
 
   function injectEditPostModal() {

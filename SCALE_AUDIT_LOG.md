@@ -12,6 +12,21 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-10, new category "Strike a Pose" (📸) for photos
+
+Ken: the site is mostly photos, so add a fun category to name them under —
+"Strike a Pose". Done: added to the feed filter chips (between Swimming and
+Other), `CATEGORY_ICONS` (📸), the post-edit menu (`EDIT_CATEGORY_OPTIONS`),
+upload.html's Category dropdown + its required-category message, find.html's
+"Browse by activity" list (links `feed.html?filter=Strike%20a%20Pose`), and
+admin.html's category edit list. No SQL: `workout_type` is free text and the
+feed already filters generically with `.eq("workout_type", ...)`. Verified:
+chip renders, ?filter= activates it and queries `workout_type = 'Strike a
+Pose'`, edit list includes it, no errors. admin.html is in the member-app
+folder ONLY (never the mobile www).
+
+---
+
 ## 2026-10-10, feed.html — category/location pills moved to bottom-left of the video
 
 Ken, after seeing the pill beside the time: it still takes up the top of the
