@@ -612,11 +612,25 @@
   /* Context badges — workout type / location surfaced as small tappable-
      looking pills rather than plain text glued after a timestamp, so a
      post's context is legible at a glance instead of buried in a caption. */
+  /* Ken's ask (Oct 2026): the category pill (e.g. "Working Out") now sits on the
+     same line as the "50d ago" time, right under the member's name, instead of on
+     its own line below. If a post also has a location pill and the row runs out of
+     room, the pills wrap to the next line rather than being cut off. */
+  .rp-slide-header-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    column-gap: 8px;
+    row-gap: 4px;
+    margin-top: 1px;
+  }
+  .rp-slide-header-meta .rp-slide-header-sub { flex: 0 0 auto; }
   .rp-context-badges {
     display: flex;
     gap: 5px;
-    margin-top: 3px;
-    overflow: hidden;
+    margin-top: 0;
+    min-width: 0;
+    flex-wrap: wrap;
   }
   .rp-context-badge {
     flex: 0 0 auto;
@@ -3486,8 +3500,10 @@
             : '<div class="rp-slide-avatar rp-avatar-pending" data-avatar-user="' + escapeHtml(item.user_id || "") + '" style="background:' + avatarColor(item.user_id) + '">' + escapeHtml(initial) + '</div>') +
           '<div class="rp-slide-headertext">' +
             '<div class="rp-slide-header-name">' + escapeHtml(item.name) + connectionBadgeHtml(item.connectionStatus) + '</div>' +
-            '<div class="rp-slide-header-sub">' + escapeHtml(timeAgo(item.created_at)) + '</div>' +
-            (badgeParts.length ? '<div class="rp-context-badges">' + badgeParts.join("") + '</div>' : "") +
+            '<div class="rp-slide-header-meta">' +
+              '<div class="rp-slide-header-sub">' + escapeHtml(timeAgo(item.created_at)) + '</div>' +
+              (badgeParts.length ? '<div class="rp-context-badges">' + badgeParts.join("") + '</div>' : "") +
+            '</div>' +
           '</div>' +
           (isOwnPost ? "" :
             '<button type="button" class="rp-follow-btn' + (isFollowing ? " following" : "") + '" data-action="follow">' +

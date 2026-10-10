@@ -12,6 +12,50 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-10, feed.html — category pill moved up beside the time
+
+Ken: the "💪 Working Out" pill sat on its own line under "50d ago" and read as
+floating across the video; he wants it right next to the time, under the
+member's name. Done: the time and the pill(s) now share one flex row
+(`.rp-slide-header-meta`); if a post also has a location pill and space runs
+out, the pills wrap to the next line instead of being cut off. Verified on
+phone (430px) and wide (1300px) widths: same line, no errors.
+
+---
+
+## 2026-10-10, Connection Status badge (feed, members, member profile, Fitness+, profile, signup)
+
+Ken's idea: an optional tiny badge beside a member's name — 💗 Open to
+Connect, 💍 Taken, 🤝 Here for Community, or no badge — plus a legend of all
+of them on the Join form so new members have a reference.
+Done: `sql/connection-status.sql` (NEW — Ken must run it once in Supabase):
+adds `profiles.connection_status` with a check constraint, and a SEPARATE
+best-effort signup trigger (`on_auth_user_created_z_connection_status`) that
+copies the value from signup metadata — `handle_new_user()` is untouched.
+`js/supabaseClient.js`: option list, `buildConnectionStatusOptionsHtml`,
+`buildConnectionStatusLegendHtml`, `connectionBadgeHtml`, and
+`fetchConnectionStatuses` (one batched query, swallows every error).
+`css/app.css` (+ `?v=3` in each page): `.conn-badge`, ~0.82em, inline after the name.
+Pages: feed.html (post header; looked up in parallel with the existing
+reaction-count preload, per-session cache, so no extra round trip),
+members.html, member.html, fitness-plus.html cards; profile.html (select +
+legend, loaded/saved in separate best-effort queries so the rest of the
+profile still saves before the SQL is run); login.html (optional select +
+legend on Create Account, sent as `connection_status` in signUp metadata).
+Safety: before the SQL is run everything renders with no badges and nothing
+breaks (tested with a simulated missing column). Privacy decision: Fitness+
+membership does NOT automatically show a heart — a badge only appears when
+the member chose one themselves.
+Follow-up (same day, Ken: "members need to know what these symbols mean"):
+the key is now printed right on the Find Members and Fitness+ pages
+(`data-conn-key` block, filled by supabaseClient.js), a "What do these mean?"
+link sits on a member's profile page (when they have a badge) and in the
+desktop feed header, the phone feed post's "..." menu has "What do the badges
+mean?", and tapping ANY badge anywhere opens the key sheet (capture-phase
+click handler, so it doesn't trigger the row/card underneath). CSS now `?v=4`.
+
+---
+
 ## 2026-10-09, feed.html — reaction row simplified (all counts white, Like is outline-only)
 
 Ken: "I'm getting way too creative" — all numbers under the reaction icons
