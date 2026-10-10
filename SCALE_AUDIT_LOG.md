@@ -12,6 +12,20 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-10, admin.html — new videos missing from Videos tab; "Queue" naming; history order
+
+Ken: the artist's new video (found in the Queue) wasn't in the Videos tab. Cause: Videos / Feed
+Photos lists loaded ONCE when admin.html opened; approving in the Queue refreshed only the queue
+and history, so a just-approved video appeared only after a full page reload. Fixes: approve and
+reject now also refresh Videos + Feed Photos; opening the Videos / Feed Photos / Profile Photos
+tab re-loads it; both lists gained a "Show older videos/photos" button (they were hard-capped at
+the newest 30). Also: sidebar "Moderation Queue" renamed "Queue" to match the top nav; "Recently
+reviewed" sorted never-stamped items (reviewed_at null) first, so it showed "20736d ago" rows and
+hid recent reviews — now nulls last, falling back to created_at for the time label.
+admin.html is website-only; never copied to mobile www.
+
+---
+
 ## 2026-10-10, feed.html — "🔔 1 new" pill sat mid-video on notched iPhones
 
 Ken (iPhone 17 Pro, phone app): the pill landed in the middle of the video instead of just

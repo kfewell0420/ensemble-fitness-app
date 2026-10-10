@@ -63,7 +63,7 @@
       <nav class="admin-tabs" id="adminTabs">
         <div class="admin-sidenav-group-label">Moderation</div>
         <button type="button" class="admin-tab-btn active" data-tab="enrollments">New Enrollments</button>
-        <button type="button" class="admin-tab-btn" data-tab="modqueue">Moderation Queue</button>
+        <button type="button" class="admin-tab-btn" data-tab="modqueue">Queue</button>
         <button type="button" class="admin-tab-btn" data-tab="reports">Reports</button>
 
         <div class="admin-sidenav-group-label">Members &amp; Community</div>
@@ -578,6 +578,9 @@
         }).eq("id", btn.getAttribute("data-id"));
         await loadQueue();
         await loadHistory();
+        // Approved videos/photos belong in the Videos / Feed Photos tabs right away
+        // (those lists used to load only once, when the page opened).
+        loadRecentVideos(); loadRecentPhotos();
       });
     });
 
@@ -594,6 +597,9 @@
         }).eq("id", btn.getAttribute("data-id"));
         await loadQueue();
         await loadHistory();
+        // Approved videos/photos belong in the Videos / Feed Photos tabs right away
+        // (those lists used to load only once, when the page opened).
+        loadRecentVideos(); loadRecentPhotos();
       });
     });
   }
@@ -604,10 +610,12 @@
     // they get their own "Recent voice updates" list below instead.
     var { data, error } = await window.sb
       .from("media")
-      .select("id, kind, status, reviewed_at, profiles!media_user_id_fkey(display_name)")
+      .select("id, kind, status, reviewed_at, created_at, profiles!media_user_id_fkey(display_name)")
       .neq("status", "pending")
       .neq("kind", "audio")
-      .order("reviewed_at", { ascending: false })
+      // nullsFirst:false — older items that were never stamped with a review time used to sort
+      // ABOVE everything and show as "20736d ago", hiding what was actually reviewed lately.
+      .order("reviewed_at", { ascending: false, nullsFirst: false })
       .limit(15);
 
     if (error || !data || data.length === 0) {
@@ -624,7 +632,7 @@
       row.innerHTML =
         '<div class="review-meta">' +
           '<strong style="font-size:13.5px;">' + name + ' · ' + item.kind + '</strong>' +
-          '<span>' + timeAgo(item.reviewed_at) + '</span>' +
+          '<span>' + timeAgo(item.reviewed_at || item.created_at) + '</span>' +
         '</div>' +
         '<span class="status-badge ' + item.status + '" style="position:static; width:auto; display:inline-block;">' + item.status + '</span>';
       el.appendChild(row);
@@ -991,7 +999,7 @@
     var el = document.getElementById("profilePhotoQueue");
     var { data, error } = await window.sb
       .from("media")
-      .select("id, storage_path, created_at, profiles!media_user_id_fkey(display_name)")
+      .select("id, storage_path, workout_type, created_at, profiles!media_user_id_fkey(display_name)")
       .eq("kind", "photo")
       .eq("is_profile_photo", true)
       .order("created_at", { ascending: false })
@@ -1017,13 +1025,18 @@
         '<div class="review-thumb"><img src="' + url + '" alt="Profile photo" /></div>' +
         '<div class="review-meta">' +
           '<strong>' + name + '</strong>' +
-          '<span>' + timeAgo(item.created_at) + '</span>' +
+          '<span>' + (item.workout_type ? categoryLabel(item.workout_type) + " · " : "") + timeAgo(item.created_at) + '</span>' +
         '</div>' +
         '<div class="review-actions">' +
+          // Ken: profile photos are approved and also appear in the community feed, so
+          // they need the same category dropdown the Feed Photos tab has.
+          categorySelectHtml(item) +
           '<button class="btn btn-ghost btn-sm delete-profile-photo-btn" data-id="' + item.id + '" data-path="' + item.storage_path + '">Remove</button>' +
         '</div>';
       el.appendChild(row);
     }
+
+    wireCategorySelects(el);
 
     el.querySelectorAll(".delete-profile-photo-btn").forEach(function (btn) {
       btn.addEventListener("click", async function () {
@@ -1056,7 +1069,7 @@
     // see the .order("workout_type", {nullsFirst:true}) calls above).
     var flag = item.workout_type ? "" :
       '<div style="font-size:11px; font-weight:700; color:#ffb74d; margin-bottom:4px;">⚠️ Needs a category</div>';
-    return flag + '<select class="admin-category-select" data-id="' + item.id + '">' + optionsHtml + '</select>';
+    return flag + '<select class="admin-category-select" data-id="' + item.id + '" data-current="' + (item.workout_type || "") + '">' + optionsHtml + '</select>';
   }
   function showCategoryNudge(nudgeId, untaggedCount) {
     var el = document.getElementById(nudgeId);
@@ -1075,10 +1088,35 @@
         sel.disabled = true;
         var { error } = await window.sb.from("media").update({ workout_type: sel.value || null }).eq("id", id);
         sel.disabled = false;
+        if (!error) {
+          // Keep the grey "Category · time ago" line in sync with the dropdown so it
+          // doesn't keep showing the old category until the page is reloaded.
+          var oldCat = sel.getAttribute("data-current") || "";
+          var metaSpan = sel.closest(".review-row") && sel.closest(".review-row").querySelector(".review-meta span");
+          if (metaSpan) {
+            var parts = metaSpan.textContent.split(" \u00b7 ");
+            if (oldCat && parts[0] === categoryLabel(oldCat)) parts.shift();
+            if (sel.value) parts.unshift(categoryLabel(sel.value));
+            metaSpan.textContent = parts.join(" \u00b7 ");
+          }
+          sel.setAttribute("data-current", sel.value || "");
+        }
         sel.style.borderColor = error ? "#ff6b6b" : "#3dd68a";
         setTimeout(function () { sel.style.borderColor = ""; }, 1500);
       });
     });
+  }
+
+  var videoListLimit = 30;
+  var photoListLimit = 30;
+  function addShowOlderButton(el, label, onClick) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "btn btn-ghost btn-sm";
+    b.style.cssText = "margin:16px auto 4px; display:block;";
+    b.textContent = label;
+    b.addEventListener("click", function () { b.disabled = true; b.textContent = "Loading…"; onClick(); });
+    el.appendChild(b);
   }
 
   async function loadRecentVideos() {
@@ -1100,7 +1138,7 @@
         .eq("kind", "video")
         .eq("status", "approved")
         .order("created_at", { ascending: false })
-        .limit(30),
+        .limit(videoListLimit),
       window.sb
         .from("media")
         .select("id", { count: "exact", head: true })
@@ -1152,6 +1190,9 @@
     }
 
     wireCategorySelects(el);
+    if (data.length >= videoListLimit) {
+      addShowOlderButton(el, "Show older videos", function () { videoListLimit += 30; loadRecentVideos(); });
+    }
 
     el.querySelectorAll(".delete-video-btn").forEach(function (btn) {
       btn.addEventListener("click", async function () {
@@ -1181,7 +1222,7 @@
         .eq("is_profile_photo", false)
         .eq("status", "approved")
         .order("created_at", { ascending: false })
-        .limit(30),
+        .limit(photoListLimit),
       window.sb
         .from("media")
         .select("id", { count: "exact", head: true })
@@ -1223,6 +1264,9 @@
     }
 
     wireCategorySelects(el);
+    if (data.length >= photoListLimit) {
+      addShowOlderButton(el, "Show older photos", function () { photoListLimit += 30; loadRecentPhotos(); });
+    }
 
     el.querySelectorAll(".delete-photo-btn").forEach(function (btn) {
       btn.addEventListener("click", async function () {
@@ -2540,6 +2584,14 @@
     document.querySelectorAll(".admin-tab-panel").forEach(function (panel) {
       panel.hidden = panel.getAttribute("data-tab") !== tab;
     });
+
+    // These lists used to load once when the page opened, so a video approved a minute ago
+    // wasn't there until a full refresh. Re-load them each time their tab is opened.
+    try {
+      if (tab === "videos") loadRecentVideos();
+      else if (tab === "photos-feed") loadRecentPhotos();
+      else if (tab === "photos-profile") loadProfilePhotos();
+    } catch (e) { /* the list that was already on screen stays */ }
   });
   // -------------------------------------------------------------------------
 
