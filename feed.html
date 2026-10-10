@@ -630,12 +630,18 @@
     z-index: 5;
     pointer-events: none;
   }
+  /* Ken: no black backdrop behind the pill — just the icon and the words. A soft
+     shadow (instead of a box) keeps the white text readable over bright video. */
   .rp-media-badges .rp-context-badge,
   .rp-media-badges .rp-context-badge.rp-badge-type {
-    background: rgba(0,0,0,0.55);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
+    background: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    padding: 0;
+    font-size: 12px;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.85), 0 0 8px rgba(0,0,0,0.6);
   }
+  .rp-media-badges { gap: 12px; }
   .rp-context-badge {
     flex: 0 0 auto;
     font-size: 10.5px;

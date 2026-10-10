@@ -19,7 +19,7 @@ video, so move "💪 Working Out" (horizontal, as-is) to the bottom-left of the
 video frame. Supersedes the "beside the time" entry below. Done: pills are now
 `.rp-media-badges` inside `.rp-media`, absolutely positioned bottom-left
 (12px/12px, mirroring the mute button bottom-right, max-width leaves room for
-it), dark translucent background for legibility over any video,
+it), Ken then asked for NO black backdrop: pill background/padding removed, just icon + words with a soft text-shadow for legibility,
 `pointer-events:none` so tapping the video still toggles mute. The header is
 back to just name + badge and time. Verified phone + wide: pill 12px from the
 left/bottom edges of the video, header 38px tall, no errors.
