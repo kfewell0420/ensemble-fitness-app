@@ -12,6 +12,14 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-12, profile.html — helper lines removed from the form
+
+Ken: the grey explainer lines under ZIP code, Height, wake-up time, "What are you looking for?" and Connection
+status were dead space. Removed all five. The Connection status key (Taken / Open to Connect / Here for the
+Community, from the shared list) stays under the dropdown. profile.html only (+ mobile www).
+
+---
+
 ## 2026-10-12, members.html — tighter spacing, "(optional)" removed
 
 Ken: cut scrolling. ZIP label is now just "Narrow by ZIP code". Subtitle, Connection Status key, ZIP box and the
