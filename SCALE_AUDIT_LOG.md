@@ -12,6 +12,14 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-12, speedcheck.html — adds a resized-picture row
+
+Speed Check's picture row used the original-size link, so it could not show the effect of speed-pass item 2. It now
+also downloads the same photo resized to 1080px (the way the feed sends it) and reports time + KB, and flags "resizing
+is not working" if that request fails. Website only.
+
+---
+
 ## 2026-10-12, feed speed pass — items 1 & 2 (instant reopen, smaller photos)
 
 Ken approved items 1-2 of the sub-1-second plan (3-5 to follow: parallelize steps / video fast-start + preload next /
