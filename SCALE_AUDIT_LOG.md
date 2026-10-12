@@ -12,6 +12,22 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-12, speed pass — item 2 switched OFF; step 3 (parallel loading) built
+
+Item 2 correction: Ken's Speed Check showed the resized photo can be SLOWER on first view (1826 ms vs 785 ms original in
+the latest run; 719 vs 948 earlier). Reason: every member gets their own link, so the first view of each photo waits for
+Supabase to build the 1080px copy (cold), and upload.html ALREADY shrinks photos to <=1920px (~1 MB) before storing, so
+the saving was only ~65% of bytes. Feed now uses the stored photo again (`PHOTO_RESIZE_ENABLED = false`; code kept and
+tested, flip to true to re-enable e.g. with public/cached links). Feed snapshot cache v3 -> v4 drops snapshots holding
+resized links. Reused (stable) links + persisted snapshot from item 1 stay. speedcheck.html now also requests the
+resized picture a second time so cold vs warm is visible.
+Step 3 (feed.html buildItems): the extra-clips lookup, reaction/comment counts, author badges, post sounds and the
+main link signing now all start together; only signing links for extra clips still waits for the clips lookup (most
+posts have none). Saves roughly one to two round trips (~150-250 ms) per page of posts on a cold load. Verified with the
+Playwright feed harnesses (speedpass, feed_sound, music_start): no errors, same behavior.
+
+---
+
 ## 2026-10-12, speed pass step 5 — self-hosted sign-in toolkit + fonts (wired, files come from Ken's one-time download)
 
 Every page loaded the Supabase library from cdn.jsdelivr.net and fonts from fonts.googleapis.com on each open (and the

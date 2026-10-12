@@ -139,6 +139,10 @@
         var rsz = rz.out && rz.out.size ? rz.out.size : 0;
         add("Download same picture, resized (what the feed sends now)", rz.out && rz.out.ok ? ms(rz.t) : "FAILED", rz.out && rz.out.ok ? grade(rz.t, 400, 900) : "bad",
             (rsz / 1024).toFixed(0) + " KB" + (rz.out && rz.out.dim ? " · " + rz.out.dim + " px" : "") + (rz.out && rz.out.type ? " · " + rz.out.type : "") + (rz.out && !rz.out.ok ? " · resizing is not working on this project" : ""));
+        if (rz.out && rz.out.ok) {
+          var rz2 = await timed(function () { return fetch(rzUrl, { cache: "no-store" }).then(function (r) { return r.blob(); }); });
+          add("Same resized picture, asked for a second time", ms(rz2.t), grade(rz2.t, 400, 900), "Shows how fast it is once the server has already built it. The first request above includes the building time.");
+        }
       } else {
         add("Download same picture, resized", "no link", "bad", "Could not get a resized link — Image Transformation may be off.");
       }

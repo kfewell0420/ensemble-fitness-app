@@ -2063,7 +2063,7 @@
   // fresh app launch started from a blank screen). Trusted for 6 hours, and the real
   // fetch still always runs and replaces it. Bumped to v2 because items now also
   // carry imgUrl (the resized photo link).
-  var FEED_CACHE_VERSION = "v3";
+  var FEED_CACHE_VERSION = "v4";
   var FEED_CACHE_MAX_AGE_MS = 6 * 60 * 60 * 1000; // 6 hours
   var cacheFlashNodes = [];
   var renderingCacheFlash = false;
@@ -2597,6 +2597,11 @@
   // resize:"contain" + a bounding box = scale DOWN to fit inside 1080x1920 keeping the photo's own
   // proportions, never cropping. (First version sent width only; Supabase's default mode is "cover",
   // which can crop to a different shape — Ken saw heads cut off at the top. Fixed Oct 2026.)
+  // Oct 2026: OFF. Photos are already shrunk to <=1920px (~1 MB) by upload.html before they are stored, so the
+  // server-side copy only saved ~65% of the bytes but made the FIRST view of every photo wait for Supabase to
+  // build the copy (Speed Check: 0.7-1.8 s cold vs ~0.8 s for the stored file). Kept (and tested) so it can be
+  // switched back on, e.g. for public/cached photo links, without rewriting it.
+  var PHOTO_RESIZE_ENABLED = false;
   var PHOTO_RESIZE = { width: 1080, height: 1920, resize: "contain", quality: 80 };
 
   // Ken's ask (Sept 2026): "pictures and videos load slowly" on a mobile
@@ -3023,20 +3028,37 @@
   }
 
   async function buildItems(rows) {
+    // Oct 2026 (speed pass, step 3): everything below that needs only `rows` now STARTS AT THE SAME
+    // MOMENT instead of queuing — the extra-clips lookup, reaction/comment counts, author badges,
+    // post sounds, and signing the main photo/video/poster links. Before, the clips lookup finished
+    // first, then signing, then the counts/badges/sounds each began — three to four round trips in
+    // a row. Only signing links for EXTRA clips truly depends on the clips lookup (and most posts
+    // have none), so that is the one thing that still waits.
     var videoIds = rows.filter(function (r) { return r.kind === "video"; }).map(function (r) { return r.id; });
-    var clipsByMediaId = await fetchClipsForMediaIds(videoIds);
+    var clipsPromise = fetchClipsForMediaIds(videoIds);
+    var sideDataPromise = Promise.all([
+      preloadActionCounts(rows.map(function (r) { return r.id; })),
+      loadConnectionStatusesFor(rows.map(function (r) { return r.user_id; })),
+      loadPostSounds(rows)
+    ]);
 
     var paths = [];
     rows.forEach(function (raw) {
       if (raw.storage_path) paths.push(raw.storage_path);
       if (raw.kind === "video" && raw.poster_path) paths.push(raw.poster_path);
-      // Extra clips' files reuse this exact same batched signing pass —
-      // no separate signing mechanism just because a post has more files.
-      (clipsByMediaId[raw.id] || []).forEach(function (c) { if (c.storage_path) paths.push(c.storage_path); });
     });
-    var photoPaths = rows.filter(function (r) { return r.kind !== "video" && r.storage_path; }).map(function (r) { return r.storage_path; });
-    var both = await Promise.all([resolveSignedUrls(paths), resolveResizedUrls(photoPaths)]);
-    var urlMap = both[0];
+    var photoPaths = !PHOTO_RESIZE_ENABLED ? [] : rows.filter(function (r) { return r.kind !== "video" && r.storage_path; }).map(function (r) { return r.storage_path; });
+    var mainUrlsPromise = Promise.all([resolveSignedUrls(paths), resolveResizedUrls(photoPaths)]);
+
+    var clipsByMediaId = await clipsPromise;
+    var clipPaths = [];
+    rows.forEach(function (raw) {
+      // Extra clips' files reuse the same batched signing — no separate mechanism.
+      (clipsByMediaId[raw.id] || []).forEach(function (c) { if (c.storage_path) clipPaths.push(c.storage_path); });
+    });
+    var clipUrlMap = clipPaths.length ? await resolveSignedUrls(clipPaths) : {};
+    var both = await mainUrlsPromise;
+    var urlMap = Object.assign({}, both[0], clipUrlMap);
     var resizedMap = both[1];
     var items = rows.map(function (raw) {
       var wantsPoster = raw.kind === "video" && !!raw.poster_path;
@@ -3081,11 +3103,8 @@
     // Connection-status badges (💗/💍/🤝) ride along in parallel with that
     // same wait — one small batched query for only the authors we haven't
     // already looked up — so they add no extra round trip to a feed load.
-    await Promise.all([
-      preloadActionCounts(rows.map(function (r) { return r.id; })),
-      loadConnectionStatusesFor(items.map(function (it) { return it.user_id; })),
-      loadPostSounds(rows)
-    ]);
+    // (These three now started at the top of buildItems; this just waits for them.)
+    await sideDataPromise;
     items.forEach(function (it) {
       it.connectionStatus = connStatusCache[it.user_id] || "";
       var snd = postSoundCache[it.id];
