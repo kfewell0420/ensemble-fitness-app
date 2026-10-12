@@ -503,3 +503,52 @@ function createMusicStartPicker(opts) {
     stop: stop
   };
 }
+
+
+/* ==========================================================================
+   Daily Inspiration quote picker (shared by feed.html, quote-library.html and
+   admin.html's "Today ★" marker, so all three always agree).
+   Ken's ask (Oct 2026): a different quote every day, in any order — not
+   necessarily 1, 2, 3. How it works: the active quotes are put in a stable
+   order (oldest first, then id, so identical timestamps from a bulk add can't
+   reorder them), then each "round" of days uses its own seeded shuffle of that
+   list. Every quote shows once per round before any repeats, the order looks
+   random, the last quote of one round is never the first of the next, and
+   two days in a row are never the same. No database column or scheduled job
+   needed. The day changes at midnight on the member's own clock.
+   ========================================================================== */
+function quoteDayNumber() {
+  var d = new Date();
+  return Math.floor((d.getTime() - d.getTimezoneOffset() * 60000) / 86400000);
+}
+function quoteShuffleOrder(n, seed) {
+  var s = (seed * 2654435761 + 0x9e3779b9) >>> 0;
+  function rnd() {
+    s = (s + 0x6D2B79F5) >>> 0;
+    var t = s;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  }
+  var a = [], i, j, tmp;
+  for (i = 0; i < n; i++) a.push(i);
+  for (i = n - 1; i > 0; i--) {
+    j = Math.floor(rnd() * (i + 1));
+    tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+  }
+  return a;
+}
+function pickQuoteOfDay(quotes, dayNumber) {
+  var n = quotes ? quotes.length : 0;
+  if (!n) return null;
+  var day = dayNumber === undefined ? quoteDayNumber() : dayNumber;
+  if (n <= 2) return quotes[((day % n) + n) % n];
+  var round = Math.floor(day / n), pos = day - round * n;
+  var order = quoteShuffleOrder(n, round);
+  if (pos <= 1) {
+    // Never start a round with the quote that ended the previous round.
+    var prevLast = quoteShuffleOrder(n, round - 1)[n - 1];
+    if (order[0] === prevLast) { var t = order[0]; order[0] = order[1]; order[1] = t; }
+  }
+  return quotes[order[pos]];
+}

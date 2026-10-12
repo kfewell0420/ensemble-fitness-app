@@ -126,7 +126,8 @@
       .from("quotes")
       .select("quote_text, author")
       .eq("is_active", true)
-      .order("created_at", { ascending: true });
+      .order("created_at", { ascending: true })
+      .order("id", { ascending: true });
 
     if (error) {
       wrap.innerHTML = '<div class="empty-state">Couldn\'t load today\'s line right now — please refresh.</div>';
@@ -137,7 +138,7 @@
       return;
     }
 
-    var q = quotes[Math.floor(Date.now() / 86400000) % quotes.length];
+    var q = pickQuoteOfDay(quotes); // shuffled daily pick, shared helper in js/supabaseClient.js
     wrap.innerHTML =
       (q.author ? '<div class="eyebrow" style="margin-bottom:16px;">' + escapeHtml(q.author) + "</div>" : "") +
       '<p style="font-size:22px; font-weight:600; font-style:italic; margin:0; line-height:1.5;">“' + escapeHtml(q.quote_text) + '”</p>';

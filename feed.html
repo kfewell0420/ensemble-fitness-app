@@ -4837,9 +4837,12 @@
       .from("quotes")
       .select("quote_text, author")
       .eq("is_active", true)
-      .order("created_at", { ascending: true });
+      .order("created_at", { ascending: true })
+      .order("id", { ascending: true });
     var quotes = !error && data ? data : [];
-    var q = quotes.length ? quotes[Math.floor(Date.now() / 86400000) % quotes.length] : null;
+    // Oct 2026: a different quote every day, in shuffled order (see pickQuoteOfDay
+    // in js/supabaseClient.js — shared with quote-library.html and admin.html).
+    var q = pickQuoteOfDay(quotes);
     panel.innerHTML =
       '<div class="rp-panel-head"><span class="rp-panel-icon">✨</span><span class="rp-panel-title">Daily Inspiration (Quote)</span></div>' +
       (q

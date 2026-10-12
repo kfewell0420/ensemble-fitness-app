@@ -1573,14 +1573,15 @@
     // automatically populate the next quote." The member site
     // (feed.html's loadQuotePanel) orders ACTIVE quotes oldest-added-first
     // and picks one per calendar day via days-since-epoch modulo the count
-    // — this mirrors that exact math so "today's pick" shown here always
-    // matches what members actually see, without a day ever being special-
-    // cased or hard-coded.
+    // — this uses the same shared helper (pickQuoteOfDay in
+    // js/supabaseClient.js: a seeded daily shuffle, every quote once per
+    // round) so "today's pick" shown here always matches what members
+    // actually see, without a day ever being special-cased or hard-coded.
     var active = data.filter(function (q) { return q.is_active; });
-    var todayId = active.length
-      ? active.slice().sort(function (a, b) { return new Date(a.created_at) - new Date(b.created_at); })
-          [Math.floor(Date.now() / 86400000) % active.length].id
-      : null;
+    var todayPick = pickQuoteOfDay(active.slice().sort(function (a, b) {
+      return (new Date(a.created_at) - new Date(b.created_at)) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+    }));
+    var todayId = todayPick ? todayPick.id : null;
     summaryEl.textContent = active.length
       ? active.length + " active quote" + (active.length === 1 ? "" : "s") + " in the rotation" +
         (active.length < 50 ? " (aiming for 50+)" : "")

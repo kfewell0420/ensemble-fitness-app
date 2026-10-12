@@ -12,6 +12,30 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-12 (afternoon), Daily Inspiration quote now rotates in shuffled order, every day
+
+Ken: the daily quote wasn't rotating; it should move to a different quote each day,
+in any order (not necessarily 1, 2, 3).
+
+- What I found: the old code picked `today's day number % number of quotes`, and the
+  day number was UTC, so it flipped at 7 PM Central rather than midnight; quotes were
+  fetched oldest-first with no tie-breaker (a bulk add gives identical timestamps, so
+  the order could differ between the feed, the quote page and admin). I could not see
+  Ken's quotes table from here, so I could not confirm which of these he hit.
+- Fix: new shared helper `pickQuoteOfDay()` in `js/supabaseClient.js` (plus
+  `quoteDayNumber`, `quoteShuffleOrder`). Active quotes are put in a stable order
+  (created_at, then id); each "round" of days uses its own seeded shuffle, so every
+  quote shows once per round, the order looks random, no two days in a row match, and
+  a new round never opens with the last quote of the previous one. Day changes at
+  midnight on the member's own clock. No database change.
+- Used by `feed.html` (desktop panel), `quote-library.html` (phone page) and
+  `admin.html` (the "Today ★" marker), so all three always agree. Queries now also
+  `order("id")` as a tie-breaker.
+- Tested: 3,000 simulated days for 2, 3, 4, 7, 10, 50 and 51 quotes (no back-to-back
+  repeats, every round covers every quote); page test with 50 quotes on 5 faked dates
+  (stays put all day, changes at 12:10 AM). With only 1 active quote it can never
+  change; with 2 it alternates. Adding or deactivating a quote re-shuffles the order.
+
 ## 2026-10-12 (late morning), profile page: three cards made the same compact height on phones
 
 Ken's request: on the phone profile page, "Your network" (Followers & Following),
