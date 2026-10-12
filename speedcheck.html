@@ -123,21 +123,21 @@
     var firstPhoto = rows.filter(function (r) { return r.kind !== "video" && signed[r.storage_path]; })[0];
     var imgRow = firstPhoto ? signed[firstPhoto.storage_path] : (firstPoster ? signed[firstPoster.poster_path] : null);
     if (imgRow) {
-      var im = await timed(function () { return fetch(imgRow, { cache: "no-store" }).then(function (r) { return r.blob().then(function (b) { return { size: b.size, cf: r.headers.get("cf-cache-status") }; }); }); });
+      var im = await timed(function () { return fetch(imgRow, { cache: "no-store" }).then(function (r) { return r.blob().then(function (b) { return (window.createImageBitmap ? createImageBitmap(b).then(function (bm) { return bm.width + "x" + bm.height; }, function () { return ""; }) : Promise.resolve("")).then(function (dim) { return { size: b.size, cf: r.headers.get("cf-cache-status"), dim: dim }; }); }); }); });
       var isz = im.out && im.out.size ? im.out.size : 0;
-      add("Download first picture", ms(im.t), grade(im.t, 500, 1200), (isz / 1024).toFixed(0) + " KB" + (im.out && im.out.cf ? " · CDN cache: " + im.out.cf : ""));
+      add("Download first picture", ms(im.t), grade(im.t, 500, 1200), (isz / 1024).toFixed(0) + " KB" + (im.out && im.out.dim ? " · " + im.out.dim + " px" : "") + (im.out && im.out.cf ? " · CDN cache: " + im.out.cf : ""));
     }
 
     // ---- Same photo, resized the way the feed now sends it (Oct 2026 speed pass, item 2)
     var rzRow = firstPhoto || null;
     if (rzRow) {
-      var rs = await timed(function () { return window.sb.storage.from("media").createSignedUrl(rzRow.storage_path, 3600, { transform: { width: 1080, quality: 80 } }); });
+      var rs = await timed(function () { return window.sb.storage.from("media").createSignedUrl(rzRow.storage_path, 3600, { transform: { width: 1080, height: 1920, resize: "contain", quality: 80 } }); });
       var rzUrl = rs.out && rs.out.data ? rs.out.data.signedUrl : "";
       if (rzUrl) {
-        var rz = await timed(function () { return fetch(rzUrl, { cache: "no-store" }).then(function (r) { return r.blob().then(function (b) { return { size: b.size, ok: r.ok, type: r.headers.get("content-type") }; }); }); });
+        var rz = await timed(function () { return fetch(rzUrl, { cache: "no-store" }).then(function (r) { return r.blob().then(function (b) { return (window.createImageBitmap ? createImageBitmap(b).then(function (bm) { return bm.width + "x" + bm.height; }, function () { return ""; }) : Promise.resolve("")).then(function (dim) { return { size: b.size, ok: r.ok, type: r.headers.get("content-type"), dim: dim }; }); }); }); });
         var rsz = rz.out && rz.out.size ? rz.out.size : 0;
         add("Download same picture, resized (what the feed sends now)", rz.out && rz.out.ok ? ms(rz.t) : "FAILED", rz.out && rz.out.ok ? grade(rz.t, 400, 900) : "bad",
-            (rsz / 1024).toFixed(0) + " KB" + (rz.out && rz.out.type ? " · " + rz.out.type : "") + (rz.out && !rz.out.ok ? " · resizing is not working on this project" : ""));
+            (rsz / 1024).toFixed(0) + " KB" + (rz.out && rz.out.dim ? " · " + rz.out.dim + " px" : "") + (rz.out && rz.out.type ? " · " + rz.out.type : "") + (rz.out && !rz.out.ok ? " · resizing is not working on this project" : ""));
       } else {
         add("Download same picture, resized", "no link", "bad", "Could not get a resized link — Image Transformation may be off.");
       }
@@ -225,7 +225,7 @@
     }
     document.getElementById("scSummary").textContent = msg;
     document.getElementById("scSummaryCard").style.display = "block";
-    var text = "Speed check — " + new Date().toLocaleString() + "\n" + results.map(function (r) { var extra = r.raw || ""; if (r.note && /MB|KB|CDN|ranges|\d+x\d+/.test(r.note)) extra = (extra ? extra + "; " : "") + r.note; return r.name + ": " + r.value + (extra ? " (" + extra + ")" : ""); }).join("\n");
+    var text = "Speed check — " + new Date().toLocaleString() + "\n" + results.map(function (r) { var extra = r.raw || ""; if (r.note && /MB|KB|CDN|ranges|\d+x\d+| px/.test(r.note)) extra = (extra ? extra + "; " : "") + r.note; return r.name + ": " + r.value + (extra ? " (" + extra + ")" : ""); }).join("\n");
     document.getElementById("scRaw").textContent = "";
     document.getElementById("scCopy").onclick = function () {
       try { navigator.clipboard.writeText(text); this.textContent = "Copied"; } catch (e) { document.getElementById("scRaw").textContent = text; }

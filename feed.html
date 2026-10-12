@@ -2062,7 +2062,7 @@
   // fresh app launch started from a blank screen). Trusted for 6 hours, and the real
   // fetch still always runs and replaces it. Bumped to v2 because items now also
   // carry imgUrl (the resized photo link).
-  var FEED_CACHE_VERSION = "v2";
+  var FEED_CACHE_VERSION = "v3";
   var FEED_CACHE_MAX_AGE_MS = 6 * 60 * 60 * 1000; // 6 hours
   var cacheFlashNodes = [];
   var renderingCacheFlash = false;
@@ -2567,7 +2567,7 @@
   // (Reuse stops 8h before expiry so the 6h feed snapshot never holds a dead link.)
   var SIGNED_URL_TTL_SECONDS = 24 * 60 * 60;
   var SIGNED_URL_REUSE_SECONDS = 16 * 60 * 60;
-  var SIGNED_URL_STORE_KEY = "efit_signed_urls_v1";
+  var SIGNED_URL_STORE_KEY = "efit_signed_urls_v2"; // v2: drops the cropped width-only resized links saved by the first version
   var signedUrlCache = new Map(); // key -> { url, expiresAt: ms epoch }
   (function hydrateSignedUrls() {
     try {
@@ -2593,7 +2593,10 @@
       } catch (e) {}
     }, 400);
   }
-  var PHOTO_RESIZE = { width: 1080, quality: 80 };
+  // resize:"contain" + a bounding box = scale DOWN to fit inside 1080x1920 keeping the photo's own
+  // proportions, never cropping. (First version sent width only; Supabase's default mode is "cover",
+  // which can crop to a different shape — Ken saw heads cut off at the top. Fixed Oct 2026.)
+  var PHOTO_RESIZE = { width: 1080, height: 1920, resize: "contain", quality: 80 };
 
   // Ken's ask (Sept 2026): "pictures and videos load slowly" on a mobile
   // hotspot — a slow/high-latency connection makes ROUND TRIPS expensive,
@@ -2678,7 +2681,7 @@
     var expiresAt = Date.now() + SIGNED_URL_REUSE_SECONDS * 1000;
     await Promise.all(paths.map(async function (p) {
       if (!p) return;
-      var key = p + "|w" + PHOTO_RESIZE.width;
+      var key = p + "|contain" + PHOTO_RESIZE.width + "x" + PHOTO_RESIZE.height;
       var cached = signedUrlCache.get(key);
       if (cached && cached.expiresAt > Date.now()) { result[p] = cached.url; return; }
       try {

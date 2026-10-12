@@ -12,6 +12,19 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-12, feed photos cropped by the resize — fixed (contain)
+
+Ken: after speed-pass item 2, feed photos looked zoomed in / head cut off at the top (before: whole upper torso).
+Likely cause: the first version asked Supabase for width only; its default mode is "cover", which can crop to a
+different shape, then the feed's own fill-the-screen styling zoomed that further. Fix: transform is now
+{width:1080, height:1920, resize:"contain", quality:80} = scale down to fit inside the box keeping the photo's own
+proportions, never crop. Cache keys changed so the old cropped links/snapshot are dropped on next open
+(signed-link store v1 -> v2, FEED_CACHE_VERSION v2 -> v3). speedcheck.html now prints the pixel dimensions of the
+original and resized photo so a crop/shape change is visible. If photos still look wrong after this, the quick
+fallback is to stop using imgUrl (originals) — one-line change.
+
+---
+
 ## 2026-10-12, speedcheck.html — adds a resized-picture row
 
 Speed Check's picture row used the original-size link, so it could not show the effect of speed-pass item 2. It now
