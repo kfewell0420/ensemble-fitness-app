@@ -12,6 +12,18 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-12, members.html — simpler Find Members page (no wake-up filter)
+
+Ken (Android app): shorten the intro to "Search by ZIP code to find other Ensemble Fitness members in your
+area." (dropped the "optionally narrow it down… wake up" half) and remove the Wake-up time dropdown — the page
+is just for finding members near you. Removed the dropdown, its filter query, its Enter-key listener and the
+"different wake-up time" wording in the empty-result message. Kept: the ZIP box prefilled from the member's OWN
+profile zip_code (verified: `profiles` query is `.eq("id", currentUser.id)`, then auto-search), results excluding
+the viewer, and the small "Same wake-up time as you" highlight on cards (Ken: "everything else is fine").
+Verified in Playwright at 393px: prefill 76002, no wake-up select, 1 result card, no page errors.
+
+---
+
 ## 2026-10-12, fitness-journeys.html — phone hero removal had silently reverted; now CSS in the shared file
 
 Ken (Android app screenshot): Share Your Journey again showed the full hero ("Real people. Real
