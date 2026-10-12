@@ -33,6 +33,18 @@
   </nav>
 </header>
 
+<style>
+  /* Phone-size screens: the page-link menu (Community, Members, Fitness+, ...) is hidden here —
+     the bottom tab bar already covers navigation, and Ken wants a member's own profile to be the
+     first thing on screen. Sign Out moves to the bottom of the page (#signOutMobileCard) so it
+     isn't lost. Done in the shared file's CSS so a straight file copy to the phone app keeps it. */
+  .signout-mobile-card { display: none; }
+  @media (max-width: 720px) {
+    .app-nav-links { display: none; }
+    .signout-mobile-card { display: block; }
+  }
+</style>
+
 <div class="app-shell">
 
   <div class="card">
@@ -84,6 +96,14 @@
         <label for="zipCode">ZIP code</label>
         <input type="text" id="zipCode" name="zipCode" placeholder="e.g. 75201" inputmode="numeric" pattern="[0-9]{5}" maxlength="5" autocomplete="postal-code" required />
         <span style="font-size:12px; color:var(--faint-invert);">Shown to other members so they can find you on the Find Members page.</span>
+      </div>
+      <div class="field" id="heightField" style="display:none;">
+        <label for="heightFeet">Height</label>
+        <div style="display:flex; gap:10px;">
+          <select id="heightFeet" name="heightFeet" aria-label="Feet" style="flex:1;"></select>
+          <select id="heightInches" name="heightInches" aria-label="Inches" style="flex:1;"></select>
+        </div>
+        <span style="font-size:12px; color:var(--faint-invert);">Shown on your Fitness+ profile card. Change it any time.</span>
       </div>
       <div class="field">
         <label for="wakeTimeCategory">What time do you naturally wake up?</label>
@@ -225,6 +245,10 @@
     </div>
   </div>
 
+  <div class="card signout-mobile-card" id="signOutMobileCard">
+    <button type="button" class="btn btn-ghost btn-block" id="signOutMobileBtn">Sign Out</button>
+  </div>
+
 </div>
 
 <div class="simple-modal-overlay" id="followListOverlay">
@@ -253,6 +277,28 @@
 <script src="js/moderation.js"></script>
 <script>
   var currentUser = null;
+
+  // ---- Height (Fitness+ members): feet + inches pickers, stored as total inches (36–96) ----
+  function buildHeightOptions() {
+    var feet = document.getElementById("heightFeet"), inches = document.getElementById("heightInches");
+    var f = '<option value="">ft</option>';
+    for (var i = 3; i <= 8; i++) f += '<option value="' + i + '">' + i + " ft</option>";
+    var n = '<option value="">in</option>';
+    for (var j = 0; j <= 11; j++) n += '<option value="' + j + '">' + j + " in</option>";
+    feet.innerHTML = f; inches.innerHTML = n;
+  }
+  function setHeightFields(totalInches) {
+    if (!totalInches) return;
+    document.getElementById("heightFeet").value = String(Math.floor(totalInches / 12));
+    document.getElementById("heightInches").value = String(totalInches % 12);
+  }
+  // Returns total inches, null if not chosen, or -1 if out of the allowed 3'0"–8'0" range.
+  function readHeightFields() {
+    var ft = document.getElementById("heightFeet").value, inch = document.getElementById("heightInches").value;
+    if (ft === "") return null;
+    var total = parseInt(ft, 10) * 12 + parseInt(inch || "0", 10);
+    return (total >= 36 && total <= 96) ? total : -1;
+  }
 
   function escapeHtml(str) {
     var div = document.createElement("div");
@@ -681,6 +727,13 @@
       document.getElementById("zipCode").value = data.zip_code || "";
       document.getElementById("wakeTimeCategory").value = data.wake_time_category || "";
       document.getElementById("relationshipIntent").value = data.relationship_intent || "";
+      // Height is editable for Fitness+ members (it comes from their Fitness+ checkout, and
+      // sometimes it's entered wrong or changes).
+      buildHeightOptions();
+      if (data.fitness_plus_active) {
+        document.getElementById("heightField").style.display = "";
+        setHeightFields(data.height_inches);
+      }
       // Ken's ask (Oct 2026): same fix as the Save Profile handler below —
       // this ran BEFORE loadAvatar() on every single page load, and since
       // it used to set the whole avatarCircle's .textContent, it wiped out
@@ -702,10 +755,8 @@
       if (data.wake_time_category) glanceParts.push("🌞 " + wakeTimeLabel(data.wake_time_category));
       if (data.zip_code) glanceParts.push("📍 ZIP " + data.zip_code);
       if (data.relationship_intent) glanceParts.push("❤️ " + relationshipIntentLabel(data.relationship_intent));
-      // Height only ever gets set once someone pays for Fitness+ (captured at
-      // checkout, see stripe-webhook.js's handleFitnessPlusSignup) — it's not
-      // an editable field on this page, just a readout of what's on file, so
-      // it only shows up here for members who've actually signed up for it.
+      // Height is captured at Fitness+ checkout (stripe-webhook.js's handleFitnessPlusSignup) and
+      // can be corrected in the form above; it only shows for members who've signed up for Fitness+.
       if (data.fitness_plus_active && data.height_inches) {
         glanceParts.push("📏 " + formatHeightInches(data.height_inches));
       }
@@ -1010,13 +1061,31 @@
       } catch (csSaveErr) { connectionStatusSaveFailed = true; }
     }
 
+    // Height (Fitness+ members only) — separate best-effort update, same pattern as connection status.
+    var heightSaveNote = "";
+    var heightValue = null;
+    if (!error && document.getElementById("heightField").style.display !== "none") {
+      heightValue = readHeightFields();
+      if (heightValue === -1) {
+        heightSaveNote = "Height wasn't saved — please choose between 3 ft and 8 ft.";
+        heightValue = null;
+      } else if (heightValue !== null) {
+        try {
+          var hUpd = await window.sb.from("profiles").update({ height_inches: heightValue }).eq("id", currentUser.id);
+          if (hUpd && hUpd.error) { heightSaveNote = "Height couldn't be saved right now."; heightValue = null; }
+        } catch (hErr) { heightSaveNote = "Height couldn't be saved right now."; heightValue = null; }
+      }
+    }
+
     btn.disabled = false;
     btn.textContent = "Save Profile";
 
     if (error) {
       showMsg(msg, error.message, "error");
     } else {
-      showMsg(msg, connectionStatusSaveFailed ? "Saved (connection status isn't available yet)." : "Saved.", "success");
+      showMsg(msg, heightSaveNote
+        ? "Saved. " + heightSaveNote
+        : (connectionStatusSaveFailed ? "Saved (connection status isn't available yet)." : "Saved."), heightSaveNote ? "error" : "success");
       // Ken's ask (Oct 2026): this used to set the whole avatarCircle's
       // .textContent, which wipes out ALL of its children — including the
       // 📷 upload badge span that's only in the markup when there's no
@@ -1038,6 +1107,7 @@
       if (wakeTimeValue) glanceParts.push("🌞 " + wakeTimeLabel(wakeTimeValue));
       if (zipCodeValue) glanceParts.push("📍 ZIP " + zipCodeValue);
       if (relationshipIntentValue) glanceParts.push("❤️ " + relationshipIntentLabel(relationshipIntentValue));
+      if (heightValue) glanceParts.push("📏 " + formatHeightInches(heightValue));
       var glanceEl = document.getElementById("profileGlance");
       glanceEl.textContent = glanceParts.join("  ·  ");
       glanceEl.style.display = glanceParts.length ? "block" : "none";
@@ -1227,6 +1297,7 @@
     e.preventDefault();
     signOut();
   });
+  document.getElementById("signOutMobileBtn").addEventListener("click", function () { signOut(); });
 
   init();
 </script>

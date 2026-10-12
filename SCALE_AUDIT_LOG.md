@@ -12,6 +12,24 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-12, profile.html — phone: no page-link menu, Sign Out at the bottom; Height now editable
+
+Ken (Android app, My Profile): the top menu (Community, Share Your Journey, Members, Fitness+, Products, Music,
+Quotes, My Profile, Queue, Sign Out) took a big chunk of the screen; he wants the profile itself first. Also his
+height showed 6'2" (from his Fitness+ checkout) and was not editable (he is 6'3"). Changes: at ≤720px (the
+same breakpoint css/app.css uses for that menu) `.app-nav-links` is hidden — logo row with home/bell/heart stays,
+bottom tab bar still navigates — and a "Sign Out" button card appears at the very bottom of the page (the menu's
+Sign Out would otherwise be lost). Desktop keeps the full menu. Height: new feet/inches pickers on the profile
+form for Fitness+ members (shown only when fitness_plus_active, per the earlier "height belongs to Fitness+"
+decision), stored as total inches (3'0"–8'0", matches the DB check 36–96); saved as its own best-effort update so a
+problem can't block the rest of the profile; the readout under the photo updates immediately. Existing RLS
+("users can update their own profile") already allows this — no SQL. Admin "Queue" link in that hidden menu is
+therefore not reachable on phones (admin.html never ships in the app anyway; use the website).
+Verified in Playwright at 393px/1200px: menu hidden/shown, 74 in → 6 ft 2 in prefill, change to 6'3" saved as
+height_inches 75, glance updates, sign-out navigates to login; no page errors.
+
+---
+
 ## 2026-10-12, members.html — simpler Find Members page (no wake-up filter)
 
 Ken (Android app): shorten the intro to "Search by ZIP code to find other Ensemble Fitness members in your
