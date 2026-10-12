@@ -12,6 +12,17 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-12, Connection Status — three options only, "No badge" removed
+
+Ken: options are now exactly Taken, Open to Connect, Here for the Community (in that order, hints unchanged).
+"No badge" and all its wording removed from the join form (dropdown, helper text, legend, error), the tap-a-badge
+key sheet, the inline key block and the profile page. The sheet/key simply close up (no empty row). Join form
+requires one of the three. Profile dropdown keeps a blank "Choose one…" so existing members who never picked
+aren't forced into a status when they save. Stored values unchanged (taken / open_to_connect / community), so no
+SQL and no data change; order is display-only. Files: js/supabaseClient.js, login.html, profile.html (+ mobile www).
+
+---
+
 ## 2026-10-12, members.html — browse everyone first; ZIP is an optional narrow-down
 
 Ken: the page required a ZIP and opened locked to the viewer's own (76002), so he only saw FitnessDeV. Fitness+

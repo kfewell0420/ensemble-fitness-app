@@ -126,18 +126,18 @@ function buildRelationshipIntentOptionsHtml(placeholderLabel) {
    empty means "no badge". The same list drives the profile dropdown, the join form's
    dropdown and its legend, and every badge shown next to a name. */
 window.CONNECTION_STATUS_OPTIONS = [
-  { value: "open_to_connect", icon: "\uD83D\uDC97", label: "Open to Connect", hint: "Single and open to meeting someone" },
   { value: "taken", icon: "\uD83D\uDC8D", label: "Taken", hint: "Married or in a relationship" },
-  { value: "community", icon: "\uD83E\uDD1D", label: "Here for Community", hint: "Friends, workout partners, motivation only" }
+  { value: "open_to_connect", icon: "\uD83D\uDC97", label: "Open to Connect", hint: "Single and open to meeting someone" },
+  { value: "community", icon: "\uD83E\uDD1D", label: "Here for the Community", hint: "Friends, workout partners, motivation only" }
 ];
 
 function connectionStatusOption(value) {
   return window.CONNECTION_STATUS_OPTIONS.filter(function (o) { return o.value === value; })[0] || null;
 }
 
-/* <option> markup for a status <select>; the blank first option means "show no badge". */
+/* <option> markup for a status <select>; the blank first option is only a "Choose one…" prompt. */
 function buildConnectionStatusOptionsHtml(placeholderLabel) {
-  var html = '<option value="">' + (placeholderLabel || "No badge") + '</option>';
+  var html = '<option value="">' + (placeholderLabel || "Choose one\u2026") + '</option>';
   window.CONNECTION_STATUS_OPTIONS.forEach(function (o) {
     html += '<option value="' + o.value + '">' + o.icon + " " + o.label + '</option>';
   });
@@ -149,7 +149,7 @@ function buildConnectionStatusOptionsHtml(placeholderLabel) {
 function buildConnectionStatusLegendHtml() {
   return window.CONNECTION_STATUS_OPTIONS.map(function (o) {
     return '<div>' + o.icon + ' <strong>' + o.label + '</strong> \u2014 ' + o.hint + '</div>';
-  }).join("") + '<div>No badge \u2014 you\'d rather not show a status</div>';
+  }).join("");
 }
 
 /* The tiny badge itself, to drop right after a name. Returns "" for no/unknown status. */
@@ -165,14 +165,13 @@ function showConnectionKey() {
   if (document.getElementById("connKeyOverlay")) return;
   var rows = window.CONNECTION_STATUS_OPTIONS.map(function (o) {
     return '<div class="conn-key-row"><span class="conn-key-icon">' + o.icon + '</span><span><strong>' + o.label + '</strong><br>' + o.hint + '</span></div>';
-  }).join("") +
-    '<div class="conn-key-row"><span class="conn-key-icon">\u2014</span><span><strong>No badge</strong><br>Member chooses not to display a status</span></div>';
+  }).join("");
   var overlay = document.createElement("div");
   overlay.id = "connKeyOverlay";
   overlay.className = "conn-key-overlay";
   overlay.innerHTML = '<div class="conn-key-sheet" role="dialog" aria-modal="true" aria-label="What the badges mean">' +
     '<div class="conn-key-title">Connection status</div>' +
-    '<div class="conn-key-sub">The tiny badge beside a member\'s name. It\'s optional, and members choose their own.</div>' +
+    '<div class="conn-key-sub">The tiny badge beside a member\'s name. Members choose their own.</div>' +
     rows +
     '<button type="button" class="conn-key-close">Got it</button></div>';
   function close() { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); document.removeEventListener("keydown", onKey); }
@@ -196,8 +195,7 @@ function connectionKeyBlockHtml() {
   return '<div class="conn-key-inline"><div class="conn-key-inline-title">Connection status key</div>' +
     window.CONNECTION_STATUS_OPTIONS.map(function (o) {
       return '<div><span class="conn-key-inline-icon">' + o.icon + '</span><strong>' + o.label + '</strong> \u2014 ' + o.hint + '</div>';
-    }).join("") +
-    '<div><span class="conn-key-inline-icon">\u2014</span><strong>No badge</strong> \u2014 member chooses not to display a status</div></div>';
+    }).join("") + '</div>';
 }
 function fillConnectionKeys() {
   Array.prototype.forEach.call(document.querySelectorAll("[data-conn-key]"), function (el) { el.innerHTML = connectionKeyBlockHtml(); });

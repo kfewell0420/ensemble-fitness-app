@@ -74,7 +74,7 @@
       <div class="field" id="connectionStatusField" style="display:none;">
         <label for="connectionStatus">Connection status</label>
         <select id="connectionStatus" name="connectionStatus"></select>
-        <span style="font-size:12px; color:var(--faint-invert);">Required — pick one. It shows as a tiny badge beside your name. Prefer not to share? Choose "No badge." You can change it anytime on your Profile.</span>
+        <span style="font-size:12px; color:var(--faint-invert);">Required — pick one. It shows as a tiny badge beside your name. You can change it anytime on your Profile.</span>
         <div id="connectionStatusLegend" style="font-size:12px; color:var(--faint-invert); line-height:1.7; margin-top:6px;"></div>
       </div>
       <div class="field" id="artistField" style="display:none;">
@@ -136,10 +136,8 @@
   wakeTimeInput.innerHTML = buildWakeTimeOptionsHtml("Choose one…");
   var connectionStatusField = document.getElementById("connectionStatusField");
   var connectionStatusInput = document.getElementById("connectionStatus");
-  // Required on sign-up: a blank "Choose one…" must be replaced by a real pick. "No badge"
-  // is a real pick (value "none") for members who'd rather not display a status.
-  connectionStatusInput.innerHTML = buildConnectionStatusOptionsHtml("Choose one…").replace("</select>", "") +
-    '<option value="none">No badge \u2014 I\'d rather not show a status</option>';
+  // Required on sign-up: a blank "Choose one…" must be replaced by a real pick.
+  connectionStatusInput.innerHTML = buildConnectionStatusOptionsHtml("Choose one…");
   document.getElementById("connectionStatusLegend").innerHTML = buildConnectionStatusLegendHtml();
   var artistField = document.getElementById("artistField");
   var isArtistInput = document.getElementById("isArtist");
@@ -275,7 +273,7 @@
         }
 
         if (!connectionStatusInput.value) {
-          throw new Error("Please choose a connection status — or choose \"No badge\" if you'd rather not show one.");
+          throw new Error("Please choose a connection status.");
         }
 
         var { error } = await withTimeout(window.sb.auth.signUp({
@@ -286,7 +284,7 @@
               date_of_birth: dobValue,
               zip_code: zipValue,
               wake_time_category: wakeTimeValue,
-              connection_status: connectionStatusInput.value === "none" ? null : connectionStatusInput.value,
+              connection_status: connectionStatusInput.value,
               is_artist: isArtistInput.checked,
               artist_type: isArtistInput.checked ? artistTypeInput.value : null
             }
