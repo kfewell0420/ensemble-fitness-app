@@ -12,6 +12,22 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-12, members.html — browse everyone first; ZIP is an optional narrow-down
+
+Ken: the page required a ZIP and opened locked to the viewer's own (76002), so he only saw FitnessDeV. Fitness+
+(fitness-plus.html) already lists all Fitness+ members ranked with a same-ZIP bonus, so only this page was
+forcing it. Now: opens on ALL members — people in the viewer's own ZIP first (first page only, capped 100,
+tagged "📍 Same ZIP code as you"), then everyone else A–Z, 30 per page with a "Show more members" button
+(paged by `range`). The ZIP box starts EMPTY, labeled "Narrow by ZIP code (optional)", accepts 3–5 digits:
+5 digits = exact (`eq`), 3–4 = prefix (`like 'NNN%'`, e.g. 760 = all 760xx); empty + Search = everyone; a
+"Show all members" button appears while filtered. Overlapping loads are guarded with a sequence counter; blocked
+members are filtered out; avatars + badges are still fetched concurrently (now per page of 30, previously up to
+200). Verified with an in-memory fake DB of 71 profiles: browse = 23 same-ZIP + 30 others, Show more → 70 total
+with the button gone, 760 = prefix match, 76006 = 8, no-match message, bad-input message, Show all restores the
+list, no page errors. Not built: true "within N miles" (needs a ZIP→lat/long table).
+
+---
+
 ## 2026-10-12, member.html — phone: another member's profile hides the page-link menu
 
 Ken (Android app, tapping FitnessDeV from Members): same ask as his own profile — no Community / Share Your

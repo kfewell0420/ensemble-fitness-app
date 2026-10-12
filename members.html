@@ -43,7 +43,7 @@
 
   <div class="eyebrow">Community</div>
   <h2 style="margin-bottom:6px;">Find Members Near You</h2>
-  <p class="card-sub" style="margin-bottom:24px;">Search by ZIP code to find other Ensemble Fitness members in your area.</p>
+  <p class="card-sub" style="margin-bottom:24px;">Meet other Ensemble Fitness members. Enter a ZIP code to find people near you.</p>
 
   <div data-conn-key style="margin-bottom:16px;"></div>
 
@@ -51,16 +51,17 @@
     <div class="form-msg" id="searchMsg"></div>
     <div style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap;">
       <div class="field" style="flex:1; min-width:160px; margin-bottom:0;">
-        <label for="zipSearch">ZIP code</label>
-        <input type="text" id="zipSearch" inputmode="numeric" pattern="[0-9]{5}" maxlength="5" placeholder="e.g. 75201" autocomplete="postal-code" />
+        <label for="zipSearch">Narrow by ZIP code (optional)</label>
+        <input type="text" id="zipSearch" inputmode="numeric" pattern="[0-9]{3,5}" maxlength="5" placeholder="e.g. 76002, or just 760" autocomplete="postal-code" />
       </div>
       <button type="button" class="btn btn-primary" id="searchBtn">Search</button>
     </div>
+    <button type="button" class="btn btn-ghost btn-sm" id="showAllBtn" style="display:none; margin-top:12px;">Show all members</button>
   </div>
 
   <div class="card">
     <div id="memberResults">
-      <div class="empty-state">Enter a ZIP code above to see members near you.</div>
+      <div class="empty-state">Loading members…</div>
     </div>
   </div>
 
@@ -112,110 +113,171 @@
     return signed ? signed.signedUrl : "";
   }
 
-  async function runSearch() {
-    var msg = document.getElementById("searchMsg");
-    var results = document.getElementById("memberResults");
-    var searchBtn = document.getElementById("searchBtn");
-    hideMsg(msg);
+  // Browse-first member directory (Ken, Oct 12 2026): the page used to REQUIRE a ZIP code and
+  // opened locked to the viewer's own, so members only saw people in that exact ZIP. Now it opens
+  // on everyone (people in your own ZIP first, then the rest A–Z), 30 at a time. The ZIP box is an
+  // optional narrow-down and takes 3–5 digits: "760" matches every 760xx ZIP, "76002" just that one.
+  var PAGE_SIZE = 30;
+  var myZip = "";
+  var activeZip = "";     // "" = browsing everyone
+  var othersOffset = 0;   // paging position in the "everyone else" list
+  var loadSeq = 0;        // guards against two overlapping loads landing out of order
 
-    var zip = document.getElementById("zipSearch").value.trim();
-    if (!/^[0-9]{5}$/.test(zip)) {
-      showMsg(msg, "Please enter a valid 5-digit ZIP code.", "error");
-      return;
+  function buildMemberRow(member, avatarUrl, connStatus) {
+    var row = document.createElement("div");
+    row.className = "member-row member-row-clickable";
+    row.setAttribute("role", "button");
+    row.setAttribute("tabindex", "0");
+    row.setAttribute("aria-label", "View " + (member.display_name || "member") + "'s profile");
+
+    var initial = (member.display_name || "?").trim().charAt(0).toUpperCase() || "?";
+    var avatarInner = avatarUrl ? '<img src="' + avatarUrl + '" alt="' + escapeHtml(member.display_name || "Member") + '" />' : initial;
+    var wakeLabel = wakeTimeLabel(member.wake_time_category);
+    var sameWakeTime = !!currentUserWakeTime && member.wake_time_category === currentUserWakeTime;
+    var sameZip = !!myZip && member.zip_code === myZip;
+
+    row.innerHTML =
+      '<div class="avatar-circle">' + avatarInner + '</div>' +
+      '<div class="member-row-meta">' +
+        '<strong>' + escapeHtml(member.display_name || "A member") + connectionBadgeHtml(connStatus) + '</strong>' +
+        (member.bio ? '<p>' + escapeHtml(member.bio) + '</p>' : '') +
+        '<span>' + (member.zip_code ? 'ZIP ' + escapeHtml(member.zip_code) : '') + (wakeLabel ? (member.zip_code ? ' · ' : '') + escapeHtml(wakeLabel) : '') + '</span>' +
+        (sameZip ? '<span style="display:block; color:var(--accent-2); font-weight:700; margin-top:3px;">📍 Same ZIP code as you</span>' : '') +
+        (sameWakeTime ? '<span style="display:block; color:var(--accent-2); font-weight:700; margin-top:3px;">🌞 Same wake-up time as you</span>' : '') +
+      '</div>';
+
+    row.addEventListener("click", function () {
+      window.location.href = "member.html?id=" + encodeURIComponent(member.id);
+    });
+    row.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        window.location.href = "member.html?id=" + encodeURIComponent(member.id);
+      }
+    });
+    return row;
+  }
+
+  // Appends rows for `members` to the list (avatars + badges fetched together, concurrently).
+  async function appendMembers(container, members) {
+    var fetched = await Promise.all([
+      Promise.all(members.map(function (m) { return avatarUrlFor(m.id); })),
+      fetchConnectionStatuses(members.map(function (m) { return m.id; }))
+    ]);
+    for (var i = 0; i < members.length; i++) {
+      container.appendChild(buildMemberRow(members[i], fetched[0][i], fetched[1][members[i].id]));
     }
+  }
 
-    // Ken's ask (Oct 2026): this button wasn't disabled while a search was
-    // in flight, so clicking Search twice (or clicking then hitting Enter)
-    // fired two overlapping searches whose results could land in either
-    // order and get mixed together in the list below. Guard against that
-    // the same way the rest of the app disables a button mid-request.
-    if (searchBtn.disabled) return;
+  var MEMBER_COLS = "id, display_name, bio, zip_code, wake_time_category";
+
+  // reset=true starts a fresh list (first load, a search, or "Show all"); false appends the next page.
+  async function loadMembers(reset) {
+    var results = document.getElementById("memberResults");
+    var msg = document.getElementById("searchMsg");
+    var searchBtn = document.getElementById("searchBtn");
+    var seq = ++loadSeq;
     searchBtn.disabled = true;
-
-    results.innerHTML = '<div class="empty-state">Searching…</div>';
+    if (reset) {
+      hideMsg(msg);
+      othersOffset = 0;
+      results.innerHTML = '<div class="empty-state">Loading members…</div>';
+    }
+    var moreBtn = document.getElementById("showMoreBtn");
+    if (moreBtn) { moreBtn.disabled = true; moreBtn.textContent = "Loading…"; }
 
     try {
-      var query = window.sb
-        .from("profiles")
-        .select("id, display_name, bio, zip_code, wake_time_category")
-        .eq("zip_code", zip)
-        .neq("id", currentUser.id);
+      var batch = [];     // members to show now, in display order
+      var rawCount = 0;   // size of the "others" page before block-filtering (decides if more exist)
 
-      // A safety cap — one ZIP code shouldn't realistically have more
-      // members than this, but it keeps a single search from ever pulling
-      // down an unbounded result set as the member base grows.
-      var { data, error } = await query.order("display_name", { ascending: true }).limit(200);
+      if (activeZip) {
+        var q = window.sb.from("profiles").select(MEMBER_COLS).neq("id", currentUser.id);
+        q = activeZip.length === 5 ? q.eq("zip_code", activeZip) : q.like("zip_code", activeZip + "%");
+        var res = await q.order("display_name", { ascending: true }).range(othersOffset, othersOffset + PAGE_SIZE - 1);
+        if (res.error) throw res.error;
+        batch = res.data || [];
+        rawCount = batch.length;
+      } else {
+        // Browse mode: people in the viewer's own ZIP first (first page only), then everyone else A–Z.
+        if (reset && myZip) {
+          var same = await window.sb.from("profiles").select(MEMBER_COLS)
+            .eq("zip_code", myZip).neq("id", currentUser.id)
+            .order("display_name", { ascending: true }).limit(100);
+          if (!same.error && same.data) batch = batch.concat(same.data);
+        }
+        var oq = window.sb.from("profiles").select(MEMBER_COLS).neq("id", currentUser.id);
+        if (myZip) oq = oq.or("zip_code.is.null,zip_code.neq." + myZip);
+        var ores = await oq.order("display_name", { ascending: true }).range(othersOffset, othersOffset + PAGE_SIZE - 1);
+        if (ores.error) throw ores.error;
+        rawCount = (ores.data || []).length;
+        batch = batch.concat(ores.data || []);
+      }
+      if (seq !== loadSeq) return; // a newer load started — drop this one
 
-      if (error) {
-        results.innerHTML = '<div class="empty-state">Couldn\'t load results. Please try again.</div>';
+      othersOffset += rawCount;
+      // Blocked members never show up in the directory.
+      batch = filterOutBlocked(batch, "id");
+
+      if (reset) results.innerHTML = "";
+      var oldMore = document.getElementById("showMoreBtn");
+      if (oldMore) oldMore.remove();
+
+      if (reset && !batch.length) {
+        results.innerHTML = activeZip
+          ? '<div class="empty-state">No members found in ZIP ' + escapeHtml(activeZip) + (activeZip.length < 5 ? '…' : '') + ' yet. Try fewer digits, or tap "Show all members".</div>'
+          : '<div class="empty-state">No other members yet — check back soon as more people join.</div>';
         return;
       }
+      await appendMembers(results, batch);
+      if (seq !== loadSeq) return;
 
-      // Blocked members never show up in search results.
-      data = filterOutBlocked(data || [], "id");
-
-      if (!data || data.length === 0) {
-        results.innerHTML = '<div class="empty-state">No members found in ZIP ' + escapeHtml(zip) + ' yet. Try a nearby ZIP code, or check back later as more members join.</div>';
-        return;
+      if (rawCount === PAGE_SIZE) {
+        var btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "btn btn-ghost btn-block";
+        btn.id = "showMoreBtn";
+        btn.style.marginTop = "14px";
+        btn.textContent = "Show more members";
+        btn.addEventListener("click", function () { loadMembers(false); });
+        results.appendChild(btn);
       }
-
-      // Ken's ask (Oct 2026): fetch every row's avatar at once instead of
-      // one at a time in the loop below — see fitness-plus.html's
-      // loadMatches() for the same fix and the full explanation.
-      var fetched = await Promise.all([
-        Promise.all(data.map(function (member) { return avatarUrlFor(member.id); })),
-        fetchConnectionStatuses(data.map(function (m) { return m.id; }))
-      ]);
-      var avatarUrls = fetched[0];
-      var connStatuses = fetched[1];
-
-      results.innerHTML = "";
-      for (var i = 0; i < data.length; i++) {
-        var member = data[i];
-        var row = document.createElement("div");
-        row.className = "member-row member-row-clickable";
-        row.setAttribute("role", "button");
-        row.setAttribute("tabindex", "0");
-        row.setAttribute("aria-label", "View " + (member.display_name || "member") + "'s profile");
-
-        var avatarUrl = avatarUrls[i];
-        var initial = (member.display_name || "?").trim().charAt(0).toUpperCase() || "?";
-        var avatarInner = avatarUrl ? '<img src="' + avatarUrl + '" alt="' + escapeHtml(member.display_name || "Member") + '" />' : initial;
-
-        var wakeLabel = wakeTimeLabel(member.wake_time_category);
-        var sameWakeTime = !!currentUserWakeTime && member.wake_time_category === currentUserWakeTime;
-
-        row.innerHTML =
-          '<div class="avatar-circle">' + avatarInner + '</div>' +
-          '<div class="member-row-meta">' +
-            '<strong>' + escapeHtml(member.display_name || "A member") + connectionBadgeHtml(connStatuses[member.id]) + '</strong>' +
-            (member.bio ? '<p>' + escapeHtml(member.bio) + '</p>' : '') +
-            '<span>ZIP ' + escapeHtml(member.zip_code) + (wakeLabel ? ' · ' + escapeHtml(wakeLabel) : '') + '</span>' +
-            (sameWakeTime ? '<span style="display:block; color:var(--accent-2); font-weight:700; margin-top:3px;">🌞 Same wake-up time as you</span>' : '') +
-          '</div>';
-
-        (function (memberId) {
-          row.addEventListener("click", function () {
-            window.location.href = "member.html?id=" + encodeURIComponent(memberId);
-          });
-          row.addEventListener("keydown", function (e) {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              window.location.href = "member.html?id=" + encodeURIComponent(memberId);
-            }
-          });
-        })(member.id);
-
-        results.appendChild(row);
+    } catch (err) {
+      if (seq === loadSeq) {
+        if (reset) results.innerHTML = '<div class="empty-state">Couldn\'t load members. Please try again.</div>';
+        var mb = document.getElementById("showMoreBtn");
+        if (mb) { mb.disabled = false; mb.textContent = "Show more members"; }
       }
     } finally {
-      searchBtn.disabled = false;
+      if (seq === loadSeq) searchBtn.disabled = false;
     }
+  }
+
+  function runSearch() {
+    var msg = document.getElementById("searchMsg");
+    var zip = document.getElementById("zipSearch").value.trim();
+    var showAll = document.getElementById("showAllBtn");
+    if (zip === "") {            // empty box = back to everyone
+      activeZip = "";
+      showAll.style.display = "none";
+      loadMembers(true);
+      return;
+    }
+    if (!/^[0-9]{3,5}$/.test(zip)) {
+      showMsg(msg, "Enter 3 to 5 digits of a ZIP code (for example 760 or 76002).", "error");
+      return;
+    }
+    activeZip = zip;
+    showAll.style.display = "inline-block";
+    loadMembers(true);
   }
 
   document.getElementById("searchBtn").addEventListener("click", runSearch);
   document.getElementById("zipSearch").addEventListener("keydown", function (e) {
     if (e.key === "Enter") runSearch();
+  });
+  document.getElementById("showAllBtn").addEventListener("click", function () {
+    document.getElementById("zipSearch").value = "";
+    runSearch();
   });
 
   (async function init() {
@@ -228,7 +290,8 @@
     // markup above), so there's no admin "Queue" link or Sign Out link on
     // this page to wire up — both were removed along with the header.
 
-    // Prefill with the member's own ZIP code (if they've set one) and search right away.
+    // The viewer's own ZIP is used only to list their neighbors first and tag them —
+    // the ZIP box itself starts empty so everyone is visible.
     var { data } = await window.sb
       .from("profiles")
       .select("zip_code, wake_time_category")
@@ -236,11 +299,9 @@
       .maybeSingle();
     if (data) {
       currentUserWakeTime = data.wake_time_category || "";
-      if (data.zip_code) {
-        document.getElementById("zipSearch").value = data.zip_code;
-        await runSearch();
-      }
+      myZip = data.zip_code || "";
     }
+    await loadMembers(true);
   })();
 </script>
 
