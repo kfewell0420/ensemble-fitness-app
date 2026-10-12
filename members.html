@@ -37,21 +37,31 @@
   }
   .efit-nav-utility { margin-left: 0; margin-top: 0; }
   .app-shell { padding-top: 4px; }
+  /* Ken's ask (Oct 2026): as little scrolling as possible — every box on this page
+     sits snug under the one above it, and the ZIP box has the same slim top/bottom
+     padding as the Connection Status key (10px 14px). */
+  .app-shell .eyebrow { margin-bottom: 2px; }
+  .app-shell > h2 { margin-top: 0; }
+  .app-shell > .card { padding: 10px 14px; margin-bottom: 10px; }
+  .app-shell > .card .field label { margin-bottom: 4px; }
+  .app-shell > .card .field input { padding-top: 9px; padding-bottom: 9px; }
+  .app-shell > .card .btn { padding-top: 10px; padding-bottom: 10px; }
+  .app-shell .member-row-clickable { padding: 8px 10px; }
 </style>
 
 <div class="app-shell">
 
   <div class="eyebrow">Community</div>
   <h2 style="margin-bottom:6px;">Find Members Near You</h2>
-  <p class="card-sub" style="margin-bottom:24px;">Meet other Ensemble Fitness members. Enter a ZIP code to find people near you.</p>
+  <p class="card-sub" style="margin-bottom:10px;">Meet other Ensemble Fitness members. Enter a ZIP code to find people near you.</p>
 
-  <div data-conn-key style="margin-bottom:16px;"></div>
+  <div data-conn-key style="margin-bottom:10px;"></div>
 
   <div class="card">
     <div class="form-msg" id="searchMsg"></div>
     <div style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap;">
       <div class="field" style="flex:1; min-width:160px; margin-bottom:0;">
-        <label for="zipSearch">Narrow by ZIP code (optional)</label>
+        <label for="zipSearch">Narrow by ZIP code</label>
         <input type="text" id="zipSearch" inputmode="numeric" pattern="[0-9]{3,5}" maxlength="5" placeholder="e.g. 76002, or just 760" autocomplete="postal-code" />
       </div>
       <button type="button" class="btn btn-primary" id="searchBtn">Search</button>

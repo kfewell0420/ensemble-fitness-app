@@ -12,6 +12,14 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-12, members.html — tighter spacing, "(optional)" removed
+
+Ken: cut scrolling. ZIP label is now just "Narrow by ZIP code". Subtitle, Connection Status key, ZIP box and the
+member list all sit closer together (10px gaps); the ZIP box has the same slim 10px/14px padding as the key box
+(page-scoped <style> in members.html only, shared card CSS untouched); member rows got less top/bottom padding.
+
+---
+
 ## 2026-10-12, Connection Status — three options only, "No badge" removed
 
 Ken: options are now exactly Taken, Open to Connect, Here for the Community (in that order, hints unchanged).
