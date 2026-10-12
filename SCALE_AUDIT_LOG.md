@@ -12,6 +12,37 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-12, SPEED PASS SUMMARY (read this first for anything speed-related)
+
+Goal (Ken): feel as fast as TikTok/Instagram/Facebook — under ~1 s to real content. Result: "much, much better".
+
+How to measure: open app.ensemblefitness.com/speedcheck.html (signed in), HARD REFRESH the page first, then Run, then
+paste "Copy results". Only the two page-load rows depend on the refresh; but a hard refresh also bypasses saved copies,
+so it measures a first-ever visit. For a returning visit use a normal reload. "Run again" without reloading repeats the
+same page-load numbers.
+
+What shipped: (1) instant reopen: last screen kept on the device 6 h (localStorage, FEED_CACHE_VERSION v4) + signed links
+valid 24 h and reused 16 h (`efit_signed_urls_v2`) so the phone reuses downloaded pictures; (2) server-side photo resize
+built, tested, then switched OFF (`PHOTO_RESIZE_ENABLED=false`): first request builds the copy (~0.8 s), repeat is ~40 ms,
+uploads already shrink photos to <=1920 px; crop bug (width-only = "cover") fixed with resize "contain" + 1080x1920 box
+if it is ever re-enabled; (3) feed buildItems loads clips/counts/badges/sounds/signing in parallel; (5) Supabase SDK + fonts
+load from our own files (js/vendor/supabase.js, assets/fonts, css/fonts.css) with CDN/Google fallback — page-load row
+563 -> 287 ms; (4) next-video preloading deliberately NOT built (videos start 0.4-0.9 s, fast-start = yes, only 5 videos;
+earlier preload attempts caused black videos).
+
+Measured (Ken's phone, 4G): DB round trip ~80-130 ms; first 8 posts 68-182 ms; secure links 88-185 ms; picture
+(stored, ~1 MB, 1440x1920) 690-950 ms; video first byte 350-580 ms, first picture 364-1019 ms; video file is fast-start.
+
+Remaining/open: remaining first-view delay is Supabase storage's slow first trip per private link (~0.4-0.7 s). Fix =
+shared stable (public, unguessable) media links so the CDN is warm for everyone — a PRIVACY decision, left to Ken (not
+done). Other options: re-encode videos smaller / hosted video service (only if videos get big or Windows black screens
+persist); next-video preload (revisit with more videos); run `fetch-local-assets.js` copy into mobile www + rebuild;
+phone app picks up feed.html changes only after `npx cap sync` rebuild.
+Black-video mystery on the artist's Windows computer is still open: have him run Speed Check on that machine (it reports
+H.264/HEVC support and whether the video plays).
+
+---
+
 ## 2026-10-12, step 4 groundwork — Speed Check reads the video file layout
 
 Speed Check now checks whether the latest video is MP4 "fast start" (movie index before the video data) by reading its
