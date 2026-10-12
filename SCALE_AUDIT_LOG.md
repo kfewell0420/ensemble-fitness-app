@@ -12,6 +12,18 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-12, member.html — phone: another member's profile hides the page-link menu
+
+Ken (Android app, tapping FitnessDeV from Members): same ask as his own profile — no Community / Share Your
+Journey / Members / Fitness+ / Products / Music / Quotes / My Profile / Queue / Sign Out block at the top; just the
+member, with "← Back to Find Members" as the only way back at the top. At ≤720px `.app-nav-links` is now hidden
+in member.html (logo row with home/bell/heart stays; the back arrow sits right under it). Desktop unchanged.
+No Sign Out added here — the member's own profile page carries it. Verified in Playwright at 393px/1200px.
+**Other pages still show that menu on phones** (fitness-plus, gear, music-library, quote-library, books, track,
+etc.) — Ken asked page by page; offered to hide it everywhere with one shared rule.
+
+---
+
 ## 2026-10-12, profile.html — phone: no page-link menu, Sign Out at the bottom; Height now editable
 
 Ken (Android app, My Profile): the top menu (Community, Share Your Journey, Members, Fitness+, Products, Music,

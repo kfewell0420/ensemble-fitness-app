@@ -33,6 +33,15 @@
   </nav>
 </header>
 
+<style>
+  /* Phone-size screens: another member's profile shows ONLY the profile — the page-link menu
+     (Community, Members, Fitness+, ...) is hidden, leaving the logo row (home / bell / heart) and
+     the "Back to Find Members" arrow below it. Desktop keeps the full menu. */
+  @media (max-width: 720px) {
+    .app-nav-links { display: none; }
+  }
+</style>
+
 <div class="app-shell">
 
   <a href="members.html" style="display:inline-block; margin-bottom:18px; font-size:13.5px; color:var(--faint-invert); font-weight:700;">&larr; Back to Find Members</a>
