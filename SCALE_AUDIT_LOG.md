@@ -12,6 +12,20 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-12, speed pass step 5 — self-hosted sign-in toolkit + fonts (wired, files come from Ken's one-time download)
+
+Every page loaded the Supabase library from cdn.jsdelivr.net and fonts from fonts.googleapis.com on each open (and the
+phone app did it on every launch). Pages now load `js/vendor/supabase.js` first and fall back to the CDN only if that
+file is missing (`window.supabase || document.write(CDN)`); fonts load from `css/fonts.css` with the Google link only as
+the `onerror` fallback (so no double load). Applied to 17 pages in member-app (incl. admin.html, speedcheck.html) and
+the same 16 in mobile www (never admin.html). The files themselves can't be fetched from the Claude workspace (no route
+to those hosts), so Ken runs the existing `fetch-local-assets.js` once on his Mac in the website folder
+(creates js/vendor/supabase.js, assets/fonts/*, css/fonts.css) and copies those three into mobile www too.
+Until then everything behaves exactly as before (CDN/Google fallback). Verified with Playwright both ways: files absent ->
+falls back, files present -> zero external requests. journey.html and community-preview.html don't load either.
+
+---
+
 ## 2026-10-12, feed photos cropped by the resize — fixed (contain)
 
 Ken: after speed-pass item 2, feed photos looked zoomed in / head cut off at the top (before: whole upper torso).
