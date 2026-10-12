@@ -242,6 +242,34 @@
      and a 6-across "how it works" grid both looked wrong in testing. Only
      the real-journeys grid (and the hero) use the full wide shell. */
   .fj-narrow { max-width: 760px; margin-left: auto; margin-right: auto; }
+
+  /* ---- Phone-size screens (the mobile app AND phone browsers) ----------------
+     Ken (round 8, and again Oct 12 2026 when it had silently reverted): members on a phone
+     should land straight on the form — no scrolling past a photo hero, the "Real people.
+     Real progress." heading, three quick-jump buttons, or intro text. Only "Stronger
+     Together" and the white "Post an update" heading stay above Date / Category.
+     This is done with CSS in the SHARED file on purpose: round 8 made the phone app's
+     copy of this page different by hand, and the next straight file copy wiped that out.
+     A media query can't be overwritten that way, so website + app can share one file.
+     Desktop/tablet widths (900px+) keep the full hero exactly as before. */
+  @media (max-width: 899px) {
+    .fj-hero {
+      min-height: 0;
+      padding: 4px 4px 0;
+      margin-bottom: 4px;
+      background: none;
+      border-radius: 0;
+    }
+    .fj-hero::before { display: none; }
+    .fj-hero h1,
+    .fj-hero p,
+    .fj-hero-actions { display: none; }
+    .fj-hero-script { margin: 0; }
+    /* Kept in the layout at zero size (not display:none) so "#fjComposerAnchor" links still land here. */
+    #fjComposerAnchor { height: 0; margin: 0; padding: 0; overflow: hidden; visibility: hidden; }
+    .fj-narrow > .card-sub { display: none; }
+    .fj-narrow > h2 { margin: 0 0 14px; }
+  }
 </style>
 
 <div class="app-shell">

@@ -12,6 +12,21 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-12, fitness-journeys.html — phone hero removal had silently reverted; now CSS in the shared file
+
+Ken (Android app screenshot): Share Your Journey again showed the full hero ("Real people. Real
+progress.", three buttons, intro text) before the form. Round 8 (2026-10-06) had removed those for the
+phone app by HAND-EDITING www/fitness-journeys.html, with a note not to straight-copy over it — but a later
+straight copy did exactly that (the two files were byte-identical when checked). Fix, so it can't recur:
+the phone layout now lives in the SHARED file as `@media (max-width: 899px)` — hides the photo background,
+h1, intro paragraph and 3 buttons, the orange "Share Your Journey" eyebrow and the grey subtitle; keeps
+"Stronger Together" + the white "Post an update" heading, then Date/Category right below (form top at ~172px
+on a 393px-wide viewport, was ~558px on desktop). 900px+ keeps the full hero. The "#fjComposerAnchor" link
+target stays in the layout at zero size. Verified in Playwright at 393px and 1200px; no page errors.
+**The round-8 "don't straight-copy this file" warning no longer applies** — straight copies are safe now.
+
+---
+
 ## 2026-10-10, black videos — format check + admin thumbnails now show the preview picture
 
 Ken saw many of the artist's workout videos stay black on the artist's (Windows) computer, photos fine;
