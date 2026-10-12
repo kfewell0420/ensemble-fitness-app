@@ -12,6 +12,19 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-12, step 4 groundwork — Speed Check reads the video file layout
+
+Speed Check now checks whether the latest video is MP4 "fast start" (movie index before the video data) by reading its
+first box headers, and says so in plain words; verified against ffmpeg-made fast/slow files. The two page-load rows are
+labelled "(as of when this page was opened)" because they come from the browser's load timing and DO NOT change on "Run
+again" (Ken's repeated 156 ms / 563 ms were that, not new measurements). Decision on the rest of step 4: videos already
+start in ~0.4-0.6 s on Ken's phone (<1 s target met) and the library has only 5 videos, so NOT adding next-video
+preloading yet (earlier preload attempts caused black videos; iOS ignores it anyway). Revisit if the fast-start check
+says NO, or when the feed holds more videos. Resize-vs-original photo timing is noisy: (orig,resized) ms = (948,719),
+(785,1826), (686,373) — feed keeps using the stored photo (steady, ~1 MB).
+
+---
+
 ## 2026-10-12, speed pass — item 2 switched OFF; step 3 (parallel loading) built
 
 Item 2 correction: Ken's Speed Check showed the resized photo can be SLOWER on first view (1826 ms vs 785 ms original in

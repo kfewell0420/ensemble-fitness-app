@@ -61,6 +61,23 @@
     rowsEl.appendChild(row);
   }
 
+  // Reads the first few MP4 "boxes": if the movie index ("moov") comes before the video data ("mdat"), it is fast-start.
+  function mp4Layout(buf) {
+    try {
+      var dv = new DataView(buf), off = 0;
+      for (var i = 0; i < 12 && off + 8 <= dv.byteLength; i++) {
+        var size = dv.getUint32(off);
+        var type = String.fromCharCode(dv.getUint8(off + 4), dv.getUint8(off + 5), dv.getUint8(off + 6), dv.getUint8(off + 7));
+        if (type === "moov") return "fast";
+        if (type === "mdat") return "slow";
+        if (size === 1) { if (off + 16 > dv.byteLength) return "unknown"; size = dv.getUint32(off + 8) * 4294967296 + dv.getUint32(off + 12); }
+        if (!size) return "unknown";
+        off += size;
+      }
+    } catch (e) {}
+    return "unknown";
+  }
+
   async function timed(fn) { var t = now(); var out; try { out = await fn(); } catch (e) { out = { __err: e }; } return { t: now() - t, out: out }; }
 
   async function run() {
@@ -79,10 +96,10 @@
     // ---- Page load of this very page (a fair stand-in for any page)
     var nav = performance.getEntriesByType("navigation")[0];
     if (nav) {
-      add("Server answers the page", ms(nav.responseStart - nav.requestStart), grade(nav.responseStart - nav.requestStart, 300, 800),
+      add("Server answers the page (as of when this page was opened)", ms(nav.responseStart - nav.requestStart), grade(nav.responseStart - nav.requestStart, 300, 800),
           "Time until the website's first byte arrives (Netlify).");
-      add("Whole page finished loading", ms(nav.loadEventEnd || (now())), grade(nav.loadEventEnd || now(), 1500, 3500),
-          "Includes the sign-in toolkit downloaded from the internet. This page is small, so the real feed is slower than this.");
+      add("Whole page finished loading (as of when this page was opened)", ms(nav.loadEventEnd || (now())), grade(nav.loadEventEnd || now(), 1500, 3500),
+          "Does NOT change on \"Run again\" — reload the page to re-measure it. Includes the sign-in toolkit and fonts.");
     }
 
     // ---- Supabase round trips
@@ -162,14 +179,18 @@
       var url = signed[vid.storage_path];
       // First byte
       var fb = await timed(function () {
-        return fetch(url, { headers: { Range: "bytes=0-1023" }, cache: "no-store" }).then(function (r) {
+        return fetch(url, { headers: { Range: "bytes=0-4095" }, cache: "no-store" }).then(function (r) {
           var cr = r.headers.get("content-range"); var cf = r.headers.get("cf-cache-status");
-          return r.arrayBuffer().then(function () { return { total: cr ? parseInt(cr.split("/")[1], 10) : 0, cf: cf, status: r.status, type: r.headers.get("content-type") }; });
+          return r.arrayBuffer().then(function (buf) { return { total: cr ? parseInt(cr.split("/")[1], 10) : 0, cf: cf, status: r.status, type: r.headers.get("content-type"), layout: mp4Layout(buf) }; });
         });
       });
       var o = fb.out || {};
       add("Video: first byte arrives", ms(fb.t), grade(fb.t, 400, 1000),
           "Latest video" + (o.total ? " · file is " + (o.total / 1048576).toFixed(1) + " MB" : "") + (o.cf ? " · CDN cache: " + o.cf : "") + (o.status && o.status !== 206 ? " · server ignored byte ranges (status " + o.status + ")" : ""));
+      // Is the file laid out so it can start playing right away? (MP4 "fast start": the index comes first.)
+      if (o.layout === "fast") add("Video file is saved for instant start", "yes", "good", "The file's index is at the front, so playback can begin before the whole file arrives.");
+      else if (o.layout === "slow") add("Video file is saved for instant start", "NO", "bad", "The index is at the END of the file, so the phone has to fetch an extra piece from the far end before the first picture. Fixable by re-encoding with 'fast start'.");
+      else add("Video file is saved for instant start", "unknown", "na", "Could not read the file's layout.");
       // Throughput on 2 MB
       var tp = await timed(function () {
         return fetch(url, { headers: { Range: "bytes=1048576-3145727" }, cache: "no-store" }).then(function (r) { return r.arrayBuffer(); });
