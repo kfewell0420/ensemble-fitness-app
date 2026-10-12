@@ -12,6 +12,26 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-12, feed speed pass — items 1 & 2 (instant reopen, smaller photos)
+
+Ken approved items 1-2 of the sub-1-second plan (3-5 to follow: parallelize steps / video fast-start + preload next /
+self-host SDK+fonts). feed.html only (+ mobile www).
+1. Instant reopen: the first-screen snapshot now lives in localStorage (was sessionStorage, died with the tab), trusted
+   6h (FEED_CACHE_VERSION v2, MAX_AGE 6h); real fetch still always runs and replaces it. Signed links now last 24h and
+   are reused for 16h, persisted on the device (`efit_signed_urls_v1`, max 300) — before, every visit signed brand-new
+   URLs, so the browser could never reuse a downloaded picture/video and every repeat open re-signed (~150 ms) and
+   re-downloaded. Failed signings are no longer cached. Trade-off: links are valid 24h instead of 1h (members-only
+   content, links only live on the member's own device).
+2. Smaller photos: feed photos/meal-prep/post-modal use `item.imgUrl`, a copy resized to 1080px wide at quality 80 via
+   Supabase image transformation (`createSignedUrl(path, ttl, {transform})`, one parallel call per photo; originals
+   untouched, posters/videos unchanged). If resizing fails or is not enabled, `onerror` falls back to the original link,
+   so a photo can't go missing. REQUIRES Image Transformation enabled on the Supabase project (Pro plan) — if it is off
+   every photo makes one wasted failed request before falling back; Ken should confirm in Storage settings.
+Verified with Playwright mock: visit 2 made 0 signing calls and reused identical URLs; snapshot + links persisted;
+resize-failure mode falls back to originals. (Real-world byte savings still to be confirmed with speedcheck.html.)
+
+---
+
 ## 2026-10-12, speed investigation — storage sizes checked, speedcheck.html added
 
 Ken asked for a TikTok/Instagram-style speed hunt. Hypothesis: raw camera originals served unchanged. Ken's Supabase

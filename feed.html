@@ -2057,8 +2057,13 @@
   // it loads. It also means fewer database round trips per visit as the
   // member base grows, not just a trick that feels faster without
   // changing what each visit actually costs the backend.
-  var FEED_CACHE_VERSION = "v1";
-  var FEED_CACHE_MAX_AGE_MS = 10 * 60 * 1000; // 10 minutes
+  // Oct 2026 (speed pass, item 1): the snapshot now lives in localStorage so it
+  // survives closing and reopening the app (it used to die with the tab, so every
+  // fresh app launch started from a blank screen). Trusted for 6 hours, and the real
+  // fetch still always runs and replaces it. Bumped to v2 because items now also
+  // carry imgUrl (the resized photo link).
+  var FEED_CACHE_VERSION = "v2";
+  var FEED_CACHE_MAX_AGE_MS = 6 * 60 * 60 * 1000; // 6 hours
   var cacheFlashNodes = [];
   var renderingCacheFlash = false;
 
@@ -2067,7 +2072,9 @@
   }
   function loadFeedCache(userId, filter) {
     try {
-      var raw = window.sessionStorage.getItem(feedCacheKey(userId, filter));
+      var raw = null;
+      try { raw = window.localStorage.getItem(feedCacheKey(userId, filter)); } catch (e1) {}
+      if (!raw) { try { raw = window.sessionStorage.getItem(feedCacheKey(userId, filter)); } catch (e2) {} }
       if (!raw) return null;
       var parsed = JSON.parse(raw);
       if (!parsed || !parsed.savedAt || (Date.now() - parsed.savedAt) > FEED_CACHE_MAX_AGE_MS) return null;
@@ -2079,7 +2086,9 @@
   function saveFeedCache(userId, filter, payload) {
     try {
       payload.savedAt = Date.now();
-      window.sessionStorage.setItem(feedCacheKey(userId, filter), JSON.stringify(payload));
+      var json = JSON.stringify(payload);
+      try { window.localStorage.setItem(feedCacheKey(userId, filter), json); }
+      catch (e1) { window.sessionStorage.setItem(feedCacheKey(userId, filter), json); }
     } catch (e) {
       // sessionStorage full or unavailable (private browsing, storage
       // quota, etc.) — the page works exactly as it always has, just
@@ -2128,7 +2137,7 @@
     var urls = [];
     list.slice(0, count).forEach(function (item) {
       if (!item || item.kind === "journal") return;
-      var url = item.kind === "video" ? item.posterUrl : item.url;
+      var url = item.kind === "video" ? item.posterUrl : (item.imgUrl || item.url);
       if (url) urls.push(url);
     });
     if (!urls.length) return Promise.resolve();
@@ -2550,8 +2559,41 @@
   // which would otherwise re-request a URL for a post that's already on
   // screen. Refreshing a minute early avoids ever handing out one that
   // expires moments after use.
-  var SIGNED_URL_TTL_SECONDS = 3600;
-  var signedUrlCache = new Map(); // path -> { url, expiresAt: ms epoch }
+  // Oct 2026 (speed pass, item 1): links now last 24 hours and are REUSED for 16 of
+  // them, saved on the device. Before, every visit signed a brand-new link for the
+  // same file, so the browser saw a "new" picture/video each time and downloaded it
+  // again — its own saved copy could never be used. A reused link means repeat opens
+  // show pictures from the phone's saved copy and skip the signing round trip.
+  // (Reuse stops 8h before expiry so the 6h feed snapshot never holds a dead link.)
+  var SIGNED_URL_TTL_SECONDS = 24 * 60 * 60;
+  var SIGNED_URL_REUSE_SECONDS = 16 * 60 * 60;
+  var SIGNED_URL_STORE_KEY = "efit_signed_urls_v1";
+  var signedUrlCache = new Map(); // key -> { url, expiresAt: ms epoch }
+  (function hydrateSignedUrls() {
+    try {
+      var saved = JSON.parse(window.localStorage.getItem(SIGNED_URL_STORE_KEY) || "{}");
+      var nowMs = Date.now();
+      Object.keys(saved).forEach(function (k) {
+        var v = saved[k];
+        if (v && v.url && v.expiresAt > nowMs) signedUrlCache.set(k, v);
+      });
+    } catch (e) {}
+  })();
+  var persistSignedUrlsTimer = null;
+  function persistSignedUrls() {
+    if (persistSignedUrlsTimer) return;
+    persistSignedUrlsTimer = setTimeout(function () {
+      persistSignedUrlsTimer = null;
+      try {
+        var nowMs = Date.now(), out = {}, keys = [];
+        signedUrlCache.forEach(function (v, k) { if (v.url && v.expiresAt > nowMs) keys.push(k); });
+        keys.sort(function (a, b) { return signedUrlCache.get(b).expiresAt - signedUrlCache.get(a).expiresAt; });
+        keys.slice(0, 300).forEach(function (k) { out[k] = signedUrlCache.get(k); });
+        window.localStorage.setItem(SIGNED_URL_STORE_KEY, JSON.stringify(out));
+      } catch (e) {}
+    }, 400);
+  }
+  var PHOTO_RESIZE = { width: 1080, quality: 80 };
 
   // Ken's ask (Sept 2026): "pictures and videos load slowly" on a mobile
   // hotspot — a slow/high-latency connection makes ROUND TRIPS expensive,
@@ -2575,7 +2617,7 @@
       }
     });
     if (toFetch.length) {
-      var expiresAt = Date.now() + (SIGNED_URL_TTL_SECONDS - 60) * 1000;
+      var expiresAt = Date.now() + SIGNED_URL_REUSE_SECONDS * 1000;
       var bucket = window.sb.storage.from("media");
       // Defensive fallback: createSignedUrls (plural) is the whole point of
       // this batching, but if it's ever missing (an unexpectedly old client
@@ -2599,7 +2641,7 @@
           (!error && data ? data : []).forEach(function (row) {
             var url = (!row.error && row.signedUrl) ? row.signedUrl : "";
             result[row.path] = url;
-            signedUrlCache.set(row.path, { url: url, expiresAt: expiresAt });
+            if (url) signedUrlCache.set(row.path, { url: url, expiresAt: expiresAt });
           });
         } catch (e) {
           // Leave this batch's paths unresolved (falsy url) — callers
@@ -2612,13 +2654,40 @@
             var { data } = await bucket.createSignedUrl(p, SIGNED_URL_TTL_SECONDS);
             var url = data ? data.signedUrl : "";
             result[p] = url;
-            signedUrlCache.set(p, { url: url, expiresAt: expiresAt });
+            if (url) signedUrlCache.set(p, { url: url, expiresAt: expiresAt });
           } catch (e) {
             result[p] = "";
           }
         }));
       }
     }
+    persistSignedUrls();
+    return result;
+  }
+
+  // Item 2 (Oct 2026): feed PHOTOS are shown from a copy resized to 1080px wide
+  // (still edge-to-edge and sharp on any phone) instead of the full camera
+  // original. Supabase resizes on the way out; the stored original is untouched.
+  // Signed one path at a time because the batch call has no resize option; the
+  // calls run in parallel and the links are reused like any other. Any failure
+  // (resizing off, error, expired) just returns "" and the caller uses the
+  // original link, so a photo can never go missing because of this.
+  async function resolveResizedUrls(paths) {
+    var result = {};
+    var bucket = window.sb.storage.from("media");
+    var expiresAt = Date.now() + SIGNED_URL_REUSE_SECONDS * 1000;
+    await Promise.all(paths.map(async function (p) {
+      if (!p) return;
+      var key = p + "|w" + PHOTO_RESIZE.width;
+      var cached = signedUrlCache.get(key);
+      if (cached && cached.expiresAt > Date.now()) { result[p] = cached.url; return; }
+      try {
+        var { data, error } = await bucket.createSignedUrl(p, SIGNED_URL_TTL_SECONDS, { transform: PHOTO_RESIZE });
+        var url = (!error && data && data.signedUrl) ? data.signedUrl : "";
+        if (url) { result[p] = url; signedUrlCache.set(key, { url: url, expiresAt: expiresAt }); }
+      } catch (e) { /* use the original */ }
+    }));
+    persistSignedUrls();
     return result;
   }
 
@@ -2961,7 +3030,10 @@
       // no separate signing mechanism just because a post has more files.
       (clipsByMediaId[raw.id] || []).forEach(function (c) { if (c.storage_path) paths.push(c.storage_path); });
     });
-    var urlMap = await resolveSignedUrls(paths);
+    var photoPaths = rows.filter(function (r) { return r.kind !== "video" && r.storage_path; }).map(function (r) { return r.storage_path; });
+    var both = await Promise.all([resolveSignedUrls(paths), resolveResizedUrls(photoPaths)]);
+    var urlMap = both[0];
+    var resizedMap = both[1];
     var items = rows.map(function (raw) {
       var wantsPoster = raw.kind === "video" && !!raw.poster_path;
       // Already ordered by order_index (2, 3, 4…) from the query above —
@@ -2980,6 +3052,7 @@
         user_id: raw.user_id,
         kind: raw.kind,
         url: urlMap[raw.storage_path] || "",
+        imgUrl: raw.kind !== "video" ? (resizedMap[raw.storage_path] || "") : "",
         posterUrl: wantsPoster ? (urlMap[raw.poster_path] || "") : "",
         name: (raw.profiles && raw.profiles.display_name) || "A member",
         created_at: raw.created_at,
@@ -3054,7 +3127,7 @@
       var fallback = '<span class="rp-mealprep-fallback" style="background:' + avatarColor(item.user_id) + '">' + escapeHtml(initial) + '</span>';
       var thumb = item.kind === "video"
         ? '<video class="rp-mealprep-media" src="' + item.url + '"' + (item.posterUrl ? ' poster="' + item.posterUrl + '"' : '') + ' muted playsinline preload="metadata" onloadeddata="this.classList.add(\'ready\')"></video><span class="rp-play-badge">▶</span>'
-        : '<img class="rp-mealprep-media" src="' + item.url + '" alt="Meal prep" loading="lazy" decoding="async" onload="this.classList.add(\'ready\')" onerror="this.style.display=\'none\'" />';
+        : '<img class="rp-mealprep-media" src="' + (item.imgUrl || item.url) + '" data-orig="' + item.url + '" alt="Meal prep" loading="lazy" decoding="async" onload="this.classList.add(\'ready\')" onerror="if(this.dataset.orig&&this.src!==this.dataset.orig){this.src=this.dataset.orig}else{this.style.display=\'none\'}" />';
       return '<button type="button" class="rp-mealprep-card" data-index="' + i + '">' +
         '<span class="rp-mealprep-ring"><span class="rp-mealprep-thumb">' + fallback + thumb + '</span></span>' +
         '<span class="rp-mealprep-name">' + escapeHtml(item.name) + '</span>' +
@@ -3250,7 +3323,7 @@
 
     media.innerHTML = item.kind === "video"
       ? '<video src="' + item.url + '"' + (item.posterUrl ? ' poster="' + item.posterUrl + '"' : '') + ' autoplay loop muted playsinline></video>'
-      : '<img src="' + item.url + '" alt="Healthy Meal Prep" />';
+      : '<img src="' + (item.imgUrl || item.url) + '" data-orig="' + item.url + '" onerror="if(this.dataset.orig&&this.src!==this.dataset.orig){this.src=this.dataset.orig}" alt="Healthy Meal Prep" />';
 
     // A leading "Prep time: ..." line (every illustrative example, and
     // any real member who follows the same convention) is shown as the
@@ -3537,7 +3610,7 @@
     // video itself.
     var mediaHtml = item.kind === "video"
       ? '<video data-src="' + item.url + '" poster="' + videoPoster + '"' + (reelMuted ? ' muted' : '') + ' loop playsinline preload="metadata"></video>'
-      : '<img src="' + item.url + '" alt="Workout post" loading="' + (loadedItems.length <= 8 ? 'eager' : 'lazy') + '" decoding="async" />';
+      : '<img src="' + (item.imgUrl || item.url) + '" data-orig="' + item.url + '" onerror="if(this.dataset.orig&&this.src!==this.dataset.orig){this.src=this.dataset.orig}" alt="Workout post" loading="' + (loadedItems.length <= 8 ? 'eager' : 'lazy') + '" decoding="async" />';
 
     var badgeParts = [];
     if (item.workout_type) {
@@ -4106,7 +4179,7 @@
     // it's cheap and the signed URL is already sitting on `item`.
     mediaEl.innerHTML = item.kind === "video"
       ? '<video src="' + item.url + '" controls loop muted playsinline></video>'
-      : '<img src="' + item.url + '" alt="" />';
+      : '<img src="' + (item.imgUrl || item.url) + '" data-orig="' + item.url + '" onerror="if(this.dataset.orig&&this.src!==this.dataset.orig){this.src=this.dataset.orig}" alt="" />';
 
     modal.hidden = false;
     loadComments(item, panel);
