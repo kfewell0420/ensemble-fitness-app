@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="robots" content="noindex" />
+<title>Speed Check — Ensemble Fitness</title>
+<link rel="stylesheet" href="css/app.css?v=5" />
+<style>
+  .app-shell { padding-top: 16px; }
+  .sc-row { display:flex; justify-content:space-between; gap:12px; padding:9px 0; border-bottom:1px solid rgba(255,255,255,0.08); font-size:14px; align-items:baseline; }
+  .sc-row:last-child { border-bottom:none; }
+  .sc-row .sc-name { color:#fff; font-weight:600; }
+  .sc-row .sc-note { display:block; color:var(--faint-invert,#7d8496); font-weight:400; font-size:12px; margin-top:2px; }
+  .sc-val { font-variant-numeric:tabular-nums; white-space:nowrap; font-weight:700; }
+  .sc-good { color:#5be39a; } .sc-ok { color:#ffd166; } .sc-bad { color:#ff6b6b; } .sc-na { color:var(--faint-invert,#7d8496); }
+  #scSummary { font-size:15px; line-height:1.55; color:#fff; }
+  #scCopy { margin-top:10px; }
+  pre#scRaw { white-space:pre-wrap; font-size:11px; color:var(--muted-invert,#a9b0c0); margin:10px 0 0; }
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <div class="eyebrow">Diagnostics</div>
+  <h2 style="margin-bottom:6px;">Speed Check</h2>
+  <p class="card-sub" style="margin-bottom:12px;">Times each step of loading the feed from this device, so we can see exactly which one is slow. Takes about 15 seconds. Sign in first, then run it on the phone or computer that feels slow.</p>
+  <button type="button" class="btn btn-primary" id="scRun">Run speed check</button>
+
+  <div class="card" id="scSummaryCard" style="display:none; margin-top:14px;"><div id="scSummary"></div>
+    <button type="button" class="btn btn-ghost btn-sm" id="scCopy">Copy results</button></div>
+
+  <div class="card" id="scCard" style="display:none; margin-top:10px;"><div id="scRows"></div><pre id="scRaw"></pre></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="js/config.js"></script>
+<script src="js/supabaseClient.js"></script>
+<script>
+(function () {
+  var rowsEl = document.getElementById("scRows");
+  var results = [];   // {name, value, grade, note, raw}
+
+  function ms(n) { return Math.round(n) + " ms"; }
+  function now() { return performance.now(); }
+  function median(a) { var s = a.slice().sort(function (x, y) { return x - y; }); return s[Math.floor(s.length / 2)]; }
+  function grade(v, good, ok) { return v <= good ? "good" : (v <= ok ? "ok" : "bad"); }
+
+  function add(name, value, g, note, raw) {
+    results.push({ name: name, value: value, grade: g, note: note || "", raw: raw || "" });
+    var row = document.createElement("div");
+    row.className = "sc-row";
+    var left = document.createElement("span");
+    left.className = "sc-name";
+    left.textContent = name;
+    if (note) { var n = document.createElement("span"); n.className = "sc-note"; n.textContent = note; left.appendChild(n); }
+    var right = document.createElement("span");
+    right.className = "sc-val sc-" + (g || "na");
+    right.textContent = value;
+    row.appendChild(left); row.appendChild(right);
+    rowsEl.appendChild(row);
+  }
+
+  async function timed(fn) { var t = now(); var out; try { out = await fn(); } catch (e) { out = { __err: e }; } return { t: now() - t, out: out }; }
+
+  async function run() {
+    var btn = document.getElementById("scRun");
+    btn.disabled = true; btn.textContent = "Running…";
+    rowsEl.innerHTML = ""; results = [];
+    document.getElementById("scCard").style.display = "block";
+    document.getElementById("scSummaryCard").style.display = "none";
+
+    // ---- This device & connection
+    var c = navigator.connection || {};
+    add("Connection reported by device",
+        (c.effectiveType || "unknown") + (c.downlink ? " · " + c.downlink + " Mbps" : "") + (c.rtt ? " · " + c.rtt + " ms ping" : ""),
+        "na", "What this phone or computer says about its own network.");
+
+    // ---- Page load of this very page (a fair stand-in for any page)
+    var nav = performance.getEntriesByType("navigation")[0];
+    if (nav) {
+      add("Server answers the page", ms(nav.responseStart - nav.requestStart), grade(nav.responseStart - nav.requestStart, 300, 800),
+          "Time until the website's first byte arrives (Netlify).");
+      add("Whole page finished loading", ms(nav.loadEventEnd || (now())), grade(nav.loadEventEnd || now(), 1500, 3500),
+          "Includes the sign-in toolkit downloaded from the internet. This page is small, so the real feed is slower than this.");
+    }
+
+    // ---- Supabase round trips
+    if (!window.sb) { add("Supabase", "not connected", "bad", "js/config.js problem."); finish(btn); return; }
+    var pings = [];
+    for (var i = 0; i < 5; i++) {
+      var p = await timed(function () { return window.sb.from("profiles").select("id").limit(1); });
+      pings.push(p.t);
+    }
+    var pingMed = median(pings);
+    add("Round trip to the database", ms(pingMed), grade(pingMed, 150, 400),
+        "Median of 5 tiny requests. This is the cost of every single question the feed asks. Fast = under 150 ms.", "all: " + pings.map(Math.round).join(", "));
+
+    var sess = await timed(function () { return window.sb.auth.getSession(); });
+    var user = sess.out && sess.out.data && sess.out.data.session ? sess.out.data.session.user : null;
+    add("Sign-in check", user ? ms(sess.t) : "NOT SIGNED IN", user ? grade(sess.t, 100, 400) : "bad",
+        user ? "Reading your saved sign-in." : "Sign in on the app first, then run this again.");
+    if (!user) { finish(btn); return; }
+
+    // ---- The feed's own query (same columns the feed asks for)
+    var feed = await timed(function () {
+      return window.sb.from("media")
+        .select("id, user_id, kind, storage_path, poster_path, caption, created_at, profiles!media_user_id_fkey(display_name)")
+        .order("created_at", { ascending: false }).range(0, 7);
+    });
+    var rows = feed.out && feed.out.data ? feed.out.data : [];
+    add("Load the first 8 posts (list)", ms(feed.t), grade(feed.t, 400, 1000), rows.length + " posts came back. The feed can't show anything until this finishes.");
+
+    // ---- Signing the file links for those posts (the feed does this next)
+    var paths = [];
+    rows.forEach(function (r) { if (r.storage_path) paths.push(r.storage_path); if (r.kind === "video" && r.poster_path) paths.push(r.poster_path); });
+    var signed = {};
+    var sg = await timed(function () { return window.sb.storage.from("media").createSignedUrls(paths, 3600); });
+    ((sg.out && sg.out.data) || []).forEach(function (r) { if (r.signedUrl) signed[r.path] = r.signedUrl; });
+    add("Get secure links for those files", ms(sg.t), grade(sg.t, 400, 1000), paths.length + " files. Also has to finish before any picture or video can start.");
+
+    // ---- First photo / poster
+    var firstPoster = rows.filter(function (r) { return r.kind === "video" && r.poster_path && signed[r.poster_path]; })[0];
+    var firstPhoto = rows.filter(function (r) { return r.kind !== "video" && signed[r.storage_path]; })[0];
+    var imgRow = firstPhoto ? signed[firstPhoto.storage_path] : (firstPoster ? signed[firstPoster.poster_path] : null);
+    if (imgRow) {
+      var im = await timed(function () { return fetch(imgRow, { cache: "no-store" }).then(function (r) { return r.blob().then(function (b) { return { size: b.size, cf: r.headers.get("cf-cache-status") }; }); }); });
+      var isz = im.out && im.out.size ? im.out.size : 0;
+      add("Download first picture", ms(im.t), grade(im.t, 500, 1200), (isz / 1024).toFixed(0) + " KB" + (im.out && im.out.cf ? " · CDN cache: " + im.out.cf : ""));
+    }
+
+    // ---- Video: the latest one
+    var vid = rows.filter(function (r) { return r.kind === "video" && signed[r.storage_path]; })[0];
+    if (!vid) {
+      var more = await window.sb.from("media").select("id, storage_path, poster_path, kind").eq("kind", "video").order("created_at", { ascending: false }).limit(1);
+      var mv = more.data && more.data[0];
+      if (mv) {
+        var s1 = await window.sb.storage.from("media").createSignedUrl(mv.storage_path, 3600);
+        if (s1.data) { vid = mv; signed[mv.storage_path] = s1.data.signedUrl; }
+      }
+    }
+    if (vid) {
+      var url = signed[vid.storage_path];
+      // First byte
+      var fb = await timed(function () {
+        return fetch(url, { headers: { Range: "bytes=0-1023" }, cache: "no-store" }).then(function (r) {
+          var cr = r.headers.get("content-range"); var cf = r.headers.get("cf-cache-status");
+          return r.arrayBuffer().then(function () { return { total: cr ? parseInt(cr.split("/")[1], 10) : 0, cf: cf, status: r.status, type: r.headers.get("content-type") }; });
+        });
+      });
+      var o = fb.out || {};
+      add("Video: first byte arrives", ms(fb.t), grade(fb.t, 400, 1000),
+          "Latest video" + (o.total ? " · file is " + (o.total / 1048576).toFixed(1) + " MB" : "") + (o.cf ? " · CDN cache: " + o.cf : "") + (o.status && o.status !== 206 ? " · server ignored byte ranges (status " + o.status + ")" : ""));
+      // Throughput on 2 MB
+      var tp = await timed(function () {
+        return fetch(url, { headers: { Range: "bytes=1048576-3145727" }, cache: "no-store" }).then(function (r) { return r.arrayBuffer(); });
+      });
+      var bytes = tp.out && tp.out.byteLength ? tp.out.byteLength : 0;
+      if (bytes > 200000) {
+        var mbps = (bytes * 8 / 1e6) / (tp.t / 1000);
+        add("Video: download speed", mbps.toFixed(1) + " Mbps", mbps >= 15 ? "good" : (mbps >= 5 ? "ok" : "bad"),
+            "Measured on 2 MB of that video. A smooth feed video needs roughly 3–8 Mbps free.");
+      }
+      // Real playback start
+      var play = await new Promise(function (resolve) {
+        var v = document.createElement("video");
+        v.muted = true; v.playsInline = true; v.preload = "auto";
+        var t0 = now(), done = false, marks = {};
+        function fin(why) { if (done) return; done = true; var w = v.videoWidth + "x" + v.videoHeight; v.removeAttribute("src"); try { v.load(); } catch (e) {} resolve({ marks: marks, why: why, size: w, err: v.error ? v.error.code : 0 }); }
+        v.addEventListener("loadedmetadata", function () { marks.meta = now() - t0; });
+        v.addEventListener("loadeddata", function () { marks.frame = now() - t0; });
+        v.addEventListener("canplay", function () { marks.canplay = now() - t0; fin("canplay"); });
+        v.addEventListener("error", function () { fin("error"); });
+        setTimeout(function () { fin("timeout"); }, 15000);
+        v.src = url;
+      });
+      if (play.why === "canplay") {
+        add("Video: first picture shows", ms(play.marks.frame || play.marks.canplay), grade(play.marks.frame || play.marks.canplay, 800, 2000),
+            "Time from tapping to a real video frame, at " + play.size + ". This is the 'black screen wait' your members feel.");
+      } else if (play.why === "error") {
+        add("Video: first picture shows", "FAILED", "bad", "This device could not play the latest video (error code " + play.err + "). That is the black-screen case.");
+      } else {
+        add("Video: first picture shows", "over 15 s", "bad", "Gave up waiting.");
+      }
+      var vt = document.createElement("video");
+      var hevc = vt.canPlayType('video/mp4; codecs="hvc1.1.6.L93.B0"') || "no";
+      var avc = vt.canPlayType('video/mp4; codecs="avc1.42E01E"') || "no";
+      add("This device plays standard video (H.264)", avc === "" || avc === "no" ? "NO" : "yes", avc === "" || avc === "no" ? "bad" : "good", "");
+      add("This device plays iPhone-style video (HEVC)", hevc === "" || hevc === "no" ? "NO" : "yes", "na", "If this says NO here, an iPhone-recorded video shows black on this device.");
+    } else {
+      add("Video test", "no videos found", "na", "");
+    }
+
+    // ---- Website files: are they cached?
+    var css = await timed(function () { return fetch("css/app.css?v=5").then(function (r) { return r.text().then(function (t) { return { size: t.length }; }); }); });
+    var entry = performance.getEntriesByType("resource").filter(function (e) { return /css\/app\.css/.test(e.name); }).pop();
+    add("Site stylesheet", ms(css.t), grade(css.t, 150, 500), entry && entry.transferSize === 0 ? "Came from the phone's saved copy (good)." : "Re-downloaded or re-checked with the server.");
+
+    finish(btn);
+  }
+
+  function finish(btn) {
+    btn.disabled = false; btn.textContent = "Run again";
+    var bad = results.filter(function (r) { return r.grade === "bad"; });
+    var ok = results.filter(function (r) { return r.grade === "ok"; });
+    var msg;
+    if (!bad.length && !ok.length) msg = "Everything measured fast from this device. If the feed still feels slow, the cause is in how the feed page assembles itself, and we'll dig there next.";
+    else {
+      msg = (bad.length ? "Slow: " + bad.map(function (r) { return r.name; }).join("; ") + ". " : "") +
+            (ok.length ? "Borderline: " + ok.map(function (r) { return r.name; }).join("; ") + "." : "");
+    }
+    document.getElementById("scSummary").textContent = msg;
+    document.getElementById("scSummaryCard").style.display = "block";
+    var text = "Speed check — " + new Date().toLocaleString() + "\n" + results.map(function (r) { return r.name + ": " + r.value + (r.raw ? " (" + r.raw + ")" : ""); }).join("\n");
+    document.getElementById("scRaw").textContent = "";
+    document.getElementById("scCopy").onclick = function () {
+      try { navigator.clipboard.writeText(text); this.textContent = "Copied"; } catch (e) { document.getElementById("scRaw").textContent = text; }
+    };
+  }
+
+  document.getElementById("scRun").addEventListener("click", run);
+})();
+</script>
+</body>
+</html>

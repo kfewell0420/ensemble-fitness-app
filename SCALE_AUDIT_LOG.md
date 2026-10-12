@@ -12,6 +12,21 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-12, speed investigation — storage sizes checked, speedcheck.html added
+
+Ken asked for a TikTok/Instagram-style speed hunt. Hypothesis: raw camera originals served unchanged. Ken's Supabase
+query showed only 5 videos in `media` (all video/mp4: 37.9, 27.9, 5.0, 3.0, 2.2 MB, Aug 21-23), and the newest 20
+storage objects are mostly <1 MB — so raw file size is NOT proven as the cause. (The artist's Oct videos did not
+appear in the media/storage join — worth a follow-up query: `select kind,count(*),max(created_at) from media group by kind`.)
+New page `speedcheck.html` (website only, not linked, noindex) times, from the viewer's own device: DB round trip
+(5 pings), sign-in check, the feed's list query, signed-URL batch, first picture, latest video first-byte / 2 MB
+throughput / time-to-first-frame, H.264 + HEVC support, CDN cache status, stylesheet caching; prints a plain summary
+and a "Copy results" button. Verified with a Playwright mock (note: headless Chromium has no H.264, so its H.264 row
+says NO there; real browsers differ). Still to try: caching rules in `_headers` for images/fonts, Supabase CDN
+delivery, video re-encoding if the numbers point there.
+
+---
+
 ## 2026-10-12, profile.html — helper lines removed from the form
 
 Ken: the grey explainer lines under ZIP code, Height, wake-up time, "What are you looking for?" and Connection
