@@ -12,6 +12,23 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-12 (late morning), profile page: three cards made the same compact height on phones
+
+Ken's request: on the phone profile page, "Your network" (Followers & Following),
+"Inbox / Messages" and "Blocked members" should all be about the same height,
+squeezed down so there is less scrolling.
+
+- `profile.html` only (page-scoped `<style>` + class `compact-card` on those three
+  cards), phone-size screens only (max-width 720px). No change to wording or
+  behavior; desktop untouched. Shared file, so a straight copy to mobile `www/` works.
+- Tighter card padding, smaller gaps under the title/description, smaller empty-state
+  padding, and `min-height: 156px` on all three so they match. `min-height` (not
+  `height`) means a populated inbox or block list still grows as needed.
+- Measured at 393px wide: before 198 / 259 / 238 px (695 total), after 156 / 156 / 156 px
+  (468 total), about 227 px less scrolling on this page.
+- Also noted: cache rules verified live on Ken's morning Speed Check (toolkit 7 days,
+  fonts 365 days), and Ken reports the phone app build feels great.
+
 ## 2026-10-12 (morning), speed check after step 5 + long-lived caching for fonts/toolkit
 
 Ken's hard-refresh runs: first run after the overnight deploy had a cold-server first request (page answered 628 ms,
