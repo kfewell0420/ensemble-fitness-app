@@ -12,6 +12,22 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-12 (morning), speed check after step 5 + long-lived caching for fonts/toolkit
+
+Ken's hard-refresh runs: first run after the overnight deploy had a cold-server first request (page answered 628 ms,
+finished 1070 ms); next runs 73 ms/336 ms and 51 ms/189 ms. Supabase-bound steps ~20-40% slower than the night before
+(morning network): DB ~110-134 ms, list 104-157 ms, links 119-130 ms, stored picture 744-952 ms, video first byte
+506-634 ms, video first picture 438-1082 ms; fast-start = yes. Resized photo again 505-826 ms cold / ~75-88 ms warm
+(still not used in the feed).
+Change: `_headers` now keeps `/assets/fonts/*` 1 year (immutable), `/js/vendor/*` and `/assets/*.jpg|png` 7 days — pages,
+CSS and app JS stay on "always check" so fixes show immediately. Speed Check has two new rows ("Saved-copy rule")
+showing the real Cache-Control Netlify sends for supabase.js and a font. If those rows show "rechecked every time"
+after deploy, Netlify merged/ignored the specific rules — then restructure `_headers` (it matches the most specific
+path unpredictably, which is why a verification row exists). If a font or the SDK is ever replaced, rename it
+(browsers keep the old copy until expiry). Website only (not the phone app).
+
+---
+
 ## 2026-10-12, SPEED PASS SUMMARY (read this first for anything speed-related)
 
 Goal (Ken): feel as fast as TikTok/Instagram/Facebook — under ~1 s to real content. Result: "much, much better".

@@ -11,3 +11,19 @@
 # gets what's actually live.
 /*
   Cache-Control: public, max-age=0, must-revalidate
+
+# Oct 2026 (speed pass): files that never change under the same name are saved
+# by the phone/browser for a long time instead of being re-checked on every page
+# load. Only these three groups are listed — pages, CSS and the app's own JS stay
+# on the "always check" rule above so fixes still show up right away.
+# If you ever replace one of these files, give the new one a new name (or ask
+# Claude to bump it), because browsers will keep the old copy until it expires.
+# Speed Check (speedcheck.html) has a row that shows which rule is really live.
+/assets/fonts/*
+  Cache-Control: public, max-age=31536000, immutable
+/js/vendor/*
+  Cache-Control: public, max-age=604800
+/assets/*.jpg
+  Cache-Control: public, max-age=604800
+/assets/*.png
+  Cache-Control: public, max-age=604800

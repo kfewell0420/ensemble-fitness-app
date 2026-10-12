@@ -236,6 +236,19 @@
     var entry = performance.getEntriesByType("resource").filter(function (e) { return /css\/app\.css/.test(e.name); }).pop();
     add("Site stylesheet", ms(css.t), grade(css.t, 150, 500), entry && entry.transferSize === 0 ? "Came from the phone's saved copy (good)." : "Re-downloaded or re-checked with the server.");
 
+    // ---- Do our own fonts and sign-in toolkit get saved for a long time?
+    var cacheRows = [["js/vendor/supabase.js", "sign-in toolkit"], ["assets/fonts/font-0.woff2", "a font file"]];
+    for (var ci = 0; ci < cacheRows.length; ci++) {
+      try {
+        var cr = await fetch(cacheRows[ci][0], { method: "GET" });
+        var cc = cr.headers.get("cache-control") || "";
+        var m = /max-age=(\d+)/.exec(cc);
+        var age = m ? parseInt(m[1], 10) : 0;
+        if (!cr.ok) add("Saved-copy rule: " + cacheRows[ci][1], "FILE MISSING", "bad", cacheRows[ci][0] + " returned " + cr.status + " — the new local files are not on the site yet.");
+        else add("Saved-copy rule: " + cacheRows[ci][1], age >= 86400 ? "kept " + Math.round(age / 86400) + " days" : "rechecked every time", age >= 86400 ? "good" : "ok", "Server sends: " + (cc || "(nothing)"));
+      } catch (e) { add("Saved-copy rule: " + cacheRows[ci][1], "could not check", "na", ""); }
+    }
+
     finish(btn);
   }
 
