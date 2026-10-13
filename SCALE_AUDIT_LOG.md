@@ -12,6 +12,30 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-13, one-screen approval page for new member enrollments (website only)
+
+Ken: tapping the "New charter member enrollment" email opened the whole admin page (app
+menu, then the side menu, then a tab) -- too many clicks just to approve or deny someone.
+
+- New `approve.html` (website only, noindex, NOT for the phone app's `www`): no menus, just
+  who is waiting, with big Approve / Deny buttons. Same database actions as admin.html's
+  New Enrollments tab (sets status, reviewed_at, reviewed_by; the existing trigger sends the
+  welcome email on approve). Deny asks one confirm. The update only applies while the request
+  is still "pending", so a double-tap or a second device can't flip an already-decided one.
+  A small "Recently reviewed" (last 5) and an "Open full admin" link sit at the bottom.
+  Admin-only (same `admins` check as admin.html); non-admins see "Admins only".
+- `login.html`: `approve.html` added to the allowed return pages, so if Ken is signed out
+  when he taps the email link, signing in drops him back on the approval page.
+- New `sql/enrollment-email-approve-link.sql` (run once in Supabase): the email now ends
+  "Tap here to approve or deny: https://app.ensemblefitness.com/approve.html?id=<id>", and
+  that person is shown first and outlined. `sql/schema.sql` updated to match. Note: the
+  live email wording ("click the New Members tab...") did not match schema.sql, so the live
+  function had been edited by hand at some point; the new file replaces it.
+- admin.html is unchanged and still has the New Enrollments tab.
+- Tested at phone width with mocked data: link id shown first, approve/deny write the right
+  status, success lines show, non-admin blocked, no page errors.
+- Not changed (offered): the "New member signed up" email still links to admin.html?tab=members.
+
 ## 2026-10-12 (afternoon), Daily Inspiration quote now rotates in shuffled order, every day
 
 Ken: the daily quote wasn't rotating; it should move to a different quote each day,

@@ -778,7 +778,7 @@ begin
       'to', notify_to,
       'subject', 'New charter member enrollment — Ensemble Fitness',
       'text', coalesce(nullif(new.name, ''), 'Someone') || ' (' || new.email || ') just submitted a charter member enrollment.' || chr(10) || chr(10) ||
-              'Open the Review Queue — it''s right there under Pending Review, alongside anything else waiting on you: https://app.ensemblefitness.com/admin.html'
+              'Tap here to approve or deny: https://app.ensemblefitness.com/approve.html?id=' || new.id::text
     )
   );
   return new;

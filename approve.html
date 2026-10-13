@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="robots" content="noindex, nofollow" />
+<title>New Member Requests — Ensemble Fitness</title>
+<link rel="stylesheet" href="css/fonts.css" onerror="this.onerror=null;this.href='https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&family=Caveat:wght@600;700&family=Dancing+Script:wght@600;700&display=swap'">
+<link rel="stylesheet" href="css/app.css?v=2" />
+<style>
+  /* Ken's ask (Oct 2026): the "New charter member enrollment" email used to open the whole
+     admin page (Community, Fitness+, Quotes... then a side menu, then the right tab). This
+     page is the shortcut: no menus at all, just who's waiting and Approve / Deny. It is
+     website-only, like admin.html — it is NOT copied into the phone app's www folder. */
+  .ap-top { display:flex; align-items:center; gap:10px; padding:14px 16px 4px; max-width:640px; margin:0 auto; }
+  .ap-top img { width:34px; height:34px; border-radius:8px; }
+  .ap-top span { font-family:'Poppins',sans-serif; font-weight:800; font-size:16px; color:#fff; }
+  .ap-wrap { max-width:640px; margin:0 auto; padding:8px 16px 40px; }
+  .ap-wrap h1 { font-size:22px; margin:8px 0 2px; }
+  .ap-sub { font-size:13.5px; color:var(--faint-invert); margin:0 0 14px; }
+  .ap-card { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:16px; padding:14px 16px; margin-bottom:12px; }
+  .ap-card.ap-new { border-color:var(--accent-2, #ff7a3d); }
+  .ap-name { font-size:17px; font-weight:700; color:#fff; margin:0 0 2px; }
+  .ap-line { font-size:13.5px; color:var(--muted-invert, #b9bccb); margin:0; line-height:1.5; word-break:break-word; }
+  .ap-btns { display:flex; gap:10px; margin-top:12px; }
+  .ap-btns .btn { flex:1; padding:13px 10px; font-size:15px; }
+  .ap-done { font-size:14px; padding:6px 0 2px; }
+  .ap-ok { color:var(--green, #4cd98b); }
+  .ap-no { color:#ff9a8f; }
+  .ap-empty { text-align:center; padding:34px 12px; color:var(--faint-invert); font-size:15px; }
+  .ap-foot { display:flex; justify-content:space-between; gap:12px; margin-top:22px; font-size:13px; }
+  .ap-foot a { color:var(--faint-invert); }
+  details.ap-hist { margin-top:18px; font-size:13.5px; color:var(--muted-invert, #b9bccb); }
+  details.ap-hist summary { cursor:pointer; color:var(--faint-invert); padding:6px 0; }
+  .ap-hist-row { display:flex; justify-content:space-between; gap:10px; padding:6px 0; border-top:1px solid rgba(255,255,255,0.06); }
+</style>
+</head>
+<body>
+
+<div class="ap-top"><img src="assets/logo.png" alt="" /><span>Ensemble Fitness</span></div>
+
+<div class="ap-wrap">
+  <div id="apNotAdmin" style="display:none;" class="card">
+    <h2>Admins only</h2>
+    <p>This account doesn't have review access.</p>
+  </div>
+
+  <div id="apMain" style="display:none;">
+    <h1>New member requests</h1>
+    <p class="ap-sub" id="apSub">Loading…</p>
+    <div id="apList"></div>
+
+    <details class="ap-hist" id="apHist" style="display:none;">
+      <summary>Recently reviewed</summary>
+      <div id="apHistList"></div>
+    </details>
+
+    <div class="ap-foot">
+      <a href="admin.html">Open full admin</a>
+      <a href="#" id="apRefresh">Refresh</a>
+    </div>
+  </div>
+  <div id="apLoading" class="ap-empty">Loading…</div>
+</div>
+
+<script src="js/vendor/supabase.js"></script>
+<script>window.supabase||document.write('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"><\/script>')</script>
+<script src="js/config.js"></script>
+<script src="js/shared-session.js"></script>
+<script src="js/supabaseClient.js"></script>
+<script>
+  var currentUser = null;
+  // If the email link carries ?id=..., that request is shown first and outlined.
+  var focusId = new URLSearchParams(window.location.search).get("id");
+
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+  function timeAgo(dateStr) {
+    var mins = Math.floor((Date.now() - new Date(dateStr).getTime()) / 60000);
+    if (mins < 1) return "just now";
+    if (mins < 60) return mins + "m ago";
+    var hrs = Math.floor(mins / 60);
+    if (hrs < 24) return hrs + "h ago";
+    return Math.floor(hrs / 24) + "d ago";
+  }
+  function lifestyleLabel(v) {
+    if (v === "healthy") return "Healthy (1–3 days/wk)";
+    if (v === "mixed_healthy") return "Mixed Healthy (2–4 days/wk)";
+    if (v === "active_healthy") return "Active Healthy (5–7 days/wk)";
+    return "";
+  }
+
+  async function init() {
+    currentUser = await requireAuth();
+    if (!currentUser) return;
+    document.getElementById("apLoading").style.display = "none";
+    if (!(await isCurrentUserAdmin())) {
+      document.getElementById("apNotAdmin").style.display = "block";
+      return;
+    }
+    document.getElementById("apMain").style.display = "block";
+    document.getElementById("apRefresh").addEventListener("click", function (e) { e.preventDefault(); load(); });
+    await load();
+  }
+
+  async function load() {
+    var listEl = document.getElementById("apList");
+    var subEl = document.getElementById("apSub");
+    var { data, error } = await window.sb
+      .from("charter_enrollments")
+      .select("id, name, email, zip, wants_tester, lifestyle, created_at")
+      .eq("status", "pending")
+      .order("created_at", { ascending: true });
+
+    if (error) { listEl.innerHTML = '<div class="ap-empty">Couldn\'t load requests: ' + esc(error.message) + '</div>'; subEl.textContent = ""; return; }
+    data = data || [];
+    if (focusId) data.sort(function (a, b) { return (b.id === focusId) - (a.id === focusId); });
+
+    if (!data.length) {
+      subEl.textContent = "";
+      listEl.innerHTML = '<div class="ap-empty">All caught up — nobody is waiting. 🎉</div>';
+    } else {
+      subEl.textContent = data.length + " waiting for your decision";
+      listEl.innerHTML = "";
+      data.forEach(function (item) {
+        var card = document.createElement("div");
+        card.className = "ap-card" + (item.id === focusId ? " ap-new" : "");
+        var details = [item.email];
+        if (item.zip) details.push("ZIP " + item.zip);
+        var ls = lifestyleLabel(item.lifestyle);
+        card.innerHTML =
+          '<p class="ap-name">' + esc(item.name || "(no name)") + '</p>' +
+          '<p class="ap-line">' + esc(details.join(" · ")) + '</p>' +
+          '<p class="ap-line">' + esc((ls ? ls + " · " : "") + (item.wants_tester ? "wants to be an early tester · " : "") + timeAgo(item.created_at)) + '</p>' +
+          '<div class="ap-btns">' +
+            '<button type="button" class="btn btn-ghost ap-deny">Deny</button>' +
+            '<button type="button" class="btn btn-primary ap-approve">Approve</button>' +
+          '</div>';
+        listEl.appendChild(card);
+        card.querySelector(".ap-approve").addEventListener("click", function () { decide(card, item, "approved"); });
+        card.querySelector(".ap-deny").addEventListener("click", function () {
+          if (!confirm("Deny " + (item.name || item.email) + "? They won't be notified, and this can't be undone.")) return;
+          decide(card, item, "denied");
+        });
+      });
+    }
+    loadHistory();
+  }
+
+  async function decide(card, item, status) {
+    var btns = card.querySelectorAll("button");
+    btns.forEach(function (b) { b.disabled = true; });
+    var { data, error } = await window.sb.from("charter_enrollments").update({
+      status: status,
+      reviewed_at: new Date().toISOString(),
+      reviewed_by: currentUser.id
+    }).eq("id", item.id).eq("status", "pending").select("id");
+    if (error || !data || !data.length) {
+      btns.forEach(function (b) { b.disabled = false; });
+      alert(error ? "That didn't go through: " + error.message : "That request was already handled — refreshing.");
+      load();
+      return;
+    }
+    card.querySelector(".ap-btns").outerHTML = status === "approved"
+      ? '<p class="ap-done ap-ok">✓ Approved — welcome email sent to ' + esc(item.email) + '</p>'
+      : '<p class="ap-done ap-no">Denied</p>';
+    var left = document.querySelectorAll("#apList .ap-btns").length;
+    document.getElementById("apSub").textContent = left ? left + " waiting for your decision" : "All caught up.";
+    loadHistory();
+  }
+
+  async function loadHistory() {
+    var { data } = await window.sb
+      .from("charter_enrollments")
+      .select("name, email, status, reviewed_at")
+      .neq("status", "pending")
+      .order("reviewed_at", { ascending: false })
+      .limit(5);
+    var box = document.getElementById("apHist");
+    if (!data || !data.length) { box.style.display = "none"; return; }
+    box.style.display = "block";
+    document.getElementById("apHistList").innerHTML = data.map(function (r) {
+      return '<div class="ap-hist-row"><span>' + esc(r.name || r.email) + '</span><span class="' + (r.status === "approved" ? "ap-ok" : "ap-no") + '">' +
+        esc(r.status) + ' · ' + timeAgo(r.reviewed_at) + '</span></div>';
+    }).join("");
+  }
+
+  init();
+</script>
+</body>
+</html>
