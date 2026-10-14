@@ -12,6 +12,13 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-14 (night) — Sound wave inside the music bar
+
+- The song's real sound wave is drawn inside the orange bar (as on TikTok / Instagram): the part of the song that is used, from where it starts for as long as the bar. Dragging the left end slides the wave under the bar so the beat can be lined up by eye; the right end crops it; sliding the bar moves it as a whole. The title sits on a small dark pill so it stays readable.
+- Built in the browser from the song file (one extra download of the song, decoded once per song per visit, picture only). Files over 30 MB or browsers that can't decode skip the picture; everything else works the same. No database change.
+
+---
+
 ## 2026-10-14 (evening) — Music drag feel restored with several clips; readout shows distance moved
 
 - Dragging the song's left end on a phone moved the song start about 8x the length of the whole reel per swipe, so with several clips (18-20 s) one swipe jumped 40+ s. The strip now always stands for about 40 s of song (never less than the video), the same feel as a single short clip. The bar stays at the front of the video; letting go replays from the top.

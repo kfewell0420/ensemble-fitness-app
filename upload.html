@@ -152,8 +152,9 @@
   .mix-filmstrip img { flex: 1 1 0; min-width: 0; height: 100%; object-fit: cover; opacity: 0.9; }
   .mix-music { height: 38px; }
   .mix-clip { position: absolute; top: 0; bottom: 0; display: flex; border-radius: 8px; background: linear-gradient(90deg, #ff6a1a, #c9431a); box-shadow: 0 0 0 1.5px rgba(255,255,255,0.55) inset; }
-  .mix-clip-body { flex: 1; min-width: 0; display: flex; align-items: center; padding: 0 6px; cursor: grab; touch-action: none; overflow: hidden; }
-  .mix-clip-label { font-size: 12px; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
+  .mix-clip-body { position: relative; flex: 1; min-width: 0; display: flex; align-items: center; padding: 0 6px; cursor: grab; touch-action: none; overflow: hidden; }
+  .mix-clip-label { position: relative; font-size: 12px; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; text-shadow: 0 1px 3px rgba(0,0,0,0.6); max-width: 100%; padding: 1px 7px; border-radius: 999px; background: rgba(0,0,0,0.38); }
+  .mix-wave { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; display: none; }
   .mix-handle { flex: 0 0 16px; cursor: ew-resize; touch-action: none; background: rgba(255,255,255,0.92); display: flex; align-items: center; justify-content: center; }
   .mix-handle::after { content: ""; width: 3px; height: 16px; border-radius: 2px; background: #c9431a; }
   @media (pointer: coarse) { .mix-handle { flex-basis: 24px; } .mix-music, .mix-video { height: 44px; } }
@@ -379,7 +380,7 @@
             <div class="mix-track mix-music" id="mixMusicTrack">
               <div class="mix-clip" id="mixClip">
                 <div class="mix-handle mix-handle-l" id="mixHandleL" title="Drag to trim the front of the song"></div>
-                <div class="mix-clip-body" id="mixClipBody" title="Drag to slide the song along your video"><span class="mix-clip-label" id="mixClipLabel"></span></div>
+                <div class="mix-clip-body" id="mixClipBody" title="Drag to slide the song along your video"><canvas class="mix-wave" id="mixWave"></canvas><span class="mix-clip-label" id="mixClipLabel"></span></div>
                 <div class="mix-handle mix-handle-r" id="mixHandleR" title="Drag to cut the song earlier"></div>
               </div>
             </div>
@@ -1525,6 +1526,79 @@
   }
   function resetWindow() { mDelay = 0; mLenWanted = Infinity; clampWindow(); }
 
+  // ---- The song's sound wave, drawn inside the bar (like TikTok / Instagram) ----
+  // Shows the part of the song that is actually used (from where it starts, as long as the bar).
+  // Dragging the left end slides the wave under the bar, so the beat can be lined up by eye.
+  var wavePeaks = {}, waveLoading = {};
+  var mixWave = document.getElementById("mixWave");
+  function xhrBuffer(url) {
+    return new Promise(function (resolve) {
+      var x = new XMLHttpRequest();
+      x.open("GET", url); x.responseType = "arraybuffer";
+      x.onload = function () { resolve(x.response || null); };
+      x.onerror = function () { resolve(null); };
+      x.send();
+    });
+  }
+  function ensureWave(trackId) {
+    if (!trackId || wavePeaks[trackId] || waveLoading[trackId]) return;
+    var t = tracksById[trackId];
+    if (!t) return;
+    waveLoading[trackId] = true;
+    (async function () {
+      try {
+        var r = await window.sb.storage.from("tracks").createSignedUrl(t.storage_path, 600);
+        if (!r || !r.data) return;
+        var buf = await xhrBuffer(r.data.signedUrl);
+        if (!buf || buf.byteLength > 30 * 1024 * 1024) return; // very long file: skip the picture, it all still works
+        var AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        var ctx = new AC();
+        var audio = await new Promise(function (res, rej) { var p = ctx.decodeAudioData(buf, res, rej); if (p && p.catch) p.catch(rej); });
+        var ch = audio.getChannelData(0), rate = 25;
+        var n = Math.max(1, Math.ceil(audio.duration * rate)), step = Math.max(1, Math.floor(audio.sampleRate / rate));
+        var peaks = new Float32Array(n);
+        for (var i = 0; i < n; i++) {
+          var m = 0, end = Math.min((i + 1) * step, ch.length);
+          for (var j = i * step; j < end; j += 8) { var a = Math.abs(ch[j]); if (a > m) m = a; }
+          peaks[i] = m;
+        }
+        var sorted = Array.prototype.slice.call(peaks).sort(function (a, b) { return a - b; });
+        var ref = sorted[Math.floor(sorted.length * 0.95)] || 1; // so one loud spike doesn't flatten everything else
+        for (var k = 0; k < n; k++) peaks[k] = Math.min(1, peaks[k] / ref);
+        try { ctx.close(); } catch (e) {}
+        wavePeaks[trackId] = { rate: rate, peaks: peaks };
+        renderTimeline();
+      } catch (e) { /* no picture — the bar just stays plain */ }
+      finally { delete waveLoading[trackId]; }
+    })();
+  }
+  function drawWave(s) {
+    var w = wavePeaks[musicTrackSelect.value];
+    var body = document.getElementById("mixClipBody");
+    var W = body.clientWidth, H = body.clientHeight;
+    if (!w || !W || !H || !(mLen > 0)) { mixWave.style.display = "none"; return; }
+    mixWave.style.display = "block";
+    var key = [musicTrackSelect.value, Math.round(s * 10), Math.round(mLen * 10), W, H].join("|");
+    if (mixWave._key === key) return;
+    mixWave._key = key;
+    var dpr = window.devicePixelRatio || 1;
+    mixWave.width = Math.round(W * dpr); mixWave.height = Math.round(H * dpr);
+    var g = mixWave.getContext("2d");
+    g.clearRect(0, 0, mixWave.width, mixWave.height);
+    g.fillStyle = "rgba(255,255,255,0.7)";
+    var barW = Math.max(1, Math.round(2 * dpr)), gap = Math.max(1, Math.round(1.5 * dpr));
+    var cols = Math.floor(mixWave.width / (barW + gap));
+    for (var c = 0; c < cols; c++) {
+      var i0 = Math.floor((s + c / cols * mLen) * w.rate);
+      var i1 = Math.max(i0 + 1, Math.ceil((s + (c + 1) / cols * mLen) * w.rate));
+      var m = 0;
+      for (var i = i0; i < i1 && i < w.peaks.length; i++) if (w.peaks[i] > m) m = w.peaks[i];
+      var h = Math.max(2 * dpr, m * mixWave.height * 0.8);
+      g.fillRect(c * (barW + gap), (mixWave.height - h) / 2, barW, h);
+    }
+  }
+
   function renderTimeline() {
     var show = hasMusicSelected() && vidDur() > 0;
     mixTimeline.style.display = show ? "block" : "none";
@@ -1534,6 +1608,8 @@
     mixClip.style.width = (mLen / vd * 100) + "%";
     var tr = tracksById[musicTrackSelect.value];
     mixClipLabel.textContent = "🎵 " + (tr ? tr.title : "");
+    ensureWave(musicTrackSelect.value);
+    drawWave(s);
     // The old "Song 0:19–0:24 plays from video…" line is gone (Oct 2026): the bar itself
     // and the bubble over the video say it. Only a warning shows here, and only when needed.
     var sd = songDurNow();
