@@ -1036,6 +1036,28 @@
   .rp-action-btn.active[data-reaction="heart"] .rp-action-icon { color: var(--red); background: none; }
   .rp-action-btn.active[data-reaction="muscle"] .rp-action-icon { background: none; }
 
+  /* Ken's ask (Oct 2026): the main below-video row reads as one consistent
+     OUTLINED set — thumbs-up (orange), heart (red), the muscle emoji, and the
+     comment bubble (white), no matter the state. Before, a loved post showed a
+     solid red heart and a post with comments a solid grey bubble, so the four
+     looked like they came from different sets. Whether YOU reacted (or the post
+     has comments) is now shown by a soft tint inside the same outline instead of
+     a solid fill. Scoped away from the Journeys rows (.rp-slide-compact). */
+  .rp-slide:not(.rp-slide-compact) .rp-actions .rp-action-icon svg {
+    fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round;
+  }
+  .rp-slide:not(.rp-slide-compact) .rp-actions .rp-action-btn[data-reaction="thumbs_up"] .rp-action-icon { color: #ffa24a; }
+  .rp-slide:not(.rp-slide-compact) .rp-actions .rp-action-btn[data-reaction="thumbs_up"] .rp-action-icon svg { width: 25px; height: 25px; }
+  .rp-slide:not(.rp-slide-compact) .rp-actions .rp-action-btn[data-reaction="heart"] .rp-action-icon { color: #ff4d4d; }
+  .rp-slide:not(.rp-slide-compact) .rp-actions .rp-comment-btn .rp-action-icon { color: #fff; }
+  .rp-slide:not(.rp-slide-compact) .rp-actions .rp-action-btn.active[data-reaction="thumbs_up"] .rp-action-icon svg,
+  .rp-slide:not(.rp-slide-compact) .rp-actions .rp-action-btn.active[data-reaction="heart"] .rp-action-icon svg {
+    fill: currentColor; fill-opacity: 0.28;
+  }
+  .rp-slide:not(.rp-slide-compact) .rp-actions .rp-comment-btn .rp-action-icon svg[fill="currentColor"] {
+    fill: currentColor; fill-opacity: 0.28;
+  }
+
   /* Comments modal — fixed over the whole viewport, completely decoupled
      from any card's box, so opening it (on any post, with any number of
      comments) never changes that card's height or reflows the grid below

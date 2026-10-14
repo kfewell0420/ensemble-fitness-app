@@ -12,6 +12,20 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-17 (later), reaction row: one consistent outlined set
+
+Ken (reference mock): Like / Love / Strong / Comment under each video should look like one outlined set,
+website and phone app alike.
+
+- `feed.html` (CSS only): the main below-video row now shows thumbs-up in orange, heart in red, the muscle
+  emoji, and the comment bubble in white, all as OUTLINES in every state. Before, a loved post showed a solid
+  red heart and a post with comments a solid grey bubble. "You reacted" / "has comments" is now a soft tint
+  inside the same outline instead of a solid fill (keeps the cue without breaking the set). Thumb icon
+  enlarged a little to match the others. Journeys rows (`.rp-slide-compact`) and the Meal Prep pills are
+  unchanged. Same file for the phone app (copy into `www`).
+
+---
+
 ## 2026-10-17, main icon rail/bottom bar: Finder / Post / Profile / Products brighter (emoji kept)
 
 Ken: those four looked shadowed gray next to the (bright) house; wanted them brighter on website and phone app.
