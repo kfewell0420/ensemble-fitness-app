@@ -20,6 +20,7 @@ Ken: a positive, creative section for videos called "Just Doing You", added to t
 - `feed.html`: new filter chip (🎨) before "Other"; also in the post Edit category list.
 - `find.html`: new row linking to `feed.html?filter=Just%20Doing%20You`.
 - `admin.html`: added to the admin category list (website only).
+- Order everywhere: ... Strike a Pose, Just Doing You, Healthy Meal Prep, Other (Ken: Meal Prep last, right above Other).
 - No SQL: `workout_type` is free text (no constraint), so existing posts are unaffected.
 - Not done: nothing yet checks that these posts are "positive" beyond the existing review-before-visible step.
 

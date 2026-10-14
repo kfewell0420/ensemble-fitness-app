@@ -348,8 +348,8 @@
           <option value="Running">Running</option>
           <option value="Swimming">Swimming</option>
           <option value="Strike a Pose">Strike a Pose</option>
-          <option value="Meal Prep">Healthy Meal Prep</option>
           <option value="Just Doing You">Just Doing You</option>
+          <option value="Meal Prep">Healthy Meal Prep</option>
           <option value="Other">Other</option>
         </select>
         <!-- Ken's ask (Oct 2026): "delete it, that way Caption will pull up"
@@ -1800,7 +1800,7 @@
     var precheckIsProfilePhoto = precheckKind === "photo" && document.getElementById("isProfilePhoto").checked;
     var workoutTypeField2 = document.getElementById("workoutType");
     if ((precheckKind === "photo" || precheckKind === "video") && !precheckIsProfilePhoto && !workoutTypeField2.value.trim()) {
-      showMsg(msg, "Please choose a category (Working Out, Walking, Hiking, Biking, Running, Swimming, Strike a Pose, Meal Prep, Just Doing You, or Other) so your post shows up in the right place.", "error");
+      showMsg(msg, "Please choose a category (Working Out, Walking, Hiking, Biking, Running, Swimming, Strike a Pose, Just Doing You, Healthy Meal Prep, or Other) so your post shows up in the right place.", "error");
       workoutTypeField2.focus();
       return;
     }
