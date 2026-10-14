@@ -12,6 +12,20 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-14 (late night), product categories simplified: "Equipment"
+
+Ken: "Home Equipment" is too narrow; make it just "Equipment" (anything from a laptop stand to home gear).
+
+- `admin.html` (website only): Category suggestions are now Equipment, Fitness Shoes, Recovery,
+  Hydration, Wearables, Health Care, Nutrition ("Home Equipment", "Fitness Equipment" and "Home"
+  removed from the list; still a type-anything field). Hint text now says to keep spelling the same.
+- New `sql/rename-home-equipment-to-equipment.sql`: moves existing products saved as "Home Equipment"
+  or "Fitness Equipment" to "Equipment" (category text only), then lists product counts per category.
+- Public marketing-site picks page: no change needed. Its filter buttons are built from whatever
+  categories exist in the live data (`approved-gear-live.js`); the fixed list in
+  `approved-gear-picks.js` ("Home Equipment") is only the fallback if the database can't be reached.
+  (Earlier note saying that page had a fixed list was only half right.)
+
 ## 2026-10-14 (night), "new row violates row-level security policy" when adding a product
 
 Ken saw this on admin.html's Add Pick form (Olympic EZ Curl Barbell Bar); the first product had saved fine.
