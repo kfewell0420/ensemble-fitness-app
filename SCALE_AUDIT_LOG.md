@@ -12,6 +12,18 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-14 (evening), admin Approved Products: added "Fitness Equipment" and "Fitness Shoes" categories
+
+Ken: the Category drop-down when adding an Amazon/TikTok product had no fitness equipment or
+fitness shoes option.
+
+- `admin.html` only (website only): "Fitness Equipment" and "Fitness Shoes" added at the top of the
+  Category suggestion list (placeholder updated). The Edit form's Category box now shows the same
+  suggestions. It is still a type-anything field, so any other category can be typed, and any new
+  category becomes a filter chip on the Products page automatically.
+- Existing products keep their current categories. No database change.
+- Not changed: the public marketing site's picks page (`approved-gear.html`, fixed category list).
+
 ## 2026-10-14 (later), Products page (gear.html): compact thumbnail grid for hundreds of products
 
 Ken: the first Amazon product showed as one huge card with the photo cropped; he is about to

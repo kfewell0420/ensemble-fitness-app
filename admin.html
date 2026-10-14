@@ -375,8 +375,10 @@
         </div>
         <div class="field">
           <label for="gearCategory">Category</label>
-          <input type="text" id="gearCategory" list="gearCategoryOptions" placeholder="e.g. Home Equipment, Recovery, Health Care, Home, Nutrition…" maxlength="40" />
+          <input type="text" id="gearCategory" list="gearCategoryOptions" placeholder="e.g. Fitness Equipment, Fitness Shoes, Recovery, Nutrition…" maxlength="40" />
           <datalist id="gearCategoryOptions">
+            <option value="Fitness Equipment"></option>
+            <option value="Fitness Shoes"></option>
             <option value="Home Equipment"></option>
             <option value="Recovery"></option>
             <option value="Hydration"></option>
@@ -2061,7 +2063,7 @@
             '</div>' +
             '<div class="field" style="margin-bottom:8px;">' +
               '<label style="font-size:11.5px;">Category</label>' +
-              '<input type="text" class="edit-gear-category" value="' + escapeAttrAdmin(item.category) + '" maxlength="40" />' +
+              '<input type="text" class="edit-gear-category" list="gearCategoryOptions" value="' + escapeAttrAdmin(item.category) + '" maxlength="40" />' +
             '</div>' +
             '<div class="field" style="margin-bottom:8px;">' +
               '<label style="font-size:11.5px;">Your take</label>' +
