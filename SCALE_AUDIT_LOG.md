@@ -12,6 +12,13 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-14 (final 2) — Whole-screen flash between clips
+
+- Ken saw the whole screen flash at each cut on his phone. Likely causes removed: (1) the hand-over used to switch the player's `controls` on/off and hide/show the twin player with `visibility`, both of which make phones rebuild the video layer — now the player's buttons are hidden by a CSS class instead and the twin stays painted (opacity only); (2) the twin was removed as soon as the real player was "playing", which could be a frame before its picture was on screen — now it waits for a fresh frame (plus two more) before stepping aside; (3) the clip strip under the video was torn down and rebuilt at every cut (twice) — now only the highlight/"Clip N of M" text changes unless the clips actually changed.
+- Tested headlessly by screenshotting the video area ~30×/second across two cuts: no blank or dark frames at the joins. Still needs a check on a real phone (can't reproduce the phone's video compositor here).
+
+---
+
 ## 2026-10-14 (final) — Song locked to video, auto-stop, 3-second fade-out
 
 - **Song and video locked:** tapping/dragging in the video (or tapping a clip in the tray) while it plays now pauses the song too, jumps both to the same spot, and playing again resumes the song exactly there. Previously the song kept running on its own.

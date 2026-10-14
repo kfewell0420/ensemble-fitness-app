@@ -484,8 +484,20 @@ function wireTrimPlayback(video, trimStart, trimEnd) {
                           clip the ordinary way)
      time()               seconds into the clip on screen right now (the twin's while it is showing)
      busy()               true while the twin is still on screen */
+// Hides a player's own buttons/spinner WITHOUT touching its `controls` attribute (switching that on and
+// off rebuilds the player's control layer, which is one of the things that flashed on phones).
+function setPlayerChromeHidden(video, hide) {
+  if (!document.getElementById("ef-chrome-hide")) {
+    var st = document.createElement("style");
+    st.id = "ef-chrome-hide";
+    st.textContent = "video.ef-chrome-hidden::-webkit-media-controls,video.ef-chrome-hidden::-webkit-media-controls-enclosure,video.ef-chrome-hidden::-webkit-media-controls-panel,video.ef-chrome-hidden::-webkit-media-controls-overlay-play-button,video.ef-chrome-hidden::-webkit-media-controls-start-playback-button,video.ef-chrome-hidden::-internal-media-controls-overlay-cast-button{display:none !important;opacity:0 !important;-webkit-appearance:none}";
+    (document.head || document.documentElement).appendChild(st);
+  }
+  if (video) video.classList.toggle("ef-chrome-hidden", !!hide);
+}
+
 function createClipSwapper(video) {
-  var shadow = null, pre = { url: null, ready: false }, swapTok = 0, showing = false, savedControls = false;
+  var shadow = null, pre = { url: null, ready: false }, swapTok = 0, showing = false;
   function make() {
     if (shadow || !video || !video.parentNode) return shadow;
     shadow = document.createElement("video");
@@ -493,7 +505,7 @@ function createClipSwapper(video) {
     shadow.setAttribute("playsinline", ""); shadow.setAttribute("muted", "");
     shadow.preload = "auto"; shadow.controls = false; shadow.disablePictureInPicture = true;
     shadow.setAttribute("aria-hidden", "true");
-    shadow.style.cssText = "position:absolute; pointer-events:none; visibility:hidden; margin:0;";
+    shadow.style.cssText = "position:absolute; pointer-events:none; opacity:0.02; margin:0; transition:none; will-change:opacity; transform:translateZ(0);";
     video.parentNode.insertBefore(shadow, video.nextSibling);
     return shadow;
   }
@@ -507,7 +519,7 @@ function createClipSwapper(video) {
     shadow.style.maxWidth = "none"; shadow.style.maxHeight = "none"; shadow.style.aspectRatio = "auto";
     shadow.style.objectFit = cs.objectFit; shadow.style.objectPosition = cs.objectPosition;
     shadow.style.borderRadius = cs.borderRadius; shadow.style.background = cs.backgroundColor;
-    shadow.style.transform = cs.transform === "none" ? "" : cs.transform;
+    shadow.style.transform = cs.transform === "none" ? "translateZ(0)" : cs.transform;
   }
   function preload(url, start) {
     if (!make() || !url) return;
@@ -537,21 +549,31 @@ function createClipSwapper(video) {
     if (!shadow || pre.url !== url || !pre.ready || showing) return false;
     var S = shadow, tok = ++swapTok, t0 = Date.now(), tries = 0, lead = 0.2, seeking = false;
     showing = true;
-    savedControls = video.controls;
-    video.controls = false; // no flash of the player's own buttons underneath
+    setPlayerChromeHidden(video, true); // no flash of the player's own buttons underneath
     place();
-    S.style.visibility = "visible";
+    S.style.opacity = "1";
     var sp = S.play(); if (sp && sp.catch) sp.catch(function () {});
     video.src = url;
-    function finish() {
+    function reallyFinish() {
       if (tok !== swapTok) return;
-      if (savedControls) video.controls = true;
+      setPlayerChromeHidden(video, false);
       showing = false;
-      S.style.visibility = "hidden";
+      S.style.opacity = "0.02";
       try { S.pause(); } catch (e) {}
       pre = { url: null, ready: false };
       S.removeAttribute("data-start");
       if (swap.onDone) swap.onDone();
+    }
+    // Only take the twin away once the real player has actually put a fresh picture on screen (and
+    // then one more frame), otherwise a blank frame can show for an instant — the flash.
+    function finish() {
+      if (tok !== swapTok) return;
+      var fired = false;
+      function go() { if (fired) return; fired = true; requestAnimationFrame(function () { requestAnimationFrame(reallyFinish); }); }
+      if (video.requestVideoFrameCallback && !video.paused) {
+        try { video.requestVideoFrameCallback(function () { go(); }); } catch (e) { go(); }
+        setTimeout(go, 250);
+      } else setTimeout(go, 120);
     }
     // Put the real player a little AHEAD of the twin (by what loading is expected to cost), then
     // learn from how far off it lands and correct, so the hand-over is not a visible jump.
@@ -586,8 +608,8 @@ function createClipSwapper(video) {
     busy: function () { return showing; },
     cancel: function () { // abandon a hand-over in progress (the caller is about to load a clip another way)
       swapTok++;
-      if (showing && savedControls) video.controls = true; // give the upload preview its buttons back
-      if (showing && shadow) { showing = false; shadow.style.visibility = "hidden"; try { shadow.pause(); } catch (e) {} }
+      if (showing) setPlayerChromeHidden(video, false); // give the upload preview its buttons back
+      if (showing && shadow) { showing = false; shadow.style.opacity = "0.02"; try { shadow.pause(); } catch (e) {} }
     },
     time: function () { return showing && shadow ? shadow.currentTime : video.currentTime; },
     onDone: function (fn) { swap.onDone = fn; }

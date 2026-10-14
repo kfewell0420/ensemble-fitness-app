@@ -1241,6 +1241,22 @@
     if (!clips.length) { tray.style.display = "none"; row.innerHTML = ""; if (label) label.textContent = "🎬 Your videos"; return; }
     tray.style.display = "block";
     if (clipSel >= clips.length) clipSel = clips.length - 1;
+    // Same clips as last time (just a different one selected, e.g. when the reel rolls on): update in
+    // place instead of rebuilding every thumbnail — a rebuild at each cut made the strip repaint/flicker.
+    var sig = clips.map(function (c) { return c.url + "|" + (c.dur || 0) + "|" + (c.thumb ? c.thumb.length : 0); }).join(",") + "#" + (clips.length < MAX_CLIPS);
+    if (row.getAttribute("data-sig") === sig && row.children.length) {
+      Array.prototype.forEach.call(row.querySelectorAll(".clip-thumb"), function (b, i) { b.classList.toggle("sel", i === clipSel); });
+      var info = ctl.querySelector(".clip-info");
+      if (clips.length > 1 && info) {
+        var tot0 = clips.reduce(function (a, c) { return a + (c.dur || 0); }, 0);
+        info.textContent = "Clip " + (clipSel + 1) + " of " + clips.length + (tot0 ? " \u00b7 " + (Math.round(tot0 * 10) / 10).toFixed(1) + " s in all" : "");
+        var bl = ctl.querySelector('[data-act="left"]'), br = ctl.querySelector('[data-act="right"]');
+        if (bl) bl.disabled = clipSel === 0;
+        if (br) br.disabled = clipSel === clips.length - 1;
+        return;
+      }
+    }
+    row.setAttribute("data-sig", sig);
     row.innerHTML = "";
     clips.forEach(function (c, i) {
       var b = document.createElement("button");
@@ -1362,9 +1378,9 @@
       var v = trimPreviewVideo;
       // While the next clip loads, hide the player's own play button / spinner and hold a still of the
       // clip, so the joins look like one continuous video instead of flashing a big play icon.
-      v.controls = false;
+      setPlayerChromeHidden(v, true);
       v.poster = clips[idx].thumb || "";
-      var restore = function () { if (tok !== reelLoadTok) return; v.controls = true; v.removeAttribute("poster"); };
+      var restore = function () { if (tok !== reelLoadTok) return; setPlayerChromeHidden(v, false); v.removeAttribute("poster"); };
       v.addEventListener("playing", restore, { once: true });
       v.addEventListener("seeked", restore, { once: true });
       setTimeout(restore, 2500);
