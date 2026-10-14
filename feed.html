@@ -1057,6 +1057,12 @@
   .rp-slide:not(.rp-slide-compact) .rp-actions .rp-comment-btn .rp-action-icon svg[fill="currentColor"] {
     fill: currentColor; fill-opacity: 0.28;
   }
+  /* Ken's ask (Oct 2026), phone first, then website too: the thumb, heart and comment bubble were
+     ~25-30% bigger than the Strong muscle next to them. Brought down so all four read
+     at the same size, on phone and website. */
+  .rp-slide:not(.rp-slide-compact) .rp-actions .rp-action-btn[data-reaction="thumbs_up"] .rp-action-icon svg { width: 19px; height: 19px; flex-shrink: 0; }
+  .rp-slide:not(.rp-slide-compact) .rp-actions .rp-action-btn[data-reaction="heart"] .rp-action-icon svg { width: 21px; height: 21px; flex-shrink: 0; }
+  .rp-slide:not(.rp-slide-compact) .rp-actions .rp-comment-btn .rp-action-icon svg { width: 21px; height: 21px; flex-shrink: 0; }
 
   /* Comments modal — fixed over the whole viewport, completely decoupled
      from any card's box, so opening it (on any post, with any number of

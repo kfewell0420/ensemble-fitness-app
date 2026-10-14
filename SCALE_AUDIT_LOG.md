@@ -23,6 +23,10 @@ website and phone app alike.
   inside the same outline instead of a solid fill (keeps the cue without breaking the set). Thumb icon
   enlarged a little to match the others. Journeys rows (`.rp-slide-compact`) and the Meal Prep pills are
   unchanged. Same file for the phone app (copy into `www`).
+- Follow-up: the thumb, heart and comment bubble were ~20-30% larger than the muscle (phone: thumb 25px, heart 26,
+  comment 26; website: 25/26/26, and the thumb box was also squeezed to a non-square 22x25). Now thumb 19 px,
+  heart 21, comment 21, on phone AND website (Ken asked for the website to be checked too), fixed-size so they
+  can't be squeezed.
 
 ---
 
