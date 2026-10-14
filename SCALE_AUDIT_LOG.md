@@ -12,6 +12,15 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-14 (final 3) — Music bar reachable without scrolling (upload page)
+
+- Removed the "Earlier / Later / Remove" row and the "Clip 1 of 3 · 19.7 s" line under the clip thumbnails. Tapping a clip still jumps to it; the chosen clip now shows a small ✕ in its corner to remove it (only when there are 2+ clips). The total length moved into the heading: "Your videos (3) · 19.7s". **Reordering clips is gone for now** (was the ◀▶ buttons) — a long-press-and-drag reorder can replace it if wanted.
+- Song card is now two lines: full title across the top (up to 2 lines), then "Genre · m:ss" with the Change and ✕ buttons beside it, instead of the title squeezed into a narrow column with 3 lines.
+- "Keep my video's sound too (music softer)" is one line; spacing around the song card and timeline tightened.
+- Headless check at 412×915 with three portrait clips: video, thumbnails, song card, checkbox, and the whole music bar fit on one screen (bar ends ~100 px above the bottom with the video near the top).
+
+---
+
 ## 2026-10-14 (final 2) — Whole-screen flash between clips
 
 - Ken saw the whole screen flash at each cut on his phone. Likely causes removed: (1) the hand-over used to switch the player's `controls` on/off and hide/show the twin player with `visibility`, both of which make phones rebuild the video layer — now the player's buttons are hidden by a CSS class instead and the twin stays painted (opacity only); (2) the twin was removed as soon as the real player was "playing", which could be a frame before its picture was on screen — now it waits for a fresh frame (plus two more) before stepping aside; (3) the clip strip under the video was torn down and rebuilt at every cut (twice) — now only the highlight/"Clip N of M" text changes unless the clips actually changed.

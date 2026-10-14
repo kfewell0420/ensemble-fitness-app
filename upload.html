@@ -160,8 +160,8 @@
   @media (pointer: coarse) { .mix-handle { flex-basis: 24px; } .mix-music, .mix-video { height: 44px; } }
   .mix-handle-l { border-radius: 8px 0 0 8px; }
   .mix-handle-r { border-radius: 0 8px 8px 0; }
-  .clip-tray { margin-top: 8px; }
-  .clip-tray-row { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 6px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .clip-tray { margin-top: 6px; }
+  .clip-tray-row { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 2px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
   .clip-tray-row::-webkit-scrollbar { display: none; }
   .clip-thumb { flex: 0 0 auto; position: relative; width: 54px; height: 70px; padding: 0; border-radius: 10px; border: 2px solid rgba(255,255,255,0.18); background: #000 center / cover no-repeat; cursor: pointer; overflow: hidden; }
   .clip-thumb.sel { border-color: var(--accent-2); box-shadow: 0 0 0 1px var(--accent-2); }
@@ -169,6 +169,8 @@
   .clip-thumb .clip-d { position: absolute; right: 3px; bottom: 3px; padding: 0 4px; border-radius: 6px; background: rgba(0,0,0,0.72); color: #fff; font-size: 10px; font-weight: 700; }
   .clip-add { flex: 0 0 auto; width: 54px; height: 70px; border-radius: 10px; border: 2px dashed rgba(255,255,255,0.35); background: rgba(255,255,255,0.04); color: #fff; font: inherit; font-size: 11px; font-weight: 700; line-height: 1.2; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
   .clip-add b { font-size: 22px; line-height: 1; }
+  .clip-thumb .clip-x { display: none; position: absolute; right: 2px; top: 2px; width: 22px; height: 22px; border-radius: 50%; background: rgba(0,0,0,0.78); color: #ff9a9a; font-size: 12px; font-weight: 800; line-height: 22px; text-align: center; }
+  .clip-tray-row.multi .clip-thumb.sel .clip-x { display: block; }
   .clip-tray-ctl { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 12.5px; color: var(--muted-invert, #b9bccb); }
   .clip-tray-ctl .clip-info { flex: 1 1 100%; }
   .clip-tray-ctl button { flex: 0 0 auto; padding: 7px 12px; border-radius: 999px; border: 1.5px solid rgba(255,255,255,0.3); background: none; color: #fff; font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; }
@@ -191,14 +193,16 @@
   .mt-choose { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 14px; border-radius: 12px; border: 1.5px solid rgba(255,255,255,0.14); background: rgba(255,255,255,0.05); color: #fff; font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; }
   .mt-choose:hover { border-color: var(--accent-2); }
   .mt-count { font-size: 12.5px; font-weight: 600; color: var(--accent-2); white-space: nowrap; }
-  .mt-selected { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 12px; border: 1.5px solid var(--accent-2); background: var(--accent-tint); }
-  .mt-art { flex: 0 0 auto; width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 800; color: var(--accent-2); }
+  .mt-selected { display: grid; grid-template-columns: 34px minmax(0, 1fr); column-gap: 10px; row-gap: 4px; align-items: center; padding: 8px 10px; border-radius: 12px; border: 1.5px solid var(--accent-2); background: var(--accent-tint); }
+  .mt-art { grid-row: 1 / span 2; align-self: start; margin-top: 2px; width: 34px; height: 34px; border-radius: 50%; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 800; color: var(--accent-2); }
   .mt-sel-text { flex: 1; min-width: 0; display: flex; flex-direction: column; text-align: left; }
   .mt-sel-text b { font-size: 14px; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .mt-sel-text small { font-size: 12px; color: var(--faint-invert, #9aa0b4); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .mt-selected .mt-sel-text b { white-space: normal; overflow: visible; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.25; }
-  .mt-change { flex: 0 0 auto; background: none; border: 1.5px solid rgba(255,255,255,0.3); color: #fff; border-radius: 999px; padding: 6px 12px; font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; }
-  .mt-remove { flex: 0 0 auto; width: 30px; height: 30px; border-radius: 50%; background: rgba(255,255,255,0.1); border: none; color: #fff; font-size: 13px; cursor: pointer; }
+  .mt-selected .mt-sel-text b { white-space: normal; overflow: visible; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.25; }
+  .mt-acts { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .mt-meta { flex: 1; min-width: 0; font-size: 12px; color: var(--faint-invert, #9aa0b4); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mt-change { flex: 0 0 auto; background: none; border: 1.5px solid rgba(255,255,255,0.3); color: #fff; border-radius: 999px; padding: 4px 12px; font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+  .mt-remove { flex: 0 0 auto; width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,0.1); border: none; color: #fff; font-size: 13px; cursor: pointer; }
   #trackPickerRow.disabled { opacity: 0.45; pointer-events: none; }
   .mt-overlay { position: fixed; inset: 0; z-index: 2000; background: rgba(0,0,0,0.55); display: none; }
   .mt-overlay.open { display: flex; justify-content: flex-end; align-items: stretch; }
@@ -355,7 +359,7 @@
                  WHERE in the song it starts. Letting go of the slider or tapping the
                  half-second buttons replays the clip from the top against the new
                  start point, so the beat can be matched by ear. -->
-            <div class="narration-section more-option-compact" id="musicSection" style="margin-top:14px;">
+            <div class="narration-section more-option-compact" id="musicSection" style="margin-top:8px;">
               <div class="field-label-row">
                 <label>🎵 Music tracks</label>
               </div>
@@ -366,9 +370,9 @@
                 <option value="">Select music track</option>
               </select>
               <div id="musicStartRow" style="display:none;"></div>
-              <label id="keepOriginalRow" style="display:none; align-items:flex-start; gap:8px; margin-top:12px; font-size:13.5px; font-weight:600; cursor:pointer;">
-                <input type="checkbox" id="keepOriginalAudio" style="width:auto; margin-top:3px;" />
-                <span title="Your track plays softly underneath. Leave unchecked to replace the video's sound with the track.">Keep my video's own sound too <span style="font-weight:400; font-size:12px; color:var(--faint-invert);">(music plays softly underneath)</span></span>
+              <label id="keepOriginalRow" style="display:none; align-items:center; gap:8px; margin-top:8px; font-size:13.5px; font-weight:600; cursor:pointer;">
+                <input type="checkbox" id="keepOriginalAudio" style="width:auto; margin:0;" />
+                <span title="Your track plays softly underneath. Leave unchecked to replace the video's sound with the track.">Keep my video's sound too <span style="font-weight:400; font-size:12px; color:var(--faint-invert);">(music softer)</span></span>
               </label>
               <audio id="musicPreviewAudio" style="display:none;"></audio>
             </div>
@@ -379,7 +383,7 @@
         <!-- Timeline: the song locked to the video. Drag the bar to slide it along
              the video, drag its left end to trim the front of the song, drag its
              right end to cut the song earlier. Tap the video strip to scrub. -->
-        <div id="mixTimeline" style="display:none; margin-top:12px;">
+        <div id="mixTimeline" style="display:none; margin-top:8px;">
           <div class="mix-tracks" id="mixTracks">
             <div class="mix-track mix-video" id="mixVideoTrack"><div class="mix-filmstrip" id="mixFilmstrip"></div></div>
             <div class="mix-track mix-music" id="mixMusicTrack">
@@ -1246,17 +1250,10 @@
     var sig = clips.map(function (c) { return c.url + "|" + (c.dur || 0) + "|" + (c.thumb ? c.thumb.length : 0); }).join(",") + "#" + (clips.length < MAX_CLIPS);
     if (row.getAttribute("data-sig") === sig && row.children.length) {
       Array.prototype.forEach.call(row.querySelectorAll(".clip-thumb"), function (b, i) { b.classList.toggle("sel", i === clipSel); });
-      var info = ctl.querySelector(".clip-info");
-      if (clips.length > 1 && info) {
-        var tot0 = clips.reduce(function (a, c) { return a + (c.dur || 0); }, 0);
-        info.textContent = "Clip " + (clipSel + 1) + " of " + clips.length + (tot0 ? " \u00b7 " + (Math.round(tot0 * 10) / 10).toFixed(1) + " s in all" : "");
-        var bl = ctl.querySelector('[data-act="left"]'), br = ctl.querySelector('[data-act="right"]');
-        if (bl) bl.disabled = clipSel === 0;
-        if (br) br.disabled = clipSel === clips.length - 1;
-        return;
-      }
+      return;
     }
     row.setAttribute("data-sig", sig);
+    row.classList.toggle("multi", clips.length > 1);
     row.innerHTML = "";
     clips.forEach(function (c, i) {
       var b = document.createElement("button");
@@ -1265,7 +1262,7 @@
       b.setAttribute("data-i", i);
       b.setAttribute("aria-label", "Clip " + (i + 1));
       if (c.thumb) b.style.backgroundImage = "url(" + c.thumb + ")";
-      b.innerHTML = '<span class="clip-n">' + (i + 1) + '</span>' + (c.dur ? '<span class="clip-d">' + clipLabel(c) + '</span>' : '');
+      b.innerHTML = '<span class="clip-n">' + (i + 1) + '</span>' + (c.dur ? '<span class="clip-d">' + clipLabel(c) + '</span>' : '') + '<span class="clip-x" data-act="remove" aria-label="Remove clip ' + (i + 1) + '">✕</span>';
       row.appendChild(b);
     });
     if (clips.length < MAX_CLIPS) {
@@ -1275,21 +1272,22 @@
       row.appendChild(add);
     }
     var total = clips.reduce(function (a, c) { return a + (c.dur || 0); }, 0);
-    if (label) label.textContent = clips.length > 1 ? "🎬 Your videos (" + clips.length + ")" : "🎬 Your videos";
-    if (clips.length > 1) {
-      ctl.style.display = "flex";
-      ctl.innerHTML = '<span class="clip-info">Clip ' + (clipSel + 1) + ' of ' + clips.length + (total ? ' · ' + (Math.round(total * 10) / 10).toFixed(1) + ' s in all' : '') + '</span>' +
-        '<button type="button" data-act="left"' + (clipSel === 0 ? " disabled" : "") + '>◀ Earlier</button>' +
-        '<button type="button" data-act="right"' + (clipSel === clips.length - 1 ? " disabled" : "") + '>Later ▶</button>' +
-        '<button type="button" class="clip-rm" data-act="remove">✕ Remove</button>';
-    } else {
-      ctl.style.display = "none";
-    }
+    if (label) label.textContent = clips.length > 1 ? "🎬 Your videos (" + clips.length + ")" + (total ? " · " + (Math.round(total * 10) / 10).toFixed(1) + "s" : "") : "🎬 Your videos";
+    ctl.style.display = "none"; // no Earlier/Later/Remove row any more: tap a clip to jump to it, ✕ on the chosen clip removes it
   }
   document.getElementById("clipTrayRow").addEventListener("click", function (e) {
     if (e.target.closest("#clipAddBtn")) { document.getElementById("addClipsInput").click(); return; }
     var t = e.target.closest(".clip-thumb");
     if (!t) return;
+    if (e.target.closest(".clip-x")) { // ✕ on the chosen clip: take it out of the reel
+      var ri = Number(t.getAttribute("data-i")), oldFirst = clips[0] && clips[0].file;
+      if (ri !== clipSel || clips.length < 2) return;
+      try { URL.revokeObjectURL(clips[ri].url); } catch (err) {}
+      clips.splice(ri, 1);
+      if (clipSel >= clips.length) clipSel = Math.max(0, clips.length - 1);
+      reelChanged(oldFirst);
+      return;
+    }
     clipSel = Number(t.getAttribute("data-i"));
     renderClipTray();
     var wasPlaying = !trimPreviewVideo.paused;
@@ -1297,19 +1295,6 @@
     musicPreviewAudio.pause();
     reelSeek(reelOffsetOf(clipSel));
     if (wasPlaying) resumeAfterJump();
-  });
-  document.getElementById("clipTrayCtl").addEventListener("click", function (e) {
-    var btn = e.target.closest("button[data-act]");
-    if (!btn || btn.disabled) return;
-    var act = btn.getAttribute("data-act"), i = clipSel, oldFirst = clips[0] && clips[0].file;
-    if (act === "left" && i > 0) { var tmp = clips[i - 1]; clips[i - 1] = clips[i]; clips[i] = tmp; clipSel = i - 1; }
-    else if (act === "right" && i < clips.length - 1) { var tmp2 = clips[i + 1]; clips[i + 1] = clips[i]; clips[i] = tmp2; clipSel = i + 1; }
-    else if (act === "remove") {
-      try { URL.revokeObjectURL(clips[i].url); } catch (err) {}
-      clips.splice(i, 1);
-      if (clipSel >= clips.length) clipSel = Math.max(0, clips.length - 1);
-    } else return;
-    reelChanged(oldFirst);
   });
   // Clips were reordered, removed, or added: refresh everything that depends on them.
   function reelChanged(oldFirst) {
@@ -2062,10 +2047,15 @@
     if (t) {
       trackPickerRow.innerHTML =
         '<div class="mt-selected"><span class="mt-art"></span><span class="mt-sel-text"><b></b></span>' +
+        '<span class="mt-acts"><span class="mt-meta"></span>' +
         '<button type="button" class="mt-change">Change</button>' +
-        '<button type="button" class="mt-remove" aria-label="Remove music" title="Remove music">✕</button></div>';
+        '<button type="button" class="mt-remove" aria-label="Remove music" title="Remove music">✕</button></span></div>';
       trackPickerRow.querySelector(".mt-art").textContent = trackInitial(t);
       trackPickerRow.querySelector(".mt-sel-text b").textContent = t.title;
+      var metaBits = [];
+      if (t.genre) metaBits.push(t.genre);
+      if (t.duration_seconds) metaBits.push(formatSongTime(t.duration_seconds));
+      trackPickerRow.querySelector(".mt-meta").textContent = metaBits.join(" · ");
     } else {
       trackPickerRow.innerHTML = '<button type="button" class="mt-choose">🎵 Choose a song <span class="mt-count">' + allTracks.length + ' tracks ›</span></button>';
     }
