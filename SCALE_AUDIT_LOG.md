@@ -12,6 +12,19 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-14 (4:38 PM, 4G 10 Mbps phone), Ken's Speed Check
+
+Page answered 321 ms / finished 645 ms; DB round trip 107-183 ms (139); list of 8 posts 261 ms; secure links 175 ms;
+stored picture 942 ms (998 KB); resized test picture 749 ms cold / 139 ms warm (290 KB); video first byte 569 ms,
+21.3 Mbps, fast-start yes; video first picture 2421 ms (earlier runs 438-1082 ms). CORRECTION: this run was a
+MacBook on wifi; the "4g / 10 Mbps" row is only the browser's rough guess (Chrome caps it), so the 2.4 s is a
+real increase, most likely because the newest video is heavier than the ones tested earlier -- Speed Check now
+shows the video's length, MB and bitrate on that row to confirm; H.264 and HEVC both fine; caches: toolkit 7 days, font 365 days.
+Verdict: healthy, except "video first picture" (2.4 s) is worth watching -- feed posters cover most of that wait. The picture-resize row's label said "what the feed sends now", but resize is OFF in the feed
+(`PHOTO_RESIZE_ENABLED = false`, see 2026-10-12), so the label was wrong: `speedcheck.html` now says it is a test only.
+
+---
+
 ## 2026-10-17 (later), reaction row: one consistent outlined set
 
 Ken (reference mock): Like / Love / Strong / Comment under each video should look like one outlined set,

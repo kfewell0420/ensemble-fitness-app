@@ -91,7 +91,7 @@
     var c = navigator.connection || {};
     add("Connection reported by device",
         (c.effectiveType || "unknown") + (c.downlink ? " · " + c.downlink + " Mbps" : "") + (c.rtt ? " · " + c.rtt + " ms ping" : ""),
-        "na", "What this phone or computer says about its own network.");
+        "na", "The browser's own rough guess, NOT a measurement — Chrome never reports more than 10 Mbps or '4g', even on fast wifi. Real speeds are measured below.");
 
     // ---- Page load of this very page (a fair stand-in for any page)
     var nav = performance.getEntriesByType("navigation")[0];
@@ -154,7 +154,7 @@
       if (rzUrl) {
         var rz = await timed(function () { return fetch(rzUrl, { cache: "no-store" }).then(function (r) { return r.blob().then(function (b) { return (window.createImageBitmap ? createImageBitmap(b).then(function (bm) { return bm.width + "x" + bm.height; }, function () { return ""; }) : Promise.resolve("")).then(function (dim) { return { size: b.size, ok: r.ok, type: r.headers.get("content-type"), dim: dim }; }); }); }); });
         var rsz = rz.out && rz.out.size ? rz.out.size : 0;
-        add("Download same picture, resized (what the feed sends now)", rz.out && rz.out.ok ? ms(rz.t) : "FAILED", rz.out && rz.out.ok ? grade(rz.t, 400, 900) : "bad",
+        add("Download same picture, resized (a test only — the feed currently uses the stored photo above)", rz.out && rz.out.ok ? ms(rz.t) : "FAILED", rz.out && rz.out.ok ? grade(rz.t, 400, 900) : "bad",
             (rsz / 1024).toFixed(0) + " KB" + (rz.out && rz.out.dim ? " · " + rz.out.dim + " px" : "") + (rz.out && rz.out.type ? " · " + rz.out.type : "") + (rz.out && !rz.out.ok ? " · resizing is not working on this project" : ""));
         if (rz.out && rz.out.ok) {
           var rz2 = await timed(function () { return fetch(rzUrl, { cache: "no-store" }).then(function (r) { return r.blob(); }); });
@@ -207,7 +207,7 @@
         v.muted = true; v.playsInline = true; v.preload = "auto";
         var t0 = now(), done = false, marks = {};
         function fin(why) { if (done) return; done = true; var w = v.videoWidth + "x" + v.videoHeight; v.removeAttribute("src"); try { v.load(); } catch (e) {} resolve({ marks: marks, why: why, size: w, err: v.error ? v.error.code : 0 }); }
-        v.addEventListener("loadedmetadata", function () { marks.meta = now() - t0; });
+        v.addEventListener("loadedmetadata", function () { marks.meta = now() - t0; marks.dur = v.duration; });
         v.addEventListener("loadeddata", function () { marks.frame = now() - t0; });
         v.addEventListener("canplay", function () { marks.canplay = now() - t0; fin("canplay"); });
         v.addEventListener("error", function () { fin("error"); });
@@ -216,7 +216,9 @@
       });
       if (play.why === "canplay") {
         add("Video: first picture shows", ms(play.marks.frame || play.marks.canplay), grade(play.marks.frame || play.marks.canplay, 800, 2000),
-            "Time from tapping to a real video frame, at " + play.size + ". This is the 'black screen wait' your members feel.");
+            "Time from tapping to a real video frame, at " + play.size + ". This is the 'black screen wait' your members feel." +
+            (play.marks.meta ? " Video info arrived at " + Math.round(play.marks.meta) + " ms." : "") +
+            (play.marks.dur && o.total ? " This video is " + play.marks.dur.toFixed(0) + " s long, " + (o.total / 1048576).toFixed(1) + " MB (about " + ((o.total * 8 / 1e6) / play.marks.dur).toFixed(1) + " Mbps of video) — a heavier video takes longer to start than a light one." : ""));
       } else if (play.why === "error") {
         add("Video: first picture shows", "FAILED", "bad", "This device could not play the latest video (error code " + play.err + "). That is the black-screen case.");
       } else {
