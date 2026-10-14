@@ -1180,18 +1180,17 @@
     padding: 9px 4px 8px;
     background: none;
     border: none;
-    /* Ken's ask (Oct 2026): every icon in this rail bright white, like the house —
-       the old 55%-white made the Finder / Profile / Products icons look shadowed
-       and (as emoji) the cart was hard to even recognize. They are now crisp
-       white line icons; the page you are on gets a soft highlight behind it. */
+    /* Ken's ask (Oct 2026): Finder / Post / Profile / Products looked dim next to
+       the house. Same creative emoji icons as before, just brighter: full-white
+       text (they used to be 55%-white, which also dimmed the emoji), plus a
+       brightness boost and a faint glow on the four darker emoji. The house is
+       left exactly as it was. */
     color: #fff;
     text-decoration: none;
     font-family: 'Inter', sans-serif;
   }
-  .rp-tab-icon { font-size: 20px; line-height: 1; display: flex; align-items: center; justify-content: center; }
-  .rp-tab-icon svg { width: 1.2em; height: 1.2em; display: block; }
-  .rp-tab:not(.rp-tab-post) .rp-tab-icon { width: 2.1em; height: 1.7em; border-radius: 10px; }
-  .rp-tab.active:not(.rp-tab-post) .rp-tab-icon { background: rgba(255,255,255,0.16); }
+  .rp-tab-icon { font-size: 20px; line-height: 1; }
+  .rp-tab:not([href="feed.html"]) .rp-tab-icon { filter: brightness(1.85) contrast(1.05) drop-shadow(0 0 3px rgba(255,255,255,0.5)); }
   .rp-tab-label { font-size: 10px; font-weight: 600; letter-spacing: 0.01em; }
   .rp-tab.active { color: #fff; }
 
@@ -1239,7 +1238,6 @@
     border: 2px solid currentColor;
     font-size: 20px;
     font-weight: 700;
-    margin: 6px 0; /* same row height as the other icons, so the labels line up */
   }
 
   /* ---- Healthy Meal Prep profile viewer (tap a strip card) ------
@@ -1475,7 +1473,7 @@
     .rp-tab { flex: none; width: auto; padding: 0; }
     .rp-tab-label { display: none; }
     .rp-tab-icon { font-size: 24px; }
-    .rp-tab-post .rp-tab-icon { width: 34px; height: 26px; margin: 4px 0; font-size: 22px; }
+    .rp-tab-post .rp-tab-icon { width: 34px; height: 26px; font-size: 22px; }
 
     /* With the text label hidden on this rail, the fast tooltip above is
        the only label left — move it from "above the icon" (which suits a
@@ -1872,7 +1870,7 @@
        fast custom CSS tooltip above actually displays) instead. -->
   <nav class="rp-tabbar" aria-label="Main">
     <a href="feed.html" class="rp-tab active" aria-label="Home" data-tooltip="Home">
-      <span class="rp-tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></span><span class="rp-tab-label">Home</span>
+      <span class="rp-tab-icon">🏠</span><span class="rp-tab-label">Home</span>
     </a>
     <!-- Ken's ask (Oct 2026): replaced with a "Find" hub after Meal Prep
          and the category filter chips got tightened up on mobile (see
@@ -1883,13 +1881,13 @@
          Members, etc.), one tap each. Members browsing didn't disappear —
          it's just one tile on that page now instead of its own tab. -->
     <a href="find.html" class="rp-tab" aria-label="Finder" data-tooltip="Finder">
-      <span class="rp-tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></span><span class="rp-tab-label">Finder</span>
+      <span class="rp-tab-icon">🔎</span><span class="rp-tab-label">Finder</span>
     </a>
     <a href="upload.html" class="rp-tab rp-tab-post" aria-label="Upload a photo, video, or song" data-tooltip="Post">
       <span class="rp-tab-icon">+</span><span class="rp-tab-label">Post</span>
     </a>
     <a href="profile.html" class="rp-tab" aria-label="My Profile" data-tooltip="Profile">
-      <span class="rp-tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg></span><span class="rp-tab-label">Profile</span>
+      <span class="rp-tab-icon">👤</span><span class="rp-tab-label">Profile</span>
     </a>
     <!-- Ken's ask (Sept 2026): put Approved Gear somewhere members will
          actually notice it, instead of only inside the desktop sidebar
@@ -1901,7 +1899,7 @@
          marketing site's approved-gear.html — so it never leaves the app
          or opens a new tab, exactly like Home/Members/Post/Profile. -->
     <a href="gear.html" class="rp-tab" aria-label="Ensemble Approved Products" data-tooltip="Products">
-      <span class="rp-tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h3l2.4 12.2a1 1 0 0 0 1 .8h9.2a1 1 0 0 0 1-.8L20.5 7H6"/></svg></span><span class="rp-tab-label">Products</span>
+      <span class="rp-tab-icon">🛒</span><span class="rp-tab-label">Products</span>
     </a>
   </nav>
 </div>

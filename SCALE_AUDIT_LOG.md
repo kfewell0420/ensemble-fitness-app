@@ -12,18 +12,19 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
-## 2026-10-17, main icon rail/bottom bar: all five icons bright white
+## 2026-10-17, main icon rail/bottom bar: Finder / Post / Profile / Products brighter (emoji kept)
 
-Ken: Finder, Post, Profile and Products icons looked shadowed gray next to the (bright) house; the cart was
-hard to even recognise. Wanted all bright white, website and phone app.
+Ken: those four looked shadowed gray next to the (bright) house; wanted them brighter on website and phone app.
+First attempt replaced the emoji with white line icons -- Ken did NOT want that ("keep it creative": the real
+cart, the real magnifying glass, the person). Reverted to the original emoji.
 
-- Cause: every tab except the current page used 55%-white text, and as emoji (magnifier, silhouette, cart)
-  they are dark glyphs that dimmed further.
-- `feed.html` and `find.html` (the only two pages with this bar): Home / Finder / Profile / Products are now
-  crisp pure-white line icons (same style as each other; the house too, so the set matches). The current
-  page gets a soft light highlight behind its icon. Post "+" is bigger and bolder in a thicker white frame.
-  Post icon row height matches the others so all labels line up on the phone bar.
-- Same files for the phone app (copy into `www`).
+- Cause: every tab except the current page used 55%-white text, which also dimmed the emoji (and the
+  magnifier, person and cart are dark glyphs to begin with).
+- `feed.html` and `find.html` (the only pages with this bar): tab colour is now full white; the four non-home
+  emoji get `filter: brightness(1.85) contrast(1.05)` plus a faint white glow. The house is untouched. The
+  Post "+" is full white in a thicker frame with a bolder, slightly larger plus. Nothing else changed.
+- Same two files for the phone app (copy into `www`). If still not bright enough on a real Apple emoji, raise
+  the brightness number in `.rp-tab:not([href="feed.html"]) .rp-tab-icon`.
 
 ---
 
