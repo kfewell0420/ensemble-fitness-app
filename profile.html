@@ -1289,7 +1289,7 @@
         tileReel = wireReelPlayback(tile.querySelector("video"), reelClips0, clipDursById[item.id]);
       }
       if (soundUrl) {
-        wireNarrationSync(tile.querySelector("video"), tile.querySelector("audio." + soundClass), keepOriginal, musicUrl ? musicStartById[item.id] : 0, musicUrl ? item.trim_start : 0, musicUrl ? musicWinById[item.id] : null, tileReel && tileReel.hasTimes && musicUrl ? tileReel : null);
+        wireNarrationSync(tile.querySelector("video"), tile.querySelector("audio." + soundClass), keepOriginal, musicUrl ? musicStartById[item.id] : 0, musicUrl ? item.trim_start : 0, musicUrl ? musicWinById[item.id] : null, tileReel && tileReel.hasTimes && musicUrl ? tileReel : null, !!musicUrl);
       }
       if (item.kind === "video") {
         var extraClips = resolved[i].extraClips || [];

@@ -3799,14 +3799,14 @@
           var reelAudio = new Audio();
           reelAudio.preload = "none";
           reelAudio.src = item.soundUrl;
-          wireFeedSound(videoEl, reelAudio, !!item.keepOriginalAudio, item.trim_start, item.musicStart, item.musicWin, reel);
+          wireFeedSound(videoEl, reelAudio, !!item.keepOriginalAudio, item.trim_start, item.musicStart, item.musicWin, reel, true);
         }
       } else if (item.soundUrl) {
         // Attached music/voice-over (single-clip posts only). See wireFeedSound.
         var postAudio = new Audio();
         postAudio.preload = "none";
         postAudio.src = item.soundUrl;
-        wireFeedSound(videoEl, postAudio, !!item.keepOriginalAudio, item.trim_start, item.musicStart, item.musicWin);
+        wireFeedSound(videoEl, postAudio, !!item.keepOriginalAudio, item.trim_start, item.musicStart, item.musicWin, null, !!item.isMusicSound);
       }
     }
 

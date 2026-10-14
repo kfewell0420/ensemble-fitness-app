@@ -12,6 +12,15 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-14 (final) — Song locked to video, auto-stop, 3-second fade-out
+
+- **Song and video locked:** tapping/dragging in the video (or tapping a clip in the tray) while it plays now pauses the song too, jumps both to the same spot, and playing again resumes the song exactly there. Previously the song kept running on its own.
+- **Song stops when the clips end:** after the last clip finishes, the song stops (upload preview, feed, My uploads, member profile).
+- **3-second fade-out** on every post's music, automatic: volume ramps down over the last 3 seconds of the song's stretch (very short stretches fade over 40% of their length instead). iPhones ignore script volume, so there the song just stops at the end with no audible fade.
+- **Flash between clips:** next clip now starts slightly early and the player's own controls stay hidden during hand-over, so the split-second play button should no longer show. Not reproducible headlessly, so needs a check on a real phone.
+
+---
+
 ## 2026-10-14 (last) — Clean cuts between clips, picture box shape, thumbnails
 
 - **Clean cut between clips** (upload preview, feed, My uploads, member profile): a hidden twin player (`createClipSwapper` in js/supabaseClient.js) keeps the NEXT clip loaded at its first frame; at the cut it appears on top and plays instantly while the real player loads underneath, then hands back (lining up the time so there is no visible jump). Falls back to the ordinary load if the twin isn't ready. Reel time and the song stay continuous across the cut (tested: no backward jumps, song never stops).

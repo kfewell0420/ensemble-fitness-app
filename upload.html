@@ -531,6 +531,7 @@
   var clipSel = 0;           // clip highlighted in the tray
   var reelIdx = 0;           // clip currently loaded in the preview player
   var reelSwitching = false, reelPending = null, reelLoadTok = 0, reelFilmGen = 0;
+  var autoAdvancing = false; // true only while the preview rolls on by itself from one clip into the next
   var pvSwapper = null; // clean cuts between clips (see createClipSwapper in js/supabaseClient.js)
   var memberDisplayName = "";
   // Ken's ask (Oct 2026): a 1:42 workout video hit Supabase's "the object
@@ -1275,8 +1276,11 @@
     if (!t) return;
     clipSel = Number(t.getAttribute("data-i"));
     renderClipTray();
-    if (!trimPreviewVideo.paused) trimPreviewVideo.pause();
+    var wasPlaying = !trimPreviewVideo.paused;
+    if (wasPlaying) trimPreviewVideo.pause();
+    musicPreviewAudio.pause();
     reelSeek(reelOffsetOf(clipSel));
+    if (wasPlaying) resumeAfterJump();
   });
   document.getElementById("clipTrayCtl").addEventListener("click", function (e) {
     var btn = e.target.closest("button[data-act]");
@@ -1343,7 +1347,7 @@
     return new Promise(function (resolve) {
       if (!pvSwapper) {
         pvSwapper = createClipSwapper(trimPreviewVideo);
-        pvSwapper.onDone(function () { reelSwitching = false; renderClipTray(); preloadNextPreview(); });
+        pvSwapper.onDone(function () { reelSwitching = false; autoAdvancing = false; renderClipTray(); preloadNextPreview(); });
       }
       // Playing straight on into the next clip: a clean cut, no loading flash.
       if (andPlay && !local && pvSwapper.swap(clips[idx].url, 0)) {
@@ -1368,7 +1372,7 @@
         v.removeEventListener("loadedmetadata", onMeta);
         if (tok !== reelLoadTok) { resolve(); return; }
         try { v.currentTime = local || 0; } catch (e) {}
-        reelSwitching = false;
+        reelSwitching = false; autoAdvancing = false;
         renderClipTray();
         if (andPlay) v.play().catch(function () {});
         if (reelPending !== null) { var p = reelPending; reelPending = null; reelSeek(p); }
@@ -1720,10 +1724,18 @@
   function mixTick() {
     mixRaf = null;
     if (trimPreviewVideo.paused && !(pvSwapper && pvSwapper.busy())) return;
+    // Roll on into the next clip a hair before this one ends, so the player never reaches its own "ended" state.
+    if (clips.length > 1 && hasNextClip() && !reelSwitching && !trimPreviewVideo.paused) {
+      var leftInClip = trimPreviewVideo.duration - trimPreviewVideo.currentTime;
+      if (isFinite(leftInClip) && trimPreviewVideo.currentTime > 0.3 && leftInClip < 0.09) { autoAdvancing = true; loadClipAt(reelIdx + 1, 0, true); }
+    }
     updatePlayhead();
     if (hasMusicSelected()) {
       var t = reelNow(), s = musicStartPicker.getValue();
       if (t >= mDelay - 0.02 && t < mDelay + mLen) {
+        // fade out over the last 3 seconds of the song's stretch (see songFadeLength)
+        var fadeVol = (keepOriginalAudio.checked ? MIX_MUSIC_VOLUME : 1) * songFadeGain(mDelay + mLen - t, songFadeLength(mLen));
+        if (Math.abs(musicPreviewAudio.volume - fadeVol) > 0.004) { try { musicPreviewAudio.volume = Math.max(0, Math.min(1, fadeVol)); } catch (e) {} }
         var want = s + Math.max(0, t - mDelay);
         if (musicPreviewAudio.paused) {
           try { musicPreviewAudio.currentTime = want; } catch (e) {}
@@ -1742,7 +1754,7 @@
 
   trimPreviewVideo.addEventListener("playing", function () {
     if (clips.length > 1) {
-      if (!pvSwapper) { pvSwapper = createClipSwapper(trimPreviewVideo); pvSwapper.onDone(function () { reelSwitching = false; renderClipTray(); preloadNextPreview(); }); }
+      if (!pvSwapper) { pvSwapper = createClipSwapper(trimPreviewVideo); pvSwapper.onDone(function () { reelSwitching = false; autoAdvancing = false; renderClipTray(); preloadNextPreview(); }); }
       preloadNextPreview(); // the next clip waits, ready, behind this one
     }
   });
@@ -1753,11 +1765,13 @@
     startMixLoop();
   });
   trimPreviewVideo.addEventListener("pause", function () {
-    if (reelSwitching || (trimPreviewVideo.ended && hasNextClip())) return; // a clip finishing is not the end of the song
+    // Only the preview rolling on into the next clip is allowed to leave the song playing; any other
+    // pause (a tap, a scrub, a jump to another clip) stops the song with the picture.
+    if (autoAdvancing || (trimPreviewVideo.ended && hasNextClip())) return;
     updatePlayTogetherBtn(); musicPreviewAudio.pause(); updatePlayhead(); renderTimeline();
   });
   trimPreviewVideo.addEventListener("ended", function () {
-    if (hasNextClip()) { loadClipAt(reelIdx + 1, 0, true); return; } // next clip, song keeps going
+    if (hasNextClip()) { autoAdvancing = true; loadClipAt(reelIdx + 1, 0, true); return; } // next clip, song keeps going
     updatePlayTogetherBtn(); musicPreviewAudio.pause(); updatePlayhead(); renderTimeline();
   });
   trimPreviewVideo.addEventListener("seeked", function () { updatePlayhead(); if (trimPreviewVideo.paused) renderTimeline(); });
@@ -1859,17 +1873,34 @@
     reelSeek(Math.min(Math.max(0, (e.clientX - r.left) / r.width * vd), vd - 0.05));
   }
   var mixVideoTrack = document.getElementById("mixVideoTrack");
+  var scrubWasPlaying = false;
+  // After a jump, carry on playing from exactly there (song locked to the picture) if it was playing before.
+  function resumeAfterJump() {
+    var tries = 0;
+    (function wait() {
+      if (reelSwitching && tries++ < 100) { setTimeout(wait, 30); return; }
+      trimPreviewVideo.play().catch(function () {});
+    })();
+  }
   mixVideoTrack.addEventListener("pointerdown", function (e) {
     if (!vidDur()) return;
     e.preventDefault();
     scrubbing = true;
+    scrubWasPlaying = !trimPreviewVideo.paused || !!(pvSwapper && pvSwapper.busy());
+    if (replayTimer) { clearTimeout(replayTimer); replayTimer = null; }
     if (!trimPreviewVideo.paused) trimPreviewVideo.pause();
+    musicPreviewAudio.pause(); // the song never keeps going on its own while the picture is held
     try { mixVideoTrack.setPointerCapture(e.pointerId); } catch (err) {}
     scrubTo(e);
   });
   mixVideoTrack.addEventListener("pointermove", function (e) { if (scrubbing) scrubTo(e); });
-  mixVideoTrack.addEventListener("pointerup", function () { scrubbing = false; });
-  mixVideoTrack.addEventListener("pointercancel", function () { scrubbing = false; });
+  function endScrub() {
+    if (!scrubbing) return;
+    scrubbing = false;
+    if (scrubWasPlaying) { scrubWasPlaying = false; resumeAfterJump(); }
+  }
+  mixVideoTrack.addEventListener("pointerup", endScrub);
+  mixVideoTrack.addEventListener("pointercancel", endScrub);
 
   async function startRecording() {
     try {

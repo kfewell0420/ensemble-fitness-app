@@ -254,12 +254,23 @@ function wirePasswordToggle(button, input) {
   });
 }
 
+/* Music fade-out (Oct 2026): a song's tail fades to silence instead of dropping. 3 seconds, but never more
+   than 40% of the music's own length, so a very short post doesn't spend most of its time fading.
+   (Volume is set on the audio element; iPhones ignore that setting, so there the song still stops at
+   the end, just without the fade.) */
+function songFadeLength(musicLen) { return Math.max(0.5, Math.min(3, (musicLen || 0) * 0.4)); } // 3 seconds
+function songFadeGain(remaining, fadeLen) {
+  if (!(fadeLen > 0) || remaining >= fadeLen) return 1;
+  var g = Math.max(0, remaining / fadeLen);
+  return g * g; // squared sounds like an even fade to the ear
+}
+
 /* Keeps a hidden narration <audio> track in sync with its paired <video> —
    used everywhere a video with a recorded voiceover is shown (feed, profile
    "My uploads", and the admin review queue). The video's own sound is muted
    so only the narration plays. Best-effort: if the browser's autoplay policy
    blocks audio.play(), it fails silently rather than throwing. */
-function wireNarrationSync(video, audio, keepOriginal, musicStart, trimStart, musicWin, reel) {
+function wireNarrationSync(video, audio, keepOriginal, musicStart, trimStart, musicWin, reel, fade) {
   if (!video || !audio) return;
   // musicStart: where in the SONG playback begins (seconds; 0 for narration or an unset post).
   // trimStart: the clip's own trim point, so the song lines up with the clip's first frame.
@@ -286,7 +297,26 @@ function wireNarrationSync(video, audio, keepOriginal, musicStart, trimStart, mu
   } else {
     video.muted = true;
   }
+  // fade (music only): the tail fades out over the last seconds of the music's window.
+  var baseVol = keepOriginal ? 0.35 : 1, fadeRaf = null;
+  function endRel() {
+    if (wlen !== null) return delay + wlen;
+    if (reel && reel.total && reel.total()) return reel.total();
+    var d = video.duration;
+    return isFinite(d) && d > 0 ? d - tStart : Infinity;
+  }
+  function fadeStep() {
+    fadeRaf = null;
+    if (!fade || video.paused) return;
+    var end = endRel();
+    if (isFinite(end)) {
+      var v = baseVol * songFadeGain(end - rel(), songFadeLength(end - delay));
+      if (Math.abs(audio.volume - v) > 0.004) { try { audio.volume = Math.max(0, Math.min(1, v)); } catch (e) {} }
+    }
+    fadeRaf = requestAnimationFrame(fadeStep);
+  }
   video.addEventListener("play", function () {
+    if (fade && !fadeRaf) fadeRaf = requestAnimationFrame(fadeStep);
     if (!inWin()) { audio.pause(); return; }
     audio.currentTime = expected();
     audio.play().catch(function () {});
@@ -321,7 +351,7 @@ function wireNarrationSync(video, audio, keepOriginal, musicStart, trimStart, mu
    - keepOriginal: video keeps its own sound; the track plays at low volume and simply
      follows the video's muted state.
    The track starts where the clip's trim starts (at `musicStart` seconds into the song), mirroring the upload preview. */
-function wireFeedSound(video, audio, keepOriginal, trimStart, musicStart, musicWin, reel) {
+function wireFeedSound(video, audio, keepOriginal, trimStart, musicStart, musicWin, reel, fade) {
   if (!video || !audio) return;
   var start = typeof trimStart === "number" ? trimStart : 0;
   var offset = typeof musicStart === "number" && musicStart > 0 ? musicStart : 0; // where in the song playback begins
@@ -361,7 +391,26 @@ function wireFeedSound(video, audio, keepOriginal, trimStart, musicStart, musicW
       try { audio.currentTime = expected(); } catch (e) {}
     }
   }
+  // fade (music only): the tail fades out over the last seconds of the music's window.
+  var baseVol = keepOriginal ? 0.35 : 1, fadeRaf = null;
+  function endRel() {
+    if (wlen !== null) return delay + wlen;
+    if (reel && reel.total && reel.total()) return reel.total();
+    var d = video.duration;
+    return isFinite(d) && d > 0 ? d - start : Infinity;
+  }
+  function fadeStep() {
+    fadeRaf = null;
+    if (!fade || video.paused) return;
+    var end = endRel();
+    if (isFinite(end)) {
+      var v = baseVol * songFadeGain(end - rel(), songFadeLength(end - delay));
+      if (Math.abs(audio.volume - v) > 0.004) { try { audio.volume = Math.max(0, Math.min(1, v)); } catch (e) {} }
+    }
+    fadeRaf = requestAnimationFrame(fadeStep);
+  }
   video.addEventListener("play", function () {
+    if (fade && !fadeRaf) fadeRaf = requestAnimationFrame(fadeStep);
     if (!inWin()) { audio.pause(); return; }
     try { audio.currentTime = expected(); } catch (e) {}
     audio.play().catch(function () {});
@@ -436,7 +485,7 @@ function wireTrimPlayback(video, trimStart, trimEnd) {
      time()               seconds into the clip on screen right now (the twin's while it is showing)
      busy()               true while the twin is still on screen */
 function createClipSwapper(video) {
-  var shadow = null, pre = { url: null, ready: false }, swapTok = 0, showing = false;
+  var shadow = null, pre = { url: null, ready: false }, swapTok = 0, showing = false, savedControls = false;
   function make() {
     if (shadow || !video || !video.parentNode) return shadow;
     shadow = document.createElement("video");
@@ -488,12 +537,15 @@ function createClipSwapper(video) {
     if (!shadow || pre.url !== url || !pre.ready || showing) return false;
     var S = shadow, tok = ++swapTok, t0 = Date.now(), tries = 0, lead = 0.2, seeking = false;
     showing = true;
+    savedControls = video.controls;
+    video.controls = false; // no flash of the player's own buttons underneath
     place();
     S.style.visibility = "visible";
     var sp = S.play(); if (sp && sp.catch) sp.catch(function () {});
     video.src = url;
     function finish() {
       if (tok !== swapTok) return;
+      if (savedControls) video.controls = true;
       showing = false;
       S.style.visibility = "hidden";
       try { S.pause(); } catch (e) {}
@@ -534,6 +586,7 @@ function createClipSwapper(video) {
     busy: function () { return showing; },
     cancel: function () { // abandon a hand-over in progress (the caller is about to load a clip another way)
       swapTok++;
+      if (showing && savedControls) video.controls = true; // give the upload preview its buttons back
       if (showing && shadow) { showing = false; shadow.style.visibility = "hidden"; try { shadow.pause(); } catch (e) {} }
     },
     time: function () { return showing && shadow ? shadow.currentTime : video.currentTime; },
@@ -571,7 +624,21 @@ function wireReelPlayback(video, clips, durations) {
     var n = (index + 1) % clips.length;
     swapper.preload(clips[n].url, clipStart(clips[n]));
   }
-  video.addEventListener("playing", preloadNext); // once a clip is really playing, get the next one ready behind it
+  // Cut a hair BEFORE a clip's end so the player never reaches "ended" (which is what flashed its play
+  // button): the twin takes over while the last instant is still playing.
+  var watchRaf = null;
+  function watchEnd() {
+    watchRaf = null;
+    if (video.paused || swapper.busy()) return;
+    var end = clipEnd(clips[index]);
+    var limit = end !== null ? end : video.duration;
+    if (isFinite(limit) && video.currentTime > 0.3 && limit - video.currentTime < 0.09) { advance(); return; }
+    watchRaf = requestAnimationFrame(watchEnd);
+  }
+  video.addEventListener("playing", function () {
+    preloadNext(); // once a clip is really playing, get the next one ready behind it
+    if (!watchRaf) watchRaf = requestAnimationFrame(watchEnd);
+  });
   swapper.onDone(preloadNext);
 
   function goToClip(i) {
@@ -605,6 +672,7 @@ function wireReelPlayback(video, clips, durations) {
 
   return {
     hasTimes: !!offsets,
+    total: function () { return offsets ? offsets[offsets.length - 1] : null; },
     index: function () { return index; },
     // Seconds into the whole reel (clip 1 starts at 0).
     time: function () {

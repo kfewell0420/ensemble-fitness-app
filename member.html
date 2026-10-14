@@ -347,7 +347,7 @@
         cardReel = wireReelPlayback(card.querySelector("video"), [{ url: url, start: item.trim_start, end: item.trim_end }].concat(clipsById[item.id]), clipDursById[item.id]);
       }
       if (soundUrl) {
-        wireNarrationSync(card.querySelector("video"), card.querySelector("audio." + soundClass), keepOriginal, musicUrl ? musicStartById[item.id] : 0, musicUrl ? item.trim_start : 0, musicUrl ? musicWinById[item.id] : null, cardReel && cardReel.hasTimes && musicUrl ? cardReel : null);
+        wireNarrationSync(card.querySelector("video"), card.querySelector("audio." + soundClass), keepOriginal, musicUrl ? musicStartById[item.id] : 0, musicUrl ? item.trim_start : 0, musicUrl ? musicWinById[item.id] : null, cardReel && cardReel.hasTimes && musicUrl ? cardReel : null, !!musicUrl);
       }
       if (item.kind === "video" && !cardReel) {
         wireTrimPlayback(card.querySelector("video"), item.trim_start, item.trim_end);
