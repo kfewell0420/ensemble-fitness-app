@@ -12,6 +12,27 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-16 (later), video upload music controls: play against the video, more compact
+
+Ken (looking at it on desktop): tapping a song played it on its own, so there was no way to hear the chosen
+start point against the video, and the area was too big.
+
+- `upload.html`: tapping a song card now plays video + song together from the video's first frame (it used
+  to play the song alone). Letting go of the "Start the song at" slider, or tapping -1/2 / +1/2, replays the
+  clip from the top against the new start point (350 ms settle so quick repeated nudges = one replay).
+  Dragging while the clip plays moves the song live. The separate full-width play button is gone: the
+  button is now "Play with video / Stop" in the start-point box, and -1/2 / +1/2 sit on either side of the
+  slider (one row). "Keep my video's own sound" is one line; Cover photo is a collapsed "tap to change"
+  row (the first frame is still the default). Phones: preview is 4:3 instead of square and the sound note
+  is hidden, so the music controls sit on screen right under the video. Silent-audio "unlock" on the tap so
+  iPhone allows the song to start (could not be tested on a real iPhone here -- please confirm).
+  Also fixed: after clearing a song and re-picking the same one, it could be silent.
+- `js/supabaseClient.js` `createMusicStartPicker`: nudge layout + `onPlay`/`setPlaying`; `onChange` gets a
+  second "committed" argument. The feed's post Edit picker is unchanged.
+- Tested at 393 px and 1000 px with Playwright (tap-to-play, nudge replay, slider release, stop/play, upload row).
+
+---
+
 ## 2026-10-16, video upload: editing removed, music timing is now the focus
 
 Ken: members edit on their phone first, so the site shouldn't edit video. The only thing to control

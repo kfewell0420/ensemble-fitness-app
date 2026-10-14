@@ -143,6 +143,12 @@
   }
   .efit-nav-utility { margin-left: 0; margin-top: 0; }
   .app-shell { padding-top: 4px; }
+  /* Phones: a shorter preview so the music controls sit on screen right under the
+     video without scrolling (preview crop only; the uploaded video is untouched). */
+  @media (max-width: 560px) {
+    #trimPreviewVideo { aspect-ratio: 4 / 3; margin-bottom: 8px; }
+    #previewSoundNote { display: none; }
+  }
 </style>
 
 <div class="app-shell narrow" id="uploadShell">
@@ -265,9 +271,10 @@
           </div>
 
           <div class="trim-controls">
-            <!-- Music: pick a song, then slide WHERE in the song it starts. Press
-                 play on the video (or the button) to hear both together; move the
-                 slider or nudge by half a second until the beat lands. -->
+            <!-- Music: pick a song (tapping it plays it against the video), then slide
+                 WHERE in the song it starts. Letting go of the slider or tapping the
+                 half-second buttons replays the clip from the top against the new
+                 start point, so the beat can be matched by ear. -->
             <div class="narration-section more-option-compact" id="musicSection" style="margin-top:14px;">
               <div class="field-label-row">
                 <label>🎵 Music (optional)</label>
@@ -279,24 +286,21 @@
                 <option value="">Select music track</option>
               </select>
               <div id="musicStartRow" style="display:none;"></div>
-              <button type="button" class="btn btn-primary btn-sm" id="playTogetherBtn" style="display:none; margin-top:10px; width:100%;">▶ Play video with music</button>
               <label id="keepOriginalRow" style="display:none; align-items:flex-start; gap:8px; margin-top:12px; font-size:13.5px; font-weight:600; cursor:pointer;">
                 <input type="checkbox" id="keepOriginalAudio" style="width:auto; margin-top:3px;" />
-                <span>Keep my video's own sound too<br><span style="font-weight:400; font-size:12px; color:var(--faint-invert);">Your track plays softly underneath. Leave unchecked to replace the video's sound with the track.</span></span>
+                <span title="Your track plays softly underneath. Leave unchecked to replace the video's sound with the track.">Keep my video's own sound too <span style="font-weight:400; font-size:12px; color:var(--faint-invert);">(music plays softly underneath)</span></span>
               </label>
               <audio id="musicPreviewAudio" style="display:none;"></audio>
             </div>
 
             <!-- Cover photo: still a simple pick of one frame as the post's
                  thumbnail (this does not change the video itself). -->
-            <div class="cover-picker" id="coverPicker" style="display:none; margin-top:14px;">
-              <div class="field-label-row">
-                <label>🖼️ Cover photo</label>
-              </div>
-              <div class="cover-picker-row" id="coverPickerRow">
+            <details class="cover-picker" id="coverPicker" style="display:none; margin-top:12px;">
+              <summary style="cursor:pointer; font-size:13.5px; font-weight:600;">🖼️ Cover photo <span style="font-weight:400; font-size:12px; color:var(--faint-invert);">(optional — tap to change)</span></summary>
+              <div class="cover-picker-row" id="coverPickerRow" style="margin-top:8px;">
                 <span class="cover-picker-status">Generating previews…</span>
               </div>
-            </div>
+            </details>
           </div>
         </div>
       </div>
@@ -1128,7 +1132,6 @@
   // video itself, scrubbing it, dragging the song slider, or nudging it by half
   // a second all keep the two lined up, so the beat can be matched to the
   // workout by ear.
-  var playTogetherBtn = document.getElementById("playTogetherBtn");
 
   function hasMusicSelected() {
     return !!musicTrackSelect.value && !musicTrackSelect.disabled;
@@ -1154,7 +1157,7 @@
     musicPreviewAudio.play().catch(function () {});
   }
   function updatePlayTogetherBtn() {
-    playTogetherBtn.textContent = trimPreviewVideo.paused ? "▶ Play video with music" : "■ Stop";
+    musicStartPicker.setPlaying(!trimPreviewVideo.paused);
   }
   trimPreviewVideo.addEventListener("play", function () { updatePlayTogetherBtn(); syncMusicToVideo(); });
   trimPreviewVideo.addEventListener("pause", function () { updatePlayTogetherBtn(); musicPreviewAudio.pause(); });
@@ -1164,17 +1167,34 @@
       try { musicPreviewAudio.currentTime = songTimeForVideo(); } catch (e) {}
     }
   });
-  playTogetherBtn.addEventListener("click", function () {
-    if (!trimPreviewVideo.paused) { trimPreviewVideo.pause(); return; }
-    musicStartPicker.stop();
+  // "▶ Play with video" (and every auto-preview below): restart the clip from
+  // the top with the song at its chosen start point. If the clip is already
+  // playing, the seek re-lines the song up.
+  function playWithVideo() {
     applyPreviewMix();
+    // Pause first so the play event always fires: it (re)loads the chosen song and
+    // starts it at the right spot, even if a different song was just playing.
+    if (!trimPreviewVideo.paused) trimPreviewVideo.pause();
     trimPreviewVideo.currentTime = 0;
     trimPreviewVideo.play().catch(function () {});
-  });
-  // Called whenever the song's start point moves while the video is playing.
-  function onMusicStartMoved() {
-    if (!trimPreviewVideo.paused && hasMusicSelected()) {
+  }
+  function toggleVideoWithMusic() {
+    if (!trimPreviewVideo.paused) { trimPreviewVideo.pause(); return; }
+    playWithVideo();
+  }
+  // Called whenever the song's start point moves. While the clip is playing the
+  // song follows live; when the member lets go of the slider / taps a nudge
+  // button, replay the clip from the top (a short pause lets quick repeated
+  // nudges settle into one replay) so they hear the new start against the video.
+  var replayTimer = null;
+  function onMusicStartMoved(v, committed) {
+    if (!hasMusicSelected()) return;
+    if (!trimPreviewVideo.paused) {
       try { musicPreviewAudio.currentTime = songTimeForVideo(); } catch (e) {}
+    }
+    if (committed) {
+      if (replayTimer) clearTimeout(replayTimer);
+      replayTimer = setTimeout(function () { replayTimer = null; playWithVideo(); }, 350);
     }
   }
 
@@ -1291,6 +1311,20 @@
     musicPreviewAudio.play().catch(function () {});
   }
 
+  // iPhone/Safari only lets a page start sound from inside a tap. The song's
+  // link is fetched a moment AFTER the tap, so "play" a silent blip on the
+  // audio element during the tap itself; after that, the page may start the
+  // real song on it whenever the video plays.
+  var SILENT_WAV = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
+  function unlockPreviewAudio() {
+    if (musicPreviewAudio.dataset.unlocked) return;
+    musicPreviewAudio.dataset.unlocked = "1";
+    if (!musicPreviewAudio.getAttribute("src")) {
+      musicPreviewAudio.src = SILENT_WAV;
+      musicPreviewAudio.play().catch(function () {});
+    }
+  }
+
   function renderTrackCards(tracks) {
     trackPickerRow.innerHTML = "";
 
@@ -1326,11 +1360,12 @@
       if (!card) return;
       var id = card.getAttribute("data-track-id");
       if (musicTrackSelect.disabled) return; // narration already chosen — see syncMusicNarrationExclusivity
+      unlockPreviewAudio(); // phones only allow sound that was started by a tap — do it now, before any waiting
       musicTrackSelect.value = id;
       musicTrackSelect.dispatchEvent(new Event("change"));
-      // Ken's ask: hear it right away, before committing. If the video is
-      // already playing, line the new song up with it instead.
-      if (!trimPreviewVideo.paused) { syncMusicToVideo(); } else { playTrackPreview(id); }
+      // Ken's ask: hear it right away, before committing — played AGAINST the
+      // video (from its first frame), not on its own.
+      if (id) playWithVideo(); else { trimPreviewVideo.pause(); musicPreviewAudio.pause(); }
     });
   }
 
@@ -1374,13 +1409,12 @@
   }
   // "Start the song at …" — lets the artist skip a long intro. Saved as media.music_start_seconds.
   var musicStartRow = document.getElementById("musicStartRow");
-  var musicStartPicker = createMusicStartPicker({ audio: musicPreviewAudio, initial: 0, nudge: true, hideHear: true, onChange: onMusicStartMoved });
+  var musicStartPicker = createMusicStartPicker({ audio: musicPreviewAudio, initial: 0, nudge: true, onChange: onMusicStartMoved, onPlay: toggleVideoWithMusic });
   musicStartRow.appendChild(musicStartPicker.el);
   var lastMusicStartTrack = "";
   function updateMusicStartRow() {
     var hasMusic = !!musicTrackSelect.value && !musicTrackSelect.disabled;
     musicStartRow.style.display = hasMusic ? "block" : "none";
-    playTogetherBtn.style.display = hasMusic ? "block" : "none";
     if (!hasMusic) musicPreviewAudio.pause();
     // Start over at 0:00 only when the track itself changes (tapping the same card again keeps it).
     var trackChanged = (musicTrackSelect.value || "") !== lastMusicStartTrack;
@@ -1400,6 +1434,7 @@
     updateSelectedTrackCard();
     musicPreviewAudio.pause();
     musicPreviewAudio.removeAttribute("src");
+    delete musicPreviewAudio.dataset.trackId; // the next pick must fetch its link again
   }
 
   // Music and a recorded voiceover are mutually exclusive — whichever one
