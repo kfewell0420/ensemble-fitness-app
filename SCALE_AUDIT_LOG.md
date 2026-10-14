@@ -12,6 +12,17 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-15 (later), "Equipment" added back as its own category
+
+Ken: Equipment was forgotten; it needs to be a category too (alongside Fitness, Home, Clothing).
+
+- `admin.html`: category drop-down is now Fitness, Equipment, Home, Clothing, Recovery, Hydration,
+  Wearables, Health Care, Nutrition (+ Other...).
+- `sql/merge-categories-into-fitness.sql` corrected: plain "Equipment" is NO LONGER moved to Fitness.
+  Now: Fitness Equipment / Fitness Shoes / Shoes -> "Fitness"; Home Equipment -> "Equipment".
+  If the earlier version of this file was already run, products that were "Equipment" are now
+  "Fitness"; move them back with the per-row category drop-down in admin.
+
 ## 2026-10-15, product categories: Fitness / Home / Clothing, drop-downs, quick re-categorize
 
 Ken: merge fitness shoes + fitness equipment into one "Fitness"; add Home and Clothing; needs to be
