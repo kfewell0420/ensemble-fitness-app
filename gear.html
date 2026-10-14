@@ -43,18 +43,31 @@
 
   <div class="eyebrow">Ensemble Approved Products</div>
   <h2 style="margin-bottom:6px;">Products Ensemble Fitness actually buys.</h2>
-  <p class="card-sub" style="margin-bottom:16px;">Real products. Real experience. Every product featured here has been personally purchased and used by us—not simply pulled from a “Top 10” list.</p>
+  <p class="card-sub" style="margin-bottom:10px;">Real products. Real experience. Every product featured here has been personally purchased and used by us—not simply pulled from a “Top 10” list.</p>
 
   <div class="gear-disclosure">
-    <strong>Honest disclosure:</strong> Ensemble Fitness participates in the Amazon Associates program and TikTok Shop's affiliate program. If you buy something through a link here, we may earn a small commission at no extra cost to you. That never changes which products make this list.
+    <strong>Honest disclosure:</strong> As an Amazon Associate, Ensemble Fitness earns from qualifying purchases. We also participate in TikTok Shop's affiliate program. If you buy something through a link here, we may earn a small commission at no extra cost to you. That never changes which products make this list.
   </div>
 
+  <input type="search" id="gearSearch" class="gear-search" placeholder="Search products…" aria-label="Search products" autocomplete="off" />
   <div class="gear-filters" id="gearFilters"></div>
+  <div class="gear-count" id="gearCount"></div>
 
-  <div class="feed-grid" id="gearGrid">
+  <div class="gear-grid" id="gearGrid">
     <div class="empty-state">Loading picks…</div>
   </div>
+  <button type="button" class="btn btn-ghost btn-block" id="gearMore" style="display:none; margin-top:14px;">Show more</button>
 
+</div>
+
+<!-- Tap a small product tile to open it bigger: full photo, full name, price, Ken's note and the buy
+     links. Keeps the page itself a compact thumbnail grid however many products there are. -->
+<div class="gear-sheet-backdrop" id="gearSheet" hidden>
+  <div class="gear-sheet" role="dialog" aria-modal="true" aria-label="Product details">
+    <button type="button" class="gear-sheet-close" id="gearSheetClose" aria-label="Close">✕</button>
+    <div class="gear-sheet-img" id="gearSheetImg"></div>
+    <div class="gear-sheet-body" id="gearSheetBody"></div>
+  </div>
 </div>
 
 <style>
@@ -66,15 +79,24 @@
     border: 1px solid rgba(255,255,255,0.1);
     border-left: 3px solid var(--accent-2);
     border-radius: 10px;
-    padding: 14px 16px;
-    font-size: 13px;
+    padding: 10px 12px;
+    font-size: 12.5px;
     color: var(--muted-invert);
-    line-height: 1.5;
-    margin-bottom: 20px;
+    line-height: 1.45;
+    margin-bottom: 12px;
   }
-  .gear-filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+  /* Ken's ask (Oct 2026): picture 500 products — the old one-big-card-per-product layout took a
+     whole screen each and cropped the photo. Now: small square thumbnail tiles (about 1 inch),
+     the whole product photo shown (object-fit: contain, never cropped), a tap opens the details. */
+  .gear-search {
+    width: 100%; box-sizing: border-box; margin-bottom: 10px;
+    background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.16);
+    border-radius: 10px; padding: 10px 14px; font-size: 15px; color: #fff; font-family: inherit;
+  }
+  .gear-filters { display: flex; flex-wrap: nowrap; gap: 8px; margin-bottom: 10px; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
   .gear-chip {
-    padding: 8px 16px;
+    flex: 0 0 auto; white-space: nowrap;
+    padding: 7px 14px;
     border-radius: var(--radius-pill);
     border: 1px solid rgba(255,255,255,0.16);
     background: none;
@@ -84,7 +106,50 @@
     cursor: pointer;
   }
   .gear-chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
-  .gear-card-cta { display: block; margin: 10px 16px 16px; text-align: center; }
+  .gear-count { font-size: 12px; color: var(--faint-invert); margin-bottom: 8px; }
+  .gear-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 10px; }
+  .gear-grid .empty-state { grid-column: 1 / -1; }
+  .gear-tile {
+    display: flex; flex-direction: column; text-align: left; padding: 0; cursor: pointer;
+    background: #161a22; border: 1px solid rgba(255,255,255,0.1); border-radius: 10px;
+    overflow: hidden; color: inherit; font-family: inherit;
+  }
+  .gear-tile:hover, .gear-tile:focus-visible { border-color: var(--accent-2); outline: none; }
+  .gear-tile-img { aspect-ratio: 1 / 1; background: #fff; display: flex; align-items: center; justify-content: center; }
+  .gear-tile-img img { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .gear-tile-img .thumb-initial { font-size: 28px; }
+  .gear-tile-name {
+    font-size: 11.5px; line-height: 1.3; font-weight: 600; color: #fff; padding: 6px 7px 2px; min-height: 2.6em;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word;
+  }
+  .gear-tile-price { font-size: 11px; color: var(--faint-invert); padding: 0 7px 7px; min-height: 1.2em; }
+
+  .gear-sheet-backdrop {
+    position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,0.65);
+    display: flex; align-items: flex-end; justify-content: center;
+  }
+  .gear-sheet-backdrop[hidden] { display: none; }
+  .gear-sheet {
+    position: relative; width: 100%; max-width: 480px; max-height: 88vh; overflow-y: auto;
+    background: #12151c; border: 1px solid rgba(255,255,255,0.12); border-radius: 18px 18px 0 0;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  }
+  @media (min-width: 721px) {
+    .gear-sheet-backdrop { align-items: center; }
+    .gear-sheet { border-radius: 18px; padding-bottom: 16px; }
+  }
+  .gear-sheet-close {
+    position: absolute; top: 10px; right: 10px; z-index: 2; width: 34px; height: 34px; border-radius: 50%;
+    border: none; background: rgba(0,0,0,0.55); color: #fff; font-size: 16px; cursor: pointer;
+  }
+  .gear-sheet-img { background: #fff; height: 260px; display: flex; align-items: center; justify-content: center; border-radius: 18px 18px 0 0; }
+  .gear-sheet-img img { max-width: 100%; max-height: 100%; object-fit: contain; }
+  .gear-sheet-body { padding: 14px 16px 0; }
+  .gear-sheet-cat { display: inline-block; font-size: 11px; font-weight: 700; color: var(--accent-2); text-transform: uppercase; letter-spacing: .06em; }
+  .gear-sheet-name { font-size: 16px; font-weight: 700; color: #fff; margin: 4px 0; line-height: 1.35; }
+  .gear-sheet-price { font-size: 14px; color: var(--muted-invert); margin-bottom: 8px; }
+  .gear-sheet-note { font-size: 14px; color: var(--muted-invert); line-height: 1.5; margin: 0 0 12px; }
+  .gear-sheet-body .btn { display: block; text-align: center; margin-top: 8px; }
 </style>
 
 <!-- Ken's ask (Oct 2026): the "self-hosted copy, fall back to CDN" setup
@@ -123,10 +188,14 @@
     return (label || "").trim().toLowerCase().replace(/\s+/g, "-");
   }
 
+  // Commission safety (Oct 2026): the Associates tag is added to every real amazon.* link.
+  // Short links (amzn.to, a.co) can't be tagged here — they must be made with SiteStripe while
+  // signed in to Associates Central, which already builds your tag into them.
   function withAssociateTag(rawUrl) {
     try {
       var u = new URL(rawUrl);
-      if (AMAZON_ASSOCIATE_TAG && AMAZON_ASSOCIATE_TAG.indexOf("REPLACE_WITH") !== 0) {
+      var isAmazonHost = /(^|\.)amazon\.[a-z.]+$/i.test(u.hostname);
+      if (isAmazonHost && AMAZON_ASSOCIATE_TAG && AMAZON_ASSOCIATE_TAG.indexOf("REPLACE_WITH") !== 0) {
         u.searchParams.set("tag", AMAZON_ASSOCIATE_TAG);
       }
       return u.toString();
@@ -134,6 +203,23 @@
       return rawUrl;
     }
   }
+
+  // Small thumbnails for the grid: asks Supabase for a 240px copy instead of the full-size photo
+  // (a screen of 60 tiles would otherwise download 60 full photos). Falls back to the original
+  // automatically if resizing isn't available. The tap-to-open view always uses the original.
+  var GEAR_THUMB_RESIZE = true;
+  function thumbUrl(path) {
+    var base = window.SUPABASE_URL + "/storage/v1/";
+    return GEAR_THUMB_RESIZE
+      ? base + "render/image/public/gear-photos/" + path + "?width=240&height=240&resize=contain&quality=75"
+      : base + "object/public/gear-photos/" + path;
+  }
+
+  var GEAR_PAGE_SIZE = 60;
+  var gearShownCount = GEAR_PAGE_SIZE;
+  var gearFilterKey = "all";
+  var gearQuery = "";
+  var gearVisible = [];
 
   function renderFilters() {
     var wrap = document.getElementById("gearFilters");
@@ -146,51 +232,91 @@
       chip.addEventListener("click", function () {
         wrap.querySelectorAll(".gear-chip").forEach(function (c) { c.classList.remove("active"); });
         chip.classList.add("active");
-        renderGrid(chip.getAttribute("data-cat"));
+        gearFilterKey = chip.getAttribute("data-cat");
+        gearShownCount = GEAR_PAGE_SIZE;
+        renderGrid();
       });
     });
   }
 
-  function renderGrid(filterKey) {
+  function renderGrid() {
     var grid = document.getElementById("gearGrid");
-    var shown = filterKey && filterKey !== "all"
-      ? gearItems.filter(function (item) { return item.categoryKey === filterKey; })
-      : gearItems;
+    var q = gearQuery.trim().toLowerCase();
+    gearVisible = gearItems.filter(function (item) {
+      if (gearFilterKey !== "all" && item.categoryKey !== gearFilterKey) return false;
+      if (!q) return true;
+      return (item.name + " " + item.note + " " + item.category).toLowerCase().indexOf(q) !== -1;
+    });
 
-    if (!shown.length) {
-      grid.innerHTML = '<div class="empty-state">No picks in this category yet — check back soon.</div>';
+    var countEl = document.getElementById("gearCount");
+    var moreBtn = document.getElementById("gearMore");
+
+    if (!gearVisible.length) {
+      countEl.textContent = "";
+      moreBtn.style.display = "none";
+      grid.innerHTML = '<div class="empty-state">' + (q || gearFilterKey !== "all" ? "No products match — try a different search or category." : "No picks yet — check back soon.") + '</div>';
       return;
     }
 
-    grid.innerHTML = shown.map(function (item) {
-      var thumb = item.imgUrl
-        ? '<img src="' + escapeHtml(item.imgUrl) + '" alt="' + escapeHtml(item.name) + '" />'
+    var slice = gearVisible.slice(0, gearShownCount);
+    grid.innerHTML = slice.map(function (item, i) {
+      var thumb = item.imgPath
+        ? '<img src="' + escapeHtml(thumbUrl(item.imgPath)) + '" data-orig="' + escapeHtml(item.imgUrl) + '" alt="' + escapeHtml(item.name) + '" loading="lazy" decoding="async" onerror="if(this.dataset.orig&&this.src!==this.dataset.orig){this.src=this.dataset.orig;}else{this.onerror=null;this.style.visibility=\'hidden\';}" />'
         : '<div class="thumb-initial">🛒</div>';
-  var ctas = "";
-      if (item.amazon_url) {
-        var amazonLink = withAssociateTag(item.amazon_url);
-        ctas += '<a class="btn btn-primary btn-sm gear-card-cta" href="' + escapeHtml(amazonLink) + '" target="_blank" rel="sponsored nofollow noopener">' +
-          (item.price ? "Buy on Amazon" : "View on Amazon") +
-        '</a>';
-      }
-      if (item.tiktok_url) {
-        ctas += '<a class="btn btn-ghost btn-sm gear-card-cta" href="' + escapeHtml(item.tiktok_url) + '" target="_blank" rel="sponsored nofollow noopener">' +
-          "View on TikTok" +
-        '</a>';
-      }
-      return (
-        '<div class="feed-card">' +
-          '<div class="feed-card-thumb">' + thumb + '<span class="kind-badge">' + escapeHtml(item.category) + '</span></div>' +
-          '<div class="feed-card-meta">' +
-            '<div class="feed-card-name">' + escapeHtml(item.name) + '</div>' +
-            (item.price ? '<div class="feed-card-sub">' + escapeHtml(item.price) + '</div>' : '') +
-            (item.note ? '<p class="feed-card-caption">“' + escapeHtml(item.note) + '”</p>' : '') +
-          '</div>' +
-          ctas +
-        '</div>'
-      );
+      return '<button type="button" class="gear-tile" data-i="' + i + '">' +
+          '<div class="gear-tile-img">' + thumb + '</div>' +
+          '<div class="gear-tile-name">' + escapeHtml(item.name) + '</div>' +
+          '<div class="gear-tile-price">' + escapeHtml(item.price || "") + '</div>' +
+        '</button>';
     }).join("");
+
+    countEl.textContent = "Showing " + slice.length + " of " + gearVisible.length + " product" + (gearVisible.length === 1 ? "" : "s");
+    var left = gearVisible.length - slice.length;
+    moreBtn.style.display = left > 0 ? "block" : "none";
+    moreBtn.textContent = "Show more (" + left + " more)";
   }
+
+  function openSheet(item) {
+    var img = item.imgUrl
+      ? '<img src="' + escapeHtml(item.imgUrl) + '" alt="' + escapeHtml(item.name) + '" />'
+      : '<div class="thumb-initial" style="font-size:48px;">🛒</div>';
+    document.getElementById("gearSheetImg").innerHTML = img;
+    var ctas = "";
+    if (item.amazon_url) {
+      ctas += '<a class="btn btn-primary" href="' + escapeHtml(withAssociateTag(item.amazon_url)) + '" target="_blank" rel="sponsored nofollow noopener">' +
+        (item.price ? "Buy on Amazon" : "View on Amazon") + '</a>';
+    }
+    if (item.tiktok_url) {
+      ctas += '<a class="btn btn-ghost" href="' + escapeHtml(item.tiktok_url) + '" target="_blank" rel="sponsored nofollow noopener">View on TikTok</a>';
+    }
+    document.getElementById("gearSheetBody").innerHTML =
+      '<span class="gear-sheet-cat">' + escapeHtml(item.category) + '</span>' +
+      '<div class="gear-sheet-name">' + escapeHtml(item.name) + '</div>' +
+      (item.price ? '<div class="gear-sheet-price">' + escapeHtml(item.price) + '</div>' : '') +
+      (item.note ? '<p class="gear-sheet-note">“' + escapeHtml(item.note) + '”</p>' : '') +
+      ctas;
+    document.getElementById("gearSheet").hidden = false;
+  }
+  function closeSheet() { document.getElementById("gearSheet").hidden = true; }
+
+  document.getElementById("gearGrid").addEventListener("click", function (e) {
+    var tile = e.target.closest(".gear-tile");
+    if (!tile) return;
+    var item = gearVisible[Number(tile.getAttribute("data-i"))];
+    if (item) openSheet(item);
+  });
+  document.getElementById("gearMore").addEventListener("click", function () {
+    gearShownCount += GEAR_PAGE_SIZE;
+    renderGrid();
+  });
+  document.getElementById("gearSearch").addEventListener("input", function (e) {
+    gearQuery = e.target.value;
+    gearShownCount = GEAR_PAGE_SIZE;
+    renderGrid();
+  });
+  document.getElementById("gearSheetClose").addEventListener("click", closeSheet);
+  document.getElementById("gearSheet").addEventListener("click", function (e) { if (e.target === this) closeSheet(); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeSheet(); });
 
   async function loadGear() {
     var grid = document.getElementById("gearGrid");
@@ -221,12 +347,13 @@
         price: row.price || "",
         amazon_url: row.amazon_url,
         tiktok_url: row.tiktok_url,
+        imgPath: row.image_path || "",
         imgUrl: imgUrl
       };
     });
 
     renderFilters();
-    renderGrid("all");
+    renderGrid();
   }
 
   (async function init() {

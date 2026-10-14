@@ -12,6 +12,34 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-14 (later), Products page (gear.html): compact thumbnail grid for hundreds of products
+
+Ken: the first Amazon product showed as one huge card with the photo cropped; he is about to
+add 50 products today, 50 tomorrow, plus TikTok products, so the page must show an abundance
+of them at thumbnail size (about one inch), and commissions must be tracked.
+
+- `gear.html` (shared; website + phone app): products are small square tiles (3 across on a
+  phone, more on desktop) showing the WHOLE photo (`object-fit: contain` on white, never
+  cropped), a 2-line name and the price. Tapping a tile opens a details sheet with the big
+  photo, full name, price, note and the Buy on Amazon / View on TikTok buttons.
+- Built for hundreds: search box, category chips that scroll sideways (no wrapping), "Showing
+  X of Y", 60 tiles at a time with "Show more", lazy-loaded images. Grid thumbnails ask
+  Supabase for a 240px copy (`GEAR_THUMB_RESIZE`, falls back to the original photo
+  automatically; set false to turn off); the details sheet uses the original photo.
+- Commission safety: the Associates tag (`kenfewell-20`) is now only added to real amazon.*
+  links (was added to any URL). Short links (amzn.to, a.co) are left as-is: they must be made
+  with SiteStripe while signed in so the tag is built in. TikTok links are shown exactly as
+  entered: they must be TikTok Shop affiliate links to earn anything.
+- Disclosure text now includes the sentence Amazon asks for: "As an Amazon Associate,
+  Ensemble Fitness earns from qualifying purchases." (kept TikTok mention and "no extra cost").
+- Tested at 393px and 1200px with 150 fake products: tile sizes, 60-at-a-time + Show more,
+  search, category chip, details sheet opens/closes (Esc), tag added to amazon.com link,
+  amzn.to and TikTok links untouched. Not changed: marketing-site `approved-gear.html`
+  (separate page, still the old card layout; offered).
+- Heads-up for Ken: Amazon's Associates agreement has rules on showing prices and product
+  images; worth reading the current version in Associates Central (typed-in prices can go
+  out of date).
+
 ## 2026-10-14, "Welcome, charter member" note on the Create Account tab
 
 Ken: everyone should know from the beginning what Ensemble Fitness is aiming to be and what
