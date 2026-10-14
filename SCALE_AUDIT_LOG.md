@@ -12,6 +12,23 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-14, "Welcome, charter member" note on the Create Account tab
+
+Ken: everyone should know from the beginning what Ensemble Fitness is aiming to be and what
+is free vs. an upgrade (he is still deciding the exact free/paid split and price).
+
+- `login.html` only: a compact card above the sign-up form, shown on the Create Account tab
+  (also when arriving via `?mode=signup`) and hidden on Sign In. Wording: community for
+  people who live active, healthy lives; goal = a trusted way to meet someone who shares
+  that lifestyle. Free = join, post videos and meal preps, browse members, like, follow,
+  comment, send encouraging notes. "Upgrade (coming soon)" = private messages and Fitness+
+  matching. No charter-member perk mentioned (Ken's choice for now).
+- NOTE: this is wording only. Nothing is blocked yet; private messages and Fitness+ are not
+  limited to paid members. If the free/paid split changes, the card text is in one place
+  (`#welcomeNote` in login.html). Does not name any competitor.
+- Shared file, copied to mobile `www` too (phone sign-ups see it).
+- Tested at 393px: hidden on Sign In, shown on Create Account and `?mode=signup`, no errors.
+
 ## 2026-10-13, one-screen approval page for new member enrollments (website only)
 
 Ken: tapping the "New charter member enrollment" email opened the whole admin page (app
