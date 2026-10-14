@@ -12,6 +12,25 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-15, product categories: Fitness / Home / Clothing, drop-downs, quick re-categorize
+
+Ken: merge fitness shoes + fitness equipment into one "Fitness"; add Home and Clothing; needs to be
+able to move products (some he added are really Home items) between categories.
+
+- `admin.html` (website only): Category is now a real drop-down in the Add form and the Edit form:
+  Fitness, Home, Clothing, Recovery, Hydration, Wearables, Health Care, Nutrition, plus "Other..."
+  (reveals a box for a brand-new category). Why it felt like editing was missing: the old type-ahead
+  box hid the other choices whenever it already had a value.
+- NEW: every product row in the list has its own category drop-down that saves immediately
+  ("Saved check") with no Edit form; "Other..." there asks for the name.
+  An older/custom category stays selectable on the rows that use it.
+- New `sql/merge-categories-into-fitness.sql`: moves Equipment / Home Equipment / Fitness Equipment /
+  Fitness Shoes / Shoes to "Fitness" (category text only). Replaces the earlier
+  `rename-home-equipment-to-equipment.sql` (do not run that one if not already run).
+- Public marketing-site picks page and the member Products page build their filter buttons from the
+  live data, so no change there.
+- Tested with mock data: add/edit/quick-change write the right category (incl. Other...), no page errors.
+
 ## 2026-10-14 (late night), Products page: every product tile the same size, whatever the photo's shape
 
 Ken: a tall shower-gel bottle photo made its tile tall (and the row's neighbor too). All photos
