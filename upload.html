@@ -164,6 +164,35 @@
     #trimPreviewVideo { aspect-ratio: 4 / 3; margin-bottom: 8px; }
     #previewSoundNote { display: none; }
   }
+  /* Music tracks: summary row on the page + slide-in list (side panel on desktop, bottom sheet on phones) */
+  .mt-choose { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 14px; border-radius: 12px; border: 1.5px solid rgba(255,255,255,0.14); background: rgba(255,255,255,0.05); color: #fff; font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; }
+  .mt-choose:hover { border-color: var(--accent-2); }
+  .mt-count { font-size: 12.5px; font-weight: 600; color: var(--accent-2); white-space: nowrap; }
+  .mt-selected { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 12px; border: 1.5px solid var(--accent-2); background: var(--accent-tint); }
+  .mt-art { flex: 0 0 auto; width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 800; color: var(--accent-2); }
+  .mt-sel-text { flex: 1; min-width: 0; display: flex; flex-direction: column; text-align: left; }
+  .mt-sel-text b { font-size: 14px; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mt-sel-text small { font-size: 12px; color: var(--faint-invert, #9aa0b4); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mt-change { flex: 0 0 auto; background: none; border: 1.5px solid rgba(255,255,255,0.3); color: #fff; border-radius: 999px; padding: 6px 12px; font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+  .mt-remove { flex: 0 0 auto; width: 30px; height: 30px; border-radius: 50%; background: rgba(255,255,255,0.1); border: none; color: #fff; font-size: 13px; cursor: pointer; }
+  #trackPickerRow.disabled { opacity: 0.45; pointer-events: none; }
+  .mt-overlay { position: fixed; inset: 0; z-index: 2000; background: rgba(0,0,0,0.55); display: none; }
+  .mt-overlay.open { display: flex; justify-content: flex-end; align-items: stretch; }
+  .mt-panel { width: 380px; max-width: 100%; height: 100%; background: #15151a; color: #fff; display: flex; flex-direction: column; box-shadow: -8px 0 30px rgba(0,0,0,0.5); }
+  .mt-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 16px 8px; font-size: 17px; }
+  .mt-close { width: 34px; height: 34px; border-radius: 50%; border: none; background: rgba(255,255,255,0.1); color: #fff; font-size: 15px; cursor: pointer; }
+  .mt-search { margin: 4px 16px 10px; padding: 11px 14px; border-radius: 10px; border: 1.5px solid rgba(255,255,255,0.14); background: rgba(255,255,255,0.06); color: #fff; font: inherit; font-size: 16px; }
+  .mt-list { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 0 8px 20px; }
+  .mt-row { width: 100%; display: flex; align-items: center; gap: 12px; padding: 9px 10px; border: none; border-radius: 10px; background: none; color: #fff; font: inherit; cursor: pointer; text-align: left; }
+  .mt-row:hover { background: rgba(255,255,255,0.06); }
+  .mt-row.selected { background: var(--accent-tint); box-shadow: 0 0 0 1.5px var(--accent-2) inset; }
+  .mt-star { color: var(--accent-2); font-size: 13px; }
+  .mt-more { width: calc(100% - 20px); margin: 8px 10px; padding: 11px; border-radius: 10px; border: 1.5px solid rgba(255,255,255,0.2); background: none; color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+  .mt-empty { padding: 24px 12px; text-align: center; color: var(--faint-invert, #9aa0b4); font-size: 14px; }
+  @media (max-width: 560px) {
+    .mt-overlay.open { align-items: flex-end; }
+    .mt-panel { width: 100%; height: 82vh; border-radius: 18px 18px 0 0; box-shadow: 0 -8px 30px rgba(0,0,0,0.5); }
+  }
 </style>
 
 <div class="app-shell narrow" id="uploadShell">
@@ -292,9 +321,9 @@
                  start point, so the beat can be matched by ear. -->
             <div class="narration-section more-option-compact" id="musicSection" style="margin-top:14px;">
               <div class="field-label-row">
-                <label>🎵 Music (optional)</label>
+                <label>🎵 Music tracks</label>
               </div>
-              <div class="track-picker-row" id="trackPickerRow">
+              <div class="track-picker-row" id="trackPickerRow" style="display:block; overflow:visible; padding:0;">
                 <span class="cover-picker-status">Loading tracks…</span>
               </div>
               <select id="musicTrackSelect" style="display:none;" aria-hidden="true" tabindex="-1">
@@ -1531,78 +1560,157 @@
     }
   }
 
-  function renderTrackCards(tracks) {
-    trackPickerRow.innerHTML = "";
+  // ---- Music tracks: a summary row on the page + a slide-in list (Oct 2026) ----
+  // A row of cards can't hold a thousand songs. The page now shows just the chosen
+  // song (or a "Choose a song" button); tapping it opens a side panel (bottom sheet on
+  // phones) with search and a scrolling list, like TikTok / Instagram's sound pickers.
+  var allTracks = [];
+  var trackSheet = null, trackSheetList = null, trackSheetSearch = null, trackSheetMore = null;
+  var SHEET_PAGE = 60, sheetLimit = SHEET_PAGE, sheetQuery = "";
 
-    // A "No music" card first — the only way to clear a selection now that
-    // the real dropdown is hidden.
-    var noneCard = document.createElement("button");
-    noneCard.type = "button";
-    noneCard.className = "track-card track-card-none selected";
-    noneCard.setAttribute("data-track-id", "");
-    noneCard.innerHTML = '<span class="track-card-art">🚫</span><span class="track-card-title">No music</span>';
-    trackPickerRow.appendChild(noneCard);
-
-    tracks.forEach(function (track) {
-      var card = document.createElement("button");
-      card.type = "button";
-      card.className = "track-card";
-      card.setAttribute("data-track-id", track.id);
-      card.innerHTML =
-        '<span class="track-card-art">' + trackInitial(track) + '</span>' +
-        (track.is_independent_artist ? '<span class="track-card-badge" title="100% royalties to the artist">★</span>' : '') +
-        '<span class="track-card-title"></span>' +
-        '<span class="track-card-artist"></span>';
-      // textContent, not innerHTML, for real track/artist names — these
-      // come straight from our own tracks table, not user-typed HTML, but
-      // there's no reason to risk it.
-      card.querySelector(".track-card-title").textContent = track.title;
-      card.querySelector(".track-card-artist").textContent = track.artist_name;
-      trackPickerRow.appendChild(card);
-    });
-
-    trackPickerRow.addEventListener("click", function (e) {
-      var card = e.target.closest(".track-card");
-      if (!card) return;
-      var id = card.getAttribute("data-track-id");
-      if (musicTrackSelect.disabled) return; // narration already chosen — see syncMusicNarrationExclusivity
-      unlockPreviewAudio(); // phones only allow sound that was started by a tap — do it now, before any waiting
-      musicTrackSelect.value = id;
-      musicTrackSelect.dispatchEvent(new Event("change"));
-      // Ken's ask: hear it right away, before committing — played AGAINST the
-      // video (from its first frame), not on its own.
-      if (id) playWithVideo(); else { trimPreviewVideo.pause(); musicPreviewAudio.pause(); }
-    });
+  function renderTrackSummary() {
+    if (!tracksLoaded || !allTracks.length) return;
+    var t = tracksById[musicTrackSelect.value];
+    if (t) {
+      trackPickerRow.innerHTML =
+        '<div class="mt-selected"><span class="mt-art"></span><span class="mt-sel-text"><b></b><small></small></span>' +
+        '<button type="button" class="mt-change">Change</button>' +
+        '<button type="button" class="mt-remove" aria-label="Remove music" title="Remove music">✕</button></div>';
+      trackPickerRow.querySelector(".mt-art").textContent = trackInitial(t);
+      trackPickerRow.querySelector(".mt-sel-text b").textContent = t.title;
+      trackPickerRow.querySelector(".mt-sel-text small").textContent = t.artist_name;
+    } else {
+      trackPickerRow.innerHTML = '<button type="button" class="mt-choose">🎵 Choose a song <span class="mt-count">' + allTracks.length + ' tracks ›</span></button>';
+    }
   }
+
+  function chooseTrack(id) {
+    if (musicTrackSelect.disabled) return; // narration already chosen — see syncMusicNarrationExclusivity
+    unlockPreviewAudio(); // phones only allow sound that was started by a tap — do it now, before any waiting
+    musicTrackSelect.value = id;
+    musicTrackSelect.dispatchEvent(new Event("change"));
+    closeTrackSheet();
+    // Hear it right away, played AGAINST the video (from its first frame), not on its own.
+    if (id) playWithVideo(); else { trimPreviewVideo.pause(); musicPreviewAudio.pause(); }
+  }
+
+  function buildTrackSheet() {
+    if (trackSheet) return;
+    trackSheet = document.createElement("div");
+    trackSheet.className = "mt-overlay";
+    trackSheet.innerHTML =
+      '<div class="mt-panel" role="dialog" aria-label="Music tracks">' +
+        '<div class="mt-head"><strong>Music tracks</strong><button type="button" class="mt-close" aria-label="Close">✕</button></div>' +
+        '<input type="search" class="mt-search" placeholder="Search songs or artists" autocomplete="off" />' +
+        '<div class="mt-list"></div>' +
+      '</div>';
+    document.body.appendChild(trackSheet);
+    trackSheetList = trackSheet.querySelector(".mt-list");
+    trackSheetSearch = trackSheet.querySelector(".mt-search");
+    trackSheet.addEventListener("click", function (e) { if (e.target === trackSheet) closeTrackSheet(); });
+    trackSheet.querySelector(".mt-close").addEventListener("click", closeTrackSheet);
+    trackSheetSearch.addEventListener("input", function () {
+      sheetQuery = trackSheetSearch.value.trim().toLowerCase();
+      sheetLimit = SHEET_PAGE;
+      renderTrackSheetList();
+    });
+    trackSheetList.addEventListener("click", function (e) {
+      var more = e.target.closest(".mt-more");
+      if (more) { sheetLimit += SHEET_PAGE; renderTrackSheetList(); return; }
+      var row = e.target.closest(".mt-row");
+      if (row) chooseTrack(row.getAttribute("data-track-id"));
+    });
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeTrackSheet(); });
+  }
+  function renderTrackSheetList() {
+    var current = musicTrackSelect.value || "";
+    var matches = allTracks.filter(function (t) {
+      return !sheetQuery || (t.title || "").toLowerCase().indexOf(sheetQuery) !== -1 || (t.artist_name || "").toLowerCase().indexOf(sheetQuery) !== -1;
+    });
+    trackSheetList.innerHTML = "";
+    function row(id, art, title, artist, star) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "mt-row" + (id === current ? " selected" : "");
+      b.setAttribute("data-track-id", id);
+      b.innerHTML = '<span class="mt-art"></span><span class="mt-sel-text"><b></b><small></small></span>' + (star ? '<span class="mt-star" title="100% royalties to the artist">★</span>' : "");
+      b.querySelector(".mt-art").textContent = art;
+      b.querySelector("b").textContent = title;
+      b.querySelector("small").textContent = artist || "";
+      trackSheetList.appendChild(b);
+    }
+    if (!sheetQuery) row("", "🚫", "No music", "Use my video's own sound", false);
+    matches.slice(0, sheetLimit).forEach(function (t) { row(t.id, trackInitial(t), t.title, t.artist_name, t.is_independent_artist); });
+    if (!matches.length) {
+      var empty = document.createElement("div");
+      empty.className = "mt-empty";
+      empty.textContent = "No songs match that search.";
+      trackSheetList.appendChild(empty);
+    }
+    if (matches.length > sheetLimit) {
+      var m = document.createElement("button");
+      m.type = "button";
+      m.className = "mt-more";
+      m.textContent = "Show more (" + (matches.length - sheetLimit) + " more)";
+      trackSheetList.appendChild(m);
+    }
+  }
+  function openTrackSheet() {
+    if (musicTrackSelect.disabled) return;
+    buildTrackSheet();
+    sheetQuery = ""; sheetLimit = SHEET_PAGE; trackSheetSearch.value = "";
+    renderTrackSheetList();
+    trackSheet.classList.add("open");
+    document.body.style.overflow = "hidden";
+    var sel = trackSheetList.querySelector(".mt-row.selected");
+    if (sel && sel.scrollIntoView) sel.scrollIntoView({ block: "center" });
+  }
+  function closeTrackSheet() {
+    if (!trackSheet) return;
+    trackSheet.classList.remove("open");
+    document.body.style.overflow = "";
+  }
+  trackPickerRow.addEventListener("click", function (e) {
+    if (e.target.closest(".mt-remove")) { chooseTrack(""); return; }
+    if (e.target.closest(".mt-choose") || e.target.closest(".mt-change")) openTrackSheet();
+  });
 
   async function loadTracksForPicker() {
     if (tracksLoaded) return;
     tracksLoaded = true;
-    var { data, error } = await window.sb
-      .from("tracks")
-      .select("id, title, artist_name, is_independent_artist, storage_path, duration_seconds")
-      .eq("is_active", true)
-      .order("title", { ascending: true });
-    if (error || !data) {
+    // Pages of 1000 (the database's per-request limit) so a big library still loads fully.
+    var data = [], from = 0, error = null;
+    for (var page = 0; page < 10; page++) {
+      var res = await window.sb
+        .from("tracks")
+        .select("id, title, artist_name, is_independent_artist, storage_path, duration_seconds")
+        .eq("is_active", true)
+        .order("title", { ascending: true })
+        .range(from, from + 999);
+      if (res.error || !res.data) { error = res.error || true; break; }
+      data = data.concat(res.data);
+      if (res.data.length < 1000) break;
+      from += 1000;
+    }
+    if (error && !data.length) {
+      tracksLoaded = false; // allow a retry next time a video is picked
       trackPickerRow.innerHTML = '<span class="cover-picker-status">Couldn’t load tracks — try again in a moment.</span>';
       return;
     }
+    var frag = document.createDocumentFragment();
     for (var i = 0; i < data.length; i++) {
       tracksById[data[i].id] = data[i];
       var opt = document.createElement("option");
       opt.value = data[i].id;
       opt.textContent = data[i].title + " — " + data[i].artist_name;
-      musicTrackSelect.appendChild(opt);
+      frag.appendChild(opt);
     }
-    renderTrackCards(data);
+    musicTrackSelect.appendChild(frag); // the hidden <select> still holds the chosen id for the rest of the page
+    allTracks = data;
+    renderTrackSummary();
   }
 
-  function updateSelectedTrackCard() {
-    var selected = musicTrackSelect.value || "";
-    trackPickerRow.querySelectorAll(".track-card").forEach(function (card) {
-      card.classList.toggle("selected", card.getAttribute("data-track-id") === selected);
-    });
-  }
+  function updateSelectedTrackCard() { renderTrackSummary(); }
 
   // "Keep my video's own sound too" only makes sense once a track is picked.
   var keepOriginalRow = document.getElementById("keepOriginalRow");
@@ -1620,7 +1728,7 @@
   var lastMusicStartTrack = "";
   function updateMusicStartRow() {
     var hasMusic = !!musicTrackSelect.value && !musicTrackSelect.disabled;
-    musicStartRow.style.display = hasMusic ? "block" : "none";
+    musicStartRow.style.display = "none"; // the "Start the song at" box is gone (Oct 2026): the timeline below is the control now; the value is still kept inside the hidden picker
     if (!hasMusic) musicPreviewAudio.pause();
     // Start over at 0:00 only when the track itself changes (tapping the same card again keeps it).
     var trackChanged = (musicTrackSelect.value || "") !== lastMusicStartTrack;

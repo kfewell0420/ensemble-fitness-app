@@ -12,6 +12,17 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-14 — Music tracks sidebar; "Start the song at" box removed (upload.html)
+
+- Removed the "Start the song at" box (slider, ±½ s nudges, Play with video) from the upload page: the timeline under the video is the control now. The start value still lives in a hidden picker so the timeline and the saved `music_start_seconds` keep working.
+- "Music (optional)" is now "Music tracks". The sideways row of cards (would not scale to ~1000 songs) is replaced by one row: "Choose a song · N tracks ›", or the chosen song with Change / ✕.
+- Tapping it opens a side panel (desktop) or bottom sheet (phones) with search, a "No music" row, and 60 songs at a time + "Show more". Picking a song closes it and plays it against the video. Esc / tapping outside closes it.
+- Tracks load in pages of 1000 (`.range`), so libraries over 1000 songs load fully.
+- Tested at 393 px and 1100 px with 1,200 mock tracks: search, empty search, pick, change, show more, Esc, remove, timeline, and upload row (music_start/delay/length) all OK; no page errors.
+- Mobile: upload.html copied to `www/` (needs `npx cap sync` + Xcode rebuild).
+
+---
+
 ## 2026-10-18, song timeline on phones: dragging the left handle gets through a long intro in one swipe
 
 Ken (phone): a song with a long intro took ~7 swipes of the left handle to reach the lyrics; on the computer one
