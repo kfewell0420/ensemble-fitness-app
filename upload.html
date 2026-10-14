@@ -175,7 +175,7 @@
   .clip-tray-ctl .clip-rm { border-color: rgba(255,90,90,0.6); color: #ff9a9a; }
   .mix-seg { display: flex; min-width: 0; height: 100%; border-left: 2px solid rgba(255,255,255,0.75); }
   .mix-seg:first-child { border-left: 0; }
-  .drag-bubble { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 3; max-width: 92%; padding: 8px 14px; border-radius: 999px; background: rgba(0,0,0,0.78); color: #fff; font-size: 15px; font-weight: 800; text-align: center; white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity .25s; box-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+  .drag-bubble { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 3; max-width: 92%; padding: 10px 22px; border-radius: 999px; background: rgba(0,0,0,0.7); color: #fff; font-size: 30px; font-weight: 800; letter-spacing: 0.5px; text-align: center; white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity .25s; box-shadow: 0 2px 10px rgba(0,0,0,0.5); }
   .drag-bubble.show { opacity: 1; }
   .mix-playhead { position: absolute; top: -3px; bottom: 3px; width: 2px; background: #fff; box-shadow: 0 0 4px rgba(0,0,0,0.6); pointer-events: none; left: 0; }
   @media (max-width: 560px) {
@@ -1548,12 +1548,15 @@
   // on the strip never hides it. Fades about a second after letting go.
   var dragBubble = document.getElementById("dragBubble");
   var bubbleTimer = null, lastBubbleText = "";
+  // The bubble shows only HOW FAR this drag has moved things (+5.5 s / −2.0 s), not where things now are.
   function bubbleText(mode) {
-    var s = musicStartPicker.getValue();
-    if (mode === "left") return s < 0.05 ? "🎵 Song plays from its beginning" : "✂️ Skipping the first " + round1(s).toFixed(1) + " s of the song";
-    if (mode === "move") return mDelay < 0.05 ? "▶ Song starts with your video" : "▶ Song comes in at " + round1(mDelay).toFixed(1) + " s";
-    var endAt = mDelay + mLen;
-    return endAt >= vidDur() - 0.05 ? "🎵 Song plays to the end" : "✂️ Song stops at " + round1(endAt).toFixed(1) + " s";
+    var D = mixDrag;
+    if (!D) return lastBubbleText;
+    var delta = mode === "left" ? musicStartPicker.getValue() - D.s0
+              : mode === "move" ? mDelay - D.p0
+              : mLen - D.l0;
+    var r = Math.round(delta * 10) / 10;
+    return (r > 0 ? "+" : r < 0 ? "−" : "") + Math.abs(r).toFixed(1) + " s";
   }
   function showBubble(mode) {
     var t = bubbleText(mode);
@@ -1683,7 +1686,7 @@
       // intro. Here the strip width stands for up to 8x the video's length (the whole
       // song when it is that short), so one swipe can travel a long way. The song start moves under the bar (the bar
       // stays put; the readout shows where in the song you are). Half-second steps.
-      var span = Math.max(vd, Math.min(sd, vd * 8)); // strip width = up to 8x the video length, never more than the song
+      var span = Math.max(vd, Math.min(sd, 40)); // strip width = about 40 s of song (never less than the video), the same feel whether it is one clip or ten
       var ds = Math.round(((e.clientX - D.x0) / D.w * span) * 2) / 2;
       var ns = Math.min(Math.max(0, D.s0 + ds), Math.max(0, sd - 1));
       musicStartPicker.setValue(ns);

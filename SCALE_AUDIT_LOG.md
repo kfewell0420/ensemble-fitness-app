@@ -12,6 +12,13 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-14 (evening) — Music drag feel restored with several clips; readout shows distance moved
+
+- Dragging the song's left end on a phone moved the song start about 8x the length of the whole reel per swipe, so with several clips (18-20 s) one swipe jumped 40+ s. The strip now always stands for about 40 s of song (never less than the video), the same feel as a single short clip. The bar stays at the front of the video; letting go replays from the top.
+- The readout over the video now shows only how far THIS drag has moved (+5.5 s / −2.0 s), big and centered, instead of "Skipping the first 46.5 s of the song" (which also ran wider than the video).
+
+---
+
 ## 2026-10-14 (later) — Several videos per post, song categories, readout over the video
 
 - **Up to 10 videos per post.** "Upload videos": the picker takes several clips at once (and a ＋ tile adds more). A thumbnail row shows them in order; tap one to select it, then ◀ Earlier / Later ▶ / ✕ Remove. Clip 1 is the post, clips 2+ go in `media_clips` (existing table + feed playback). The timeline now spans ALL clips (thin white lines mark where one ends), scrubbing and Play work across clips, and the song runs across the whole set.
