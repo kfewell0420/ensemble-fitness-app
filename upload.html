@@ -161,6 +161,9 @@
   .mix-handle-l { border-radius: 8px 0 0 8px; }
   .mix-handle-r { border-radius: 0 8px 8px 0; }
   .clip-tray { margin-top: 6px; }
+  #musicSection { padding: 0 !important; border: 0 !important; background: none !important; margin-bottom: 0 !important; }
+  #musicSection .field-label-row { margin-bottom: 6px; }
+  #musicSection.has-song #musicLabelRow { display: none; }
   .clip-tray-row { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 2px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
   .clip-tray-row::-webkit-scrollbar { display: none; }
   .clip-thumb { flex: 0 0 auto; position: relative; width: 54px; height: 70px; padding: 0; border-radius: 10px; border: 2px solid rgba(255,255,255,0.18); background: #000 center / cover no-repeat; cursor: pointer; overflow: hidden; }
@@ -339,8 +342,8 @@
            (Old posts that were trimmed or have extra clips still play as saved.) -->
       <div class="narration-section" id="trimSection">
         <div class="field-label-row">
-          <label id="yourVideosLabel">🎬 Your videos</label>
-          <button type="button" class="btn btn-ghost btn-sm" id="changeVideoBtn" style="display:none;">Change videos</button>
+          <label id="yourVideosLabel" style="white-space:nowrap;">🎬 Your videos</label>
+          <button type="button" class="btn btn-ghost btn-sm" id="changeVideoBtn" style="display:none; white-space:nowrap; padding:6px 12px;">Change videos</button>
         </div>
         <div class="trim-layout" id="trimLayout">
           <div class="trim-media" style="position:relative;">
@@ -360,7 +363,7 @@
                  half-second buttons replays the clip from the top against the new
                  start point, so the beat can be matched by ear. -->
             <div class="narration-section more-option-compact" id="musicSection" style="margin-top:8px;">
-              <div class="field-label-row">
+              <div class="field-label-row" id="musicLabelRow">
                 <label>🎵 Music tracks</label>
               </div>
               <div class="track-picker-row" id="trackPickerRow" style="display:block; overflow:visible; padding:0;">
@@ -370,9 +373,9 @@
                 <option value="">Select music track</option>
               </select>
               <div id="musicStartRow" style="display:none;"></div>
-              <label id="keepOriginalRow" style="display:none; align-items:center; gap:8px; margin-top:8px; font-size:13.5px; font-weight:600; cursor:pointer;">
+              <label id="keepOriginalRow" style="display:none; align-items:center; gap:8px; margin-top:6px; font-size:13.5px; font-weight:600; cursor:pointer;">
                 <input type="checkbox" id="keepOriginalAudio" style="width:auto; margin:0;" />
-                <span title="Your track plays softly underneath. Leave unchecked to replace the video's sound with the track.">Keep my video's sound too <span style="font-weight:400; font-size:12px; color:var(--faint-invert);">(music softer)</span></span>
+                <span title="Your track plays softly underneath. Leave unchecked to replace the video's sound with the track.">Keep original sound</span>
               </label>
               <audio id="musicPreviewAudio" style="display:none;"></audio>
             </div>
@@ -1272,7 +1275,7 @@
       row.appendChild(add);
     }
     var total = clips.reduce(function (a, c) { return a + (c.dur || 0); }, 0);
-    if (label) label.textContent = clips.length > 1 ? "🎬 Your videos (" + clips.length + ")" + (total ? " · " + (Math.round(total * 10) / 10).toFixed(1) + "s" : "") : "🎬 Your videos";
+    if (label) label.textContent = clips.length > 1 ? "🎬 " + clips.length + " videos" + (total ? " · " + (Math.round(total * 10) / 10).toFixed(1) + "s" : "") : "🎬 Your video";
     ctl.style.display = "none"; // no Earlier/Later/Remove row any more: tap a clip to jump to it, ✕ on the chosen clip removes it
   }
   document.getElementById("clipTrayRow").addEventListener("click", function (e) {
@@ -2050,6 +2053,7 @@
         '<span class="mt-acts"><span class="mt-meta"></span>' +
         '<button type="button" class="mt-change">Change</button>' +
         '<button type="button" class="mt-remove" aria-label="Remove music" title="Remove music">✕</button></span></div>';
+      document.getElementById("musicSection").classList.add("has-song");
       trackPickerRow.querySelector(".mt-art").textContent = trackInitial(t);
       trackPickerRow.querySelector(".mt-sel-text b").textContent = t.title;
       var metaBits = [];
@@ -2057,6 +2061,7 @@
       if (t.duration_seconds) metaBits.push(formatSongTime(t.duration_seconds));
       trackPickerRow.querySelector(".mt-meta").textContent = metaBits.join(" · ");
     } else {
+      document.getElementById("musicSection").classList.remove("has-song");
       trackPickerRow.innerHTML = '<button type="button" class="mt-choose">🎵 Choose a song <span class="mt-count">' + allTracks.length + ' tracks ›</span></button>';
     }
   }

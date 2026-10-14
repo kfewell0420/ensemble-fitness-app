@@ -12,6 +12,13 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-14 (final 4) — More room under the music bar (phone edge-swipe zone)
+
+- Ken's phone: the music bar sat so close to the bottom edge that dragging it triggered Android's back/close swipe. Pulled everything up about 75 px (CSS) on a 393-wide phone: heading is one line ("🎬 3 videos · 19.7s", Change videos on the same line); "Keep my video's sound too (music softer)" is now just "Keep original sound" on one line; the song box no longer sits inside a second padded box and its "🎵 Music tracks" label is hidden once a song is chosen (shown again if the song is removed).
+- Headless check at 393×957: bar ends about 180 px above the bottom with the card top where Ken's screenshot had it.
+
+---
+
 ## 2026-10-14 (final 3) — Music bar reachable without scrolling (upload page)
 
 - Removed the "Earlier / Later / Remove" row and the "Clip 1 of 3 · 19.7 s" line under the clip thumbnails. Tapping a clip still jumps to it; the chosen clip now shows a small ✕ in its corner to remove it (only when there are 2+ clips). The total length moved into the heading: "Your videos (3) · 19.7s". **Reordering clips is gone for now** (was the ◀▶ buttons) — a long-press-and-drag reorder can replace it if wanted.
