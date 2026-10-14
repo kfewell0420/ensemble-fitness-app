@@ -12,6 +12,19 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-14 (late night), Products page: every product tile the same size, whatever the photo's shape
+
+Ken: a tall shower-gel bottle photo made its tile tall (and the row's neighbor too). All photos
+should be thumbnails of the same size; tapping opens the bigger view.
+
+- `gear.html` (shared; website + phone app): the photo is now pinned inside a fixed square box
+  (absolute position + `object-fit: contain`), so tall, wide or square photos all give identical
+  tiles (114x171 on a 393px phone) with the whole photo visible. Grid rows no longer stretch
+  neighbors (`align-items: start`). The tap-to-open sheet photo is a bit larger (up to 340px
+  / 48% of the screen) and still shows the whole photo.
+- Tested at 393px with one tall (3:10), one wide (3:1) and five square photos: all 7 tiles equal.
+  Photos themselves are not changed or cropped; this is display only.
+
 ## 2026-10-14 (late night), product categories simplified: "Equipment"
 
 Ken: "Home Equipment" is too narrow; make it just "Equipment" (anything from a laptop stand to home gear).
