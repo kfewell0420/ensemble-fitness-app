@@ -424,6 +424,123 @@ function wireTrimPlayback(video, trimStart, trimEnd) {
    No-op for fewer than 2 clips — callers should use wireTrimPlayback
    instead for an ordinary single-clip post, which is the vast majority and
    should keep behaving exactly as it always has. */
+/* Cut cleanly from one clip to the next (several-clip posts, Oct 2026). Swapping a <video>'s src
+   normally freezes the picture for a moment and can flash the player's own buttons. This keeps a
+   hidden twin <video> that has the NEXT clip already loaded at its first frame. At the cut the twin is
+   shown right on top of the real player and starts playing at once (an instant, clean cut), while the
+   real player quietly loads the clip underneath; as soon as it is playing at the same moment, the
+   twin is hidden again. Callers keep using the real <video> for everything else.
+     preload(url, start)  get the twin ready (cheap to call again)
+     swap(url, start)     do the cut; returns false when the twin isn't ready (caller then loads the
+                          clip the ordinary way)
+     time()               seconds into the clip on screen right now (the twin's while it is showing)
+     busy()               true while the twin is still on screen */
+function createClipSwapper(video) {
+  var shadow = null, pre = { url: null, ready: false }, swapTok = 0, showing = false;
+  function make() {
+    if (shadow || !video || !video.parentNode) return shadow;
+    shadow = document.createElement("video");
+    shadow.muted = true; shadow.defaultMuted = true;
+    shadow.setAttribute("playsinline", ""); shadow.setAttribute("muted", "");
+    shadow.preload = "auto"; shadow.controls = false; shadow.disablePictureInPicture = true;
+    shadow.setAttribute("aria-hidden", "true");
+    shadow.style.cssText = "position:absolute; pointer-events:none; visibility:hidden; margin:0;";
+    video.parentNode.insertBefore(shadow, video.nextSibling);
+    return shadow;
+  }
+  function place() {
+    var cs = window.getComputedStyle(video);
+    shadow.className = video.className;
+    shadow.style.left = video.offsetLeft + "px";
+    shadow.style.top = video.offsetTop + "px";
+    shadow.style.width = video.offsetWidth + "px";
+    shadow.style.height = video.offsetHeight + "px";
+    shadow.style.maxWidth = "none"; shadow.style.maxHeight = "none"; shadow.style.aspectRatio = "auto";
+    shadow.style.objectFit = cs.objectFit; shadow.style.objectPosition = cs.objectPosition;
+    shadow.style.borderRadius = cs.borderRadius; shadow.style.background = cs.backgroundColor;
+    shadow.style.transform = cs.transform === "none" ? "" : cs.transform;
+  }
+  function preload(url, start) {
+    if (!make() || !url) return;
+    if (pre.url === url && shadow.getAttribute("data-start") === String(start || 0)) return;
+    if (showing) return; // still handing over — the next preload happens after
+    pre = { url: url, ready: false };
+    shadow.setAttribute("data-start", String(start || 0));
+    var st = start || 0, me = pre;
+    function onMeta() {
+      shadow.removeEventListener("loadedmetadata", onMeta);
+      try { shadow.currentTime = st; } catch (e) {}
+    }
+    function onFrame() {
+      shadow.removeEventListener("seeked", onFrame);
+      if (pre === me) me.ready = true;
+    }
+    shadow.addEventListener("loadedmetadata", onMeta);
+    shadow.addEventListener("seeked", onFrame);
+    shadow.addEventListener("loadeddata", function onData() {
+      shadow.removeEventListener("loadeddata", onData);
+      if (pre === me && !st) me.ready = true; // starting at the very first frame: it is already showing
+    });
+    shadow.src = url;
+    try { shadow.load(); } catch (e) {}
+  }
+  function swap(url, start) {
+    if (!shadow || pre.url !== url || !pre.ready || showing) return false;
+    var S = shadow, tok = ++swapTok, t0 = Date.now(), tries = 0, lead = 0.2, seeking = false;
+    showing = true;
+    place();
+    S.style.visibility = "visible";
+    var sp = S.play(); if (sp && sp.catch) sp.catch(function () {});
+    video.src = url;
+    function finish() {
+      if (tok !== swapTok) return;
+      showing = false;
+      S.style.visibility = "hidden";
+      try { S.pause(); } catch (e) {}
+      pre = { url: null, ready: false };
+      S.removeAttribute("data-start");
+      if (swap.onDone) swap.onDone();
+    }
+    // Put the real player a little AHEAD of the twin (by what loading is expected to cost), then
+    // learn from how far off it lands and correct, so the hand-over is not a visible jump.
+    function aim() {
+      seeking = true;
+      var done = function () { video.removeEventListener("seeked", done); seeking = false; };
+      video.addEventListener("seeked", done);
+      try { video.currentTime = S.currentTime + lead; } catch (e) { seeking = false; }
+    }
+    function onMeta() {
+      video.removeEventListener("loadedmetadata", onMeta);
+      if (tok !== swapTok) return;
+      aim();
+      var p = video.play(); if (p && p.catch) p.catch(function () {});
+      poll();
+    }
+    video.addEventListener("loadedmetadata", onMeta);
+    function poll() {
+      if (tok !== swapTok) return;
+      var d = video.currentTime - S.currentTime;
+      var live = !video.paused && video.readyState >= 3 && !seeking;
+      if (live && Math.abs(d) < 0.09) { finish(); return; }
+      if (Date.now() - t0 > 2500 || tries >= 5) { finish(); return; }
+      if (live) { tries++; lead = Math.max(0, Math.min(0.8, lead - d)); aim(); }
+      requestAnimationFrame(poll);
+    }
+    return true;
+  }
+  return {
+    preload: preload,
+    swap: swap,
+    busy: function () { return showing; },
+    cancel: function () { // abandon a hand-over in progress (the caller is about to load a clip another way)
+      swapTok++;
+      if (showing && shadow) { showing = false; shadow.style.visibility = "hidden"; try { shadow.pause(); } catch (e) {} }
+    },
+    time: function () { return showing && shadow ? shadow.currentTime : video.currentTime; },
+    onDone: function (fn) { swap.onDone = fn; }
+  };
+}
+
 function wireReelPlayback(video, clips, durations) {
   if (!video || !clips || clips.length < 2) return null;
   var index = 0;
@@ -449,9 +566,19 @@ function wireReelPlayback(video, clips, durations) {
     if (start && video.currentTime < start) video.currentTime = start;
   }
 
+  var swapper = createClipSwapper(video);
+  function preloadNext() {
+    var n = (index + 1) % clips.length;
+    swapper.preload(clips[n].url, clipStart(clips[n]));
+  }
+  video.addEventListener("playing", preloadNext); // once a clip is really playing, get the next one ready behind it
+  swapper.onDone(preloadNext);
+
   function goToClip(i) {
     index = i;
     var clip = clips[index];
+    if (swapper.swap(clip.url, clipStart(clip))) return; // clean cut — the next clip was already waiting
+    swapper.cancel();
     video.src = clip.url;
     video.addEventListener("loadedmetadata", function onReady() {
       video.removeEventListener("loadedmetadata", onReady);
@@ -482,7 +609,7 @@ function wireReelPlayback(video, clips, durations) {
     // Seconds into the whole reel (clip 1 starts at 0).
     time: function () {
       var base = offsets ? offsets[index] : 0;
-      return base + Math.max(0, video.currentTime - clipStart(clips[index]));
+      return base + Math.max(0, swapper.time() - clipStart(clips[index]));
     }
   };
 }

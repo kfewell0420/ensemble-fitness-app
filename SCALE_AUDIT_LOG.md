@@ -12,6 +12,15 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-14 (last) — Clean cuts between clips, picture box shape, thumbnails
+
+- **Clean cut between clips** (upload preview, feed, My uploads, member profile): a hidden twin player (`createClipSwapper` in js/supabaseClient.js) keeps the NEXT clip loaded at its first frame; at the cut it appears on top and plays instantly while the real player loads underneath, then hands back (lining up the time so there is no visible jump). Falls back to the ordinary load if the twin isn't ready. Reel time and the song stay continuous across the cut (tested: no backward jumps, song never stops).
+- **Preview box shape:** tall phone videos now fill a 4:5 box edge to edge (no black bars, about 70% of the picture's height), between the old short box and the full-height player. Wide videos keep 4:3. Preview only — the uploaded video is untouched.
+- **Clip thumbnails:** two of three thumbnails came up black on a phone. Frame grabs now wait for a real frame, check it isn't blank (and look again / try another moment if so), and the helper player is bigger and no longer fully invisible so phones decode it.
+- Not changed: the feed's own video box shape.
+
+---
+
 ## 2026-10-14 (late) — Whole video shown, smoother joins, song name only once
 
 - Tall phone videos are no longer cropped in the preview: the player now fits the whole video (about 42% of screen height for tall videos, black on the sides; wide videos keep the short box, also uncropped).
