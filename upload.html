@@ -159,6 +159,24 @@
   @media (pointer: coarse) { .mix-handle { flex-basis: 24px; } .mix-music, .mix-video { height: 44px; } }
   .mix-handle-l { border-radius: 8px 0 0 8px; }
   .mix-handle-r { border-radius: 0 8px 8px 0; }
+  .clip-tray { margin-top: 8px; }
+  .clip-tray-row { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 6px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .clip-tray-row::-webkit-scrollbar { display: none; }
+  .clip-thumb { flex: 0 0 auto; position: relative; width: 54px; height: 70px; padding: 0; border-radius: 10px; border: 2px solid rgba(255,255,255,0.18); background: #000 center / cover no-repeat; cursor: pointer; overflow: hidden; }
+  .clip-thumb.sel { border-color: var(--accent-2); box-shadow: 0 0 0 1px var(--accent-2); }
+  .clip-thumb .clip-n { position: absolute; left: 3px; top: 3px; min-width: 18px; height: 18px; border-radius: 9px; background: rgba(0,0,0,0.72); color: #fff; font-size: 11px; font-weight: 800; line-height: 18px; text-align: center; }
+  .clip-thumb .clip-d { position: absolute; right: 3px; bottom: 3px; padding: 0 4px; border-radius: 6px; background: rgba(0,0,0,0.72); color: #fff; font-size: 10px; font-weight: 700; }
+  .clip-add { flex: 0 0 auto; width: 54px; height: 70px; border-radius: 10px; border: 2px dashed rgba(255,255,255,0.35); background: rgba(255,255,255,0.04); color: #fff; font: inherit; font-size: 11px; font-weight: 700; line-height: 1.2; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+  .clip-add b { font-size: 22px; line-height: 1; }
+  .clip-tray-ctl { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 12.5px; color: var(--muted-invert, #b9bccb); }
+  .clip-tray-ctl .clip-info { flex: 1 1 100%; }
+  .clip-tray-ctl button { flex: 0 0 auto; padding: 7px 12px; border-radius: 999px; border: 1.5px solid rgba(255,255,255,0.3); background: none; color: #fff; font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+  .clip-tray-ctl button:disabled { opacity: 0.35; cursor: default; }
+  .clip-tray-ctl .clip-rm { border-color: rgba(255,90,90,0.6); color: #ff9a9a; }
+  .mix-seg { display: flex; min-width: 0; height: 100%; border-left: 2px solid rgba(255,255,255,0.75); }
+  .mix-seg:first-child { border-left: 0; }
+  .drag-bubble { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 3; max-width: 92%; padding: 8px 14px; border-radius: 999px; background: rgba(0,0,0,0.78); color: #fff; font-size: 15px; font-weight: 800; text-align: center; white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity .25s; box-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+  .drag-bubble.show { opacity: 1; }
   .mix-playhead { position: absolute; top: -3px; bottom: 3px; width: 2px; background: #fff; box-shadow: 0 0 4px rgba(0,0,0,0.6); pointer-events: none; left: 0; }
   @media (max-width: 560px) {
     #trimPreviewVideo { aspect-ratio: 4 / 3; margin-bottom: 8px; }
@@ -187,6 +205,12 @@
   .mt-row:hover { background: rgba(255,255,255,0.06); }
   .mt-row.selected { background: var(--accent-tint); box-shadow: 0 0 0 1.5px var(--accent-2) inset; }
   .mt-star { color: var(--accent-2); font-size: 13px; }
+  .mt-chips { display: none; gap: 8px; overflow-x: auto; padding: 0 16px 10px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .mt-chips::-webkit-scrollbar { display: none; }
+  .mt-chip { flex: 0 0 auto; padding: 7px 13px; border-radius: 999px; border: 1.5px solid rgba(255,255,255,0.18); background: rgba(255,255,255,0.05); color: #fff; font: inherit; font-size: 13px; font-weight: 700; white-space: nowrap; cursor: pointer; }
+  .mt-chip.on { background: var(--accent-2); border-color: var(--accent-2); color: #1a0d05; }
+  button.mt-play { border: none; cursor: pointer; font-size: 15px; font-family: inherit; }
+  button.mt-play.playing { background: var(--accent-2); color: #1a0d05; }
   .mt-more { width: calc(100% - 20px); margin: 8px 10px; padding: 11px; border-radius: 10px; border: 1.5px solid rgba(255,255,255,0.2); background: none; color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
   .mt-empty { padding: 24px 12px; text-align: center; color: var(--faint-invert, #9aa0b4); font-size: 14px; }
   @media (max-width: 560px) {
@@ -229,8 +253,8 @@
       </button>
       <button type="button" class="upload-category-tile" data-category="video">
         <span class="upload-category-icon">🎬</span>
-        <strong>Video</strong>
-        <span>A clip — add music timed to your workout</span>
+        <strong>Videos</strong>
+        <span>Up to 10 clips — add music timed to your workout</span>
       </button>
       <button type="button" class="upload-category-tile" data-category="song">
         <span class="upload-category-icon">🎵</span>
@@ -305,12 +329,18 @@
            (Old posts that were trimmed or have extra clips still play as saved.) -->
       <div class="narration-section" id="trimSection">
         <div class="field-label-row">
-          <label>🎬 Your video</label>
-          <button type="button" class="btn btn-ghost btn-sm" id="changeVideoBtn" style="display:none;">Change video</button>
+          <label id="yourVideosLabel">🎬 Your videos</label>
+          <button type="button" class="btn btn-ghost btn-sm" id="changeVideoBtn" style="display:none;">Change videos</button>
         </div>
         <div class="trim-layout" id="trimLayout">
-          <div class="trim-media">
+          <div class="trim-media" style="position:relative;">
+            <div id="dragBubble" class="drag-bubble" aria-live="polite"></div>
             <video id="trimPreviewVideo" muted playsinline controls class="trim-preview-video"></video>
+            <div class="clip-tray" id="clipTray" style="display:none;">
+              <div class="clip-tray-row" id="clipTrayRow"></div>
+              <div class="clip-tray-ctl" id="clipTrayCtl" style="display:none;"></div>
+            </div>
+            <input type="file" id="addClipsInput" accept="video/*" multiple style="display:none;" />
             <div id="previewSoundNote" style="font-size:12px; color:var(--faint-invert); margin-top:6px; line-height:1.4;">🔊 Press play to hear your video with its own sound. Adding music or a voice narration replaces it.</div>
           </div>
 
@@ -390,6 +420,9 @@
       <div class="field" id="songTitleField" style="display:none;">
         <label for="songTitle">Song title</label>
         <input type="text" id="songTitle" name="songTitle" placeholder="e.g. Morning Light" maxlength="120" />
+        <label for="songGenre" style="margin-top:12px; display:block;">Category</label>
+        <select id="songGenre"><option value="">Choose a category…</option><option>Motivational</option><option>Gospel / Inspirational</option><option>Hip-Hop</option><option>R&amp;B</option><option>Pop</option><option>Rock</option><option>High-Energy Cardio</option><option>Chill / Stretch</option><option>Other</option></select>
+        <span class="field-hint">Members filter the music list by category, so pick the closest fit.</span>
         <span class="field-hint">Your song publishes to the Music Library right away under your display name — no waiting on approval. Our team reviews new songs regularly to make sure they fit the community's motivational vibe.</span>
       </div>
       <div class="field" id="captionField">
@@ -485,6 +518,13 @@
 <script>
   var currentUser = null;
   var selectedFile = null;
+  // Several videos in one post (up to 10, each a few seconds — like Instagram / TikTok). Clip 1 is
+  // `selectedFile` and becomes the post itself; clips 2+ are saved in media_clips.
+  var MAX_CLIPS = 10;
+  var clips = [];            // [{ file, url, dur, thumb, frames }] in play order
+  var clipSel = 0;           // clip highlighted in the tray
+  var reelIdx = 0;           // clip currently loaded in the preview player
+  var reelSwitching = false, reelPending = null, reelLoadTok = 0, reelFilmGen = 0;
   var memberDisplayName = "";
   // Ken's ask (Oct 2026): a 1:42 workout video hit Supabase's "the object
   // exceeded the maximum allowed size" error — the media bucket never had
@@ -711,10 +751,10 @@
     },
     video: {
       accept: "video/*",
-      heading: "Add a video",
-      sub: "Videos are reviewed before they're visible to anyone but you — usually within a day or two. You can add a music track and slide it to hit exactly with your workout, or a voice narration. (Edit the video itself on your phone first.)",
-      placeholder: "Upload a video",
-      hint: "MP4 or MOV"
+      heading: "Add videos",
+      sub: "Videos are reviewed before they're visible to anyone but you — usually within a day or two. Pick up to 10 clips at once — they play back to back — and add a music track timed to your workout. (Edit the clips themselves on your phone first.)",
+      placeholder: "Upload videos",
+      hint: "MP4 or MOV — pick up to 10 clips at once"
     },
     song: {
       accept: "audio/*",
@@ -732,8 +772,8 @@
       accept: "image/*,video/*",
       heading: "Add your post",
       sub: "Photos and videos are reviewed before they're visible to anyone but you — usually within a day or two.",
-      placeholder: "Upload a photo or video",
-      hint: "JPG, PNG, MP4, or MOV"
+      placeholder: "Upload a photo or videos",
+      hint: "JPG, PNG, MP4, or MOV — up to 10 clips"
     }
   };
 
@@ -754,6 +794,7 @@
 
     var meta = CATEGORY_META[category];
     fileInput.accept = meta.accept;
+    fileInput.multiple = (category === "video" || category === "media"); // several clips at once (up to 10)
     // Ken's ask (Oct 2026): the eyebrow/heading/subtext above only earn
     // their place on the category-picker screen itself — once a tile's
     // picked, the dropzone's own "Upload a video" (etc.) label already says
@@ -908,7 +949,8 @@
   }
 
   function updateNarrationVisibility() {
-    var isVideo = !!selectedFile && fileKind(selectedFile) === "video";
+    // A voice narration is for a single video; with several clips the music is the soundtrack.
+    var isVideo = !!selectedFile && fileKind(selectedFile) === "video" && clips.length <= 1;
     if (isVideo && narrationSupported) {
       narrationSection.classList.add("show");
     } else {
@@ -1021,12 +1063,16 @@
     }
 
     var filmEl = document.getElementById("mixFilmstrip");
-    filmEl.innerHTML = "";
-    frames.forEach(function (f) {
-      var im = document.createElement("img");
-      im.src = f.dataUrl; im.alt = "";
-      filmEl.appendChild(im);
-    });
+    if (clips.length <= 1) {
+      filmEl.innerHTML = "";
+      frames.forEach(function (f) {
+        var im = document.createElement("img");
+        im.src = f.dataUrl; im.alt = "";
+        filmEl.appendChild(im);
+      });
+    } else {
+      rebuildReelFilmstrip(); // several clips: one segment per clip instead (cover choices still come from clip 1)
+    }
     // Cover choices: four evenly spread frames out of the eight.
     var coverFrames = frames.length > 4 ? [0, 2, 5, 7].map(function (ix) { return frames[Math.min(ix, frames.length - 1)]; }) : frames;
     frames = coverFrames;
@@ -1046,7 +1092,10 @@
 
   function resetTrimUI() {
     filmstripGeneration++; // orphans any in-flight generateTrimFilmstrip run
-    if (trimPreviewObjectUrl) { URL.revokeObjectURL(trimPreviewObjectUrl); trimPreviewObjectUrl = null; }
+    reelFilmGen++;
+    clips.forEach(function (c) { try { URL.revokeObjectURL(c.url); } catch (e) {} });
+    clips = []; clipSel = 0; reelIdx = 0; reelSwitching = false; reelPending = null; reelLoadTok++;
+    trimPreviewObjectUrl = null;
     trimPreviewVideo.pause();
     trimPreviewVideo.removeAttribute("src");
     trimPreviewVideo.load();
@@ -1056,29 +1105,243 @@
     document.getElementById("mixFilmstrip").innerHTML = "";
     mDelay = 0; mLenWanted = Infinity; mLen = 0;
     if (musicPreviewAudio) musicPreviewAudio.pause();
+    renderClipTray();
     if (typeof renderTimeline === "function") renderTimeline();
   }
 
-  function loadTrimPreview(file) {
-    mDelay = 0; mLenWanted = Infinity;
-    trimPreviewObjectUrl = URL.createObjectURL(file);
-    trimPreviewVideo.src = trimPreviewObjectUrl;
+  // Loads clip 1 into the preview player and makes the cover choices from it.
+  function loadTrimPreview(keepWindow) {
+    if (!keepWindow) { mDelay = 0; mLenWanted = Infinity; }
+    reelIdx = 0; clipSel = 0; reelSwitching = false; reelPending = null; reelLoadTok++;
+    trimPreviewVideo.src = clips[0].url;
     trimPreviewVideo.onloadedmetadata = function () {
+      trimPreviewVideo.onloadedmetadata = null; // one-shot: later clip swaps must not regenerate the covers
       var duration = trimPreviewVideo.duration || 0;
+      if (clips.length === 1) clips[0].dur = duration;
       generateTrimFilmstrip(trimPreviewVideo, duration);
     };
   }
 
   function updateTrimVisibility() {
     var isVideo = !!selectedFile && fileKind(selectedFile) === "video";
-    if (isVideo) {
+    if (isVideo && clips.length) {
       trimSection.classList.add("show");
-      loadTrimPreview(selectedFile);
+      loadTrimPreview();
+      renderClipTray();
+      measureClips(clips.slice());
     } else {
       trimSection.classList.remove("show");
       resetTrimUI();
     }
     toggleDropzoneForVideo(isVideo);
+  }
+
+  // ---- Several clips in one post --------------------------------------------
+  // A hidden, off-screen <video> used only to read a clip's length and grab small frames, so the
+  // main preview player is never disturbed.
+  function withTempVideo(c, fn) {
+    return new Promise(function (resolve) {
+      var v = document.createElement("video");
+      v.muted = true; v.playsInline = true; v.preload = "auto";
+      v.style.cssText = "position:fixed;left:-9999px;top:0;width:2px;height:2px;opacity:0;pointer-events:none;";
+      document.body.appendChild(v);
+      var finished = false;
+      function fin(val) {
+        if (finished) return; finished = true;
+        try { v.removeAttribute("src"); v.load(); } catch (e) {}
+        v.remove();
+        resolve(val);
+      }
+      v.addEventListener("loadedmetadata", function () { Promise.resolve(fn(v)).then(fin, function () { fin(null); }); });
+      v.addEventListener("error", function () { fin(null); });
+      setTimeout(function () { fin(null); }, 20000);
+      v.src = c.url;
+    });
+  }
+  async function measureClips(list) {
+    for (var i = 0; i < list.length; i++) {
+      var c = list[i];
+      if (c.dur && c.thumb) continue;
+      await withTempVideo(c, async function (v) {
+        c.dur = isFinite(v.duration) ? v.duration : 0;
+        c.thumb = await captureFrameDataUrl(v, Math.min(0.3, Math.max(0.05, c.dur / 2)));
+      });
+      if (!clips.length) return;
+      renderClipTray();
+    }
+    clampWindow();
+    rebuildReelFilmstrip();
+  }
+  async function rebuildReelFilmstrip() {
+    if (clips.length <= 1) return;
+    var gen = ++reelFilmGen;
+    var filmEl = document.getElementById("mixFilmstrip");
+    var per = clips.length <= 3 ? 4 : clips.length <= 6 ? 3 : 2;
+    function paint() {
+      filmEl.innerHTML = "";
+      clips.forEach(function (c) {
+        var seg = document.createElement("div");
+        seg.className = "mix-seg";
+        seg.style.flex = (c.dur || 1) + " 1 0";
+        var srcs = (c.frames && c.frames.length) ? c.frames : (c.thumb ? [c.thumb] : []);
+        srcs.forEach(function (u) { var im = document.createElement("img"); im.src = u; im.alt = ""; seg.appendChild(im); });
+        filmEl.appendChild(seg);
+      });
+    }
+    paint();
+    for (var i = 0; i < clips.length; i++) {
+      var c = clips[i];
+      if (c.frames || !c.dur) continue;
+      var got = await withTempVideo(c, async function (v) {
+        var out = [];
+        for (var k = 0; k < per; k++) {
+          var f = await captureFrameDataUrl(v, Math.min(Math.max(c.dur * (k + 0.5) / per, 0.05), Math.max(c.dur - 0.05, 0.05)));
+          if (f) out.push(f);
+        }
+        return out;
+      });
+      if (gen !== reelFilmGen) return; // clips changed again — a newer run owns the strip
+      c.frames = (got && got.length) ? got : (c.thumb ? [c.thumb] : []);
+      paint();
+    }
+  }
+
+  function clipLabel(c) { return c.dur ? (Math.round(c.dur * 10) / 10).toFixed(1) + "s" : ""; }
+  function renderClipTray() {
+    var tray = document.getElementById("clipTray"), row = document.getElementById("clipTrayRow"), ctl = document.getElementById("clipTrayCtl");
+    var label = document.getElementById("yourVideosLabel");
+    if (!clips.length) { tray.style.display = "none"; row.innerHTML = ""; if (label) label.textContent = "🎬 Your videos"; return; }
+    tray.style.display = "block";
+    if (clipSel >= clips.length) clipSel = clips.length - 1;
+    row.innerHTML = "";
+    clips.forEach(function (c, i) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "clip-thumb" + (i === clipSel ? " sel" : "");
+      b.setAttribute("data-i", i);
+      b.setAttribute("aria-label", "Clip " + (i + 1));
+      if (c.thumb) b.style.backgroundImage = "url(" + c.thumb + ")";
+      b.innerHTML = '<span class="clip-n">' + (i + 1) + '</span>' + (c.dur ? '<span class="clip-d">' + clipLabel(c) + '</span>' : '');
+      row.appendChild(b);
+    });
+    if (clips.length < MAX_CLIPS) {
+      var add = document.createElement("button");
+      add.type = "button"; add.className = "clip-add"; add.id = "clipAddBtn";
+      add.innerHTML = '<b>＋</b>Add';
+      row.appendChild(add);
+    }
+    var total = clips.reduce(function (a, c) { return a + (c.dur || 0); }, 0);
+    if (label) label.textContent = clips.length > 1 ? "🎬 Your videos (" + clips.length + ")" : "🎬 Your videos";
+    if (clips.length > 1) {
+      ctl.style.display = "flex";
+      ctl.innerHTML = '<span class="clip-info">Clip ' + (clipSel + 1) + ' of ' + clips.length + (total ? ' · ' + (Math.round(total * 10) / 10).toFixed(1) + ' s in all' : '') + '</span>' +
+        '<button type="button" data-act="left"' + (clipSel === 0 ? " disabled" : "") + '>◀ Earlier</button>' +
+        '<button type="button" data-act="right"' + (clipSel === clips.length - 1 ? " disabled" : "") + '>Later ▶</button>' +
+        '<button type="button" class="clip-rm" data-act="remove">✕ Remove</button>';
+    } else {
+      ctl.style.display = "none";
+    }
+  }
+  document.getElementById("clipTrayRow").addEventListener("click", function (e) {
+    if (e.target.closest("#clipAddBtn")) { document.getElementById("addClipsInput").click(); return; }
+    var t = e.target.closest(".clip-thumb");
+    if (!t) return;
+    clipSel = Number(t.getAttribute("data-i"));
+    renderClipTray();
+    if (!trimPreviewVideo.paused) trimPreviewVideo.pause();
+    reelSeek(reelOffsetOf(clipSel));
+  });
+  document.getElementById("clipTrayCtl").addEventListener("click", function (e) {
+    var btn = e.target.closest("button[data-act]");
+    if (!btn || btn.disabled) return;
+    var act = btn.getAttribute("data-act"), i = clipSel, oldFirst = clips[0] && clips[0].file;
+    if (act === "left" && i > 0) { var tmp = clips[i - 1]; clips[i - 1] = clips[i]; clips[i] = tmp; clipSel = i - 1; }
+    else if (act === "right" && i < clips.length - 1) { var tmp2 = clips[i + 1]; clips[i + 1] = clips[i]; clips[i] = tmp2; clipSel = i + 1; }
+    else if (act === "remove") {
+      try { URL.revokeObjectURL(clips[i].url); } catch (err) {}
+      clips.splice(i, 1);
+      if (clipSel >= clips.length) clipSel = Math.max(0, clips.length - 1);
+    } else return;
+    reelChanged(oldFirst);
+  });
+  // Clips were reordered, removed, or added: refresh everything that depends on them.
+  function reelChanged(oldFirst) {
+    if (!trimPreviewVideo.paused) trimPreviewVideo.pause();
+    reelFilmGen++;
+    if (!clips.length) { // nothing left — same as never having picked a file
+      fileInput.value = "";
+      fileInput.dispatchEvent(new Event("change"));
+      return;
+    }
+    selectedFile = clips[0].file;
+    var firstChanged = clips[0].file !== oldFirst;
+    if (firstChanged || clips.length === 1) loadTrimPreview(true); // new clip 1 (or back to a single video): reload it and its frames
+    else if (reelIdx !== 0) { reelIdx = 0; trimPreviewVideo.src = clips[0].url; }
+    renderClipTray();
+    updateNarrationVisibility();
+    updateMoreOptionsBoxVisibility();
+    clampWindow();
+    rebuildReelFilmstrip();
+  }
+  document.getElementById("addClipsInput").addEventListener("change", async function () {
+    var inp = document.getElementById("addClipsInput");
+    var files = Array.prototype.slice.call(inp.files || []).filter(function (f) { return fileKind(f) === "video"; });
+    inp.value = "";
+    var msgEl = document.getElementById("uploadMsg");
+    var room = MAX_CLIPS - clips.length;
+    if (!files.length || room <= 0) return;
+    var big = files.filter(function (f) { return f.size > MAX_UPLOAD_BYTES; });
+    files = files.filter(function (f) { return f.size <= MAX_UPLOAD_BYTES; });
+    var cut = files.length > room;
+    files = files.slice(0, room);
+    var fresh = files.map(function (f) { return { file: f, url: URL.createObjectURL(f), dur: 0, thumb: null, frames: null }; });
+    clips = clips.concat(fresh);
+    clipSel = clips.length - fresh.length; // jump to the first new clip
+    hideMsg(msgEl);
+    if (big.length || cut) showMsg(msgEl, (cut ? "Only " + MAX_CLIPS + " clips fit in one post — the extra ones were left out. " : "") + (big.length ? big.length + " clip" + (big.length > 1 ? "s were" : " was") + " too large and left out (limit " + (MAX_UPLOAD_BYTES / (1024 * 1024)).toFixed(0) + " MB each)." : ""), "error");
+    renderClipTray();
+    updateNarrationVisibility();
+    updateMoreOptionsBoxVisibility();
+    await measureClips(fresh);
+    renderClipTray();
+  });
+
+  // ---- the clips as ONE timeline ----
+  function reelOffsetOf(i) { var o = 0; for (var k = 0; k < i && k < clips.length; k++) o += clips[k].dur || 0; return o; }
+  function reelNow() { return clips.length > 1 ? reelOffsetOf(reelIdx) + trimPreviewVideo.currentTime : trimPreviewVideo.currentTime; }
+  function hasNextClip() { return clips.length > 1 && reelIdx < clips.length - 1; }
+  // Swap the player to another clip (optionally jumping inside it and carrying on playing).
+  function loadClipAt(idx, local, andPlay) {
+    return new Promise(function (resolve) {
+      var tok = ++reelLoadTok;
+      reelSwitching = true; reelIdx = idx; clipSel = idx;
+      var v = trimPreviewVideo;
+      var onMeta = function () {
+        v.removeEventListener("loadedmetadata", onMeta);
+        if (tok !== reelLoadTok) { resolve(); return; }
+        try { v.currentTime = local || 0; } catch (e) {}
+        reelSwitching = false;
+        renderClipTray();
+        if (andPlay) v.play().catch(function () {});
+        if (reelPending !== null) { var p = reelPending; reelPending = null; reelSeek(p); }
+        resolve();
+      };
+      v.addEventListener("loadedmetadata", onMeta);
+      v.src = clips[idx].url;
+    });
+  }
+  // Jump to a moment on the whole timeline (works across clips).
+  function reelSeek(t) {
+    if (clips.length <= 1) { trimPreviewVideo.currentTime = t; return Promise.resolve(); }
+    if (reelSwitching) { reelPending = t; return Promise.resolve(); }
+    var acc = 0, idx = clips.length - 1, local = 0;
+    for (var i = 0; i < clips.length; i++) {
+      var d = clips[i].dur || 0;
+      if (t < acc + d || i === clips.length - 1) { idx = i; local = Math.max(0, Math.min(t - acc, Math.max(0, d - 0.05))); break; }
+      acc += d;
+    }
+    if (idx === reelIdx) { trimPreviewVideo.currentTime = local; return Promise.resolve(); }
+    return loadClipAt(idx, local, false);
   }
 
   // Ken's ask (Oct 2026): once a video is picked and the trim editor is
@@ -1094,7 +1357,7 @@
     changeVideoBtn.style.display = isVideo ? "inline-flex" : "none";
   }
   changeVideoBtn.addEventListener("click", function () {
-    fileInput.click();
+    fileInput.click(); // picking again replaces ALL the clips (the ＋ tile under the video adds more)
   });
 
   // (Extra-clip stitching removed Oct 2026 — see the note above. Posts that already have extra clips still play them back.)
@@ -1223,7 +1486,14 @@
   function hasMusicSelected() {
     return !!musicTrackSelect.value && !musicTrackSelect.disabled;
   }
-  function vidDur() { var d = trimPreviewVideo.duration; return (isFinite(d) && d > 0) ? d : 0; }
+  function vidDur() {
+    if (clips.length > 1) { // several clips: the whole reel, once every clip's length is known
+      var t = 0;
+      for (var i = 0; i < clips.length; i++) { if (!clips[i].dur) return 0; t += clips[i].dur; }
+      return t;
+    }
+    var d = trimPreviewVideo.duration; return (isFinite(d) && d > 0) ? d : 0;
+  }
   function songDurNow() {
     var t = tracksById[musicTrackSelect.value];
     if (t && t.duration_seconds) return Number(t.duration_seconds);
@@ -1263,22 +1533,45 @@
     mixClip.style.left = (mDelay / vd * 100) + "%";
     mixClip.style.width = (mLen / vd * 100) + "%";
     var tr = tracksById[musicTrackSelect.value];
-    mixClipLabel.textContent = (mixDrag && mixDrag.touch && mixDrag.mode === "left")
-      ? "◀ " + fmtClock(s) + " into song ▶"
-      : "🎵 " + (tr ? tr.title : "");
-    syncReadout.style.display = "block";
-    var playing = !trimPreviewVideo.paused;
-    var endAt = mDelay + mLen;
-    var base = "Song <b>" + fmtClock(s) + "–" + fmtClock(s + mLen) + "</b> plays from video <b>" + fmtClock(mDelay) + "</b> to <b>" + fmtClock(endAt) + "</b>" + (endAt < vd - 0.05 ? " (then silence)" : " (the end of your video)") + ".";
+    mixClipLabel.textContent = "🎵 " + (tr ? tr.title : "");
+    // The old "Song 0:19–0:24 plays from video…" line is gone (Oct 2026): the bar itself
+    // and the bubble over the video say it. Only a warning shows here, and only when needed.
     var sd = songDurNow();
-    var warn = (sd && sd - s < vd - mDelay - 0.05) ? " ⚠️ The song runs out before your video ends." : "";
-    syncReadout.innerHTML = playing
-      ? "🔗 Playing together — video <b>" + fmtClock(trimPreviewVideo.currentTime) + "</b> · song <b>" + fmtClock(musicPreviewAudio.paused ? s : musicPreviewAudio.currentTime) + "</b>"
-      : "🔗 " + base + warn;
+    if (sd && sd - s < vd - mDelay - 0.05) {
+      syncReadout.style.display = "block";
+      syncReadout.textContent = "⚠️ The song runs out before your video ends.";
+    } else {
+      syncReadout.style.display = "none";
+    }
+  }
+  // Big readout over the VIDEO (not the timeline) while a handle is held, so a thumb
+  // on the strip never hides it. Fades about a second after letting go.
+  var dragBubble = document.getElementById("dragBubble");
+  var bubbleTimer = null, lastBubbleText = "";
+  function bubbleText(mode) {
+    var s = musicStartPicker.getValue();
+    if (mode === "left") return s < 0.05 ? "🎵 Song plays from its beginning" : "✂️ Skipping the first " + round1(s).toFixed(1) + " s of the song";
+    if (mode === "move") return mDelay < 0.05 ? "▶ Song starts with your video" : "▶ Song comes in at " + round1(mDelay).toFixed(1) + " s";
+    var endAt = mDelay + mLen;
+    return endAt >= vidDur() - 0.05 ? "🎵 Song plays to the end" : "✂️ Song stops at " + round1(endAt).toFixed(1) + " s";
+  }
+  function showBubble(mode) {
+    var t = bubbleText(mode);
+    if (bubbleTimer) { clearTimeout(bubbleTimer); bubbleTimer = null; }
+    dragBubble.textContent = t;
+    dragBubble.classList.add("show");
+    // A tiny tick on phones each time the number changes (Android; iPhones ignore it).
+    if (t !== lastBubbleText && navigator.vibrate) { try { navigator.vibrate(6); } catch (e) {} }
+    lastBubbleText = t;
+  }
+  function hideBubbleSoon() {
+    if (bubbleTimer) clearTimeout(bubbleTimer);
+    bubbleTimer = setTimeout(function () { dragBubble.classList.remove("show"); lastBubbleText = ""; }, 1000);
   }
   function updatePlayhead() {
     var vd = vidDur();
-    mixPlayhead.style.left = (vd ? (trimPreviewVideo.currentTime / vd * 100) : 0) + "%";
+    if (reelSwitching) return;
+    mixPlayhead.style.left = (vd ? (Math.min(reelNow(), vd) / vd * 100) : 0) + "%";
   }
 
   function applyPreviewMix() {
@@ -1302,7 +1595,7 @@
     if (trimPreviewVideo.paused) return;
     updatePlayhead();
     if (hasMusicSelected()) {
-      var t = trimPreviewVideo.currentTime, s = musicStartPicker.getValue();
+      var t = reelNow(), s = musicStartPicker.getValue();
       if (t >= mDelay - 0.02 && t < mDelay + mLen) {
         var want = s + Math.max(0, t - mDelay);
         if (musicPreviewAudio.paused) {
@@ -1315,7 +1608,7 @@
         musicPreviewAudio.pause();
       }
     }
-    if (Math.floor(trimPreviewVideo.currentTime * 5) !== mixTick.last) { mixTick.last = Math.floor(trimPreviewVideo.currentTime * 5); renderTimeline(); }
+    if (Math.floor(reelNow() * 5) !== mixTick.last) { mixTick.last = Math.floor(reelNow() * 5); renderTimeline(); }
     mixRaf = requestAnimationFrame(mixTick);
   }
   function startMixLoop() { if (!mixRaf) mixRaf = requestAnimationFrame(mixTick); }
@@ -1326,18 +1619,24 @@
     applyPreviewMix();
     startMixLoop();
   });
-  trimPreviewVideo.addEventListener("pause", function () { updatePlayTogetherBtn(); musicPreviewAudio.pause(); updatePlayhead(); renderTimeline(); });
-  trimPreviewVideo.addEventListener("ended", function () { updatePlayTogetherBtn(); musicPreviewAudio.pause(); updatePlayhead(); renderTimeline(); });
+  trimPreviewVideo.addEventListener("pause", function () {
+    if (reelSwitching || (trimPreviewVideo.ended && hasNextClip())) return; // a clip finishing is not the end of the song
+    updatePlayTogetherBtn(); musicPreviewAudio.pause(); updatePlayhead(); renderTimeline();
+  });
+  trimPreviewVideo.addEventListener("ended", function () {
+    if (hasNextClip()) { loadClipAt(reelIdx + 1, 0, true); return; } // next clip, song keeps going
+    updatePlayTogetherBtn(); musicPreviewAudio.pause(); updatePlayhead(); renderTimeline();
+  });
   trimPreviewVideo.addEventListener("seeked", function () { updatePlayhead(); if (trimPreviewVideo.paused) renderTimeline(); });
   trimPreviewVideo.addEventListener("loadedmetadata", function () { clampWindow(); updatePlayhead(); });
 
   // "▶ Play with video" and every auto-preview: restart a second before the song
   // comes in, so the entrance can be heard against the picture.
-  function playWithVideo() {
+  async function playWithVideo() {
     applyPreviewMix();
     // Pause first so the play event always fires and (re)loads the chosen song.
     if (!trimPreviewVideo.paused) trimPreviewVideo.pause();
-    trimPreviewVideo.currentTime = Math.max(0, mDelay - 1);
+    await reelSeek(Math.max(0, mDelay - 1));
     trimPreviewVideo.play().catch(function () {});
   }
   function toggleVideoWithMusic() {
@@ -1369,6 +1668,7 @@
     if (replayTimer) { clearTimeout(replayTimer); replayTimer = null; }
     mixDrag = { mode: mode, touch: (e.pointerType === "touch" || e.pointerType === "pen"), x0: e.clientX, p0: mDelay, s0: musicStartPicker.getValue(), l0: mLen, w: mixTracks.getBoundingClientRect().width, pid: e.pointerId, el: e.currentTarget };
     try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {}
+    showBubble(mode);
   }
   function mixPointerMove(e) {
     if (!mixDrag || e.pointerId !== mixDrag.pid) return;
@@ -1400,10 +1700,12 @@
       mLenWanted = Math.min(Math.max(Math.min(1, maxL), D.l0 + d), maxL);
     }
     clampWindow();
+    showBubble(D.mode);
   }
   function mixPointerUp(e) {
     if (!mixDrag || e.pointerId !== mixDrag.pid) return;
     mixDrag = null;
+    hideBubbleSoon();
     scheduleReplay();
   }
   ["move", "left", "right"].forEach(function (mode) {
@@ -1418,7 +1720,7 @@
   function scrubTo(e) {
     var r = mixTracks.getBoundingClientRect(), vd = vidDur();
     if (!vd) return;
-    trimPreviewVideo.currentTime = Math.min(Math.max(0, (e.clientX - r.left) / r.width * vd), vd - 0.05);
+    reelSeek(Math.min(Math.max(0, (e.clientX - r.left) / r.width * vd), vd - 0.05));
   }
   var mixVideoTrack = document.getElementById("mixVideoTrack");
   mixVideoTrack.addEventListener("pointerdown", function (e) {
@@ -1567,6 +1869,9 @@
   var allTracks = [];
   var trackSheet = null, trackSheetList = null, trackSheetSearch = null, trackSheetMore = null;
   var SHEET_PAGE = 60, sheetLimit = SHEET_PAGE, sheetQuery = "";
+  var sheetFilter = ""; // "" = all, "__new" = newest, otherwise a category name
+  var NEW_COUNT = 40;
+  var sheetAudio = null, sheetPreviewId = "", sheetUrls = {};
 
   function renderTrackSummary() {
     if (!tracksLoaded || !allTracks.length) return;
@@ -1586,6 +1891,7 @@
 
   function chooseTrack(id) {
     if (musicTrackSelect.disabled) return; // narration already chosen — see syncMusicNarrationExclusivity
+    stopSheetPreview();
     unlockPreviewAudio(); // phones only allow sound that was started by a tap — do it now, before any waiting
     musicTrackSelect.value = id;
     musicTrackSelect.dispatchEvent(new Event("change"));
@@ -1602,6 +1908,7 @@
       '<div class="mt-panel" role="dialog" aria-label="Music tracks">' +
         '<div class="mt-head"><strong>Music tracks</strong><button type="button" class="mt-close" aria-label="Close">✕</button></div>' +
         '<input type="search" class="mt-search" placeholder="Search songs or artists" autocomplete="off" />' +
+        '<div class="mt-chips"></div>' +
         '<div class="mt-list"></div>' +
       '</div>';
     document.body.appendChild(trackSheet);
@@ -1614,37 +1921,118 @@
       sheetLimit = SHEET_PAGE;
       renderTrackSheetList();
     });
+    trackSheet.querySelector(".mt-chips").addEventListener("click", function (e) {
+      var chip = e.target.closest(".mt-chip");
+      if (!chip) return;
+      sheetFilter = chip.getAttribute("data-filter") || "";
+      sheetLimit = SHEET_PAGE;
+      renderTrackSheetList();
+      trackSheetList.scrollTop = 0;
+    });
     trackSheetList.addEventListener("click", function (e) {
       var more = e.target.closest(".mt-more");
       if (more) { sheetLimit += SHEET_PAGE; renderTrackSheetList(); return; }
+      var play = e.target.closest(".mt-play");
+      if (play) { e.stopPropagation(); toggleSheetPreview(play.closest(".mt-row").getAttribute("data-track-id")); return; }
+      var row = e.target.closest(".mt-row");
+      if (row) chooseTrack(row.getAttribute("data-track-id"));
+    });
+    trackSheetList.addEventListener("keydown", function (e) {
+      if (e.key !== "Enter" || e.target.closest(".mt-play")) return;
       var row = e.target.closest(".mt-row");
       if (row) chooseTrack(row.getAttribute("data-track-id"));
     });
     document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeTrackSheet(); });
   }
+  // Listen to a song right inside the list (own audio element, so it never touches the video mix).
+  async function toggleSheetPreview(id) {
+    if (!sheetAudio) {
+      sheetAudio = new Audio();
+      sheetAudio.addEventListener("ended", function () { sheetPreviewId = ""; paintPreviewButtons(); });
+    }
+    if (sheetPreviewId === id) { sheetAudio.pause(); sheetPreviewId = ""; paintPreviewButtons(); return; }
+    // Phones only allow sound that starts inside the tap itself: play a silent blip now, real song after the link arrives.
+    sheetAudio.src = SILENT_WAV;
+    sheetAudio.play().catch(function () {});
+    sheetPreviewId = id;
+    paintPreviewButtons();
+    var t = tracksById[id];
+    if (!t) return;
+    if (!sheetUrls[id]) {
+      var r = await window.sb.storage.from("tracks").createSignedUrl(t.storage_path, 1800);
+      if (!r.data) { if (sheetPreviewId === id) { sheetPreviewId = ""; paintPreviewButtons(); } return; }
+      sheetUrls[id] = r.data.signedUrl;
+    }
+    if (sheetPreviewId !== id) return; // they tapped something else while it loaded
+    sheetAudio.src = sheetUrls[id];
+    sheetAudio.currentTime = 0;
+    sheetAudio.play().catch(function () { sheetPreviewId = ""; paintPreviewButtons(); });
+  }
+  function stopSheetPreview() {
+    if (sheetAudio) sheetAudio.pause();
+    sheetPreviewId = "";
+  }
+  function paintPreviewButtons() {
+    if (!trackSheetList) return;
+    trackSheetList.querySelectorAll(".mt-row[data-track-id]").forEach(function (r) {
+      var id = r.getAttribute("data-track-id"), b = r.querySelector(".mt-play");
+      if (!b || !id) return;
+      var on = id === sheetPreviewId;
+      b.textContent = on ? "■" : "▶";
+      b.classList.toggle("playing", on);
+      b.setAttribute("aria-label", on ? "Stop preview" : "Play preview");
+    });
+  }
+
+  function renderTrackSheetChips() {
+    var chipBox = trackSheet.querySelector(".mt-chips");
+    var counts = {};
+    allTracks.forEach(function (t) { if (t.genre) counts[t.genre] = (counts[t.genre] || 0) + 1; });
+    var names = Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a] || (a < b ? -1 : 1); });
+    var items = [["", "All"], ["__new", "✨ New"]].concat(names.map(function (g) { return [g, g]; }));
+    chipBox.style.display = items.length > 2 ? "flex" : "none"; // nothing to filter by until artists tag their songs
+    chipBox.innerHTML = "";
+    items.forEach(function (it) {
+      var c = document.createElement("button");
+      c.type = "button";
+      c.className = "mt-chip" + (sheetFilter === it[0] ? " on" : "");
+      c.setAttribute("data-filter", it[0]);
+      c.textContent = it[1];
+      chipBox.appendChild(c);
+    });
+  }
   function renderTrackSheetList() {
     var current = musicTrackSelect.value || "";
-    var matches = allTracks.filter(function (t) {
+    renderTrackSheetChips();
+    var pool = allTracks;
+    if (sheetFilter === "__new") {
+      pool = allTracks.slice().sort(function (a, b) { return (b.created_at || "") < (a.created_at || "") ? -1 : (b.created_at || "") > (a.created_at || "") ? 1 : 0; }).slice(0, NEW_COUNT);
+    } else if (sheetFilter) {
+      pool = allTracks.filter(function (t) { return t.genre === sheetFilter; });
+    }
+    var matches = pool.filter(function (t) {
       return !sheetQuery || (t.title || "").toLowerCase().indexOf(sheetQuery) !== -1 || (t.artist_name || "").toLowerCase().indexOf(sheetQuery) !== -1;
     });
     trackSheetList.innerHTML = "";
-    function row(id, art, title, artist, star) {
-      var b = document.createElement("button");
-      b.type = "button";
+    function row(id, art, title, artist, star, canPlay) {
+      var b = document.createElement("div");
       b.className = "mt-row" + (id === current ? " selected" : "");
+      b.setAttribute("role", "button");
+      b.setAttribute("tabindex", "0");
       b.setAttribute("data-track-id", id);
-      b.innerHTML = '<span class="mt-art"></span><span class="mt-sel-text"><b></b><small></small></span>' + (star ? '<span class="mt-star" title="100% royalties to the artist">★</span>' : "");
-      b.querySelector(".mt-art").textContent = art;
+      b.innerHTML = (canPlay ? '<button type="button" class="mt-art mt-play" aria-label="Play preview">▶</button>' : '<span class="mt-art"></span>') +
+        '<span class="mt-sel-text"><b></b><small></small></span>' + (star ? '<span class="mt-star" title="100% royalties to the artist">★</span>' : "");
+      if (!canPlay) b.querySelector(".mt-art").textContent = art;
       b.querySelector("b").textContent = title;
       b.querySelector("small").textContent = artist || "";
       trackSheetList.appendChild(b);
     }
-    if (!sheetQuery) row("", "🚫", "No music", "Use my video's own sound", false);
-    matches.slice(0, sheetLimit).forEach(function (t) { row(t.id, trackInitial(t), t.title, t.artist_name, t.is_independent_artist); });
+    if (!sheetQuery && !sheetFilter) row("", "🚫", "No music", "Use my video's own sound", false, false);
+    matches.slice(0, sheetLimit).forEach(function (t) { row(t.id, "", t.title, t.artist_name + (t.genre && !sheetFilter ? " · " + t.genre : ""), t.is_independent_artist, true); });
     if (!matches.length) {
       var empty = document.createElement("div");
       empty.className = "mt-empty";
-      empty.textContent = "No songs match that search.";
+      empty.textContent = sheetQuery ? "No songs match that search." : "No songs in this category yet.";
       trackSheetList.appendChild(empty);
     }
     if (matches.length > sheetLimit) {
@@ -1654,11 +2042,12 @@
       m.textContent = "Show more (" + (matches.length - sheetLimit) + " more)";
       trackSheetList.appendChild(m);
     }
+    paintPreviewButtons();
   }
   function openTrackSheet() {
     if (musicTrackSelect.disabled) return;
     buildTrackSheet();
-    sheetQuery = ""; sheetLimit = SHEET_PAGE; trackSheetSearch.value = "";
+    sheetQuery = ""; sheetFilter = ""; sheetLimit = SHEET_PAGE; trackSheetSearch.value = "";
     renderTrackSheetList();
     trackSheet.classList.add("open");
     document.body.style.overflow = "hidden";
@@ -1667,6 +2056,7 @@
   }
   function closeTrackSheet() {
     if (!trackSheet) return;
+    stopSheetPreview();
     trackSheet.classList.remove("open");
     document.body.style.overflow = "";
   }
@@ -1681,12 +2071,11 @@
     // Pages of 1000 (the database's per-request limit) so a big library still loads fully.
     var data = [], from = 0, error = null;
     for (var page = 0; page < 10; page++) {
-      var res = await window.sb
-        .from("tracks")
-        .select("id, title, artist_name, is_independent_artist, storage_path, duration_seconds")
-        .eq("is_active", true)
-        .order("title", { ascending: true })
-        .range(from, from + 999);
+      var q = function (cols) {
+        return window.sb.from("tracks").select(cols).eq("is_active", true).order("title", { ascending: true }).range(from, from + 999);
+      };
+      var res = await q("id, title, artist_name, is_independent_artist, storage_path, duration_seconds, created_at, genre");
+      if (res.error) res = await q("id, title, artist_name, is_independent_artist, storage_path, duration_seconds, created_at"); // sql/track-genre.sql not run yet
       if (res.error || !res.data) { error = res.error || true; break; }
       data = data.concat(res.data);
       if (res.data.length < 1000) break;
@@ -1784,7 +2173,7 @@
   // as an empty bordered box for a photo/song upload.
   var moreOptionsBox = document.getElementById("moreOptionsBox");
   function updateMoreOptionsBoxVisibility() {
-    var isVideo = !!selectedFile && fileKind(selectedFile) === "video";
+    var isVideo = !!selectedFile && fileKind(selectedFile) === "video" && clips.length <= 1;
     moreOptionsBox.classList.toggle("show", isVideo);
   }
 
@@ -1824,21 +2213,41 @@
   // -------------------------------------------------------------------------
 
   fileInput.addEventListener("change", function () {
-    selectedFile = fileInput.files[0] || null;
-    if (selectedFile && selectedFile.size > MAX_UPLOAD_BYTES) {
+    var files = Array.prototype.slice.call(fileInput.files || []);
+    var first = files[0] || null;
+    var firstIsVideo = !!first && fileKind(first) === "video";
+    // Videos: take them all (up to 10), in the order picked. Anything else: just the first file, as before.
+    var allVideos = firstIsVideo ? files.filter(function (f) { return fileKind(f) === "video"; }) : [];
+    var picked = firstIsVideo ? allVideos.slice(0, MAX_CLIPS) : (first ? [first] : []);
+    var tooMany = firstIsVideo && allVideos.length > MAX_CLIPS;
+    var bigFiles = picked.filter(function (f) { return f.size > MAX_UPLOAD_BYTES; });
+    picked = picked.filter(function (f) { return f.size <= MAX_UPLOAD_BYTES; });
+    if (first && !picked.length) {
+      selectedFile = null;
       showMsg(
         document.getElementById("uploadMsg"),
-        "That file is " + (selectedFile.size / (1024 * 1024)).toFixed(0) + " MB — a bit too large (limit is " + (MAX_UPLOAD_BYTES / (1024 * 1024)).toFixed(0) + " MB). Try trimming it shorter or lowering your camera's recording quality, then pick it again.",
+        "That file is " + (bigFiles[0].size / (1024 * 1024)).toFixed(0) + " MB — a bit too large (limit is " + (MAX_UPLOAD_BYTES / (1024 * 1024)).toFixed(0) + " MB). Try trimming it shorter or lowering your camera's recording quality, then pick it again.",
         "error"
       );
       fileInput.value = "";
-      selectedFile = null;
       dropzoneLabel.textContent = CATEGORY_META[pickedCategoryKey()] ? CATEGORY_META[pickedCategoryKey()].placeholder : "Click to choose a file";
       uploadBtn.disabled = true;
       uploadBtn.textContent = "↑ Select a file above";
+      updateTrimVisibility(); updateNarrationVisibility(); updateMusicVisibility(); updateMoreOptionsBoxVisibility();
       return;
     }
+    selectedFile = picked[0] || null;
+    // Rebuild the clip list from this pick (picking again replaces all clips).
+    clips.forEach(function (c) { try { URL.revokeObjectURL(c.url); } catch (e) {} });
+    reelFilmGen++;
+    clips = (selectedFile && fileKind(selectedFile) === "video")
+      ? picked.map(function (f) { return { file: f, url: URL.createObjectURL(f), dur: 0, thumb: null, frames: null }; })
+      : [];
+    clipSel = 0;
     hideMsg(document.getElementById("uploadMsg"));
+    if (tooMany || bigFiles.length) {
+      showMsg(document.getElementById("uploadMsg"), (tooMany ? "Only " + MAX_CLIPS + " clips fit in one post — the rest were left out. " : "") + (bigFiles.length ? bigFiles.length + " clip" + (bigFiles.length > 1 ? "s were" : " was") + " too large and left out (limit " + (MAX_UPLOAD_BYTES / (1024 * 1024)).toFixed(0) + " MB each)." : ""), "error");
+    }
     if (selectedFile) {
       dropzoneLabel.textContent = fileTypeLabel(selectedFile);
       uploadBtn.disabled = false;
@@ -1859,7 +2268,7 @@
       // that title is what publishes straight to the Music Library.
       document.getElementById("songTitleField").style.display = isAudio ? "block" : "none";
       document.getElementById("captionField").style.display = isAudio ? "none" : "block";
-      if (!isAudio) document.getElementById("songTitle").value = "";
+      if (!isAudio) { document.getElementById("songTitle").value = ""; document.getElementById("songGenre").value = ""; }
     } else {
       dropzoneLabel.textContent = CATEGORY_META[pickedCategoryKey()] ? CATEGORY_META[pickedCategoryKey()].placeholder : "Click to choose a file";
       uploadBtn.disabled = true;
@@ -1932,6 +2341,11 @@
       songTitleField.focus();
       return;
     }
+    if (precheckKind === "audio" && !document.getElementById("songGenre").value) {
+      showMsg(msg, "Please choose a category for your song so members can find it.", "error");
+      document.getElementById("songGenre").focus();
+      return;
+    }
 
     uploadBtn.disabled = true;
     uploadBtn.textContent = "Uploading…";
@@ -1959,7 +2373,7 @@
         var durationSeconds = await getAudioDurationSeconds(selectedFile);
         var artistName = memberDisplayName || "Ensemble Fitness Artist";
 
-        var { error: trackInsertError } = await window.sb.from("tracks").insert({
+        var trackRow = {
           title: songTitle,
           artist_name: artistName,
           artist_email: currentUser.email || null,
@@ -1967,8 +2381,14 @@
           storage_path: trackPath,
           is_active: true,
           is_independent_artist: true,
-          submitted_by: currentUser.id
-        });
+          submitted_by: currentUser.id,
+          genre: document.getElementById("songGenre").value || null
+        };
+        var { error: trackInsertError } = await window.sb.from("tracks").insert(trackRow);
+        if (trackInsertError && /genre/i.test(trackInsertError.message || "")) {
+          delete trackRow.genre; // sql/track-genre.sql not run yet — the song still publishes
+          ({ error: trackInsertError } = await window.sb.from("tracks").insert(trackRow));
+        }
         if (trackInsertError) throw trackInsertError;
 
         showMsg(msg, "🎉 \"" + songTitle + "\" is live in the Music Library now! Our team reviews new songs regularly to make sure they fit the community's motivational vibe — you're all set for now.", "success");
@@ -1976,6 +2396,7 @@
         selectedFile = null;
         dropzoneLabel.textContent = CATEGORY_META.song.placeholder;
         songTitleField.value = "";
+        document.getElementById("songGenre").value = "";
         document.getElementById("songTitleField").style.display = "none";
         document.getElementById("captionField").style.display = "block";
         uploadBtn.textContent = "↑ Select a file above";
@@ -2053,6 +2474,7 @@
       if (kind === "video") {
         try {
           var posterSeekTime = selectedCoverTime != null ? selectedCoverTime : 0;
+          if (clips.length > 1 && reelIdx !== 0) await loadClipAt(0, 0, false); // the cover always comes from clip 1
           var posterBlob = await captureVideoPosterBlob(trimPreviewVideo, posterSeekTime);
           if (posterBlob) {
             var candidatePosterPath = currentUser.id + "/" + crypto.randomUUID() + "-poster.jpg";
@@ -2107,10 +2529,16 @@
         if (mDelay > 0.04) insertRow.music_delay_seconds = round1(mDelay);
         if (isFinite(fullNatural) && mLen > 0 && mLen < fullNatural - 0.05) insertRow.music_length_seconds = round1(mLen);
       }
+      // How long each clip is (only for several clips, and only when every length is known) — lets the
+      // feed run ONE song across all of them. Dropped on retry if sql/reel-durations.sql isn't run yet.
+      delete insertRow.clip_durations;
+      if (kind === "video" && clips.length > 1 && clips.every(function (c) { return c.dur > 0; })) {
+        insertRow.clip_durations = clips.map(function (c) { return Math.round(c.dur * 100) / 100; });
+      }
       var { data: insertedRow, error: insertError } = await window.sb.from("media").insert(insertRow).select().single();
       // Either optional column may not exist yet (its SQL not run) — drop whichever one the
       // error names and retry so the post still goes through.
-      var optionalCols = ["keep_original_audio", "music_start_seconds", "music_delay_seconds", "music_length_seconds"];
+      var optionalCols = ["keep_original_audio", "music_start_seconds", "music_delay_seconds", "music_length_seconds", "clip_durations"];
       for (var oi = 0; insertError && oi < optionalCols.length; oi++) {
         var col = optionalCols[oi];
         if (col in insertRow && (insertError.message || "").indexOf(col) !== -1) {
@@ -2124,6 +2552,43 @@
       }
       if (insertError) throw insertError;
 
+      // Clips 2..N: each uploaded as its own file and attached to the post (clip 1 IS the post). A clip
+      // that fails never rolls back a post that already went through — the member just gets a heads-up,
+      // and the saved clip lengths are corrected so the song still lines up with what really got attached.
+      var failedExtraClips = 0;
+      if (kind === "video" && clips.length > 1) {
+        var attached = [clips[0]];
+        for (var clipIndex = 1; clipIndex < clips.length; clipIndex++) {
+          uploadBtn.textContent = "Uploading clip " + (clipIndex + 1) + " of " + clips.length + "…";
+          try {
+            var clipFile = clips[clipIndex].file;
+            var clipPath = currentUser.id + "/" + crypto.randomUUID() + "." + getExt(clipFile.name);
+            var { error: clipUploadError } = await window.sb.storage.from("media").upload(clipPath, clipFile, { cacheControl: "3600", upsert: false });
+            if (clipUploadError) throw clipUploadError;
+            var { error: clipInsertError } = await window.sb.from("media_clips").insert({
+              media_id: insertedRow.id,
+              order_index: attached.length + 1, // 2, 3, 4… with no gaps even if one clip fails
+              storage_path: clipPath,
+              trim_start: null,
+              trim_end: null
+            });
+            if (clipInsertError) {
+              try { await window.sb.storage.from("media").remove([clipPath]); } catch (rmErr) {}
+              throw clipInsertError;
+            }
+            attached.push(clips[clipIndex]);
+          } catch (clipErr) {
+            failedExtraClips++;
+          }
+        }
+        if (failedExtraClips && insertRow.clip_durations) {
+          try { await window.sb.from("media").update({ clip_durations: attached.map(function (c) { return Math.round(c.dur * 100) / 100; }) }).eq("id", insertedRow.id); } catch (durErr) {}
+        }
+      }
+      var extraClipNote = failedExtraClips
+        ? " (" + failedExtraClips + " clip" + (failedExtraClips > 1 ? "s" : "") + " couldn't be attached — the rest of your post is saved.)"
+        : "";
+
       showMsg(msg, (kind === "photo" && isProfilePhotoChecked
         ? "Profile photo updated and live now!"
         : narrationPath
@@ -2132,7 +2597,7 @@
         ? (mixFlagNotSaved
             ? "Uploaded with your chosen track attached, but \"keep my video's own sound\" or \"start the song at\" or the song timing isn't switched on yet — the track will replace the video's sound and start from the beginning for now. It'll show as \"Pending\" until it's reviewed."
             : "Uploaded with your chosen track attached! It'll show as \"Pending\" until it's reviewed.")
-        : "Uploaded! It'll show as \"Pending\" until it's reviewed."), "success");
+        : "Uploaded! It'll show as \"Pending\" until it's reviewed.") + extraClipNote, "success");
       fileInput.value = "";
       selectedFile = null;
       dropzoneLabel.textContent = CATEGORY_META[pickedCategoryKey()] ? CATEGORY_META[pickedCategoryKey()].placeholder : "Click to choose a file";

@@ -12,6 +12,18 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-14 (later) — Several videos per post, song categories, readout over the video
+
+- **Up to 10 videos per post.** "Upload videos": the picker takes several clips at once (and a ＋ tile adds more). A thumbnail row shows them in order; tap one to select it, then ◀ Earlier / Later ▶ / ✕ Remove. Clip 1 is the post, clips 2+ go in `media_clips` (existing table + feed playback). The timeline now spans ALL clips (thin white lines mark where one ends), scrubbing and Play work across clips, and the song runs across the whole set.
+- **One song across the clips, everywhere it plays.** New column `media.clip_durations` (sql/reel-durations.sql) remembers each clip's length; `wireReelPlayback` now reports reel time, and `wireFeedSound` / `wireNarrationSync` use it. Feed, My uploads (profile) and member.html all play it; member.html also now plays clips 2+ (it only ever showed clip 1). Posts without the column play clips back to back as before, with no song across them.
+- **Admin review queue shows every clip** of a pending post (clip 1 plus the others underneath) so nothing is approved unseen.
+- A voice narration needs a single video, so it hides when there are 2+ clips. A failed extra clip never fails the post; clip lengths are corrected to what actually attached.
+- **Song categories.** New `tracks.genre` (sql/track-genre.sql). Artists pick one (required) when uploading a song; they can change it in My music (profile); admin can set it per song and when adding one. Music tracks sheet: chips (All · New · each category in use), ▶ preview on each row (own audio element, stops on close/pick), category shown under the artist.
+- **Readout over the video** while dragging a handle ("Skipping the first 19.0 s of the song" etc.) instead of the line under the timeline; Android phones also tick on each step. The old "Song 0:19–0:24 plays from…" line is gone (only a warning shows if the song runs out before the video ends). Cover photo moved up.
+- Still to do: Trending (needs a usage count) and "Your recent" strip. SQL to run: `sql/track-genre.sql`, `sql/reel-durations.sql` (both one line; the app works without them, just without categories / song-across-clips).
+
+---
+
 ## 2026-10-14 — Music tracks sidebar; "Start the song at" box removed (upload.html)
 
 - Removed the "Start the song at" box (slider, ±½ s nudges, Play with video) from the upload page: the timeline under the video is the control now. The start value still lives in a hidden picker so the timeline and the saved `music_start_seconds` keep working.

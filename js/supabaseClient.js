@@ -259,7 +259,7 @@ function wirePasswordToggle(button, input) {
    "My uploads", and the admin review queue). The video's own sound is muted
    so only the narration plays. Best-effort: if the browser's autoplay policy
    blocks audio.play(), it fails silently rather than throwing. */
-function wireNarrationSync(video, audio, keepOriginal, musicStart, trimStart, musicWin) {
+function wireNarrationSync(video, audio, keepOriginal, musicStart, trimStart, musicWin, reel) {
   if (!video || !audio) return;
   // musicStart: where in the SONG playback begins (seconds; 0 for narration or an unset post).
   // trimStart: the clip's own trim point, so the song lines up with the clip's first frame.
@@ -270,11 +270,13 @@ function wireNarrationSync(video, audio, keepOriginal, musicStart, trimStart, mu
   var delay = musicWin && musicWin.delay > 0 ? Number(musicWin.delay) : 0;
   var wlen = musicWin && musicWin.length > 0 ? Number(musicWin.length) : null;
   var hasWindow = delay > 0 || wlen !== null;
+  // reel (optional): a multi-clip post — time is then counted along the WHOLE reel, not the clip on screen.
+  function rel() { return reel ? reel.time() : video.currentTime - tStart; }
   function inWin() {
-    var r = video.currentTime - tStart;
+    var r = rel();
     return r >= delay - 0.02 && (wlen === null || r < delay + wlen);
   }
-  function expected() { return offset + Math.max(0, video.currentTime - tStart - delay); }
+  function expected() { return offset + Math.max(0, rel() - delay); }
   if (keepOriginal) {
     // "Keep my video's own sound too": the video stays audible and the track plays
     // softly underneath. The video's own mute/volume controls drive the track too.
@@ -289,9 +291,9 @@ function wireNarrationSync(video, audio, keepOriginal, musicStart, trimStart, mu
     audio.currentTime = expected();
     audio.play().catch(function () {});
   });
-  video.addEventListener("pause", function () { audio.pause(); });
+  video.addEventListener("pause", function () { if (reel && video.ended) return; audio.pause(); }); // reel: a clip finishing is not the song stopping
   video.addEventListener("seeking", function () { audio.currentTime = expected(); });
-  if (hasWindow) {
+  if (hasWindow || reel) {
     video.addEventListener("timeupdate", function () {
       if (video.paused) return;
       if (inWin()) {
@@ -303,6 +305,7 @@ function wireNarrationSync(video, audio, keepOriginal, musicStart, trimStart, mu
     });
   }
   video.addEventListener("ended", function () {
+    if (reel) return;
     audio.pause();
     audio.currentTime = offset;
   });
@@ -318,7 +321,7 @@ function wireNarrationSync(video, audio, keepOriginal, musicStart, trimStart, mu
    - keepOriginal: video keeps its own sound; the track plays at low volume and simply
      follows the video's muted state.
    The track starts where the clip's trim starts (at `musicStart` seconds into the song), mirroring the upload preview. */
-function wireFeedSound(video, audio, keepOriginal, trimStart, musicStart, musicWin) {
+function wireFeedSound(video, audio, keepOriginal, trimStart, musicStart, musicWin, reel) {
   if (!video || !audio) return;
   var start = typeof trimStart === "number" ? trimStart : 0;
   var offset = typeof musicStart === "number" && musicStart > 0 ? musicStart : 0; // where in the song playback begins
@@ -346,11 +349,13 @@ function wireFeedSound(video, audio, keepOriginal, trimStart, musicStart, musicW
   // musicWin (optional): { delay, length } — see wireNarrationSync.
   var delay = musicWin && musicWin.delay > 0 ? Number(musicWin.delay) : 0;
   var wlen = musicWin && musicWin.length > 0 ? Number(musicWin.length) : null;
+  // reel (optional): a multi-clip post — time is counted along the WHOLE reel, so one song runs across every clip.
+  function rel() { return reel ? reel.time() : video.currentTime - start; }
   function inWin() {
-    var r = video.currentTime - start;
+    var r = rel();
     return r >= delay - 0.02 && (wlen === null || r < delay + wlen);
   }
-  function expected() { return offset + Math.max(0, video.currentTime - start - delay); }
+  function expected() { return offset + Math.max(0, rel() - delay); }
   function sync() {
     if (Math.abs(audio.currentTime - expected()) > 0.4) {
       try { audio.currentTime = expected(); } catch (e) {}
@@ -361,7 +366,7 @@ function wireFeedSound(video, audio, keepOriginal, trimStart, musicStart, musicW
     try { audio.currentTime = expected(); } catch (e) {}
     audio.play().catch(function () {});
   });
-  video.addEventListener("pause", function () { audio.pause(); });
+  video.addEventListener("pause", function () { if (reel && video.ended) return; audio.pause(); }); // reel: a clip finishing is not the song stopping
   video.addEventListener("seeked", function () { if (inWin()) sync(); });
   video.addEventListener("timeupdate", function () {
     if (video.paused) return;
@@ -369,7 +374,7 @@ function wireFeedSound(video, audio, keepOriginal, trimStart, musicStart, musicW
     sync();
     if (audio.paused) audio.play().catch(function () {}); // song entered its window, or ended before the clip looped
   });
-  video.addEventListener("ended", function () { audio.pause(); });
+  video.addEventListener("ended", function () { if (!reel) audio.pause(); });
 }
 
 /* Applies a member's chosen trim points to a <video> WITHOUT re-encoding the
@@ -419,9 +424,16 @@ function wireTrimPlayback(video, trimStart, trimEnd) {
    No-op for fewer than 2 clips — callers should use wireTrimPlayback
    instead for an ordinary single-clip post, which is the vast majority and
    should keep behaving exactly as it always has. */
-function wireReelPlayback(video, clips) {
-  if (!video || !clips || clips.length < 2) return;
+function wireReelPlayback(video, clips, durations) {
+  if (!video || !clips || clips.length < 2) return null;
   var index = 0;
+  // durations (optional): how long each clip plays (seconds), in order. With them the reel can say
+  // "how far along the WHOLE reel are we" — what lets one song run across all the clips.
+  var offsets = null;
+  if (durations && durations.length === clips.length) {
+    offsets = [0];
+    for (var di = 0; di < durations.length; di++) offsets.push(offsets[di] + (Number(durations[di]) || 0));
+  }
 
   function clipStart(clip) { return typeof clip.start === "number" ? clip.start : 0; }
   function clipEnd(clip) { return typeof clip.end === "number" ? clip.end : null; }
@@ -463,6 +475,16 @@ function wireReelPlayback(video, clips) {
   });
   // A clip with no trim_end just plays to its own natural end instead.
   video.addEventListener("ended", advance);
+
+  return {
+    hasTimes: !!offsets,
+    index: function () { return index; },
+    // Seconds into the whole reel (clip 1 starts at 0).
+    time: function () {
+      var base = offsets ? offsets[index] : 0;
+      return base + Math.max(0, video.currentTime - clipStart(clips[index]));
+    }
+  };
 }
 
 

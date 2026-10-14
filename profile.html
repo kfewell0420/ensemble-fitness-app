@@ -373,13 +373,20 @@
       } catch (e) { resolve(null); }
     });
   }
+  var MM_GENRES = ["Motivational", "Gospel / Inspirational", "Hip-Hop", "R&B", "Pop", "Rock", "High-Energy Cardio", "Chill / Stretch", "Other"];
   async function loadMyMusic() {
     var card = document.getElementById("myMusicCard");
     var list = document.getElementById("myMusicList");
     var res = await window.sb.from("tracks")
-      .select("id, title, tagline, storage_path, duration_seconds")
+      .select("id, title, tagline, genre, storage_path, duration_seconds")
       .eq("submitted_by", currentUser.id).eq("is_active", true)
       .order("created_at", { ascending: false });
+    if (res.error) {
+      res = await window.sb.from("tracks")
+        .select("id, title, tagline, storage_path, duration_seconds")
+        .eq("submitted_by", currentUser.id).eq("is_active", true)
+        .order("created_at", { ascending: false });
+    }
     if (res.error) {
       res = await window.sb.from("tracks").select("id, title, storage_path, duration_seconds")
         .eq("submitted_by", currentUser.id).eq("is_active", true).order("created_at", { ascending: false });
@@ -405,6 +412,7 @@
       row.querySelector(".mm-name").textContent = t.title;
       var sub = [];
       if (t.duration_seconds) sub.push(formatSongTime(t.duration_seconds));
+      if (t.genre) sub.push(t.genre);
       if (t.tagline) sub.push("“" + t.tagline + "”");
       row.querySelector(".mm-sub").textContent = sub.join(" · ");
       row.querySelector(".mm-play").addEventListener("click", async function () {
@@ -426,12 +434,14 @@
       row.innerHTML =
         '<div class="form-msg mm-msg"></div>' +
         '<label>Song title</label><input type="text" class="mm-title" maxlength="120" />' +
+        '<label>Category</label><select class="mm-genre"><option value="">Choose a category…</option>' + MM_GENRES.map(function (g) { return '<option>' + g.replace(/&/g, "&amp;") + '</option>'; }).join("") + '</select>' +
         '<label>Tagline (optional)</label><input type="text" class="mm-tagline" maxlength="140" placeholder="A short, motivating line about the song" />' +
         '<label>Replace the audio file (optional)</label><input type="file" class="mm-file" accept="audio/*,.mp3,.m4a,.aac,.wav,.ogg,.flac" />' +
         '<div style="display:flex; gap:8px; margin-top:12px;"><button type="button" class="btn btn-primary btn-sm mm-save">Save</button>' +
         '<button type="button" class="btn btn-ghost btn-sm mm-cancel">Cancel</button></div>';
       row.querySelector(".mm-title").value = t.title || "";
       row.querySelector(".mm-tagline").value = t.tagline || "";
+      row.querySelector(".mm-genre").value = t.genre || "";
       row.querySelector(".mm-cancel").addEventListener("click", head);
       row.querySelector(".mm-save").addEventListener("click", save);
     }
@@ -443,7 +453,8 @@
       function fail(text) { msg.textContent = text; msg.className = "form-msg mm-msg show error"; btn.disabled = false; btn.textContent = "Save"; }
       if (!title) return fail("Please give the song a title.");
       btn.disabled = true; btn.textContent = file ? "Uploading…" : "Saving…";
-      var update = { title: title, tagline: tagline || null };
+      var genre = row.querySelector(".mm-genre").value;
+      var update = { title: title, tagline: tagline || null, genre: genre || null };
       var newPath = null, oldPath = t.storage_path;
       if (file) {
         var ext = getExt(file.name);
@@ -457,8 +468,8 @@
         update.duration_seconds = await mmDuration(file);
       }
       var upd = await window.sb.from("tracks").update(update).eq("id", t.id).select("id");
-      if (upd.error && /tagline/.test(upd.error.message || "")) {
-        delete update.tagline;
+      if (upd.error && /tagline|genre/.test(upd.error.message || "")) {
+        delete update.tagline; delete update.genre;
         upd = await window.sb.from("tracks").update(update).eq("id", t.id).select("id");
       }
       if (upd.error || !upd.data || !upd.data.length) {
@@ -466,7 +477,7 @@
         return fail(upd.error ? (upd.error.message || "Couldn't save.") : "Editing songs isn't switched on yet — please try again later.");
       }
       if (newPath) { try { await window.sb.storage.from("tracks").remove([oldPath]); } catch (e) {} }
-      t.title = title; t.tagline = tagline;
+      t.title = title; t.tagline = tagline; if ("genre" in update) t.genre = genre;
       if (newPath) { t.storage_path = newPath; t.duration_seconds = update.duration_seconds; }
       head();
     }
@@ -1147,16 +1158,18 @@
     var videoIds = data.filter(function (item) { return item.kind === "video"; }).map(function (item) { return item.id; });
     // "Keep my video's own sound" flags — own best-effort query so this page keeps
     // working before sql/keep-original-audio.sql has been run.
-    var keepOriginalById = {}, musicStartById = {}, musicWinById = {};
+    var keepOriginalById = {}, musicStartById = {}, musicWinById = {}, clipDursById = {};
     if (videoIds.length) {
       try {
-        var keepRes = await window.sb.from("media").select("id, keep_original_audio, music_start_seconds, music_delay_seconds, music_length_seconds").in("id", videoIds);
+        var keepRes = await window.sb.from("media").select("id, keep_original_audio, music_start_seconds, music_delay_seconds, music_length_seconds, clip_durations").in("id", videoIds);
+        if (keepRes && keepRes.error) keepRes = await window.sb.from("media").select("id, keep_original_audio, music_start_seconds, music_delay_seconds, music_length_seconds").in("id", videoIds);
         if (keepRes && keepRes.error) keepRes = await window.sb.from("media").select("id, keep_original_audio, music_start_seconds").in("id", videoIds);
         // (the next line is the original fallback to the oldest column set)
         if (keepRes && keepRes.error) keepRes = await window.sb.from("media").select("id, keep_original_audio").in("id", videoIds);
         if (keepRes && !keepRes.error && keepRes.data) {
           keepRes.data.forEach(function (r) {
             if (r.keep_original_audio) keepOriginalById[r.id] = true;
+            if (Array.isArray(r.clip_durations)) clipDursById[r.id] = r.clip_durations.map(Number);
             if (r.music_start_seconds) musicStartById[r.id] = Number(r.music_start_seconds) || 0;
             if (r.music_delay_seconds > 0 || r.music_length_seconds > 0) musicWinById[r.id] = { delay: Number(r.music_delay_seconds) || 0, length: Number(r.music_length_seconds) > 0 ? Number(r.music_length_seconds) : null };
           });
@@ -1267,19 +1280,21 @@
 
       grid.appendChild(wrap);
 
+      var tileReel = null;
+      if (item.kind === "video" && (resolved[i].extraClips || []).length) {
+        // Multi-clip post: build the reel first so ONE song can run across every clip.
+        var reelClips0 = [{ url: url, start: item.trim_start, end: item.trim_end }].concat(
+          resolved[i].extraClips.map(function (c) { return { url: c.url, start: c.trim_start, end: c.trim_end }; })
+        );
+        tileReel = wireReelPlayback(tile.querySelector("video"), reelClips0, clipDursById[item.id]);
+      }
       if (soundUrl) {
-        wireNarrationSync(tile.querySelector("video"), tile.querySelector("audio." + soundClass), keepOriginal, musicUrl ? musicStartById[item.id] : 0, musicUrl ? item.trim_start : 0, musicUrl ? musicWinById[item.id] : null);
+        wireNarrationSync(tile.querySelector("video"), tile.querySelector("audio." + soundClass), keepOriginal, musicUrl ? musicStartById[item.id] : 0, musicUrl ? item.trim_start : 0, musicUrl ? musicWinById[item.id] : null, tileReel && tileReel.hasTimes && musicUrl ? tileReel : null);
       }
       if (item.kind === "video") {
         var extraClips = resolved[i].extraClips || [];
-        if (extraClips.length) {
-          // Multi-clip reel (Ken's ask, Nov 2026 — "when someone views
-          // their profile" too): reuse the same feed.html helper instead
-          // of wireTrimPlayback so clip 2 onward play right after clip 1.
-          var reelClips = [{ url: url, start: item.trim_start, end: item.trim_end }].concat(
-            extraClips.map(function (c) { return { url: c.url, start: c.trim_start, end: c.trim_end }; })
-          );
-          wireReelPlayback(tile.querySelector("video"), reelClips);
+        if (tileReel) {
+          // (multi-clip reel already wired above)
         } else {
           wireTrimPlayback(tile.querySelector("video"), item.trim_start, item.trim_end);
         }

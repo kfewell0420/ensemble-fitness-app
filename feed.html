@@ -3012,6 +3012,7 @@
     try {
       // Newest optional columns first; fall back one step at a time if a column doesn't exist yet.
       var colSets = [
+        "id, narration_path, music_track_id, keep_original_audio, music_start_seconds, music_delay_seconds, music_length_seconds, clip_durations, tracks(storage_path)",
         "id, narration_path, music_track_id, keep_original_audio, music_start_seconds, music_delay_seconds, music_length_seconds, tracks(storage_path)",
         "id, narration_path, music_track_id, keep_original_audio, music_start_seconds, tracks(storage_path)",
         "id, narration_path, music_track_id, keep_original_audio, tracks(storage_path)",
@@ -3038,6 +3039,7 @@
       var signed = await Promise.all([sign("media", narrationPaths), sign("tracks", trackPaths)]);
       data.forEach(function (r) {
         var url = "", keep = false, isMusic = false, mStart = 0, mDelay = 0, mLength = null;
+        var durs = Array.isArray(r.clip_durations) ? r.clip_durations.map(Number) : null; // multi-clip posts: how long each clip is
         if (r.narration_path) url = signed[0][r.narration_path] || "";
         else if (r.music_track_id && r.tracks && r.tracks.storage_path) {
           url = signed[1][r.tracks.storage_path] || "";
@@ -3047,7 +3049,7 @@
           mDelay = Number(r.music_delay_seconds) || 0;
           mLength = Number(r.music_length_seconds) > 0 ? Number(r.music_length_seconds) : null;
         }
-        if (url) found[r.id] = { url: url, keep: keep, isMusic: isMusic, start: mStart, delay: mDelay, length: mLength };
+        if (url) found[r.id] = { url: url, keep: keep, isMusic: isMusic, start: mStart, delay: mDelay, length: mLength, durations: durs };
       });
     } catch (e) { found = {}; }
     ids.forEach(function (id) { postSoundCache[id] = found[id] || null; });
@@ -3151,6 +3153,7 @@
       it.isMusicSound = snd ? !!snd.isMusic : false;
       it.musicStart = snd ? (snd.start || 0) : 0;
       it.musicWin = snd ? { delay: snd.delay || 0, length: snd.length || null } : null;
+      it.clipDurations = snd ? snd.durations : null;
     });
 
     // Avatars: NOT awaited (round 13, Oct 2026) — see hydrateAvatars()
@@ -3789,7 +3792,15 @@
         var reelClips = [{ url: item.url, start: item.trim_start, end: item.trim_end }].concat(
           item.extraClips.map(function (c) { return { url: c.url, start: c.trim_start, end: c.trim_end }; })
         );
-        wireReelPlayback(videoEl, reelClips);
+        var reel = wireReelPlayback(videoEl, reelClips, item.clipDurations);
+        // One song across ALL the clips — only when the post saved how long each clip is
+        // (posts uploaded before that simply play their clips back to back, as they always did).
+        if (reel && reel.hasTimes && item.soundUrl && item.isMusicSound) {
+          var reelAudio = new Audio();
+          reelAudio.preload = "none";
+          reelAudio.src = item.soundUrl;
+          wireFeedSound(videoEl, reelAudio, !!item.keepOriginalAudio, item.trim_start, item.musicStart, item.musicWin, reel);
+        }
       } else if (item.soundUrl) {
         // Attached music/voice-over (single-clip posts only). See wireFeedSound.
         var postAudio = new Audio();

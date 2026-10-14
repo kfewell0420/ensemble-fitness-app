@@ -313,6 +313,10 @@
           <input type="text" id="trackTagline" placeholder="e.g. Turn this up when the workout gets hard" maxlength="140" />
         </div>
         <div class="field">
+          <label for="trackGenre">Category</label>
+          <select id="trackGenre"><option value="">Choose a category…</option><option>Motivational</option><option>Gospel / Inspirational</option><option>Hip-Hop</option><option>R&amp;B</option><option>Pop</option><option>Rock</option><option>High-Energy Cardio</option><option>Chill / Stretch</option><option>Other</option></select>
+        </div>
+        <div class="field">
           <label for="trackFile">Audio file (MP3, M4A, or WAV)</label>
           <input type="file" id="trackFile" accept="audio/*" />
         </div>
@@ -515,6 +519,20 @@
       return;
     }
 
+    // Multi-clip posts: clip 2 onward live in media_clips — fetched so a reviewer sees EVERY clip before approving.
+    var extraClipsByMedia = {};
+    try {
+      var pendingVideoIds = data.filter(function (r) { return r.kind === "video"; }).map(function (r) { return r.id; });
+      if (pendingVideoIds.length) {
+        var clipRes = await window.sb.from("media_clips").select("media_id, order_index, storage_path").in("media_id", pendingVideoIds).order("order_index", { ascending: true });
+        var clipRowsA = (clipRes && !clipRes.error && clipRes.data) || [];
+        for (var cj = 0; cj < clipRowsA.length; cj++) {
+          var cu = await signedUrlFor(clipRowsA[cj].storage_path);
+          if (cu) (extraClipsByMedia[clipRowsA[cj].media_id] = extraClipsByMedia[clipRowsA[cj].media_id] || []).push(cu);
+        }
+      }
+    } catch (clipErrA) { /* none shown — clip 1 still reviews as before */ }
+
     el.innerHTML = "";
     for (var i = 0; i < data.length; i++) {
       var item = data[i];
@@ -553,6 +571,22 @@
         '</div>';
 
       el.appendChild(row);
+
+      var moreClips = extraClipsByMedia[item.id] || [];
+      if (moreClips.length) {
+        var thumbBox = row.querySelector(".review-thumb");
+        var clipNote = document.createElement("div");
+        clipNote.style.cssText = "font-size:12px; font-weight:700; color:var(--accent-2); margin-top:8px;";
+        clipNote.textContent = "🎞️ " + (moreClips.length + 1) + " clips — clip 1 above, the rest below";
+        thumbBox.appendChild(clipNote);
+        moreClips.forEach(function (cu, ci) {
+          var v = document.createElement("video");
+          v.src = cu; v.controls = true; v.muted = true; v.playsInline = true; v.preload = "metadata";
+          v.style.cssText = "display:block; width:100%; margin-top:6px; border-radius:8px;";
+          v.title = "Clip " + (ci + 2);
+          thumbBox.appendChild(v);
+        });
+      }
 
       if (soundUrl) {
         wireNarrationSync(row.querySelector("video"), row.querySelector("audio." + soundClass));
@@ -1045,6 +1079,7 @@
   // Shared with loadRecentVideos/loadRecentPhotos below — lets admin set or
   // fix a post's category inline, since older approved posts predate the
   // category requirement and members other than the poster can't tag them.
+  var TRACK_GENRES = ["Motivational", "Gospel / Inspirational", "Hip-Hop", "R&B", "Pop", "Rock", "High-Energy Cardio", "Chill / Stretch", "Other"];
   var ADMIN_CATEGORY_OPTIONS = ["Working Out", "Walking", "Hiking", "Biking", "Running", "Swimming", "Strike a Pose", "Just Doing You", "Meal Prep", "Other"];
   // Stored value stays "Meal Prep" (every .eq("workout_type","Meal Prep")
   // filter on the member side keeps working with no migration) — this only
@@ -1351,10 +1386,12 @@
 
   async function loadTracks() {
     var el = document.getElementById("trackList");
-    var { data, error } = await window.sb
-      .from("tracks")
-      .select("id, title, artist_name, artist_email, artist_bio, artist_link, tagline, duration_seconds, storage_path, is_active, is_independent_artist, submitted_by, created_at, tip_count, tip_total_cents")
-      .order("created_at", { ascending: false });
+    var TRACK_COLS = "id, title, artist_name, artist_email, artist_bio, artist_link, tagline, duration_seconds, storage_path, is_active, is_independent_artist, submitted_by, created_at, tip_count, tip_total_cents";
+    var { data, error } = await window.sb.from("tracks").select(TRACK_COLS + ", genre").order("created_at", { ascending: false });
+    if (error) { // sql/track-genre.sql not run yet — list without the category
+      var retry = await window.sb.from("tracks").select(TRACK_COLS).order("created_at", { ascending: false });
+      data = retry.data; error = retry.error;
+    }
 
     if (error) {
       el.innerHTML = '<div class="empty-state">Couldn\'t load the music library: ' + error.message + '</div>';
@@ -1382,6 +1419,8 @@
           '<span>' + escapeHtmlAdmin(item.artist_name) + (item.duration_seconds ? ' · ' + formatTrackDuration(item.duration_seconds) : '') + (item.is_active ? '' : ' · inactive') + '</span>' +
           (item.submitted_by ? '<div style="margin-top:4px;"><span style="font-size:11px; font-weight:700; color:#7ec8ff; background:rgba(126,200,255,0.14); padding:2px 8px; border-radius:999px;">Self-submitted</span></div>' : '') +
           (item.is_independent_artist ? '<div style="margin-top:4px;"><span style="font-size:11px; font-weight:700; color:var(--accent-2); background:rgba(219,31,82,0.14); padding:2px 8px; border-radius:999px;">100% Royalties</span></div>' : '') +
+          '<div style="margin-top:6px;"><select class="track-genre-select" data-id="' + item.id + '" style="font-size:12.5px; padding:4px 8px; width:auto;" title="Song category — members filter by this">' +
+            '<option value="">Category: not set</option>' + TRACK_GENRES.map(function (g) { return '<option' + (item.genre === g ? ' selected' : '') + '>' + escapeHtmlAdmin(g) + '</option>'; }).join("") + '</select></div>' +
           (item.tagline ? '<div style="font-size:13px; color:var(--accent-2); font-style:italic; margin-top:4px;">“' + escapeHtmlAdmin(item.tagline) + '”</div>' : '') +
           (item.artist_bio ? '<div style="font-size:13px; color:var(--muted-invert); margin-top:4px;">' + escapeHtmlAdmin(item.artist_bio) + '</div>' : '') +
           // escapeHtmlAdmin() doesn't escape a double quote (safe for text
@@ -1403,6 +1442,14 @@
     }
 
     wireResendPayoutButtons(el, resendLookup);
+    el.querySelectorAll(".track-genre-select").forEach(function (sel) {
+      sel.addEventListener("change", async function () {
+        sel.disabled = true;
+        var r = await window.sb.from("tracks").update({ genre: sel.value || null }).eq("id", sel.getAttribute("data-id"));
+        sel.disabled = false;
+        if (r.error) alert("Couldn't save the category (run sql/track-genre.sql first if you haven't): " + r.error.message);
+      });
+    });
 
     // Ken's ask (Oct 2026): a real, permanent delete instead of the old
     // Deactivate/Reactivate toggle — this removes the track's row AND its
@@ -1504,7 +1551,7 @@
       });
       if (uploadError) throw uploadError;
 
-      var { error: insertError } = await window.sb.from("tracks").insert({
+      var trackRow = {
         title: title,
         artist_name: artistName,
         artist_email: artistEmail,
@@ -1515,7 +1562,14 @@
         storage_path: path,
         is_active: true,
         is_independent_artist: isIndependentArtist
-      });
+      };
+      var newGenre = document.getElementById("trackGenre").value;
+      if (newGenre) trackRow.genre = newGenre;
+      var { error: insertError } = await window.sb.from("tracks").insert(trackRow);
+      if (insertError && trackRow.genre && /genre/i.test(insertError.message || "")) {
+        delete trackRow.genre; // sql/track-genre.sql not run yet
+        ({ error: insertError } = await window.sb.from("tracks").insert(trackRow));
+      }
       if (insertError) throw insertError;
 
       await sendPayoutSetupEmail({ email: artistEmail, name: artistName, context: "music" });
@@ -1528,6 +1582,7 @@
       document.getElementById("trackArtistBio").value = "";
       document.getElementById("trackArtistLink").value = "";
       document.getElementById("trackTagline").value = "";
+      document.getElementById("trackGenre").value = "";
       document.getElementById("trackFile").value = "";
       document.getElementById("trackIndependentArtist").checked = false;
       await loadTracks();

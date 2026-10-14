@@ -250,21 +250,36 @@
 
     // "Keep my video's own sound" flags — own best-effort query so this page keeps
     // working before sql/keep-original-audio.sql has been run.
-    var keepOriginalById = {}, musicStartById = {}, musicWinById = {};
+    var keepOriginalById = {}, musicStartById = {}, musicWinById = {}, clipDursById = {}, clipsById = {};
     try {
       var vidIds = items.filter(function (it) { return it.kind === "video"; }).map(function (it) { return it.id; });
-      var keepRes = await window.sb.from("media").select("id, keep_original_audio, music_start_seconds, music_delay_seconds, music_length_seconds").in("id", vidIds);
+      var keepRes = await window.sb.from("media").select("id, keep_original_audio, music_start_seconds, music_delay_seconds, music_length_seconds, clip_durations").in("id", vidIds);
+      if (keepRes && keepRes.error) keepRes = await window.sb.from("media").select("id, keep_original_audio, music_start_seconds, music_delay_seconds, music_length_seconds").in("id", vidIds);
       if (keepRes && keepRes.error) keepRes = await window.sb.from("media").select("id, keep_original_audio, music_start_seconds").in("id", vidIds);
       // (the next line is the original fallback to the oldest column set)
       if (keepRes && keepRes.error) keepRes = await window.sb.from("media").select("id, keep_original_audio").in("id", vidIds);
       if (keepRes && !keepRes.error && keepRes.data) {
         keepRes.data.forEach(function (r) {
           if (r.keep_original_audio) keepOriginalById[r.id] = true;
+          if (Array.isArray(r.clip_durations)) clipDursById[r.id] = r.clip_durations.map(Number);
           if (r.music_start_seconds) musicStartById[r.id] = Number(r.music_start_seconds) || 0;
             if (r.music_delay_seconds > 0 || r.music_length_seconds > 0) musicWinById[r.id] = { delay: Number(r.music_delay_seconds) || 0, length: Number(r.music_length_seconds) > 0 ? Number(r.music_length_seconds) : null };
         });
       }
     } catch (keepErr) { /* columns not there yet — ignore */ }
+    // Clip 2 onward of multi-clip posts (see sql/multi-clip-reels.sql) — best-effort, a miss just means clip 1 only.
+    try {
+      if (vidIds.length) {
+        var clipRes = await window.sb.from("media_clips").select("media_id, order_index, storage_path, trim_start, trim_end").in("media_id", vidIds).order("order_index", { ascending: true });
+        var clipRows = (clipRes && !clipRes.error && clipRes.data) || [];
+        var signedClips = await Promise.all(clipRows.map(function (c) { return window.sb.storage.from("media").createSignedUrl(c.storage_path, 3600); }));
+        clipRows.forEach(function (c, ci) {
+          var u = signedClips[ci] && signedClips[ci].data ? signedClips[ci].data.signedUrl : "";
+          if (!u) return;
+          (clipsById[c.media_id] = clipsById[c.media_id] || []).push({ url: u, start: c.trim_start, end: c.trim_end });
+        });
+      }
+    } catch (clipErr) { /* ignore */ }
 
     grid.innerHTML = "";
     // Ken's ask (Oct 2026): this used to await each item's signed URL(s) —
@@ -327,10 +342,14 @@
 
       grid.appendChild(card);
 
-      if (soundUrl) {
-        wireNarrationSync(card.querySelector("video"), card.querySelector("audio." + soundClass), keepOriginal, musicUrl ? musicStartById[item.id] : 0, musicUrl ? item.trim_start : 0, musicUrl ? musicWinById[item.id] : null);
+      var cardReel = null;
+      if (item.kind === "video" && (clipsById[item.id] || []).length) {
+        cardReel = wireReelPlayback(card.querySelector("video"), [{ url: url, start: item.trim_start, end: item.trim_end }].concat(clipsById[item.id]), clipDursById[item.id]);
       }
-      if (item.kind === "video") {
+      if (soundUrl) {
+        wireNarrationSync(card.querySelector("video"), card.querySelector("audio." + soundClass), keepOriginal, musicUrl ? musicStartById[item.id] : 0, musicUrl ? item.trim_start : 0, musicUrl ? musicWinById[item.id] : null, cardReel && cardReel.hasTimes && musicUrl ? cardReel : null);
+      }
+      if (item.kind === "video" && !cardReel) {
         wireTrimPlayback(card.querySelector("video"), item.trim_start, item.trim_end);
       }
     }
