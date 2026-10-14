@@ -183,6 +183,10 @@
     #trimPreviewVideo { aspect-ratio: 4 / 3; margin-bottom: 8px; }
     #previewSoundNote { display: none; }
   }
+  /* Show the WHOLE video, never cropped: a tall phone video gets a tall player (black on the sides). */
+  #trimPreviewVideo { object-fit: contain; background: #000; }
+  #trimPreviewVideo.portrait { aspect-ratio: auto; width: 100%; height: 42vh; }
+  @media (min-width: 561px) { #trimPreviewVideo.portrait { height: min(60vh, 540px); } }
   /* Music tracks: summary row on the page + slide-in list (side panel on desktop, bottom sheet on phones) */
   .mt-choose { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 14px; border-radius: 12px; border: 1.5px solid rgba(255,255,255,0.14); background: rgba(255,255,255,0.05); color: #fff; font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; }
   .mt-choose:hover { border-color: var(--accent-2); }
@@ -192,6 +196,7 @@
   .mt-sel-text { flex: 1; min-width: 0; display: flex; flex-direction: column; text-align: left; }
   .mt-sel-text b { font-size: 14px; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .mt-sel-text small { font-size: 12px; color: var(--faint-invert, #9aa0b4); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mt-selected .mt-sel-text b { white-space: normal; overflow: visible; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.25; }
   .mt-change { flex: 0 0 auto; background: none; border: 1.5px solid rgba(255,255,255,0.3); color: #fff; border-radius: 999px; padding: 6px 12px; font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; }
   .mt-remove { flex: 0 0 auto; width: 30px; height: 30px; border-radius: 50%; background: rgba(255,255,255,0.1); border: none; color: #fff; font-size: 13px; cursor: pointer; }
   #trackPickerRow.disabled { opacity: 0.45; pointer-events: none; }
@@ -1317,6 +1322,14 @@
       var tok = ++reelLoadTok;
       reelSwitching = true; reelIdx = idx; clipSel = idx;
       var v = trimPreviewVideo;
+      // While the next clip loads, hide the player's own play button / spinner and hold a still of the
+      // clip, so the joins look like one continuous video instead of flashing a big play icon.
+      v.controls = false;
+      v.poster = clips[idx].thumb || "";
+      var restore = function () { if (tok !== reelLoadTok) return; v.controls = true; v.removeAttribute("poster"); };
+      v.addEventListener("playing", restore, { once: true });
+      v.addEventListener("seeked", restore, { once: true });
+      setTimeout(restore, 2500);
       var onMeta = function () {
         v.removeEventListener("loadedmetadata", onMeta);
         if (tok !== reelLoadTok) { resolve(); return; }
@@ -1577,8 +1590,9 @@
     var w = wavePeaks[musicTrackSelect.value];
     var body = document.getElementById("mixClipBody");
     var W = body.clientWidth, H = body.clientHeight;
-    if (!w || !W || !H || !(mLen > 0)) { mixWave.style.display = "none"; return; }
+    if (!w || !W || !H || !(mLen > 0)) { mixWave.style.display = "none"; mixClipLabel.style.display = ""; return; }
     mixWave.style.display = "block";
+    mixClipLabel.style.display = "none"; // the wave is the picture; the song's name is already shown in the row above
     var key = [musicTrackSelect.value, Math.round(s * 10), Math.round(mLen * 10), W, H].join("|");
     if (mixWave._key === key) return;
     mixWave._key = key;
@@ -1707,7 +1721,10 @@
     updatePlayTogetherBtn(); musicPreviewAudio.pause(); updatePlayhead(); renderTimeline();
   });
   trimPreviewVideo.addEventListener("seeked", function () { updatePlayhead(); if (trimPreviewVideo.paused) renderTimeline(); });
-  trimPreviewVideo.addEventListener("loadedmetadata", function () { clampWindow(); updatePlayhead(); });
+  trimPreviewVideo.addEventListener("loadedmetadata", function () {
+    trimPreviewVideo.classList.toggle("portrait", trimPreviewVideo.videoHeight > trimPreviewVideo.videoWidth);
+    clampWindow(); updatePlayhead();
+  });
 
   // "▶ Play with video" and every auto-preview: restart a second before the song
   // comes in, so the entrance can be heard against the picture.
@@ -1957,12 +1974,11 @@
     var t = tracksById[musicTrackSelect.value];
     if (t) {
       trackPickerRow.innerHTML =
-        '<div class="mt-selected"><span class="mt-art"></span><span class="mt-sel-text"><b></b><small></small></span>' +
+        '<div class="mt-selected"><span class="mt-art"></span><span class="mt-sel-text"><b></b></span>' +
         '<button type="button" class="mt-change">Change</button>' +
         '<button type="button" class="mt-remove" aria-label="Remove music" title="Remove music">✕</button></div>';
       trackPickerRow.querySelector(".mt-art").textContent = trackInitial(t);
       trackPickerRow.querySelector(".mt-sel-text b").textContent = t.title;
-      trackPickerRow.querySelector(".mt-sel-text small").textContent = t.artist_name;
     } else {
       trackPickerRow.innerHTML = '<button type="button" class="mt-choose">🎵 Choose a song <span class="mt-count">' + allTracks.length + ' tracks ›</span></button>';
     }

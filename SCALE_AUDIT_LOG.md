@@ -12,6 +12,14 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-14 (late) — Whole video shown, smoother joins, song name only once
+
+- Tall phone videos are no longer cropped in the preview: the player now fits the whole video (about 42% of screen height for tall videos, black on the sides; wide videos keep the short box, also uncropped).
+- Between clips, the player's own big play button / spinner no longer flashes: controls are hidden and a still of the next clip is held while it loads, then they come back.
+- The song's name is shown once, in the "Music tracks" row (full title, up to 3 lines, no artist). The orange bar shows only the sound wave; the name only appears there while the wave is still loading or unavailable.
+
+---
+
 ## 2026-10-14 (night) — Sound wave inside the music bar
 
 - The song's real sound wave is drawn inside the orange bar (as on TikTok / Instagram): the part of the song that is used, from where it starts for as long as the bar. Dragging the left end slides the wave under the bar so the beat can be lined up by eye; the right end crops it; sliding the bar moves it as a whole. The title sits on a small dark pill so it stays readable.
