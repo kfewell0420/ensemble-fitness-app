@@ -68,11 +68,18 @@
     height: 56px;
     background: none;
     border: none;
-    color: rgba(255,255,255,0.55);
+    /* Ken's ask (Oct 2026): every icon in this rail bright white, like the house —
+       the old 55%-white made the Finder / Profile / Products icons look shadowed
+       and (as emoji) the cart was hard to even recognize. They are now crisp
+       white line icons; the page you are on gets a soft highlight behind it. */
+    color: #fff;
     text-decoration: none;
     font-family: 'Inter', sans-serif;
   }
-  .rp-tab-icon { font-size: 20px; line-height: 1; }
+  .rp-tab-icon { font-size: 20px; line-height: 1; display: flex; align-items: center; justify-content: center; }
+  .rp-tab-icon svg { width: 1.2em; height: 1.2em; display: block; }
+  .rp-tab:not(.rp-tab-post) .rp-tab-icon { width: 2.1em; height: 1.7em; border-radius: 10px; }
+  .rp-tab.active:not(.rp-tab-post) .rp-tab-icon { background: rgba(255,255,255,0.16); }
   .rp-tab-label { font-size: 10px; font-weight: 600; letter-spacing: 0.01em; }
   .rp-tab.active { color: #fff; }
 
@@ -112,8 +119,10 @@
     align-items: center;
     justify-content: center;
     border-radius: 7px;
-    border: 1.6px solid currentColor;
-    font-size: 15px;
+    border: 2px solid currentColor;
+    font-size: 20px;
+    font-weight: 700;
+    margin: 6px 0; /* same row height as the other icons, so the labels line up */
   }
   /* Ken's ask (Oct 2026): "Explore" was sitting noticeably below the
      header's dividing line — bring it up tight against it. The 18px here
@@ -314,19 +323,19 @@
 
 <nav class="rp-tabbar" aria-label="Main">
   <a href="feed.html" class="rp-tab" aria-label="Home" data-tooltip="Home">
-    <span class="rp-tab-icon">🏠</span><span class="rp-tab-label">Home</span>
+    <span class="rp-tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></span><span class="rp-tab-label">Home</span>
   </a>
   <a href="find.html" class="rp-tab active" aria-label="Finder" data-tooltip="Finder">
-    <span class="rp-tab-icon">🔎</span><span class="rp-tab-label">Finder</span>
+    <span class="rp-tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></span><span class="rp-tab-label">Finder</span>
   </a>
   <a href="upload.html" class="rp-tab rp-tab-post" aria-label="Upload a photo, video, or song" data-tooltip="Post">
     <span class="rp-tab-icon">+</span><span class="rp-tab-label">Post</span>
   </a>
   <a href="profile.html" class="rp-tab" aria-label="My Profile" data-tooltip="Profile">
-    <span class="rp-tab-icon">👤</span><span class="rp-tab-label">Profile</span>
+    <span class="rp-tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg></span><span class="rp-tab-label">Profile</span>
   </a>
   <a href="gear.html" class="rp-tab" aria-label="Ensemble Approved Products" data-tooltip="Products">
-    <span class="rp-tab-icon">🛒</span><span class="rp-tab-label">Products</span>
+    <span class="rp-tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h3l2.4 12.2a1 1 0 0 0 1 .8h9.2a1 1 0 0 0 1-.8L20.5 7H6"/></svg></span><span class="rp-tab-label">Products</span>
   </a>
 </nav>
 </div>

@@ -12,6 +12,21 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-17, main icon rail/bottom bar: all five icons bright white
+
+Ken: Finder, Post, Profile and Products icons looked shadowed gray next to the (bright) house; the cart was
+hard to even recognise. Wanted all bright white, website and phone app.
+
+- Cause: every tab except the current page used 55%-white text, and as emoji (magnifier, silhouette, cart)
+  they are dark glyphs that dimmed further.
+- `feed.html` and `find.html` (the only two pages with this bar): Home / Finder / Profile / Products are now
+  crisp pure-white line icons (same style as each other; the house too, so the set matches). The current
+  page gets a soft light highlight behind its icon. Post "+" is bigger and bolder in a thicker white frame.
+  Post icon row height matches the others so all labels line up on the phone bar.
+- Same files for the phone app (copy into `www`).
+
+---
+
 ## 2026-10-16 (night), new category "Just Doing You"
 
 Ken: a positive, creative section for videos called "Just Doing You", added to the category drop-down.
