@@ -286,6 +286,7 @@
                 <option value="">Select music track</option>
               </select>
               <div id="musicStartRow" style="display:none;"></div>
+              <div id="syncReadout" style="display:none; font-size:12.5px; color:var(--muted-invert, #b9bccb); margin-top:8px; line-height:1.4;"></div>
               <label id="keepOriginalRow" style="display:none; align-items:flex-start; gap:8px; margin-top:12px; font-size:13.5px; font-weight:600; cursor:pointer;">
                 <input type="checkbox" id="keepOriginalAudio" style="width:auto; margin-top:3px;" />
                 <span title="Your track plays softly underneath. Leave unchecked to replace the video's sound with the track.">Keep my video's own sound too <span style="font-weight:400; font-size:12px; color:var(--faint-invert);">(music plays softly underneath)</span></span>
@@ -1159,9 +1160,40 @@
   function updatePlayTogetherBtn() {
     musicStartPicker.setPlaying(!trimPreviewVideo.paused);
   }
-  trimPreviewVideo.addEventListener("play", function () { updatePlayTogetherBtn(); syncMusicToVideo(); });
-  trimPreviewVideo.addEventListener("pause", function () { updatePlayTogetherBtn(); musicPreviewAudio.pause(); });
-  trimPreviewVideo.addEventListener("ended", function () { updatePlayTogetherBtn(); musicPreviewAudio.pause(); });
+  // Proof the song is locked to the video: a live readout of both clocks, plus a
+  // drift check that nudges the song back into place if it ever wanders more
+  // than a third of a second from "start + video time".
+  var syncReadout = document.getElementById("syncReadout");
+  function fmtClock(sec) {
+    sec = Math.max(0, sec || 0);
+    var whole = Math.floor(sec), tenth = Math.floor((sec - whole) * 10);
+    return formatSongTime(whole) + "." + tenth;
+  }
+  function updateSyncReadout() {
+    if (!hasMusicSelected()) { syncReadout.style.display = "none"; return; }
+    syncReadout.style.display = "block";
+    var vd = trimPreviewVideo.duration;
+    var t = tracksById[musicTrackSelect.value];
+    var warn = (t && t.duration_seconds && isFinite(vd) && t.duration_seconds < vd)
+      ? "<br>⚠️ This song (" + formatSongTime(t.duration_seconds) + ") is shorter than your video (" + formatSongTime(vd) + "), so the music will end early."
+      : "";
+    if (trimPreviewVideo.paused) {
+      var st = musicStartPicker.getValue();
+      syncReadout.innerHTML = "🔗 Locked to your video: song <b>" + fmtClock(st) + "</b> → <b>" + fmtClock(st + (isFinite(vd) ? vd : 0)) + "</b>. It starts with the first frame and stops when the video ends." + warn;
+    } else {
+      syncReadout.innerHTML = "🔗 Playing together — video <b>" + fmtClock(trimPreviewVideo.currentTime) + "</b> · song <b>" + fmtClock(musicPreviewAudio.currentTime) + "</b>";
+    }
+  }
+  trimPreviewVideo.addEventListener("timeupdate", function () {
+    if (!trimPreviewVideo.paused && hasMusicSelected() && !musicPreviewAudio.paused &&
+        Math.abs(musicPreviewAudio.currentTime - songTimeForVideo()) > 0.35) {
+      try { musicPreviewAudio.currentTime = songTimeForVideo(); } catch (e) {}
+    }
+    updateSyncReadout();
+  });
+  trimPreviewVideo.addEventListener("play", function () { updatePlayTogetherBtn(); syncMusicToVideo(); updateSyncReadout(); });
+  trimPreviewVideo.addEventListener("pause", function () { updatePlayTogetherBtn(); musicPreviewAudio.pause(); updateSyncReadout(); });
+  trimPreviewVideo.addEventListener("ended", function () { updatePlayTogetherBtn(); musicPreviewAudio.pause(); updateSyncReadout(); });
   trimPreviewVideo.addEventListener("seeked", function () {
     if (!trimPreviewVideo.paused && hasMusicSelected()) {
       try { musicPreviewAudio.currentTime = songTimeForVideo(); } catch (e) {}
@@ -1189,9 +1221,10 @@
   var replayTimer = null;
   function onMusicStartMoved(v, committed) {
     if (!hasMusicSelected()) return;
-    if (!trimPreviewVideo.paused) {
-      try { musicPreviewAudio.currentTime = songTimeForVideo(); } catch (e) {}
-    }
+    // While the slider is being dragged, stop the video (and with it the song) so
+    // nothing runs out of step; letting go restarts both together from the top.
+    if (!committed && !trimPreviewVideo.paused) trimPreviewVideo.pause();
+    updateSyncReadout();
     if (committed) {
       if (replayTimer) clearTimeout(replayTimer);
       replayTimer = setTimeout(function () { replayTimer = null; playWithVideo(); }, 350);
@@ -1422,7 +1455,23 @@
     if (!hasMusic || trackChanged) { musicStartPicker.stop(); musicStartPicker.setValue(0); }
     var t = tracksById[musicTrackSelect.value];
     if (hasMusic && t && t.duration_seconds) musicStartPicker.setDuration(t.duration_seconds);
+    applyStartLimit();
+    updateSyncReadout();
   }
+  // The song is locked to the video's length: it starts with the first frame and
+  // stops at the last. So the latest the song may start is (song length - video
+  // length); that way the music can never run out before the video does. If the
+  // song is shorter than the video there is no such start — the readout warns.
+  function applyStartLimit() {
+    var t = tracksById[musicTrackSelect.value];
+    var vd = trimPreviewVideo.duration;
+    if (t && t.duration_seconds && isFinite(vd) && vd > 0) {
+      musicStartPicker.setMaxStart(Math.max(0, t.duration_seconds - vd));
+    } else {
+      musicStartPicker.setMaxStart(null);
+    }
+  }
+  trimPreviewVideo.addEventListener("loadedmetadata", function () { applyStartLimit(); updateSyncReadout(); });
   keepOriginalAudio.addEventListener("change", function () {
     applyPreviewMix();
   });

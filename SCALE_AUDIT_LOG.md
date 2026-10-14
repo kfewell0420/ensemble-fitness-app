@@ -30,6 +30,17 @@ start point against the video, and the area was too big.
 - `js/supabaseClient.js` `createMusicStartPicker`: nudge layout + `onPlay`/`setPlaying`; `onChange` gets a
   second "committed" argument. The feed's post Edit picker is unchanged.
 - Tested at 393 px and 1000 px with Playwright (tap-to-play, nudge replay, slider release, stop/play, upload row).
+- Follow-up same day (Ken: "when I change the start the video keeps running, how do I know the song is locked
+  to the video?"): dragging the start slider now pauses the video and song; letting go restarts both from
+  the top. New line under the start box shows the lock: paused = "Your video's first frame = song at 0:20.5.
+  The song always starts and ends with your video."; playing = live "video 0:05.2 · song 0:25.7". A drift
+  check re-aligns the song if it ever strays more than 0.35 s from start + video time.
+- Follow-up (Ken: the song must start AND stop with the video; most videos are short and the rest of the song
+  must not run on): the song's end is always the video's end (playback everywhere already stops the song when
+  the video ends/pauses and restarts it with a looping video). Now visible and enforced on upload: the readout
+  shows the window, e.g. "song 0:20.5 -> 0:50.5"; the start slider can't go later than (song length - video
+  length), so the song can never run out before the video; if the song is shorter than the video a warning
+  says the music will end early. `createMusicStartPicker` got `setMaxStart()`.
 
 ---
 

@@ -480,9 +480,23 @@ function createMusicStartPicker(opts) {
     return formatSongTime(Math.floor(v)) + ".5";
   }
   function paint() { timeEl.textContent = fmt(value); range.value = String(value); }
+  var songDur = 0, startCap = null;
+  function applyMax() {
+    var m = Math.max(0, songDur - 1);
+    if (startCap !== null) m = Math.min(m, startCap);
+    range.max = String(m);
+    if (value > m) value = m;
+    paint();
+  }
   function setDuration(d) {
     d = Math.floor(Number(d) || 0);
-    if (d > 0) { range.max = String(Math.max(0, d - 1)); if (value > d - 1) value = Math.max(0, d - 1); paint(); }
+    if (d > 0) { songDur = d; applyMax(); }
+  }
+  // Latest allowed start (seconds), or null for "no extra limit" — the upload page uses this so the
+  // song can never start so late that it would run out before the video ends.
+  function setMaxStart(c) {
+    startCap = (c === null || c === undefined) ? null : Math.max(0, Math.floor(Number(c) * 2) / 2);
+    if (songDur > 0) applyMax();
   }
   function stop() {
     if (stopTimer) { clearTimeout(stopTimer); stopTimer = null; }
@@ -533,6 +547,7 @@ function createMusicStartPicker(opts) {
     getValue: function () { return value; },
     setValue: function (v) { value = Math.max(0, Number(v) || 0); range.max = String(Math.max(Number(range.max) || 0, value)); paint(); },
     setDuration: setDuration,
+    setMaxStart: setMaxStart,
     stop: stop,
     setPlaying: function (playing) { if (opts.nudge) playBtn.textContent = playing ? "■ Stop" : "▶ Play with video"; }
   };
