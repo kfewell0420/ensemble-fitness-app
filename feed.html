@@ -2977,6 +2977,7 @@
     try {
       // Newest optional columns first; fall back one step at a time if a column doesn't exist yet.
       var colSets = [
+        "id, narration_path, music_track_id, keep_original_audio, music_start_seconds, music_delay_seconds, music_length_seconds, tracks(storage_path)",
         "id, narration_path, music_track_id, keep_original_audio, music_start_seconds, tracks(storage_path)",
         "id, narration_path, music_track_id, keep_original_audio, tracks(storage_path)",
         "id, narration_path, music_track_id, tracks(storage_path)"
@@ -3001,15 +3002,17 @@
       }
       var signed = await Promise.all([sign("media", narrationPaths), sign("tracks", trackPaths)]);
       data.forEach(function (r) {
-        var url = "", keep = false, isMusic = false, mStart = 0;
+        var url = "", keep = false, isMusic = false, mStart = 0, mDelay = 0, mLength = null;
         if (r.narration_path) url = signed[0][r.narration_path] || "";
         else if (r.music_track_id && r.tracks && r.tracks.storage_path) {
           url = signed[1][r.tracks.storage_path] || "";
           keep = !!r.keep_original_audio;
           isMusic = true;
           mStart = Number(r.music_start_seconds) || 0;
+          mDelay = Number(r.music_delay_seconds) || 0;
+          mLength = Number(r.music_length_seconds) > 0 ? Number(r.music_length_seconds) : null;
         }
-        if (url) found[r.id] = { url: url, keep: keep, isMusic: isMusic, start: mStart };
+        if (url) found[r.id] = { url: url, keep: keep, isMusic: isMusic, start: mStart, delay: mDelay, length: mLength };
       });
     } catch (e) { found = {}; }
     ids.forEach(function (id) { postSoundCache[id] = found[id] || null; });
@@ -3112,6 +3115,7 @@
       it.keepOriginalAudio = snd ? snd.keep : false;
       it.isMusicSound = snd ? !!snd.isMusic : false;
       it.musicStart = snd ? (snd.start || 0) : 0;
+      it.musicWin = snd ? { delay: snd.delay || 0, length: snd.length || null } : null;
     });
 
     // Avatars: NOT awaited (round 13, Oct 2026) — see hydrateAvatars()
@@ -3756,7 +3760,7 @@
         var postAudio = new Audio();
         postAudio.preload = "none";
         postAudio.src = item.soundUrl;
-        wireFeedSound(videoEl, postAudio, !!item.keepOriginalAudio, item.trim_start, item.musicStart);
+        wireFeedSound(videoEl, postAudio, !!item.keepOriginalAudio, item.trim_start, item.musicStart, item.musicWin);
       }
     }
 

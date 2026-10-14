@@ -259,13 +259,22 @@ function wirePasswordToggle(button, input) {
    "My uploads", and the admin review queue). The video's own sound is muted
    so only the narration plays. Best-effort: if the browser's autoplay policy
    blocks audio.play(), it fails silently rather than throwing. */
-function wireNarrationSync(video, audio, keepOriginal, musicStart, trimStart) {
+function wireNarrationSync(video, audio, keepOriginal, musicStart, trimStart, musicWin) {
   if (!video || !audio) return;
   // musicStart: where in the SONG playback begins (seconds; 0 for narration or an unset post).
   // trimStart: the clip's own trim point, so the song lines up with the clip's first frame.
   var offset = typeof musicStart === "number" && musicStart > 0 ? musicStart : 0;
   var tStart = typeof trimStart === "number" && trimStart > 0 ? trimStart : 0;
-  function expected() { return offset + Math.max(0, video.currentTime - tStart); }
+  // musicWin (optional): { delay, length } — the song comes in `delay` seconds into the clip and
+  // plays `length` seconds (null/absent = until the clip ends). Outside that window it is silent.
+  var delay = musicWin && musicWin.delay > 0 ? Number(musicWin.delay) : 0;
+  var wlen = musicWin && musicWin.length > 0 ? Number(musicWin.length) : null;
+  var hasWindow = delay > 0 || wlen !== null;
+  function inWin() {
+    var r = video.currentTime - tStart;
+    return r >= delay - 0.02 && (wlen === null || r < delay + wlen);
+  }
+  function expected() { return offset + Math.max(0, video.currentTime - tStart - delay); }
   if (keepOriginal) {
     // "Keep my video's own sound too": the video stays audible and the track plays
     // softly underneath. The video's own mute/volume controls drive the track too.
@@ -276,11 +285,23 @@ function wireNarrationSync(video, audio, keepOriginal, musicStart, trimStart) {
     video.muted = true;
   }
   video.addEventListener("play", function () {
+    if (!inWin()) { audio.pause(); return; }
     audio.currentTime = expected();
     audio.play().catch(function () {});
   });
   video.addEventListener("pause", function () { audio.pause(); });
   video.addEventListener("seeking", function () { audio.currentTime = expected(); });
+  if (hasWindow) {
+    video.addEventListener("timeupdate", function () {
+      if (video.paused) return;
+      if (inWin()) {
+        if (audio.paused) { audio.currentTime = expected(); audio.play().catch(function () {}); }
+        else if (Math.abs(audio.currentTime - expected()) > 0.5) audio.currentTime = expected();
+      } else if (!audio.paused) {
+        audio.pause();
+      }
+    });
+  }
   video.addEventListener("ended", function () {
     audio.pause();
     audio.currentTime = offset;
@@ -297,7 +318,7 @@ function wireNarrationSync(video, audio, keepOriginal, musicStart, trimStart) {
    - keepOriginal: video keeps its own sound; the track plays at low volume and simply
      follows the video's muted state.
    The track starts where the clip's trim starts (at `musicStart` seconds into the song), mirroring the upload preview. */
-function wireFeedSound(video, audio, keepOriginal, trimStart, musicStart) {
+function wireFeedSound(video, audio, keepOriginal, trimStart, musicStart, musicWin) {
   if (!video || !audio) return;
   var start = typeof trimStart === "number" ? trimStart : 0;
   var offset = typeof musicStart === "number" && musicStart > 0 ? musicStart : 0; // where in the song playback begins
@@ -322,21 +343,31 @@ function wireFeedSound(video, audio, keepOriginal, trimStart, musicStart) {
     });
   }
 
-  function expected() { return offset + Math.max(0, video.currentTime - start); }
+  // musicWin (optional): { delay, length } — see wireNarrationSync.
+  var delay = musicWin && musicWin.delay > 0 ? Number(musicWin.delay) : 0;
+  var wlen = musicWin && musicWin.length > 0 ? Number(musicWin.length) : null;
+  function inWin() {
+    var r = video.currentTime - start;
+    return r >= delay - 0.02 && (wlen === null || r < delay + wlen);
+  }
+  function expected() { return offset + Math.max(0, video.currentTime - start - delay); }
   function sync() {
     if (Math.abs(audio.currentTime - expected()) > 0.4) {
       try { audio.currentTime = expected(); } catch (e) {}
     }
   }
   video.addEventListener("play", function () {
+    if (!inWin()) { audio.pause(); return; }
     try { audio.currentTime = expected(); } catch (e) {}
     audio.play().catch(function () {});
   });
   video.addEventListener("pause", function () { audio.pause(); });
-  video.addEventListener("seeked", sync);
+  video.addEventListener("seeked", function () { if (inWin()) sync(); });
   video.addEventListener("timeupdate", function () {
+    if (video.paused) return;
+    if (!inWin()) { if (!audio.paused) audio.pause(); return; } // before the song comes in / after its end
     sync();
-    if (audio.paused && !video.paused) audio.play().catch(function () {}); // track ended before the clip looped
+    if (audio.paused) audio.play().catch(function () {}); // song entered its window, or ended before the clip looped
   });
   video.addEventListener("ended", function () { audio.pause(); });
 }
@@ -477,7 +508,7 @@ function createMusicStartPicker(opts) {
 
   function fmt(v) {
     if (!opts.nudge || v === Math.floor(v)) return formatSongTime(v);
-    return formatSongTime(Math.floor(v)) + ".5";
+    return formatSongTime(Math.floor(v)) + "." + Math.floor((v - Math.floor(v)) * 10 + 1e-6);
   }
   function paint() { timeEl.textContent = fmt(value); range.value = String(value); }
   var songDur = 0, startCap = null;

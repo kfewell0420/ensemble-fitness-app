@@ -145,6 +145,20 @@
   .app-shell { padding-top: 4px; }
   /* Phones: a shorter preview so the music controls sit on screen right under the
      video without scrolling (preview crop only; the uploaded video is untouched). */
+  .mix-tracks { position: relative; user-select: none; -webkit-user-select: none; }
+  .mix-track { position: relative; height: 40px; border-radius: 8px; background: rgba(255,255,255,0.05); margin-bottom: 6px; overflow: hidden; touch-action: none; }
+  .mix-video { cursor: pointer; background: #000; }
+  .mix-filmstrip { display: flex; height: 100%; pointer-events: none; }
+  .mix-filmstrip img { flex: 1 1 0; min-width: 0; height: 100%; object-fit: cover; opacity: 0.9; }
+  .mix-music { height: 38px; }
+  .mix-clip { position: absolute; top: 0; bottom: 0; display: flex; border-radius: 8px; background: linear-gradient(90deg, #ff6a1a, #c9431a); box-shadow: 0 0 0 1.5px rgba(255,255,255,0.55) inset; }
+  .mix-clip-body { flex: 1; min-width: 0; display: flex; align-items: center; padding: 0 6px; cursor: grab; touch-action: none; overflow: hidden; }
+  .mix-clip-label { font-size: 12px; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
+  .mix-handle { flex: 0 0 16px; cursor: ew-resize; touch-action: none; background: rgba(255,255,255,0.92); display: flex; align-items: center; justify-content: center; }
+  .mix-handle::after { content: ""; width: 3px; height: 16px; border-radius: 2px; background: #c9431a; }
+  .mix-handle-l { border-radius: 8px 0 0 8px; }
+  .mix-handle-r { border-radius: 0 8px 8px 0; }
+  .mix-playhead { position: absolute; top: -3px; bottom: 3px; width: 2px; background: #fff; box-shadow: 0 0 4px rgba(0,0,0,0.6); pointer-events: none; left: 0; }
   @media (max-width: 560px) {
     #trimPreviewVideo { aspect-ratio: 4 / 3; margin-bottom: 8px; }
     #previewSoundNote { display: none; }
@@ -286,7 +300,6 @@
                 <option value="">Select music track</option>
               </select>
               <div id="musicStartRow" style="display:none;"></div>
-              <div id="syncReadout" style="display:none; font-size:12.5px; color:var(--muted-invert, #b9bccb); margin-top:8px; line-height:1.4;"></div>
               <label id="keepOriginalRow" style="display:none; align-items:flex-start; gap:8px; margin-top:12px; font-size:13.5px; font-weight:600; cursor:pointer;">
                 <input type="checkbox" id="keepOriginalAudio" style="width:auto; margin-top:3px;" />
                 <span title="Your track plays softly underneath. Leave unchecked to replace the video's sound with the track.">Keep my video's own sound too <span style="font-weight:400; font-size:12px; color:var(--faint-invert);">(music plays softly underneath)</span></span>
@@ -294,16 +307,34 @@
               <audio id="musicPreviewAudio" style="display:none;"></audio>
             </div>
 
+          </div>
+        </div>
+
+        <!-- Timeline: the song locked to the video. Drag the bar to slide it along
+             the video, drag its left end to trim the front of the song, drag its
+             right end to cut the song earlier. Tap the video strip to scrub. -->
+        <div id="mixTimeline" style="display:none; margin-top:12px;">
+          <div class="mix-tracks" id="mixTracks">
+            <div class="mix-track mix-video" id="mixVideoTrack"><div class="mix-filmstrip" id="mixFilmstrip"></div></div>
+            <div class="mix-track mix-music" id="mixMusicTrack">
+              <div class="mix-clip" id="mixClip">
+                <div class="mix-handle mix-handle-l" id="mixHandleL" title="Drag to trim the front of the song"></div>
+                <div class="mix-clip-body" id="mixClipBody" title="Drag to slide the song along your video"><span class="mix-clip-label" id="mixClipLabel"></span></div>
+                <div class="mix-handle mix-handle-r" id="mixHandleR" title="Drag to cut the song earlier"></div>
+              </div>
+            </div>
+            <div class="mix-playhead" id="mixPlayhead"></div>
+          </div>
+          <div id="syncReadout" style="display:none; font-size:12.5px; color:var(--muted-invert, #b9bccb); margin-top:8px; line-height:1.4;"></div>
+        </div>
             <!-- Cover photo: still a simple pick of one frame as the post's
                  thumbnail (this does not change the video itself). -->
-            <details class="cover-picker" id="coverPicker" style="display:none; margin-top:12px;">
+            <details class="cover-picker" id="coverPicker" style="display:none; margin-top:10px;">
               <summary style="cursor:pointer; font-size:13.5px; font-weight:600;">🖼️ Cover photo <span style="font-weight:400; font-size:12px; color:var(--faint-invert);">(optional — tap to change)</span></summary>
               <div class="cover-picker-row" id="coverPickerRow" style="margin-top:8px;">
                 <span class="cover-picker-status">Generating previews…</span>
               </div>
             </details>
-          </div>
-        </div>
       </div>
 
       <div class="field" id="workoutTypeField" style="margin-top:18px;">
@@ -936,7 +967,7 @@
   // with a 10-second one.
   async function generateTrimFilmstrip(videoEl, duration) {
     var myGeneration = ++filmstripGeneration;
-    var count = 4;
+    var count = 8;
     coverPickerRow.innerHTML = '<span class="cover-picker-status">Generating previews…</span>';
     coverPicker.style.display = "block";
     selectedCoverTime = null;
@@ -958,6 +989,16 @@
       return;
     }
 
+    var filmEl = document.getElementById("mixFilmstrip");
+    filmEl.innerHTML = "";
+    frames.forEach(function (f) {
+      var im = document.createElement("img");
+      im.src = f.dataUrl; im.alt = "";
+      filmEl.appendChild(im);
+    });
+    // Cover choices: four evenly spread frames out of the eight.
+    var coverFrames = frames.length > 4 ? [0, 2, 5, 7].map(function (ix) { return frames[Math.min(ix, frames.length - 1)]; }) : frames;
+    frames = coverFrames;
     coverPickerRow.innerHTML = "";
     frames.forEach(function (f, i) {
       var btn = document.createElement("button");
@@ -981,10 +1022,14 @@
     selectedCoverTime = null;
     coverPicker.style.display = "none";
     coverPickerRow.innerHTML = "";
+    document.getElementById("mixFilmstrip").innerHTML = "";
+    mDelay = 0; mLenWanted = Infinity; mLen = 0;
     if (musicPreviewAudio) musicPreviewAudio.pause();
+    if (typeof renderTimeline === "function") renderTimeline();
   }
 
   function loadTrimPreview(file) {
+    mDelay = 0; mLenWanted = Infinity;
     trimPreviewObjectUrl = URL.createObjectURL(file);
     trimPreviewVideo.src = trimPreviewObjectUrl;
     trimPreviewVideo.onloadedmetadata = function () {
@@ -1126,17 +1171,83 @@
       : "🔊 Playing your video with its own sound. Adding music or a voice narration replaces it.";
   }
 
-  // ---- Play the video and the song together -------------------------------
-  // The song's "start" setting means: where in the song it is playing at the
-  // moment the video starts (video 0:00 = song at <start>). So when the video
-  // plays from time t, the song plays from <start> + t. Pressing play on the
-  // video itself, scrubbing it, dragging the song slider, or nudging it by half
-  // a second all keep the two lined up, so the beat can be matched to the
-  // workout by ear.
+  // ---- Timeline: the song locked to the video -----------------------------
+  // Same idea as TikTok's editor, minus the clutter: the video's own strip on top,
+  // and below it a bar for the song. Three numbers describe the song's place:
+  //   mStart  = where in the SONG it begins   (the "Start the song at" slider)
+  //   mDelay  = where on the VIDEO it comes in (drag the bar; 0 = first frame)
+  //   mLen    = how many seconds of song are used (drag the right end to cut it)
+  // While the video plays at time t, for mDelay <= t < mDelay + mLen the song is
+  // at mStart + (t - mDelay); outside that window the song is silent. Dragging
+  // the left end trims the front (mStart and mDelay move together, so the sound
+  // under the playhead doesn't change). The video itself is never edited.
+  var mDelay = 0, mLen = 0, mLenWanted = Infinity;
+  var mixTimeline = document.getElementById("mixTimeline");
+  var mixTracks = document.getElementById("mixTracks");
+  var mixClip = document.getElementById("mixClip");
+  var mixClipLabel = document.getElementById("mixClipLabel");
+  var mixPlayhead = document.getElementById("mixPlayhead");
+  var syncReadout = document.getElementById("syncReadout");
 
   function hasMusicSelected() {
     return !!musicTrackSelect.value && !musicTrackSelect.disabled;
   }
+  function vidDur() { var d = trimPreviewVideo.duration; return (isFinite(d) && d > 0) ? d : 0; }
+  function songDurNow() {
+    var t = tracksById[musicTrackSelect.value];
+    if (t && t.duration_seconds) return Number(t.duration_seconds);
+    var d = musicPreviewAudio.duration;
+    return (isFinite(d) && d > 0) ? d : 0;
+  }
+  function round1(x) { return Math.round(x * 10) / 10; }
+  function fmtClock(sec) {
+    sec = Math.max(0, sec || 0);
+    var whole = Math.floor(sec), tenth = Math.floor((sec - whole) * 10 + 1e-6);
+    return formatSongTime(whole) + "." + tenth;
+  }
+  // Longest the song piece can be from where it sits right now.
+  function maxLenNow() {
+    var vd = vidDur(), sd = songDurNow();
+    var m = vd ? vd - mDelay : Infinity;
+    if (sd) m = Math.min(m, sd - musicStartPicker.getValue());
+    return Math.max(0, m);
+  }
+  // Keep delay/length inside the video and the song, then repaint.
+  function clampWindow() {
+    var vd = vidDur();
+    if (vd) mDelay = Math.min(Math.max(0, mDelay), Math.max(0, vd - 1));
+    var m = maxLenNow();
+    mLen = Math.min(mLenWanted, m);
+    if (isFinite(mLen)) mLen = Math.max(Math.min(1, m), mLen);
+    if (!isFinite(mLen)) mLen = 0;
+    renderTimeline();
+  }
+  function resetWindow() { mDelay = 0; mLenWanted = Infinity; clampWindow(); }
+
+  function renderTimeline() {
+    var show = hasMusicSelected() && vidDur() > 0;
+    mixTimeline.style.display = show ? "block" : "none";
+    if (!show) { syncReadout.style.display = "none"; return; }
+    var vd = vidDur(), s = musicStartPicker.getValue();
+    mixClip.style.left = (mDelay / vd * 100) + "%";
+    mixClip.style.width = (mLen / vd * 100) + "%";
+    var tr = tracksById[musicTrackSelect.value];
+    mixClipLabel.textContent = "🎵 " + (tr ? tr.title : "");
+    syncReadout.style.display = "block";
+    var playing = !trimPreviewVideo.paused;
+    var endAt = mDelay + mLen;
+    var base = "Song <b>" + fmtClock(s) + "–" + fmtClock(s + mLen) + "</b> plays from video <b>" + fmtClock(mDelay) + "</b> to <b>" + fmtClock(endAt) + "</b>" + (endAt < vd - 0.05 ? " (then silence)" : " (the end of your video)") + ".";
+    var sd = songDurNow();
+    var warn = (sd && sd - s < vd - mDelay - 0.05) ? " ⚠️ The song runs out before your video ends." : "";
+    syncReadout.innerHTML = playing
+      ? "🔗 Playing together — video <b>" + fmtClock(trimPreviewVideo.currentTime) + "</b> · song <b>" + fmtClock(musicPreviewAudio.paused ? s : musicPreviewAudio.currentTime) + "</b>"
+      : "🔗 " + base + warn;
+  }
+  function updatePlayhead() {
+    var vd = vidDur();
+    mixPlayhead.style.left = (vd ? (trimPreviewVideo.currentTime / vd * 100) : 0) + "%";
+  }
+
   function applyPreviewMix() {
     var hasMusic = hasMusicSelected();
     // The video's own sound is kept on upload; it plays here unless the member
@@ -1145,91 +1256,138 @@
     trimPreviewVideo.muted = (hasMusic && !keepOriginalAudio.checked) || !!narrationBlob;
     updatePreviewSoundNote();
   }
-  function songTimeForVideo() {
-    return musicStartPicker.getValue() + (trimPreviewVideo.currentTime || 0);
-  }
-  async function syncMusicToVideo() {
-    if (!hasMusicSelected()) { musicPreviewAudio.pause(); return; }
-    var trackId = musicTrackSelect.value;
-    await loadTrackAudio(trackId);
-    if (trackId !== musicTrackSelect.value || trimPreviewVideo.paused) return;
-    applyPreviewMix();
-    try { musicPreviewAudio.currentTime = songTimeForVideo(); } catch (e) {}
-    musicPreviewAudio.play().catch(function () {});
-  }
   function updatePlayTogetherBtn() {
     musicStartPicker.setPlaying(!trimPreviewVideo.paused);
   }
-  // Proof the song is locked to the video: a live readout of both clocks, plus a
-  // drift check that nudges the song back into place if it ever wanders more
-  // than a third of a second from "start + video time".
-  var syncReadout = document.getElementById("syncReadout");
-  function fmtClock(sec) {
-    sec = Math.max(0, sec || 0);
-    var whole = Math.floor(sec), tenth = Math.floor((sec - whole) * 10);
-    return formatSongTime(whole) + "." + tenth;
+
+  // While the video plays: keep the playhead moving, bring the song in at the
+  // start of its bar, hold it to "start + time into the bar", and cut it at the
+  // end of the bar. Runs every frame so the song stays tight against the picture.
+  var mixRaf = null;
+  function mixTick() {
+    mixRaf = null;
+    if (trimPreviewVideo.paused) return;
+    updatePlayhead();
+    if (hasMusicSelected()) {
+      var t = trimPreviewVideo.currentTime, s = musicStartPicker.getValue();
+      if (t >= mDelay - 0.02 && t < mDelay + mLen) {
+        var want = s + Math.max(0, t - mDelay);
+        if (musicPreviewAudio.paused) {
+          try { musicPreviewAudio.currentTime = want; } catch (e) {}
+          musicPreviewAudio.play().catch(function () {});
+        } else if (Math.abs(musicPreviewAudio.currentTime - want) > 0.35) {
+          try { musicPreviewAudio.currentTime = want; } catch (e) {}
+        }
+      } else if (!musicPreviewAudio.paused) {
+        musicPreviewAudio.pause();
+      }
+    }
+    if (Math.floor(trimPreviewVideo.currentTime * 5) !== mixTick.last) { mixTick.last = Math.floor(trimPreviewVideo.currentTime * 5); renderTimeline(); }
+    mixRaf = requestAnimationFrame(mixTick);
   }
-  function updateSyncReadout() {
-    if (!hasMusicSelected()) { syncReadout.style.display = "none"; return; }
-    syncReadout.style.display = "block";
-    var vd = trimPreviewVideo.duration;
-    var t = tracksById[musicTrackSelect.value];
-    var warn = (t && t.duration_seconds && isFinite(vd) && t.duration_seconds < vd)
-      ? "<br>⚠️ This song (" + formatSongTime(t.duration_seconds) + ") is shorter than your video (" + formatSongTime(vd) + "), so the music will end early."
-      : "";
-    if (trimPreviewVideo.paused) {
-      var st = musicStartPicker.getValue();
-      syncReadout.innerHTML = "🔗 Locked to your video: song <b>" + fmtClock(st) + "</b> → <b>" + fmtClock(st + (isFinite(vd) ? vd : 0)) + "</b>. It starts with the first frame and stops when the video ends." + warn;
-    } else {
-      syncReadout.innerHTML = "🔗 Playing together — video <b>" + fmtClock(trimPreviewVideo.currentTime) + "</b> · song <b>" + fmtClock(musicPreviewAudio.currentTime) + "</b>";
-    }
-  }
-  trimPreviewVideo.addEventListener("timeupdate", function () {
-    if (!trimPreviewVideo.paused && hasMusicSelected() && !musicPreviewAudio.paused &&
-        Math.abs(musicPreviewAudio.currentTime - songTimeForVideo()) > 0.35) {
-      try { musicPreviewAudio.currentTime = songTimeForVideo(); } catch (e) {}
-    }
-    updateSyncReadout();
+  function startMixLoop() { if (!mixRaf) mixRaf = requestAnimationFrame(mixTick); }
+
+  trimPreviewVideo.addEventListener("play", async function () {
+    updatePlayTogetherBtn();
+    if (hasMusicSelected()) { var id = musicTrackSelect.value; await loadTrackAudio(id); if (id !== musicTrackSelect.value) return; }
+    applyPreviewMix();
+    startMixLoop();
   });
-  trimPreviewVideo.addEventListener("play", function () { updatePlayTogetherBtn(); syncMusicToVideo(); updateSyncReadout(); });
-  trimPreviewVideo.addEventListener("pause", function () { updatePlayTogetherBtn(); musicPreviewAudio.pause(); updateSyncReadout(); });
-  trimPreviewVideo.addEventListener("ended", function () { updatePlayTogetherBtn(); musicPreviewAudio.pause(); updateSyncReadout(); });
-  trimPreviewVideo.addEventListener("seeked", function () {
-    if (!trimPreviewVideo.paused && hasMusicSelected()) {
-      try { musicPreviewAudio.currentTime = songTimeForVideo(); } catch (e) {}
-    }
-  });
-  // "▶ Play with video" (and every auto-preview below): restart the clip from
-  // the top with the song at its chosen start point. If the clip is already
-  // playing, the seek re-lines the song up.
+  trimPreviewVideo.addEventListener("pause", function () { updatePlayTogetherBtn(); musicPreviewAudio.pause(); updatePlayhead(); renderTimeline(); });
+  trimPreviewVideo.addEventListener("ended", function () { updatePlayTogetherBtn(); musicPreviewAudio.pause(); updatePlayhead(); renderTimeline(); });
+  trimPreviewVideo.addEventListener("seeked", function () { updatePlayhead(); if (trimPreviewVideo.paused) renderTimeline(); });
+  trimPreviewVideo.addEventListener("loadedmetadata", function () { clampWindow(); updatePlayhead(); });
+
+  // "▶ Play with video" and every auto-preview: restart a second before the song
+  // comes in, so the entrance can be heard against the picture.
   function playWithVideo() {
     applyPreviewMix();
-    // Pause first so the play event always fires: it (re)loads the chosen song and
-    // starts it at the right spot, even if a different song was just playing.
+    // Pause first so the play event always fires and (re)loads the chosen song.
     if (!trimPreviewVideo.paused) trimPreviewVideo.pause();
-    trimPreviewVideo.currentTime = 0;
+    trimPreviewVideo.currentTime = Math.max(0, mDelay - 1);
     trimPreviewVideo.play().catch(function () {});
   }
   function toggleVideoWithMusic() {
     if (!trimPreviewVideo.paused) { trimPreviewVideo.pause(); return; }
     playWithVideo();
   }
-  // Called whenever the song's start point moves. While the clip is playing the
-  // song follows live; when the member lets go of the slider / taps a nudge
-  // button, replay the clip from the top (a short pause lets quick repeated
-  // nudges settle into one replay) so they hear the new start against the video.
+
+  // The "Start the song at" slider / nudge buttons moved.
   var replayTimer = null;
+  function scheduleReplay() {
+    if (replayTimer) clearTimeout(replayTimer);
+    replayTimer = setTimeout(function () { replayTimer = null; playWithVideo(); }, 350);
+  }
   function onMusicStartMoved(v, committed) {
     if (!hasMusicSelected()) return;
-    // While the slider is being dragged, stop the video (and with it the song) so
-    // nothing runs out of step; letting go restarts both together from the top.
+    // While the slider is being dragged the video (and song) stand still; letting
+    // go restarts both together.
     if (!committed && !trimPreviewVideo.paused) trimPreviewVideo.pause();
-    updateSyncReadout();
-    if (committed) {
-      if (replayTimer) clearTimeout(replayTimer);
-      replayTimer = setTimeout(function () { replayTimer = null; playWithVideo(); }, 350);
-    }
+    clampWindow();
+    if (committed) scheduleReplay();
   }
+
+  // ---- dragging the song bar -----------------------------------------------
+  var mixDrag = null;
+  function mixPointerDown(mode, e) {
+    if (!hasMusicSelected() || !vidDur()) return;
+    e.preventDefault(); e.stopPropagation();
+    if (!trimPreviewVideo.paused) trimPreviewVideo.pause();
+    if (replayTimer) { clearTimeout(replayTimer); replayTimer = null; }
+    mixDrag = { mode: mode, x0: e.clientX, p0: mDelay, s0: musicStartPicker.getValue(), l0: mLen, w: mixTracks.getBoundingClientRect().width, pid: e.pointerId, el: e.currentTarget };
+    try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {}
+  }
+  function mixPointerMove(e) {
+    if (!mixDrag || e.pointerId !== mixDrag.pid) return;
+    var vd = vidDur(), sd = songDurNow();
+    var d = round1((e.clientX - mixDrag.x0) / mixDrag.w * vd);
+    var D = mixDrag;
+    if (D.mode === "move") {
+      mDelay = Math.min(Math.max(0, D.p0 + d), Math.max(0, vd - D.l0));
+    } else if (D.mode === "left") {
+      // trim the front: song start and bar start slide together, bar shrinks/grows
+      d = Math.max(d, -Math.min(D.p0, D.s0));
+      d = Math.min(d, D.l0 - Math.min(1, D.l0));
+      mDelay = D.p0 + d;
+      musicStartPicker.setValue(D.s0 + d);
+      mLenWanted = D.l0 - d;
+    } else if (D.mode === "right") {
+      var maxL = Math.min(vd - D.p0, sd ? sd - D.s0 : Infinity);
+      mLenWanted = Math.min(Math.max(Math.min(1, maxL), D.l0 + d), maxL);
+    }
+    clampWindow();
+  }
+  function mixPointerUp(e) {
+    if (!mixDrag || e.pointerId !== mixDrag.pid) return;
+    mixDrag = null;
+    scheduleReplay();
+  }
+  ["move", "left", "right"].forEach(function (mode) {
+    var el = mode === "move" ? document.getElementById("mixClipBody") : document.getElementById(mode === "left" ? "mixHandleL" : "mixHandleR");
+    el.addEventListener("pointerdown", function (e) { mixPointerDown(mode, e); });
+    el.addEventListener("pointermove", mixPointerMove);
+    el.addEventListener("pointerup", mixPointerUp);
+    el.addEventListener("pointercancel", mixPointerUp);
+  });
+  // Tap or drag on the video strip to scrub to that moment.
+  var scrubbing = false;
+  function scrubTo(e) {
+    var r = mixTracks.getBoundingClientRect(), vd = vidDur();
+    if (!vd) return;
+    trimPreviewVideo.currentTime = Math.min(Math.max(0, (e.clientX - r.left) / r.width * vd), vd - 0.05);
+  }
+  var mixVideoTrack = document.getElementById("mixVideoTrack");
+  mixVideoTrack.addEventListener("pointerdown", function (e) {
+    if (!vidDur()) return;
+    e.preventDefault();
+    scrubbing = true;
+    if (!trimPreviewVideo.paused) trimPreviewVideo.pause();
+    try { mixVideoTrack.setPointerCapture(e.pointerId); } catch (err) {}
+    scrubTo(e);
+  });
+  mixVideoTrack.addEventListener("pointermove", function (e) { if (scrubbing) scrubTo(e); });
+  mixVideoTrack.addEventListener("pointerup", function () { scrubbing = false; });
+  mixVideoTrack.addEventListener("pointercancel", function () { scrubbing = false; });
 
   async function startRecording() {
     try {
@@ -1452,26 +1610,12 @@
     // Start over at 0:00 only when the track itself changes (tapping the same card again keeps it).
     var trackChanged = (musicTrackSelect.value || "") !== lastMusicStartTrack;
     lastMusicStartTrack = hasMusic ? musicTrackSelect.value : "";
-    if (!hasMusic || trackChanged) { musicStartPicker.stop(); musicStartPicker.setValue(0); }
+    if (!hasMusic || trackChanged) { musicStartPicker.stop(); musicStartPicker.setValue(0); mDelay = 0; mLenWanted = Infinity; }
     var t = tracksById[musicTrackSelect.value];
     if (hasMusic && t && t.duration_seconds) musicStartPicker.setDuration(t.duration_seconds);
-    applyStartLimit();
-    updateSyncReadout();
+    musicStartPicker.setMaxStart(null);
+    clampWindow();
   }
-  // The song is locked to the video's length: it starts with the first frame and
-  // stops at the last. So the latest the song may start is (song length - video
-  // length); that way the music can never run out before the video does. If the
-  // song is shorter than the video there is no such start — the readout warns.
-  function applyStartLimit() {
-    var t = tracksById[musicTrackSelect.value];
-    var vd = trimPreviewVideo.duration;
-    if (t && t.duration_seconds && isFinite(vd) && vd > 0) {
-      musicStartPicker.setMaxStart(Math.max(0, t.duration_seconds - vd));
-    } else {
-      musicStartPicker.setMaxStart(null);
-    }
-  }
-  trimPreviewVideo.addEventListener("loadedmetadata", function () { applyStartLimit(); updateSyncReadout(); });
   keepOriginalAudio.addEventListener("change", function () {
     applyPreviewMix();
   });
@@ -1831,10 +1975,19 @@
       delete insertRow.music_start_seconds;
       if (wantsKeepOriginal) insertRow.keep_original_audio = true;
       if (musicStartValue > 0) insertRow.music_start_seconds = musicStartValue;
+      // Where the song comes in on the video (seconds) and how much of it plays. Only
+      // saved when changed from "from the first frame, as long as the video allows".
+      delete insertRow.music_delay_seconds;
+      delete insertRow.music_length_seconds;
+      if (kind === "video" && !!musicTrackValue) {
+        var fullNatural = Math.min(vidDur() ? vidDur() - mDelay : Infinity, songDurNow() ? songDurNow() - musicStartValue : Infinity);
+        if (mDelay > 0.04) insertRow.music_delay_seconds = round1(mDelay);
+        if (isFinite(fullNatural) && mLen > 0 && mLen < fullNatural - 0.05) insertRow.music_length_seconds = round1(mLen);
+      }
       var { data: insertedRow, error: insertError } = await window.sb.from("media").insert(insertRow).select().single();
       // Either optional column may not exist yet (its SQL not run) — drop whichever one the
       // error names and retry so the post still goes through.
-      var optionalCols = ["keep_original_audio", "music_start_seconds"];
+      var optionalCols = ["keep_original_audio", "music_start_seconds", "music_delay_seconds", "music_length_seconds"];
       for (var oi = 0; insertError && oi < optionalCols.length; oi++) {
         var col = optionalCols[oi];
         if (col in insertRow && (insertError.message || "").indexOf(col) !== -1) {
@@ -1854,7 +2007,7 @@
         ? "Uploaded with your voiceover attached! It'll show as \"Pending\" until it's reviewed."
         : musicTrackValue
         ? (mixFlagNotSaved
-            ? "Uploaded with your chosen track attached, but \"keep my video's own sound\" or \"start the song at\" isn't switched on yet — the track will replace the video's sound and start from the beginning for now. It'll show as \"Pending\" until it's reviewed."
+            ? "Uploaded with your chosen track attached, but \"keep my video's own sound\" or \"start the song at\" or the song timing isn't switched on yet — the track will replace the video's sound and start from the beginning for now. It'll show as \"Pending\" until it's reviewed."
             : "Uploaded with your chosen track attached! It'll show as \"Pending\" until it's reviewed.")
         : "Uploaded! It'll show as \"Pending\" until it's reviewed."), "success");
       fileInput.value = "";

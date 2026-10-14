@@ -12,6 +12,34 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-16 (evening), video upload: song timeline (TikTok-style, stripped down)
+
+Ken (comparing with TikTok Studio's editor): the song must be locked to the video with a start AND a stop --
+a 3-minute song, only ~22 s used; trim it from the front and the rear, then move it onto the video track.
+Keep it simple: just our video, no side panels. Website first; phone copy later.
+
+- `upload.html`: under the video, one slim strip. Top = the video's frames (tap/drag to scrub, with a playhead).
+  Below = the song bar. Drag the bar = slide the song along the video (delay); drag its LEFT end = trim the
+  front of the song (song start and bar start move together, so the sound under the playhead doesn't change);
+  drag its RIGHT end = cut the song earlier. The "Start the song at" slider/nudges still choose which part
+  of the song is under the bar. While dragging, the video stands still; on release it replays from 1 s
+  before the song comes in. A line shows the window: "Song 0:26.5-0:48.5 plays from video 0:02 to 0:24 (then
+  silence)". The song can no longer be forced to cover the whole video, so if it runs out early a warning shows.
+  Cover photo moved below the timeline; filmstrip uses 8 frames (cover picker still offers 4 of them).
+- Saved as `music_start_seconds` (existing) + NEW `music_delay_seconds` and `music_length_seconds`
+  (`sql/music-window.sql`, run once). Until it's run, posts still upload (the new fields are dropped by the
+  existing optional-column fallback) and the song just starts with the video.
+- Playback honors it everywhere: `wireFeedSound` (feed) and `wireNarrationSync` (profile, member pages) take an
+  optional `{delay, length}`: silent before the delay, song at start + (time - delay), cut at the end of its
+  length. Old posts (no delay/length) behave exactly as before. feed.html / profile.html / member.html read the
+  two new columns with the existing fall-back-to-older-columns pattern. admin.html's review queue is unchanged.
+- Tested (Playwright, 393 px and 1000 px): rear trim, front trim, slide, scrub, replay, upload row with all
+  three fields; plus a direct playback test: window delay 1 s / length 1 s = silent 0-1 s, song at its start
+  point 1-2 s, silent after.
+- Not done: the post "Edit" menu in the feed still edits only the song start point (whole seconds).
+
+---
+
 ## 2026-10-16 (later), video upload music controls: play against the video, more compact
 
 Ken (looking at it on desktop): tapping a song played it on its own, so there was no way to hear the chosen

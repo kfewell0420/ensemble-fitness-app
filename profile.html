@@ -1147,15 +1147,18 @@
     var videoIds = data.filter(function (item) { return item.kind === "video"; }).map(function (item) { return item.id; });
     // "Keep my video's own sound" flags — own best-effort query so this page keeps
     // working before sql/keep-original-audio.sql has been run.
-    var keepOriginalById = {}, musicStartById = {};
+    var keepOriginalById = {}, musicStartById = {}, musicWinById = {};
     if (videoIds.length) {
       try {
-        var keepRes = await window.sb.from("media").select("id, keep_original_audio, music_start_seconds").in("id", videoIds);
+        var keepRes = await window.sb.from("media").select("id, keep_original_audio, music_start_seconds, music_delay_seconds, music_length_seconds").in("id", videoIds);
+        if (keepRes && keepRes.error) keepRes = await window.sb.from("media").select("id, keep_original_audio, music_start_seconds").in("id", videoIds);
+        // (the next line is the original fallback to the oldest column set)
         if (keepRes && keepRes.error) keepRes = await window.sb.from("media").select("id, keep_original_audio").in("id", videoIds);
         if (keepRes && !keepRes.error && keepRes.data) {
           keepRes.data.forEach(function (r) {
             if (r.keep_original_audio) keepOriginalById[r.id] = true;
             if (r.music_start_seconds) musicStartById[r.id] = Number(r.music_start_seconds) || 0;
+            if (r.music_delay_seconds > 0 || r.music_length_seconds > 0) musicWinById[r.id] = { delay: Number(r.music_delay_seconds) || 0, length: Number(r.music_length_seconds) > 0 ? Number(r.music_length_seconds) : null };
           });
         }
       } catch (keepErr) { /* columns not there yet — ignore */ }
@@ -1265,7 +1268,7 @@
       grid.appendChild(wrap);
 
       if (soundUrl) {
-        wireNarrationSync(tile.querySelector("video"), tile.querySelector("audio." + soundClass), keepOriginal, musicUrl ? musicStartById[item.id] : 0, musicUrl ? item.trim_start : 0);
+        wireNarrationSync(tile.querySelector("video"), tile.querySelector("audio." + soundClass), keepOriginal, musicUrl ? musicStartById[item.id] : 0, musicUrl ? item.trim_start : 0, musicUrl ? musicWinById[item.id] : null);
       }
       if (item.kind === "video") {
         var extraClips = resolved[i].extraClips || [];
