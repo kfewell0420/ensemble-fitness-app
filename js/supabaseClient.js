@@ -444,7 +444,10 @@ function formatSongTime(sec) {
 /* "Start the song at 0:15" — a small slider plus a "Hear it" button, so an artist can skip a long
    intro and begin the song where the vocals/beat start. Used on the upload page and in a post's
    Edit menu. opts: { audio: an <audio> element whose src is the song (created if omitted),
-   initial: seconds, duration: seconds if already known, onChange(seconds) }.
+   initial: seconds, duration: seconds if already known, onChange(seconds),
+   nudge: true adds "− ½s / + ½s" fine-tune buttons and half-second steps (used on the upload page
+   so the beat can be lined up exactly with the workout), hideHear: true hides the "Hear it" button
+   when the page plays the song together with the video itself }.
    Returns { el, getValue, setValue, setDuration, stop }. */
 function createMusicStartPicker(opts) {
   opts = opts || {};
@@ -455,15 +458,26 @@ function createMusicStartPicker(opts) {
   el.innerHTML =
     '<div class="music-start-top">' +
       '<span class="music-start-label">Start the song at <b class="ms-time">0:00</b></span>' +
-      '<button type="button" class="music-start-play">▶ Hear it</button>' +
+      '<button type="button" class="music-start-play"' + (opts.hideHear ? ' style="display:none;"' : '') + '>▶ Hear it</button>' +
     '</div>' +
-    '<input type="range" class="ms-range" min="0" max="0" step="1" value="0" aria-label="Where the song starts" />';
+    '<input type="range" class="ms-range" min="0" max="0" step="' + (opts.nudge ? '0.5' : '1') + '" value="0" aria-label="Where the song starts" />' +
+    (opts.nudge
+      ? '<div class="ms-nudge" style="display:flex; gap:8px; margin-top:8px;">' +
+          '<button type="button" class="music-start-play ms-back" style="flex:1; padding:8px 10px;">− ½ sec</button>' +
+          '<button type="button" class="music-start-play ms-fwd" style="flex:1; padding:8px 10px;">+ ½ sec</button>' +
+        '</div>' +
+        '<div class="ms-help" style="font-size:12px; opacity:0.7; margin-top:8px; line-height:1.4;">Press play on your video, then slide or nudge until the beat lands with your workout.</div>'
+      : '');
   var range = el.querySelector(".ms-range");
   var timeEl = el.querySelector(".ms-time");
   var playBtn = el.querySelector(".music-start-play");
   var stopTimer = null;
 
-  function paint() { timeEl.textContent = formatSongTime(value); range.value = String(value); }
+  function fmt(v) {
+    if (!opts.nudge || v === Math.floor(v)) return formatSongTime(v);
+    return formatSongTime(Math.floor(v)) + ".5";
+  }
+  function paint() { timeEl.textContent = fmt(value); range.value = String(value); }
   function setDuration(d) {
     d = Math.floor(Number(d) || 0);
     if (d > 0) { range.max = String(Math.max(0, d - 1)); if (value > d - 1) value = Math.max(0, d - 1); paint(); }
@@ -485,6 +499,15 @@ function createMusicStartPicker(opts) {
     paint();
     if (opts.onChange) opts.onChange(value);
   });
+  if (opts.nudge) {
+    var nudgeBy = function (delta) {
+      value = Math.min(Number(range.max) || 0, Math.max(0, value + delta));
+      paint();
+      if (opts.onChange) opts.onChange(value);
+    };
+    el.querySelector(".ms-back").addEventListener("click", function () { nudgeBy(-0.5); });
+    el.querySelector(".ms-fwd").addEventListener("click", function () { nudgeBy(0.5); });
+  }
   playBtn.addEventListener("click", function () {
     if (stopTimer) { stop(); return; }
     try { audio.currentTime = value; } catch (e) {}

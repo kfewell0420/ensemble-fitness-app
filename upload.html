@@ -180,7 +180,7 @@
       <button type="button" class="upload-category-tile" data-category="video">
         <span class="upload-category-icon">🎬</span>
         <strong>Video</strong>
-        <span>A clip — with optional trim, narration, or music</span>
+        <span>A clip — add music timed to your workout</span>
       </button>
       <button type="button" class="upload-category-tile" data-category="song">
         <span class="upload-category-icon">🎵</span>
@@ -248,105 +248,26 @@
         <input type="file" id="fileInput" accept="image/*,video/*,audio/*" />
       </label>
 
+      <!-- Ken's ask (Oct 2026): members already edit their videos on their phone
+           before uploading, so this page no longer trims or stitches video. The
+           only thing left to control here is the MUSIC: which song, and where in
+           the song it starts, so the beat can hit exactly with the workout.
+           (Old posts that were trimmed or have extra clips still play as saved.) -->
       <div class="narration-section" id="trimSection">
         <div class="field-label-row">
-          <label>✂️ Shorten this video</label>
-          <span class="narration-timer" id="trimRangeLabel" style="display:inline;">0:00 – 0:00</span>
-        </div>
-        <!-- Ken's ask (Oct 2026): "just drag the handles, period" — this used
-             to also say "...to pick the part worth keeping," which was
-             accurate but not needed and took up its own line on a phone. -->
-        <p class="narrated-note" style="margin-bottom:10px;">Drag the handles.</p>
-        <!-- Ken's ask (Oct 2026): "we don't need the MP4 selected [box] at
-             the top because that's already been chosen to get here" — once
-             the trim editor is showing, the big dropzone above is redundant
-             and just eats space. toggleDropzoneForVideo() (below) hides it
-             in that case; this small link is the replacement way to pick a
-             different file, so that ability isn't lost along with the box.
-             Ken's follow-up ask: put "Add additional clip(s)" up here next
-             to it instead of down by the sliders — same .more-option-row
-             flex layout already used for the narration buttons below. -->
-        <div class="more-option-row" style="margin-bottom:10px;">
+          <label>🎬 Your video</label>
           <button type="button" class="btn btn-ghost btn-sm" id="changeVideoBtn" style="display:none;">Change video</button>
-          <button type="button" class="btn btn-ghost btn-sm" id="addExtraClipBtn">🎬 + Add additional clip(s)</button>
         </div>
-
-        <!-- Ken's ask (Oct 2026): "The computer version will always look
-             different than the mobile version" — like Instagram/TikTok's
-             own editors. On a phone this still just stacks top to bottom,
-             exactly as before (.trim-layout is a plain block by default).
-             At a computer-sized viewport (see the #uploadShell media query
-             in app.css), .trim-layout becomes a side-by-side row: the video
-             on the left, the cover photo picker / filmstrip / trim handles
-             / preview button / add-another-clip on the right — wider and
-             easier to work with on a bigger screen, same as those apps. -->
         <div class="trim-layout" id="trimLayout">
           <div class="trim-media">
-            <video id="trimPreviewVideo" muted playsinline class="trim-preview-video"></video>
-            <div id="previewSoundNote" style="font-size:12px; color:var(--faint-invert); margin-top:6px; line-height:1.4;">🔊 Press Preview to hear your video with its own sound. Adding music or a voice narration replaces it.</div>
+            <video id="trimPreviewVideo" muted playsinline controls class="trim-preview-video"></video>
+            <div id="previewSoundNote" style="font-size:12px; color:var(--faint-invert); margin-top:6px; line-height:1.4;">🔊 Press play to hear your video with its own sound. Adding music or a voice narration replaces it.</div>
           </div>
 
           <div class="trim-controls">
-            <!-- Ken's ask (Oct 2026), inspired by Instagram's editor: let the
-                 member pick which actual frame becomes the post's cover/poster
-                 image, instead of it always being auto-captured from the trim
-                 start point. -->
-            <div class="cover-picker" id="coverPicker" style="display:none;">
-              <div class="field-label-row">
-                <label>🖼️ Cover photo</label>
-              </div>
-              <div class="cover-picker-row" id="coverPickerRow">
-                <span class="cover-picker-status">Generating previews…</span>
-              </div>
-            </div>
-
-            <!-- Same generated frames as the cover picker above, laid out as a
-                 filmstrip behind the trim handles (Instagram shows real video
-                 frames here too, instead of a plain bar) so it's obvious what's
-                 actually at each point in the clip while dragging. -->
-            <div class="trim-filmstrip" id="trimFilmstrip"></div>
-
-            <div class="trim-slider-row">
-              <label for="trimStartRange">Start</label>
-              <input type="range" id="trimStartRange" min="0" max="0" step="0.1" value="0" />
-            </div>
-            <div class="trim-slider-row">
-              <label for="trimEndRange">End</label>
-              <input type="range" id="trimEndRange" min="0" max="0" step="0.1" value="0" />
-            </div>
-            <button type="button" class="btn btn-ghost btn-sm" id="previewTrimBtn">▶ Preview trimmed clip</button>
-
-            <!-- Ken's ask (Oct 2026): the "+ Add additional clip(s)" BUTTON
-                 moved up into the action row next to "Change video" above —
-                 this is now just the running list of added clips. Collapses
-                 to nothing (see renderExtraClipList's display toggle) until
-                 there's actually a clip in it, so it adds no space of its
-                 own by default. Same element, same id, same show/hide logic
-                 (updateExtraClipsVisibility) as before, just relocated. -->
-            <div class="narration-section more-option-compact" id="extraClipsSection" style="margin-top:14px;">
-              <ul class="extra-clip-list" id="extraClipList"></ul>
-              <input type="file" id="extraClipInput" accept="video/*" style="display:none;" />
-            </div>
-
-            <!-- Ken's ask (Oct 2026): "where add additional clips is
-                 located, that should be... choose music track" — moved up
-                 from the "More options" box below, right next to the video
-                 it applies to. Ken's follow-up ask: a plain dropdown "shows
-                 way too much information, looks cluttered" when opened, and
-                 should instead be "wider... left to right... easy to
-                 scroll... something that makes them want to choose" — like
-                 Instagram/TikTok's own sound pickers. This is that: a
-                 horizontally-scrolling row of track cards instead of a
-                 native dropdown list. The original <select> stays, just
-                 hidden — it's still what the upload logic and the
-                 narration/music exclusivity check actually read from (see
-                 musicTrackSelect in the script), so every card click just
-                 sets its value and fires a "change" event on it rather than
-                 duplicating that logic. True "trending/most-played" sorting
-                 would need real play/use counts, which nothing tracks yet —
-                 flagged to Ken as a real future addition once there's usage
-                 data to sort by; for now tracks list alphabetically, same
-                 order as before. -->
+            <!-- Music: pick a song, then slide WHERE in the song it starts. Press
+                 play on the video (or the button) to hear both together; move the
+                 slider or nudge by half a second until the beat lands. -->
             <div class="narration-section more-option-compact" id="musicSection" style="margin-top:14px;">
               <div class="field-label-row">
                 <label>🎵 Music (optional)</label>
@@ -357,12 +278,24 @@
               <select id="musicTrackSelect" style="display:none;" aria-hidden="true" tabindex="-1">
                 <option value="">Select music track</option>
               </select>
+              <div id="musicStartRow" style="display:none;"></div>
+              <button type="button" class="btn btn-primary btn-sm" id="playTogetherBtn" style="display:none; margin-top:10px; width:100%;">▶ Play video with music</button>
               <label id="keepOriginalRow" style="display:none; align-items:flex-start; gap:8px; margin-top:12px; font-size:13.5px; font-weight:600; cursor:pointer;">
                 <input type="checkbox" id="keepOriginalAudio" style="width:auto; margin-top:3px;" />
                 <span>Keep my video's own sound too<br><span style="font-weight:400; font-size:12px; color:var(--faint-invert);">Your track plays softly underneath. Leave unchecked to replace the video's sound with the track.</span></span>
               </label>
-              <div id="musicStartRow" style="display:none;"></div>
               <audio id="musicPreviewAudio" style="display:none;"></audio>
+            </div>
+
+            <!-- Cover photo: still a simple pick of one frame as the post's
+                 thumbnail (this does not change the video itself). -->
+            <div class="cover-picker" id="coverPicker" style="display:none; margin-top:14px;">
+              <div class="field-label-row">
+                <label>🖼️ Cover photo</label>
+              </div>
+              <div class="cover-picker-row" id="coverPickerRow">
+                <span class="cover-picker-status">Generating previews…</span>
+              </div>
             </div>
           </div>
         </div>
@@ -712,7 +645,7 @@
     video: {
       accept: "video/*",
       heading: "Add a video",
-      sub: "Videos are reviewed before they're visible to anyone but you — usually within a day or two. You'll also get the option to trim it, and to add a voice narration or a music track.",
+      sub: "Videos are reviewed before they're visible to anyone but you — usually within a day or two. You can add a music track and slide it to hit exactly with your workout, or a voice narration. (Edit the video itself on your phone first.)",
       placeholder: "Upload a video",
       hint: "MP4 or MOV"
     },
@@ -828,7 +761,6 @@
     updateNarrationVisibility();
     updateMusicVisibility();
     updateTrimVisibility();
-    updateExtraClipsVisibility();
     updateMoreOptionsBoxVisibility();
   }
   if (changeCategoryBtn) changeCategoryBtn.addEventListener("click", resetToCategoryGrid);
@@ -919,19 +851,14 @@
     }
   }
 
-  // ---- Trim (for video uploads only) -------------------------------------
-  // Non-destructive: the full video file is still uploaded as-is. All this
-  // does is record a start/end point that gets applied at playback time
-  // everywhere the video is shown, so members can skip the setup/cooldown
-  // and keep just the good part — no video processing needed.
+  // ---- Video preview + cover photo (for video uploads only) ---------------
+  // Ken's ask (Oct 2026): no video editing on our side any more (members trim
+  // on their phone first) — the file is uploaded exactly as chosen. This
+  // section just loads it into the preview player so the music can be timed
+  // against it, and generates a few frames for the cover-photo picker.
   var trimSection = document.getElementById("trimSection");
   var trimPreviewVideo = document.getElementById("trimPreviewVideo");
-  var trimStartRange = document.getElementById("trimStartRange");
-  var trimEndRange = document.getElementById("trimEndRange");
-  var trimRangeLabel = document.getElementById("trimRangeLabel");
-  var previewTrimBtn = document.getElementById("previewTrimBtn");
   var trimPreviewObjectUrl = null;
-  var trimPreviewStopCheck = null;
 
   // Ken's ask (Oct 2026): which frame becomes this post's cover/poster
   // image — null means "not chosen yet," falls back to the old default
@@ -940,17 +867,12 @@
   var selectedCoverTime = null;
   var coverPicker = document.getElementById("coverPicker");
   var coverPickerRow = document.getElementById("coverPickerRow");
-  var trimFilmstrip = document.getElementById("trimFilmstrip");
   var filmstripGeneration = 0; // bumped on every new file so a slow, still-running
                                 // generation from a PREVIOUS file can never paint
                                 // over the current one once it finally finishes.
 
   function formatSeconds(sec) {
     return formatTimer((sec || 0) * 1000);
-  }
-
-  function updateTrimRangeLabel() {
-    trimRangeLabel.textContent = formatSeconds(trimStartRange.value) + " – " + formatSeconds(trimEndRange.value);
   }
 
   // Grabs one small preview frame at `time` from `videoEl` as a data URL —
@@ -1010,7 +932,6 @@
   async function generateTrimFilmstrip(videoEl, duration) {
     var myGeneration = ++filmstripGeneration;
     var count = 4;
-    trimFilmstrip.innerHTML = "";
     coverPickerRow.innerHTML = '<span class="cover-picker-status">Generating previews…</span>';
     coverPicker.style.display = "block";
     selectedCoverTime = null;
@@ -1032,14 +953,6 @@
       return;
     }
 
-    trimFilmstrip.innerHTML = "";
-    frames.forEach(function (f) {
-      var img = document.createElement("img");
-      img.src = f.dataUrl;
-      img.alt = "";
-      trimFilmstrip.appendChild(img);
-    });
-
     coverPickerRow.innerHTML = "";
     frames.forEach(function (f, i) {
       var btn = document.createElement("button");
@@ -1050,25 +963,19 @@
       btn.addEventListener("click", function () { selectCoverTime(f.time); });
       coverPickerRow.appendChild(btn);
     });
-    // Default to the first frame — same starting point as the old
-    // always-capture-at-trim-start behavior, just explicit now.
+    // Default to the first frame.
     selectedCoverTime = frames[0].time;
   }
 
   function resetTrimUI() {
     filmstripGeneration++; // orphans any in-flight generateTrimFilmstrip run
-    if (trimPreviewStopCheck) { clearInterval(trimPreviewStopCheck); trimPreviewStopCheck = null; }
     if (trimPreviewObjectUrl) { URL.revokeObjectURL(trimPreviewObjectUrl); trimPreviewObjectUrl = null; }
     trimPreviewVideo.pause();
     trimPreviewVideo.removeAttribute("src");
     trimPreviewVideo.load();
-    trimStartRange.min = 0; trimStartRange.max = 0; trimStartRange.value = 0;
-    trimEndRange.min = 0; trimEndRange.max = 0; trimEndRange.value = 0;
-    trimRangeLabel.textContent = "0:00 – 0:00";
     selectedCoverTime = null;
     coverPicker.style.display = "none";
     coverPickerRow.innerHTML = "";
-    trimFilmstrip.innerHTML = "";
     if (musicPreviewAudio) musicPreviewAudio.pause();
   }
 
@@ -1077,13 +984,6 @@
     trimPreviewVideo.src = trimPreviewObjectUrl;
     trimPreviewVideo.onloadedmetadata = function () {
       var duration = trimPreviewVideo.duration || 0;
-      trimStartRange.min = 0;
-      trimStartRange.max = duration;
-      trimStartRange.value = 0;
-      trimEndRange.min = 0;
-      trimEndRange.max = duration;
-      trimEndRange.value = duration;
-      updateTrimRangeLabel();
       generateTrimFilmstrip(trimPreviewVideo, duration);
     };
   }
@@ -1116,99 +1016,7 @@
     fileInput.click();
   });
 
-  // ---- Extra clips, for video uploads only (Ken's ask, Nov 2026) --------
-  // A member's already-trimmed footage often comes as several separate
-  // files rather than one continuous clip — a warm-up, the main set, a
-  // finisher. Instead of building real video editing/merging in this app,
-  // they're attached in order here and play back-to-back at playback time
-  // (see sql/multi-clip-reels.sql and wireReelPlayback in
-  // js/supabaseClient.js). Capped at 10 clips total — this is clip 1, so
-  // up to 9 more — matching what Ken described as "copies one through
-  // ten." Plain up/down/remove buttons, no drag-and-drop library.
-  var EXTRA_CLIP_CAP = 10;
-  var extraClipsSection = document.getElementById("extraClipsSection");
-  var extraClipList = document.getElementById("extraClipList");
-  var addExtraClipBtn = document.getElementById("addExtraClipBtn");
-  var extraClipInput = document.getElementById("extraClipInput");
-  var extraClips = []; // ordered array of File objects — clip 2, 3, 4…
-
-  function renderExtraClipList() {
-    extraClipList.innerHTML = "";
-    extraClips.forEach(function (file, i) {
-      var li = document.createElement("li");
-      li.className = "extra-clip-item";
-      li.innerHTML =
-        '<span class="extra-clip-order">Clip ' + (i + 2) + '</span>' +
-        '<span class="extra-clip-name"></span>' +
-        '<span class="extra-clip-controls">' +
-          '<button type="button" data-action="up"' + (i === 0 ? " disabled" : "") + '>↑</button>' +
-          '<button type="button" data-action="down"' + (i === extraClips.length - 1 ? " disabled" : "") + '>↓</button>' +
-          '<button type="button" data-action="remove">✕</button>' +
-        '</span>';
-      // textContent, not innerHTML, for the filename — it's untrusted
-      // user-controlled text (whatever the member's OS named the file).
-      li.querySelector(".extra-clip-name").textContent = file.name;
-      li.querySelector('[data-action="up"]').addEventListener("click", function () {
-        if (i === 0) return;
-        var tmp = extraClips[i - 1];
-        extraClips[i - 1] = extraClips[i];
-        extraClips[i] = tmp;
-        renderExtraClipList();
-      });
-      li.querySelector('[data-action="down"]').addEventListener("click", function () {
-        if (i === extraClips.length - 1) return;
-        var tmp = extraClips[i + 1];
-        extraClips[i + 1] = extraClips[i];
-        extraClips[i] = tmp;
-        renderExtraClipList();
-      });
-      li.querySelector('[data-action="remove"]').addEventListener("click", function () {
-        extraClips.splice(i, 1);
-        renderExtraClipList();
-      });
-      extraClipList.appendChild(li);
-    });
-    // +1 for clip 1 (the file picked above) when checking against the cap.
-    addExtraClipBtn.style.display = (extraClips.length + 1 >= EXTRA_CLIP_CAP) ? "none" : "inline-flex";
-    // Ken's ask (Oct 2026): the button moved up next to "Change video" —
-    // this box is now just the list itself, so collapse it to nothing (no
-    // leftover margin/padding) until there's actually a clip in it.
-    extraClipsSection.style.display = extraClips.length ? "block" : "none";
-  }
-
-  function resetExtraClips() {
-    extraClips = [];
-    extraClipInput.value = "";
-    renderExtraClipList();
-  }
-
-  function updateExtraClipsVisibility() {
-    var isVideo = !!selectedFile && fileKind(selectedFile) === "video";
-    if (isVideo) {
-      extraClipsSection.classList.add("show");
-      // Re-run the empty/non-empty collapse check (see renderExtraClipList)
-      // right away — otherwise a freshly-picked video with 0 extra clips
-      // yet would show this as an empty bordered box until the first
-      // add/remove click ever recalculated it.
-      renderExtraClipList();
-    } else {
-      extraClipsSection.classList.remove("show");
-      resetExtraClips();
-    }
-  }
-
-  addExtraClipBtn.addEventListener("click", function () {
-    extraClipInput.click();
-  });
-  extraClipInput.addEventListener("change", function () {
-    var file = extraClipInput.files[0] || null;
-    extraClipInput.value = ""; // lets the member pick the same filename again later if they remove it
-    if (!file) return;
-    if (extraClips.length + 1 >= EXTRA_CLIP_CAP) return; // belt-and-suspenders — the button already hides at the cap
-    extraClips.push(file);
-    renderExtraClipList();
-  });
-  // -------------------------------------------------------------------------
+  // (Extra-clip stitching removed Oct 2026 — see the note above. Posts that already have extra clips still play them back.)
 
   // Grabs a still frame from the video the member just chose (reusing the
   // trim preview element that's already loaded it — no second download) so
@@ -1293,29 +1101,6 @@
     });
   }
 
-  trimStartRange.addEventListener("input", function () {
-    var start = parseFloat(trimStartRange.value);
-    var end = parseFloat(trimEndRange.value);
-    if (start > end - 0.2) {
-      start = Math.max(0, end - 0.2);
-      trimStartRange.value = start;
-    }
-    trimPreviewVideo.currentTime = start;
-    updateTrimRangeLabel();
-  });
-
-  trimEndRange.addEventListener("input", function () {
-    var start = parseFloat(trimStartRange.value);
-    var end = parseFloat(trimEndRange.value);
-    var duration = trimPreviewVideo.duration || end;
-    if (end < start + 0.2) {
-      end = Math.min(duration, start + 0.2);
-      trimEndRange.value = end;
-    }
-    trimPreviewVideo.currentTime = Math.max(0, end - 0.3);
-    updateTrimRangeLabel();
-  });
-
   // Ken's ask (Oct 2026): "we should have a preview that automatically
   // plays it with the music. That should be the preview button" — folds in
   // what the separate, confusing music-only "▶ Preview" button used to do.
@@ -1336,37 +1121,62 @@
       : "🔊 Playing your video with its own sound. Adding music or a voice narration replaces it.";
   }
 
-  previewTrimBtn.addEventListener("click", async function () {
-    var start = parseFloat(trimStartRange.value);
-    var end = parseFloat(trimEndRange.value);
-    if (trimPreviewStopCheck) clearInterval(trimPreviewStopCheck);
+  // ---- Play the video and the song together -------------------------------
+  // The song's "start" setting means: where in the song it is playing at the
+  // moment the video starts (video 0:00 = song at <start>). So when the video
+  // plays from time t, the song plays from <start> + t. Pressing play on the
+  // video itself, scrubbing it, dragging the song slider, or nudging it by half
+  // a second all keep the two lined up, so the beat can be matched to the
+  // workout by ear.
+  var playTogetherBtn = document.getElementById("playTogetherBtn");
 
-    var trackId = musicTrackSelect.value;
-    var hasMusic = !!trackId && !musicTrackSelect.disabled;
-    await playTrackPreview(hasMusic ? trackId : "");
-
-    // Artist report (Oct 2026): a video that already had music + talking in it
-    // played in total silence here, because this preview element is `muted` in
-    // the markup and nothing ever turned it back on — so he thought the sound
-    // had been lost. The video's own sound is kept on upload; it should be heard
-    // here unless the member picked music or recorded a narration, which replace
-    // it (the chosen music/narration plays instead).
+  function hasMusicSelected() {
+    return !!musicTrackSelect.value && !musicTrackSelect.disabled;
+  }
+  function applyPreviewMix() {
+    var hasMusic = hasMusicSelected();
+    // The video's own sound is kept on upload; it plays here unless the member
+    // picked music or recorded a narration, which replace it.
     musicPreviewAudio.volume = (hasMusic && keepOriginalAudio.checked) ? MIX_MUSIC_VOLUME : 1;
-    if (hasMusic) { try { musicPreviewAudio.currentTime = musicStartPicker.getValue(); } catch (e) {} }
     trimPreviewVideo.muted = (hasMusic && !keepOriginalAudio.checked) || !!narrationBlob;
     updatePreviewSoundNote();
-
-    trimPreviewVideo.currentTime = start;
-    trimPreviewVideo.play().catch(function () {});
-    trimPreviewStopCheck = setInterval(function () {
-      if (trimPreviewVideo.paused || trimPreviewVideo.currentTime >= end) {
-        trimPreviewVideo.pause();
-        musicPreviewAudio.pause();
-        clearInterval(trimPreviewStopCheck);
-        trimPreviewStopCheck = null;
-      }
-    }, 100);
+  }
+  function songTimeForVideo() {
+    return musicStartPicker.getValue() + (trimPreviewVideo.currentTime || 0);
+  }
+  async function syncMusicToVideo() {
+    if (!hasMusicSelected()) { musicPreviewAudio.pause(); return; }
+    var trackId = musicTrackSelect.value;
+    await loadTrackAudio(trackId);
+    if (trackId !== musicTrackSelect.value || trimPreviewVideo.paused) return;
+    applyPreviewMix();
+    try { musicPreviewAudio.currentTime = songTimeForVideo(); } catch (e) {}
+    musicPreviewAudio.play().catch(function () {});
+  }
+  function updatePlayTogetherBtn() {
+    playTogetherBtn.textContent = trimPreviewVideo.paused ? "▶ Play video with music" : "■ Stop";
+  }
+  trimPreviewVideo.addEventListener("play", function () { updatePlayTogetherBtn(); syncMusicToVideo(); });
+  trimPreviewVideo.addEventListener("pause", function () { updatePlayTogetherBtn(); musicPreviewAudio.pause(); });
+  trimPreviewVideo.addEventListener("ended", function () { updatePlayTogetherBtn(); musicPreviewAudio.pause(); });
+  trimPreviewVideo.addEventListener("seeked", function () {
+    if (!trimPreviewVideo.paused && hasMusicSelected()) {
+      try { musicPreviewAudio.currentTime = songTimeForVideo(); } catch (e) {}
+    }
   });
+  playTogetherBtn.addEventListener("click", function () {
+    if (!trimPreviewVideo.paused) { trimPreviewVideo.pause(); return; }
+    musicStartPicker.stop();
+    applyPreviewMix();
+    trimPreviewVideo.currentTime = 0;
+    trimPreviewVideo.play().catch(function () {});
+  });
+  // Called whenever the song's start point moves while the video is playing.
+  function onMusicStartMoved() {
+    if (!trimPreviewVideo.paused && hasMusicSelected()) {
+      try { musicPreviewAudio.currentTime = songTimeForVideo(); } catch (e) {}
+    }
+  }
 
   async function startRecording() {
     try {
@@ -1461,19 +1271,22 @@
   // music... so you can hear it before you add it to your video" — tapping
   // a track card now previews it immediately, instead of only hearing it
   // once "Preview trimmed clip" is pressed. Shared by the card click
-  // handler below AND by previewTrimBtn's own click handler (which plays
-  // this same selected track alongside the trimmed video) so the
+  // handler below AND by the play-together logic (loadTrackAudio) so the
   // sign-the-URL-once logic only lives in one place.
-  async function playTrackPreview(trackId) {
-    if (!trackId) { musicPreviewAudio.pause(); return; }
+  async function loadTrackAudio(trackId) {
     var track = tracksById[trackId];
-    if (!track) return;
+    if (!track) return false;
     if (musicPreviewAudio.dataset.trackId !== trackId) {
       var { data: signed } = await window.sb.storage.from("tracks").createSignedUrl(track.storage_path, 300);
-      if (!signed) return;
+      if (!signed) return false;
       musicPreviewAudio.src = signed.signedUrl;
       musicPreviewAudio.dataset.trackId = trackId;
     }
+    return true;
+  }
+  async function playTrackPreview(trackId) {
+    if (!trackId) { musicPreviewAudio.pause(); return; }
+    if (!(await loadTrackAudio(trackId))) return;
     musicPreviewAudio.currentTime = 0;
     musicPreviewAudio.play().catch(function () {});
   }
@@ -1515,7 +1328,9 @@
       if (musicTrackSelect.disabled) return; // narration already chosen — see syncMusicNarrationExclusivity
       musicTrackSelect.value = id;
       musicTrackSelect.dispatchEvent(new Event("change"));
-      playTrackPreview(id); // Ken's ask: hear it right away, before committing
+      // Ken's ask: hear it right away, before committing. If the video is
+      // already playing, line the new song up with it instead.
+      if (!trimPreviewVideo.paused) { syncMusicToVideo(); } else { playTrackPreview(id); }
     });
   }
 
@@ -1559,12 +1374,14 @@
   }
   // "Start the song at …" — lets the artist skip a long intro. Saved as media.music_start_seconds.
   var musicStartRow = document.getElementById("musicStartRow");
-  var musicStartPicker = createMusicStartPicker({ audio: musicPreviewAudio, initial: 0 });
+  var musicStartPicker = createMusicStartPicker({ audio: musicPreviewAudio, initial: 0, nudge: true, hideHear: true, onChange: onMusicStartMoved });
   musicStartRow.appendChild(musicStartPicker.el);
   var lastMusicStartTrack = "";
   function updateMusicStartRow() {
     var hasMusic = !!musicTrackSelect.value && !musicTrackSelect.disabled;
     musicStartRow.style.display = hasMusic ? "block" : "none";
+    playTogetherBtn.style.display = hasMusic ? "block" : "none";
+    if (!hasMusic) musicPreviewAudio.pause();
     // Start over at 0:00 only when the track itself changes (tapping the same card again keeps it).
     var trackChanged = (musicTrackSelect.value || "") !== lastMusicStartTrack;
     lastMusicStartTrack = hasMusic ? musicTrackSelect.value : "";
@@ -1573,8 +1390,7 @@
     if (hasMusic && t && t.duration_seconds) musicStartPicker.setDuration(t.duration_seconds);
   }
   keepOriginalAudio.addEventListener("change", function () {
-    musicPreviewAudio.volume = keepOriginalAudio.checked ? MIX_MUSIC_VOLUME : 1;
-    updatePreviewSoundNote();
+    applyPreviewMix();
   });
 
   function resetMusicUI() {
@@ -1627,7 +1443,7 @@
     syncMusicNarrationExclusivity();
     updateKeepOriginalRow();
     updateMusicStartRow();
-    updatePreviewSoundNote();
+    applyPreviewMix();
   });
 
   // Healthy Meal Prep gets its own longer write-up + an optional signature —
@@ -1705,7 +1521,6 @@
     updateNarrationVisibility();
     updateMusicVisibility();
     updateTrimVisibility();
-    updateExtraClipsVisibility();
     updateMoreOptionsBoxVisibility();
   });
 
@@ -1871,21 +1686,6 @@
       // the checkbox's prior state ever lingers.
       var isProfilePhotoChecked = kind === "photo" && document.getElementById("isProfilePhoto").checked;
 
-      // Trim points: only recorded for a video, and only when the member
-      // actually moved a handle — an untouched full-length clip stores null
-      // for both so it just plays normally, same as before this feature.
-      var trimStartValue = null;
-      var trimEndValue = null;
-      if (kind === "video") {
-        var trimStartNum = parseFloat(trimStartRange.value) || 0;
-        var trimEndNum = parseFloat(trimEndRange.value) || 0;
-        var fullDuration = trimPreviewVideo.duration || trimEndNum;
-        if (trimStartNum > 0.05 || (fullDuration && trimEndNum < fullDuration - 0.05)) {
-          trimStartValue = trimStartNum;
-          trimEndValue = trimEndNum;
-        }
-      }
-
       // A member can attach a track from the music library instead of a
       // recorded voiceover — the UI already keeps these mutually exclusive,
       // but this double-checks it so a row is never saved with both.
@@ -1896,12 +1696,12 @@
       // in the feed. Best-effort: any failure here just means no poster,
       // never a failed upload. Prefers whichever frame the member actually
       // tapped in the cover-photo picker (selectedCoverTime); falls back to
-      // the old default — the trim start point — if that picker never
+      // the start of the video if that picker never
       // finished generating (e.g. a very short video, or a slow decode).
       var posterPath = null;
       if (kind === "video") {
         try {
-          var posterSeekTime = selectedCoverTime != null ? selectedCoverTime : (trimStartValue || 0);
+          var posterSeekTime = selectedCoverTime != null ? selectedCoverTime : 0;
           var posterBlob = await captureVideoPosterBlob(trimPreviewVideo, posterSeekTime);
           if (posterBlob) {
             var candidatePosterPath = currentUser.id + "/" + crypto.randomUUID() + "-poster.jpg";
@@ -1928,9 +1728,7 @@
         signature: document.getElementById("signature").value.trim() || null,
         location: document.getElementById("location").value.trim() || null,
         product_tag: kind === "photo" ? (document.getElementById("productTag").value.trim() || null) : null,
-        is_profile_photo: isProfilePhotoChecked,
-        trim_start: trimStartValue,
-        trim_end: trimEndValue
+        is_profile_photo: isProfilePhotoChecked
       };
       // Audio never reaches this generic path any more — it returns early
       // above, straight into the Music Library. This is only photo/video
@@ -1939,9 +1737,6 @@
       // "pending" for a day).
       if (kind === "photo" && isProfilePhotoChecked) insertRow.status = "approved";
 
-      // .select().single() added so insertedRow.id is available below for
-      // any extra clips (they need this post's own id as their media_id) —
-      // the insert itself is otherwise unchanged from before this feature.
       // Only sent when ticked (and a track is attached) so every other upload is
       // byte-for-byte what it was before sql/keep-original-audio.sql existed. If that
       // SQL hasn't been run yet, retry without the flag so the post still goes
@@ -1969,48 +1764,6 @@
       }
       if (insertError) throw insertError;
 
-      // Extra clips (2nd file onward) — only ever present for a video post
-      // that used "+ Add another clip" above. Uploaded and inserted AFTER
-      // the primary post already succeeded, on purpose: the post itself has
-      // already been through the important part (passing insert/RLS as a
-      // real pending post), so one extra clip failing to upload is never
-      // worth rolling back a post that already went through fine — the
-      // member just gets a heads-up that a clip didn't make it, same idea
-      // as the poster-image capture above being best-effort.
-      var failedExtraClips = 0;
-      if (kind === "video" && extraClips.length) {
-        for (var clipIndex = 0; clipIndex < extraClips.length; clipIndex++) {
-          try {
-            var clipFile = extraClips[clipIndex];
-            var clipExt = getExt(clipFile.name);
-            var clipPath = currentUser.id + "/" + crypto.randomUUID() + "." + clipExt;
-            var { error: clipUploadError } = await window.sb.storage.from("media").upload(clipPath, clipFile, {
-              cacheControl: "3600",
-              upsert: false
-            });
-            if (clipUploadError) throw clipUploadError;
-            // order_index starts at 2 — clip 1 is always the media row
-            // itself, inserted just above. No trim UI for extra clips, so
-            // these always upload as-is (null/null), same as an untouched
-            // primary clip does.
-            var { error: clipInsertError } = await window.sb.from("media_clips").insert({
-              media_id: insertedRow.id,
-              order_index: clipIndex + 2,
-              storage_path: clipPath,
-              trim_start: null,
-              trim_end: null
-            });
-            if (clipInsertError) throw clipInsertError;
-          } catch (clipErr) {
-            failedExtraClips++;
-          }
-        }
-      }
-
-      var extraClipNote = failedExtraClips
-        ? " (" + failedExtraClips + " extra clip" + (failedExtraClips > 1 ? "s" : "") + " couldn't be attached — the rest of your post is live; try re-adding " + (failedExtraClips > 1 ? "them" : "it") + " later.)"
-        : "";
-
       showMsg(msg, (kind === "photo" && isProfilePhotoChecked
         ? "Profile photo updated and live now!"
         : narrationPath
@@ -2019,7 +1772,7 @@
         ? (mixFlagNotSaved
             ? "Uploaded with your chosen track attached, but \"keep my video's own sound\" or \"start the song at\" isn't switched on yet — the track will replace the video's sound and start from the beginning for now. It'll show as \"Pending\" until it's reviewed."
             : "Uploaded with your chosen track attached! It'll show as \"Pending\" until it's reviewed.")
-        : "Uploaded! It'll show as \"Pending\" until it's reviewed.") + extraClipNote, "success");
+        : "Uploaded! It'll show as \"Pending\" until it's reviewed."), "success");
       fileInput.value = "";
       selectedFile = null;
       dropzoneLabel.textContent = CATEGORY_META[pickedCategoryKey()] ? CATEGORY_META[pickedCategoryKey()].placeholder : "Click to choose a file";
@@ -2032,11 +1785,9 @@
       profilePhotoField.style.display = "flex";
       productTagField.style.display = "none";
       uploadBtn.textContent = "↑ Select a file above";
-      resetExtraClips();
       updateNarrationVisibility();
       updateMusicVisibility();
       updateTrimVisibility();
-      updateExtraClipsVisibility();
       updateMoreOptionsBoxVisibility();
       updateCategoryFieldVisibility();
     } catch (err) {
@@ -2045,10 +1796,7 @@
       // clips — so a failed post doesn't leave orphaned files behind with
       // no database row ever pointing to them. `path`/`narrationPath`/
       // `posterPath` are declared with `var` above, so they're still in
-      // scope here (undefined/null if that step never ran). Deliberately
-      // NOT cleaning up extraClips here — those only upload AFTER this
-      // insert already succeeded (see the comment on that loop above), so
-      // this catch can only run before any of them exist.
+      // scope here (undefined/null if that step never ran).
       var orphanedPaths = [path, narrationPath, posterPath].filter(Boolean);
       if (orphanedPaths.length) {
         try { await window.sb.storage.from("media").remove(orphanedPaths); } catch (cleanupErr) { /* best effort */ }

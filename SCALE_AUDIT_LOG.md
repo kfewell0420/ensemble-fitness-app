@@ -12,6 +12,30 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-16, video upload: editing removed, music timing is now the focus
+
+Ken: members edit on their phone first, so the site shouldn't edit video. The only thing to control
+is the music: which song, and where it starts, so the beat hits with the workout. Same for the phone app.
+
+- `upload.html` (shared by website and phone app, copied unchanged into `www/`):
+  - REMOVED: trim (Start/End sliders, filmstrip, "Preview trimmed clip") and "+ Add additional clip(s)".
+    New videos always upload whole; `trim_start`/`trim_end` are no longer sent (null). Old posts that were
+    already trimmed or have extra clips play back exactly as before (playback code untouched).
+  - KEPT: Change video, narration, "keep my video's own sound", cover-photo picker (a thumbnail pick,
+    not an edit; moved below the music).
+  - NEW music timing: pick a song, then drag the "Start the song at" slider or nudge it -1/2 s / +1/2 s.
+    The video has normal play controls; pressing play (or "Play video with music") plays the song from
+    start + the video's current time, and scrubbing the video or moving the slider re-syncs the song live.
+  - Saved the same way as before (`media.music_start_seconds`, numeric, now allows halves like 2.5).
+- `js/supabaseClient.js` `createMusicStartPicker`: new optional `nudge` and `hideHear` options (used only
+  by upload.html). The post "Edit" menu in feed.html is unchanged.
+- `gear.html` (also in this delivery): stray-dot-under-tile-name fix from the earlier thumbnail pass.
+- Tested at 393 px with Playwright: nudges, play-together sync (song time = start + video time),
+  stop, upload row saved with `music_start_seconds`, no `trim_*`, no console errors.
+- Not changed: DB columns (`trim_*`, `media_clips`) stay for old posts; no SQL to run.
+
+---
+
 ## 2026-10-15 (later), "Equipment" added back as its own category
 
 Ken: Equipment was forgotten; it needs to be a category too (alongside Fitness, Home, Clothing).
