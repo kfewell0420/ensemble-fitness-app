@@ -156,6 +156,7 @@
   .mix-clip-label { font-size: 12px; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
   .mix-handle { flex: 0 0 16px; cursor: ew-resize; touch-action: none; background: rgba(255,255,255,0.92); display: flex; align-items: center; justify-content: center; }
   .mix-handle::after { content: ""; width: 3px; height: 16px; border-radius: 2px; background: #c9431a; }
+  @media (pointer: coarse) { .mix-handle { flex-basis: 24px; } .mix-music, .mix-video { height: 44px; } }
   .mix-handle-l { border-radius: 8px 0 0 8px; }
   .mix-handle-r { border-radius: 0 8px 8px 0; }
   .mix-playhead { position: absolute; top: -3px; bottom: 3px; width: 2px; background: #fff; box-shadow: 0 0 4px rgba(0,0,0,0.6); pointer-events: none; left: 0; }
@@ -1233,7 +1234,9 @@
     mixClip.style.left = (mDelay / vd * 100) + "%";
     mixClip.style.width = (mLen / vd * 100) + "%";
     var tr = tracksById[musicTrackSelect.value];
-    mixClipLabel.textContent = "🎵 " + (tr ? tr.title : "");
+    mixClipLabel.textContent = (mixDrag && mixDrag.touch && mixDrag.mode === "left")
+      ? "◀ " + fmtClock(s) + " into song ▶"
+      : "🎵 " + (tr ? tr.title : "");
     syncReadout.style.display = "block";
     var playing = !trimPreviewVideo.paused;
     var endAt = mDelay + mLen;
@@ -1335,7 +1338,7 @@
     e.preventDefault(); e.stopPropagation();
     if (!trimPreviewVideo.paused) trimPreviewVideo.pause();
     if (replayTimer) { clearTimeout(replayTimer); replayTimer = null; }
-    mixDrag = { mode: mode, x0: e.clientX, p0: mDelay, s0: musicStartPicker.getValue(), l0: mLen, w: mixTracks.getBoundingClientRect().width, pid: e.pointerId, el: e.currentTarget };
+    mixDrag = { mode: mode, touch: (e.pointerType === "touch" || e.pointerType === "pen"), x0: e.clientX, p0: mDelay, s0: musicStartPicker.getValue(), l0: mLen, w: mixTracks.getBoundingClientRect().width, pid: e.pointerId, el: e.currentTarget };
     try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {}
   }
   function mixPointerMove(e) {
@@ -1345,6 +1348,17 @@
     var D = mixDrag;
     if (D.mode === "move") {
       mDelay = Math.min(Math.max(0, D.p0 + d), Math.max(0, vd - D.l0));
+    } else if (D.mode === "left" && D.touch && sd) {
+      // Finger on a phone: the strip is only a few hundred pixels wide, so at the
+      // "strip = the video" scale it takes many swipes to get through a long song
+      // intro. Here the strip width stands for up to 8x the video's length (the whole
+      // song when it is that short), so one swipe can travel a long way. The song start moves under the bar (the bar
+      // stays put; the readout shows where in the song you are). Half-second steps.
+      var span = Math.max(vd, Math.min(sd, vd * 8)); // strip width = up to 8x the video length, never more than the song
+      var ds = Math.round(((e.clientX - D.x0) / D.w * span) * 2) / 2;
+      var ns = Math.min(Math.max(0, D.s0 + ds), Math.max(0, sd - 1));
+      musicStartPicker.setValue(ns);
+      mLenWanted = D.l0;
     } else if (D.mode === "left") {
       // trim the front: song start and bar start slide together, bar shrinks/grows
       d = Math.max(d, -Math.min(D.p0, D.s0));

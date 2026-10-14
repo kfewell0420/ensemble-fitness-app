@@ -12,14 +12,36 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
-## 2026-10-14 (4:38 PM, 4G 10 Mbps phone), Ken's Speed Check
+## 2026-10-18, song timeline on phones: dragging the left handle gets through a long intro in one swipe
+
+Ken (phone): a song with a long intro took ~7 swipes of the left handle to reach the lyrics; on the computer one
+drag was enough. Cause: the strip stands for the VIDEO (e.g. 30 s over ~300 px = 0.1 s per pixel), so a 40 s intro
+needs ~400 px of dragging.
+
+- `upload.html`: for FINGER drags only (pointer type touch/pen; mouse behaviour is unchanged), the left handle now
+  moves the song start under the bar using a scale of strip width = 8x the video's length (capped at the song's
+  length): a 30 s video and a 3 min song = the whole strip is the whole song (6x faster); a 15 s video = 8x. The bar
+  itself stays put (as does the delay); a live readout on the bar shows "<- 1:30.0 into song ->"; half-second steps;
+  the -1/2 / +1/2 buttons and the slider remain for fine-tuning. Handles/bars are a little bigger on touch screens.
+- Tested with real touch events at 393 px (a half-strip swipe moved the start by the expected amount, replay played).
+- Same file for the phone app (copy into `www`); the website behaves as before with a mouse.
+
+## 2026-10-14 (4:44 PM, MacBook wifi), Ken's second Speed Check, 6 minutes after the first
+
+Page 172/462 ms; DB 85-116 ms (102); list 125 ms; links 198 ms; stored picture 1025 ms; resized test 781 ms cold / 54
+ms warm; video first byte 713 ms, 35.7 Mbps, fast-start yes; video first picture 1285 ms (video info arrived at 1173
+ms); H.264 + HEVC yes. No new videos had been uploaded since earlier runs (only Amazon products added), so the 4:38
+run's 2.4 s video first picture was run-to-run variance / a cold first request, NOT a heavier video -- my earlier
+guess was wrong. 1.3 s is back inside the normal range. Keep watching; only re-investigate if it is repeatedly >2 s.
+
+## 2026-10-14 (4:38 PM, MacBook wifi), Ken's Speed Check
 
 Page answered 321 ms / finished 645 ms; DB round trip 107-183 ms (139); list of 8 posts 261 ms; secure links 175 ms;
 stored picture 942 ms (998 KB); resized test picture 749 ms cold / 139 ms warm (290 KB); video first byte 569 ms,
 21.3 Mbps, fast-start yes; video first picture 2421 ms (earlier runs 438-1082 ms). CORRECTION: this run was a
-MacBook on wifi; the "4g / 10 Mbps" row is only the browser's rough guess (Chrome caps it), so the 2.4 s is a
-real increase, most likely because the newest video is heavier than the ones tested earlier -- Speed Check now
-shows the video's length, MB and bitrate on that row to confirm; H.264 and HEVC both fine; caches: toolkit 7 days, font 365 days.
+MacBook on wifi; the "4g / 10 Mbps" row is only the browser's rough guess (Chrome caps it). The 2.4 s looked like a
+real increase but the 4:44 re-run (above) showed 1.3 s with the same videos -- it was variance. Speed Check now also
+shows the video's length, MB and bitrate on that row; H.264 and HEVC both fine; caches: toolkit 7 days, font 365 days.
 Verdict: healthy, except "video first picture" (2.4 s) is worth watching -- feed posters cover most of that wait. The picture-resize row's label said "what the feed sends now", but resize is OFF in the feed
 (`PHOTO_RESIZE_ENABLED = false`, see 2026-10-12), so the label was wrong: `speedcheck.html` now says it is a test only.
 
