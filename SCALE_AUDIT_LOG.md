@@ -12,6 +12,19 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-16 (night), new category "Just Doing You"
+
+Ken: a positive, creative section for videos called "Just Doing You", added to the category drop-down.
+
+- `upload.html` Category drop-down (before "Other"), plus the "please choose a category" message.
+- `feed.html`: new filter chip (🎨) before "Other"; also in the post Edit category list.
+- `find.html`: new row linking to `feed.html?filter=Just%20Doing%20You`.
+- `admin.html`: added to the admin category list (website only).
+- No SQL: `workout_type` is free text (no constraint), so existing posts are unaffected.
+- Not done: nothing yet checks that these posts are "positive" beyond the existing review-before-visible step.
+
+---
+
 ## 2026-10-16 (evening), video upload: song timeline (TikTok-style, stripped down)
 
 Ken (comparing with TikTok Studio's editor): the song must be locked to the video with a start AND a stop --
