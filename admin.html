@@ -2177,7 +2177,11 @@
           cacheControl: "3600",
           upsert: false
         });
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+          // Say WHICH step failed (photo upload vs. saving the product) — both can show the same
+          // "row-level security" wording, and it was impossible to tell them apart.
+          throw new Error("The photo upload was refused (" + (uploadError.message || "storage error") + "). Nothing was saved. If this keeps happening, sign out and back in, then try again.");
+        }
       }
 
       var { error: insertError } = await window.sb.from("approved_gear_items").insert({
@@ -2190,7 +2194,7 @@
         image_path: imagePath,
         is_active: true
       });
-      if (insertError) throw insertError;
+      if (insertError) throw new Error("The product itself couldn't be saved (" + (insertError.message || "database error") + ").");
 
       msg.textContent = "Added! It's live on the Ensemble Approved Products page now.";
       msg.className = "form-msg show success";

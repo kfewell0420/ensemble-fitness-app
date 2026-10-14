@@ -12,6 +12,23 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-14 (night), "new row violates row-level security policy" when adding a product
+
+Ken saw this on admin.html's Add Pick form (Olympic EZ Curl Barbell Bar); the first product had saved fine.
+
+- Reading: Postgres table errors say `... for table "approved_gear_items"`; this message had no
+  table name, which is how the storage (photo upload) step words it. So most likely the photo
+  upload to the `gear-photos` bucket was refused. The code is unchanged from the working first
+  add, so the cause is on the Supabase side (a missing/changed policy, or an expired sign-in).
+  I could not confirm which from here.
+- `admin.html`: the Add Pick form now says which step failed ("The photo upload was refused..."
+  vs "The product itself couldn't be saved...") instead of the bare error. Website only.
+- New `sql/fix-gear-photo-upload.sql`: safely re-applies the same admin-only policies from
+  `approved-gear-items.sql` (bucket + upload/update/delete + table insert/update) and ends with
+  a list of the policies now in place. Never deletes products or photos.
+- Next if it still fails: sign out and back in on admin; try adding the product without a photo
+  (isolates storage vs table); read the new, more specific error message.
+
 ## 2026-10-14 (evening), admin Approved Products: added "Fitness Equipment" and "Fitness Shoes" categories
 
 Ken: the Category drop-down when adding an Amazon/TikTok product had no fitness equipment or
