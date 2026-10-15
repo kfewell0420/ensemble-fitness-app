@@ -51,9 +51,9 @@
      by default; the desktop media query further down turns them on. */
   .rp-dash-header { display: none; }
   /* Phone top bar: tiny tappable "💗 💍 🤝 ?" that opens the "what do the badges mean" key (the desktop header has its own link). */
-  .conn-key-pill { margin-left: auto; margin-right: 10px; flex: 0 0 auto; padding: 5px 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.22); background: rgba(255,255,255,0.07); color: #fff; font: inherit; font-size: 13px; font-weight: 600; line-height: 1; letter-spacing: 1px; white-space: nowrap; cursor: pointer; }
+  .conn-key-row { margin: 0 14px 4px; }
+  .conn-key-pill { flex: 0 0 auto; padding: 5px 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.22); background: rgba(255,255,255,0.07); color: #fff; font: inherit; font-size: 13px; font-weight: 600; line-height: 1; letter-spacing: 1px; white-space: nowrap; cursor: pointer; }
   .conn-key-pill b { color: var(--accent-2, #ff6b3d); letter-spacing: 0; }
-  .conn-key-pill + .app-nav-connect { margin-left: 0; }
   .rp-side-panels { display: contents; }
   .rp-panel { display: none; }
 
@@ -1483,6 +1483,7 @@
   @media (min-width: 900px) {
     html, body { background: #0a0a0c; }
     #rpAppNav { display: none; }
+    .conn-key-row { display: none; } /* desktop has its own "What do these mean?" link in the Welcome header */
 
     /* Fixed left icon rail — the tab bar, rotated from a mobile bottom
        bar into a vertical left-side icon column. */
@@ -1820,7 +1821,6 @@
     <a href="feed.html" class="app-brand">
       <span class="app-brand-mark"><img src="assets/logo.png" alt="Ensemble Fitness" /></span>Ensemble Fitness
     </a>
-    <button type="button" class="conn-key-open conn-key-pill" aria-label="What do the badges mean?">💗 💍 🤝 <b>?</b></button>
     <span class="app-nav-connect" aria-hidden="true">
       <svg viewBox="0 0 34 30" width="28" height="25" focusable="false">
         <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="var(--pink, #db1f52)" transform="translate(0,2)"/>
@@ -1858,6 +1858,7 @@
        order above). -->
   <div class="rp-side-panels" id="rpSidePanels">
     <div class="rp-mealprep" id="rpMealPrep">
+      <div class="conn-key-row"><button type="button" class="conn-key-open conn-key-pill" aria-label="What do the badges mean?">💗 💍 🤝 <b>?</b></button></div>
       <div class="rp-mealprep-banner">
         <span class="rp-mealprep-banner-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="30" height="30" aria-hidden="true" focusable="false"><circle cx="16" cy="16" r="15.5" fill="#f3f1ec"/><circle cx="16" cy="16" r="12.8" fill="#dedad0"/><circle cx="16" cy="16" r="11.6" fill="#3f9d4a"/><path d="M6 17c2-2 4-2 6 0s4 2 6 0 4-2 6 0 3 1 4 0M7.5 12.5c2-1.5 4-1.5 5.5 0M19 11c2-1.2 4-1 5.5.5M9 21.5c2 1.5 4.5 1.5 6.5 0" stroke="#2d7d38" stroke-width="1.6" fill="none" stroke-linecap="round"/><circle cx="11" cy="12" r="3.3" fill="#e63b2e"/><circle cx="10" cy="11" r="1" fill="#ff9d92"/><circle cx="21.5" cy="21" r="3" fill="#e63b2e"/><circle cx="20.6" cy="20.1" r=".9" fill="#ff9d92"/><rect x="16.5" y="9.5" width="7.2" height="4.6" rx="2.3" fill="#c98544" transform="rotate(24 20 12)"/><path d="M18.2 10.8l4.2 2.1" stroke="#8f5724" stroke-width=".9" stroke-linecap="round"/><circle cx="12.5" cy="21.8" r="2.6" fill="#f68b1f"/><circle cx="12.5" cy="21.8" r="1.1" fill="#ffc474"/><circle cx="16.3" cy="16.6" r="2.1" fill="#8ccf4d"/></svg></span>
         <span class="rp-mealprep-banner-text">Healthy Meal Prep</span>

@@ -16,7 +16,8 @@ briefly as a reminder; only new findings need the full writeup.
 
 - Healthy Meal Prep used the 🍱 bento-box emoji (square, looked like sushi): the feed banner, the meal-prep post's heading, and the category icon. Banner and heading now use a small round plate drawing (white plate with greens, chicken, tomato, carrot and corn); the category icon is 🥗. Marketing site untouched (its one 🍱 is a sample card badge on healthy-meal-prep.html — not changed so no whole-site re-drop is needed; say the word if it should change too).
 - Plate redo: the first drawing (mostly white plate, small orange/yellow dots) read as fried eggs at banner size. Now a full green salad on a white-rimmed plate (red tomatoes, carrot, chicken slice, greens), drawn larger (30 px in the banner).
-- Phone feed had no visible way to learn what 💗 💍 🤝 mean: the "What do these mean?" link only lives in the desktop "Welcome back" header, and the phone only had it inside ••• on OTHER people's posts. Added a small "💗 💍 🤝 ?" button in the phone top bar (opens the same Connection status key as the website) and added "What do the badges mean?" to the ••• menu on your own posts too. Checked at 393 and 340 px wide. Other phone pages that show badges (profile, member pages) were not touched.
+- The "💗 💍 🤝 ?" button moved out of the top bar onto its own line directly above the Healthy Meal Prep banner (phone only; hidden on desktop, which has its own link).
+- Phone feed had no visible way to learn what 💗 💍 🤝 mean: the "What do these mean?" link only lives in the desktop "Welcome back" header, and the phone only had it inside ••• on OTHER people's posts. Added a small "💗 💍 🤝 ?" button (first in the top bar, then moved above the meal prep banner) (opens the same Connection status key as the website) and added "What do the badges mean?" to the ••• menu on your own posts too. Checked at 393 and 340 px wide. Other phone pages that show badges (profile, member pages) were not touched.
 
 ---
 
