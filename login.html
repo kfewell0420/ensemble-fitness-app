@@ -6,6 +6,21 @@
 <title>Sign In — Ensemble Fitness</title>
 <link rel="stylesheet" href="css/fonts.css" onerror="this.onerror=null;this.href='https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&family=Caveat:wght@600;700&family=Dancing+Script:wght@600;700&display=swap'">
 <link rel="stylesheet" href="css/app.css?v=4" />
+<style>
+/* Date of birth: type it (MM/DD/YYYY, slashes added for you) or tap the calendar button.
+   The real native date input (#dob) stays the source of truth; it sits invisibly on top
+   of the calendar button so one tap opens the phone's own date picker. */
+.dob-wrap { position: relative; }
+.dob-wrap .dob-text { padding-right: 58px; letter-spacing: .5px; }
+.dob-cal { position: absolute; right: 5px; top: 50%; transform: translateY(-50%);
+  width: 44px; height: 34px; border-radius: 8px; background: var(--accent-2, #7aa2ff);
+  display: flex; align-items: center; justify-content: center; font-size: 18px; line-height: 1;
+  overflow: hidden; }
+.dob-cal span { pointer-events: none; }
+.field .dob-wrap input.dob-native { position: absolute; inset: 0; width: 100%; height: 100%;
+  opacity: 0; padding: 0; border: 0; cursor: pointer; font-size: 16px; }
+.dob-wrap:focus-within .dob-text { border-color: var(--accent-2); }
+</style>
 </head>
 <body>
 
@@ -69,8 +84,11 @@
       </div>
       <div class="field" id="dobField" style="display:none;">
         <label for="dob">Date of birth</label>
-        <input type="date" id="dob" name="dob" autocomplete="bday" />
-        <span style="font-size:12px; color:var(--faint-invert);">Ensemble Fitness is for adults 18 and up — this is required to create an account.</span>
+        <div class="dob-wrap">
+          <input type="text" id="dobText" class="dob-text" inputmode="numeric" placeholder="MM/DD/YYYY" maxlength="10" autocomplete="off" aria-label="Date of birth, month slash day slash year" />
+          <div class="dob-cal"><span aria-hidden="true">📅</span><input type="date" id="dob" class="dob-native" name="dob" tabindex="-1" aria-label="Pick date of birth from a calendar" /></div>
+        </div>
+        <span style="font-size:12px; color:var(--faint-invert);">Type it (like 03/27/1985) or tap the calendar. Ensemble Fitness is for adults 18 and up.</span>
       </div>
       <div class="field" id="zipField" style="display:none;">
         <label for="zip">ZIP code</label>
@@ -140,7 +158,8 @@
   var togglePassword = document.getElementById("togglePassword");
   var toggleConfirmPassword = document.getElementById("toggleConfirmPassword");
   var dobField = document.getElementById("dobField");
-  var dobInput = document.getElementById("dob");
+  var dobInput = document.getElementById("dob");      // native date input: always holds yyyy-mm-dd
+  var dobText = document.getElementById("dobText");   // what members type: MM/DD/YYYY
   var zipField = document.getElementById("zipField");
   var zipInput = document.getElementById("zip");
   var wakeTimeField = document.getElementById("wakeTimeField");
@@ -171,6 +190,32 @@
     dobInput.setAttribute("min", iso(minDate));
   })();
 
+  // Typing: keep only digits, add the slashes automatically, and mirror a complete, real
+  // date into the hidden native date input (which is what the rest of the page reads).
+  function dobTextToIso(t) {
+    var m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(t);
+    if (!m) { return ""; }
+    var mo = +m[1], d = +m[2], y = +m[3];
+    var dt = new Date(y, mo - 1, d);
+    if (dt.getFullYear() !== y || dt.getMonth() !== mo - 1 || dt.getDate() !== d) { return ""; }
+    return m[3] + "-" + m[1] + "-" + m[2];
+  }
+  dobText.addEventListener("input", function () {
+    var digits = dobText.value.replace(/\D/g, "").slice(0, 8);
+    var out = digits;
+    if (digits.length > 4) { out = digits.slice(0, 2) + "/" + digits.slice(2, 4) + "/" + digits.slice(4); }
+    else if (digits.length > 2) { out = digits.slice(0, 2) + "/" + digits.slice(2); }
+    dobText.value = out;
+    // Native date inputs ignore values outside min/max, so set it only when it's in range;
+    // the submit handler re-reads the typed text anyway.
+    dobInput.value = dobTextToIso(out);
+  });
+  dobInput.addEventListener("change", function () {
+    if (!dobInput.value) { return; }
+    var p = dobInput.value.split("-");
+    dobText.value = p[1] + "/" + p[2] + "/" + p[0];
+  });
+
   function calcAge(dobStr) {
     var dob = new Date(dobStr + "T00:00:00");
     var today = new Date();
@@ -193,7 +238,7 @@
     if (mode === "signin") { confirmPasswordInput.value = ""; }
     document.getElementById("forgotPasswordRow").style.display = mode === "signin" ? "block" : "none";
     dobField.style.display = mode === "signup" ? "block" : "none";
-    dobInput.required = mode === "signup";
+    dobText.required = mode === "signup";
     zipField.style.display = mode === "signup" ? "block" : "none";
     zipInput.required = mode === "signup";
     wakeTimeField.style.display = mode === "signup" ? "block" : "none";
@@ -267,9 +312,15 @@
           throw new Error("Those passwords don't match — please re-enter them so both are the same.");
         }
 
-        var dobValue = dobInput.value;
-        if (!dobValue) {
+        var dobValue = dobTextToIso(dobText.value.trim());
+        if (!dobText.value.trim()) {
           throw new Error("Date of birth is required.");
+        }
+        if (!dobValue) {
+          throw new Error("Please enter your date of birth as MM/DD/YYYY (for example 03/27/1985).");
+        }
+        if (dobValue < dobInput.getAttribute("min")) {
+          throw new Error("That date of birth doesn't look right — please check the year.");
         }
         if (calcAge(dobValue) < 18) {
           throw new Error("You must be at least 18 years old to join Ensemble Fitness.");

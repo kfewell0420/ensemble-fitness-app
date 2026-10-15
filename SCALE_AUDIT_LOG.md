@@ -12,6 +12,14 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-15 (sign-up) — Date of birth: type it or tap the calendar
+
+- Ken's test sign-up on the Samsung: the date-of-birth calendar was hard to see and there was no easy way to type the birthday. login.html now shows a normal text box ("MM/DD/YYYY", number keypad, slashes added automatically as you type) with a bright orange 📅 button at the right end. Tapping the button opens the phone's own date picker (the real native date input sits invisibly on top of it, so it works on iPhone and Android with one tap); picking a date fills the text box, and typing a full real date fills the picker.
+- Checks unchanged in spirit: required; must be a real calendar date (13/45/2000 is refused with a clear message); year not older than 100 years; must be 18+ (same calcAge check, and the database still refuses under-18 rows). The value sent to Supabase is still yyyy-mm-dd, so nothing on the server changed. Browser autofill is turned off on this box so it can't paste a differently formatted date.
+- Tested at 393 px wide: typing 03271985 gives 03/27/1985 / 1985-03-27; picking 1990-05-06 shows 05/06/1990; an impossible date is rejected. Shared with the mobile app (www/login.html).
+
+---
+
 ## 2026-10-15 (very last) — Badge button 1.6 px lower
 
 - Ken asked for the "💗 💍 🤝 ?" button to come down by half of the black space under it, still not touching the divider line. Measured gap between the button's bottom and the line: 3.2 px → now 1.6 px (button offset 17 → 18.6 px). Same on every phone width and with/without a notch. Also nudged 4 px to the right of dead-centre (Ken: "a couple of dashes to the right").
