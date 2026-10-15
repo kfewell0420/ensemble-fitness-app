@@ -7,7 +7,11 @@
 <script>
 /* Marks the page when it is running inside the Ensemble Fitness phone app (Capacitor), so the few
    phone-app-only layout tweaks below don't touch the website. */
-(function(){function m(){try{var C=window.Capacitor;if(C&&(C.isNativePlatform?C.isNativePlatform():(C.getPlatform&&C.getPlatform()!=="web")))document.documentElement.classList.add("ef-native");}catch(e){}}m();document.addEventListener("DOMContentLoaded",m);})();
+(function(){function m(){try{var C=window.Capacitor,n=false;
+if(C){n=C.isNativePlatform?!!C.isNativePlatform():!!(C.getPlatform&&C.getPlatform()!=="web");if(C.isNative===true)n=true;}
+/* Backups: the iPhone app serves pages from capacitor://localhost, the Android app from https://localhost. */
+if(location.protocol==="capacitor:"||location.hostname==="localhost")n=true;
+if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();document.addEventListener("DOMContentLoaded",m);window.addEventListener("load",m);})();
 </script>
 <link rel="stylesheet" href="css/fonts.css" onerror="this.onerror=null;this.href='https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&family=Caveat:wght@600;700&family=Dancing+Script:wght@600;700&display=swap'">
 <link rel="stylesheet" href="css/app.css?v=5" />
