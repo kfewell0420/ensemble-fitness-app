@@ -12,6 +12,13 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-15 (last) — Badge button centered in the top bar; banner says "Healthy Meal Preps"
+
+- Ken's real Android phone (393 px wide) showed the "💗 💍 🤝 ?" button jammed against the right edge under the hearts (the narrow-phone rule) — now it sits in the header row itself with equal automatic space on both sides, so it is centered exactly between the end of "Ensemble Fitness" and the hearts on every phone width (checked 393 and 340). It is nudged down toward the bottom of the bar (about 3-4 px above the divider line); the bar itself does not grow. Same on the iPhone simulator.
+- Banner now reads "Healthy Meal Preps" and the "Community picks"/"Examples" label is gone (these are real people).
+
+---
+
 ## 2026-10-15 (final) — Animated salad-bowl icon for Healthy Meal Prep (Ken picked option B)
 
 - Healthy Meal Prep banner and the meal-prep post heading now use a small drawn, animated teal bowl of salad (greens, chicken, avocado, tomato, corn) with steam rising, a gentle bob, and a glint on the chicken. Inline SVG + CSS (no image file); animation switches off for people who set "reduce motion". 38 px in the banner, 26 px in the heading.
