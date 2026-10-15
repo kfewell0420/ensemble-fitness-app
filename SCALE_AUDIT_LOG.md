@@ -12,6 +12,12 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-15 (very last) — Badge button 1.6 px lower
+
+- Ken asked for the "💗 💍 🤝 ?" button to come down by half of the black space under it, still not touching the divider line. Measured gap between the button's bottom and the line: 3.2 px → now 1.6 px (button offset 17 → 18.6 px). Same on every phone width and with/without a notch. Also nudged 4 px to the right of dead-centre (Ken: "a couple of dashes to the right").
+
+---
+
 ## 2026-10-15 (last) — Badge button centered in the top bar; banner says "Healthy Meal Preps"
 
 - Ken's real Android phone (393 px wide) showed the "💗 💍 🤝 ?" button jammed against the right edge under the hearts (the narrow-phone rule) — now it sits in the header row itself with equal automatic space on both sides, so it is centered exactly between the end of "Ensemble Fitness" and the hearts on every phone width (checked 393 and 340). It is nudged down toward the bottom of the bar (about 3-4 px above the divider line); the bar itself does not grow. Same on the iPhone simulator.
