@@ -254,15 +254,68 @@ function wirePasswordToggle(button, input) {
   });
 }
 
-/* Music fade-out (Oct 2026): a song's tail fades to silence instead of dropping. 3 seconds, but never more
-   than 40% of the music's own length, so a very short post doesn't spend most of its time fading.
-   (Volume is set on the audio element; iPhones ignore that setting, so there the song still stops at
-   the end, just without the fade.) */
-function songFadeLength(musicLen) { return Math.max(0.5, Math.min(3, (musicLen || 0) * 0.4)); } // 3 seconds
+/* Music fade-out tail (Oct 2026): the song plays at full volume for the WHOLE video, and when the video
+   reaches its last frame the picture holds there while the song carries on for 3 more seconds, fading to
+   silence. (No fade while the video is still playing.) If the song is not playing at that moment (it was cut
+   short, or it is shorter than the video) there is no tail and things end as before. Volume is set on the
+   audio element; iPhones ignore that setting, so there the tail is skipped and the song just stops with the
+   video. */
 function songFadeGain(remaining, fadeLen) {
   if (!(fadeLen > 0) || remaining >= fadeLen) return 1;
   var g = Math.max(0, remaining / fadeLen);
   return g * g; // squared sounds like an even fade to the ear
+}
+function audioVolumeWorks() {
+  try { var a = new Audio(); a.volume = 0.5; return a.volume === 0.5; } catch (e) { return false; }
+}
+// getBase(): the volume the song normally plays at. start(done) -> true if a tail began (done() runs when
+// it has finished), false if there is nothing to fade (caller ends things the normal way).
+function createSongTail(video, audio, getBase) {
+  var TAIL = 3; // seconds the song fades out after the video ends
+  var raf = null, t0 = 0, active = false, onEnd = null, works = null, io = null, visible = true;
+  function restoreVol() { try { audio.volume = getBase(); } catch (e) {} }
+  function stopWatching() { if (io) { try { io.disconnect(); } catch (e) {} io = null; } }
+  function step() {
+    raf = null;
+    if (!active) return;
+    var e = (performance.now() - t0) / 1000;
+    if (e >= TAIL || audio.paused || audio.ended) { finish(true); return; }
+    try { audio.volume = Math.max(0, Math.min(1, getBase() * songFadeGain(TAIL - e, TAIL))); } catch (x) {}
+    raf = requestAnimationFrame(step);
+  }
+  function finish(natural) {
+    if (!active) return;
+    active = false; stopWatching();
+    if (raf) { cancelAnimationFrame(raf); raf = null; }
+    try { audio.pause(); } catch (e) {}
+    restoreVol();
+    var f = onEnd; onEnd = null;
+    if (f && natural && visible) f();
+  }
+  return {
+    active: function () { return active; },
+    start: function (done) {
+      if (active) return true;
+      if (works === null) works = audioVolumeWorks();
+      if (!works || audio.paused || audio.ended || audio.muted) return false;
+      active = true; visible = true; t0 = performance.now(); onEnd = done || null;
+      if (window.IntersectionObserver && video) {
+        try {
+          io = new IntersectionObserver(function (en) {
+            visible = !!(en[0] && en[0].intersectionRatio > 0.3);
+            if (!visible) finish(false);
+          }, { threshold: [0, 0.3, 0.6] });
+          io.observe(video);
+        } catch (e) { io = null; }
+      }
+      raf = requestAnimationFrame(step);
+      return true;
+    },
+    cancel: function () { // somebody pressed play / jumped / left: drop the tail and stop the song
+      if (!active) return;
+      finish(false);
+    }
+  };
 }
 
 /* Keeps a hidden narration <audio> track in sync with its paired <video> —
@@ -297,35 +350,36 @@ function wireNarrationSync(video, audio, keepOriginal, musicStart, trimStart, mu
   } else {
     video.muted = true;
   }
-  // fade (music only): the tail fades out over the last seconds of the music's window.
-  var baseVol = keepOriginal ? 0.35 : 1, fadeRaf = null;
-  function endRel() {
-    if (wlen !== null) return delay + wlen;
-    if (reel && reel.total && reel.total()) return reel.total();
-    var d = video.duration;
-    return isFinite(d) && d > 0 ? d - tStart : Infinity;
-  }
-  function fadeStep() {
-    fadeRaf = null;
-    if (!fade || video.paused) return;
-    var end = endRel();
-    if (isFinite(end)) {
-      var v = baseVol * songFadeGain(end - rel(), songFadeLength(end - delay));
-      if (Math.abs(audio.volume - v) > 0.004) { try { audio.volume = Math.max(0, Math.min(1, v)); } catch (e) {} }
-    }
-    fadeRaf = requestAnimationFrame(fadeStep);
+  // fade (music only): when the video ends, the song carries on for 3 seconds, fading out (see createSongTail).
+  var baseVol = keepOriginal ? 0.35 : 1;
+  var tail = fade ? createSongTail(video, audio, function () { return baseVol; }) : null;
+  if (tail && reel && reel.onFinish) {
+    reel.onFinish(function () { return tail.start(function () { audio.currentTime = offset; reel.restart(); }); });
   }
   video.addEventListener("play", function () {
-    if (fade && !fadeRaf) fadeRaf = requestAnimationFrame(fadeStep);
+    if (tail) tail.cancel();
     if (!inWin()) { audio.pause(); return; }
     audio.currentTime = expected();
     audio.play().catch(function () {});
   });
-  video.addEventListener("pause", function () { if (reel && video.ended) return; audio.pause(); }); // reel: a clip finishing is not the song stopping
-  video.addEventListener("seeking", function () { audio.currentTime = expected(); });
+  video.addEventListener("pause", function () {
+    if (reel && video.ended) return; // reel: a clip finishing is not the song stopping
+    if (tail && (tail.active() || (video.ended && songRunsToEnd()))) return; // the song's fade-out tail
+    audio.pause();
+  });
+  video.addEventListener("seeking", function () {
+    if (tail && tail.active()) { tail.cancel(); return; }
+    audio.currentTime = expected();
+  });
+  // True when the song is set to play right up to the end of the video (so a fade-out tail makes sense).
+  function songRunsToEnd() {
+    if (wlen === null) return true;
+    var total = reel && reel.total && reel.total() ? reel.total() : (isFinite(video.duration) ? video.duration - tStart : null);
+    return total === null || delay + wlen >= total - 0.25;
+  }
   if (hasWindow || reel) {
     video.addEventListener("timeupdate", function () {
-      if (video.paused) return;
+      if (video.paused || video.ended || (tail && tail.active())) return;
       if (inWin()) {
         if (audio.paused) { audio.currentTime = expected(); audio.play().catch(function () {}); }
         else if (Math.abs(audio.currentTime - expected()) > 0.5) audio.currentTime = expected();
@@ -336,6 +390,7 @@ function wireNarrationSync(video, audio, keepOriginal, musicStart, trimStart, mu
   }
   video.addEventListener("ended", function () {
     if (reel) return;
+    if (tail && songRunsToEnd() && tail.start(function () { audio.currentTime = offset; })) return; // fade out over 3 more seconds
     audio.pause();
     audio.currentTime = offset;
   });
@@ -391,39 +446,48 @@ function wireFeedSound(video, audio, keepOriginal, trimStart, musicStart, musicW
       try { audio.currentTime = expected(); } catch (e) {}
     }
   }
-  // fade (music only): the tail fades out over the last seconds of the music's window.
-  var baseVol = keepOriginal ? 0.35 : 1, fadeRaf = null;
-  function endRel() {
-    if (wlen !== null) return delay + wlen;
-    if (reel && reel.total && reel.total()) return reel.total();
-    var d = video.duration;
-    return isFinite(d) && d > 0 ? d - start : Infinity;
+  // fade (music only): when the video ends, the picture holds on its last frame while the song carries on
+  // for 3 seconds, fading out; then the video starts over (see createSongTail).
+  var baseVol = keepOriginal ? 0.35 : 1;
+  var tail = fade ? createSongTail(video, audio, function () { return baseVol; }) : null;
+  var wasLoop = !!(tail && !reel && video.loop);
+  if (wasLoop) video.loop = false; // so the clip reaches its end (and the tail can play) before starting over
+  function songRunsToEnd() {
+    if (wlen === null) return true;
+    var total = reel && reel.total && reel.total() ? reel.total() : (isFinite(video.duration) ? video.duration - start : null);
+    return total === null || delay + wlen >= total - 0.25;
   }
-  function fadeStep() {
-    fadeRaf = null;
-    if (!fade || video.paused) return;
-    var end = endRel();
-    if (isFinite(end)) {
-      var v = baseVol * songFadeGain(end - rel(), songFadeLength(end - delay));
-      if (Math.abs(audio.volume - v) > 0.004) { try { audio.volume = Math.max(0, Math.min(1, v)); } catch (e) {} }
-    }
-    fadeRaf = requestAnimationFrame(fadeStep);
+  function startOver() {
+    try { video.currentTime = start; } catch (e) {}
+    var p = video.play(); if (p && p.catch) p.catch(function () {});
+  }
+  if (tail && reel && reel.onFinish) {
+    reel.onFinish(function () { return tail.start(function () { reel.restart(); }); });
   }
   video.addEventListener("play", function () {
-    if (fade && !fadeRaf) fadeRaf = requestAnimationFrame(fadeStep);
+    if (tail) tail.cancel();
     if (!inWin()) { audio.pause(); return; }
     try { audio.currentTime = expected(); } catch (e) {}
     audio.play().catch(function () {});
   });
-  video.addEventListener("pause", function () { if (reel && video.ended) return; audio.pause(); }); // reel: a clip finishing is not the song stopping
-  video.addEventListener("seeked", function () { if (inWin()) sync(); });
+  video.addEventListener("pause", function () {
+    if (reel && video.ended) return; // reel: a clip finishing is not the song stopping
+    if (tail && (tail.active() || (video.ended && songRunsToEnd()))) return; // the song's fade-out tail
+    audio.pause();
+  });
+  video.addEventListener("seeked", function () { if (tail && tail.active()) return; if (inWin()) sync(); });
   video.addEventListener("timeupdate", function () {
-    if (video.paused) return;
+    if (video.paused || video.ended || (tail && tail.active())) return;
     if (!inWin()) { if (!audio.paused) audio.pause(); return; } // before the song comes in / after its end
     sync();
     if (audio.paused) audio.play().catch(function () {}); // song entered its window, or ended before the clip looped
   });
-  video.addEventListener("ended", function () { if (!reel) audio.pause(); });
+  video.addEventListener("ended", function () {
+    if (reel) return;
+    if (tail && songRunsToEnd() && tail.start(wasLoop ? startOver : null)) return; // fade out over 3 more seconds
+    audio.pause();
+    if (wasLoop) startOver();
+  });
 }
 
 /* Applies a member's chosen trim points to a <video> WITHOUT re-encoding the
@@ -642,6 +706,9 @@ function wireReelPlayback(video, clips, durations) {
   }
 
   var swapper = createClipSwapper(video);
+  // finishHook() (set through onFinish): asked when the LAST clip ends; returns true if it takes over (the
+  // picture then holds on the last frame until restart() is called), false to loop straight back to clip 1.
+  var finishHook = null, holding = false;
   function preloadNext() {
     var n = (index + 1) % clips.length;
     swapper.preload(clips[n].url, clipStart(clips[n]));
@@ -652,6 +719,7 @@ function wireReelPlayback(video, clips, durations) {
   function watchEnd() {
     watchRaf = null;
     if (video.paused || swapper.busy()) return;
+    if (finishHook && index === clips.length - 1) return; // the last clip runs to its true end (a song fade-out may follow)
     var end = clipEnd(clips[index]);
     var limit = end !== null ? end : video.duration;
     if (isFinite(limit) && video.currentTime > 0.3 && limit - video.currentTime < 0.09) { advance(); return; }
@@ -678,8 +746,14 @@ function wireReelPlayback(video, clips, durations) {
   }
 
   function advance() {
+    if (index === clips.length - 1 && finishHook) {
+      if (holding) return;
+      if (finishHook()) { holding = true; if (!video.paused && !video.ended) video.pause(); return; }
+    }
     goToClip((index + 1) % clips.length);
   }
+  // Pressing play on a reel that has finished (and is holding) starts it over from clip 1.
+  video.addEventListener("play", function () { if (holding) { holding = false; goToClip(0); } });
 
   // Clip 1 is already loaded (its src was set when the slide/tile itself
   // was built) — just clamp its own start point the same way
@@ -696,6 +770,8 @@ function wireReelPlayback(video, clips, durations) {
     hasTimes: !!offsets,
     total: function () { return offsets ? offsets[offsets.length - 1] : null; },
     index: function () { return index; },
+    onFinish: function (fn) { finishHook = fn; },
+    restart: function () { holding = false; goToClip(0); },
     // Seconds into the whole reel (clip 1 starts at 0).
     time: function () {
       var base = offsets ? offsets[index] : 0;

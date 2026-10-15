@@ -12,6 +12,15 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-15 — Fade-out moved to AFTER the video (3-second tail)
+
+- Ken's correction: no fade while the video plays. The song now plays at full volume through the whole video; when the last frame is reached the picture holds on it and the song carries on for 3 more seconds, fading to silence (squared curve), then stops. Replaces the earlier "fade over the last 3 seconds of the song's stretch".
+- Where: upload preview, feed (single clip and reels), My uploads and member profile tiles. Shared helper `createSongTail` in js/supabaseClient.js; reels got `onFinish`/`restart` so the last clip holds and then loops back to clip 1. Feed single clips used the native `loop` attribute — it is switched off for music posts so the clip can reach its end, and the video is restarted by script after the tail (so a feed music post now rests ~3 s on its last frame before looping). Profile/member single tiles just stop at the end as before.
+- No tail (song ends with the video as before) when: the song was cut short before the video's end or is shorter than the video, the viewer has muted it, or the device ignores script volume (iPhones — the fade would be inaudible and would just add 3 s of full-volume song). Tail is dropped if the viewer presses play, scrubs, scrolls the post away, or leaves the tab.
+- Tested headlessly: upload preview (9 s reel, tail 1→0 over 3 s then silent), feed reel and single (hold, fade, loop with volume restored), profile-style sync (single, reel, scrub during tail stops song). Old trimmed single clips (trim_end set) still stop hard at their end.
+
+---
+
 ## 2026-10-14 (final 4) — More room under the music bar (phone edge-swipe zone)
 
 - Ken's phone: the music bar sat so close to the bottom edge that dragging it triggered Android's back/close swipe. Pulled everything up about 75 px (CSS) on a 393-wide phone: heading is one line ("🎬 3 videos · 19.7s", Change videos on the same line); "Keep my video's sound too (music softer)" is now just "Keep original sound" on one line; the song box no longer sits inside a second padded box and its "🎵 Music tracks" label is hidden once a song is chosen (shown again if the song is removed).
