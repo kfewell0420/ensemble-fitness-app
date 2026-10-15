@@ -12,6 +12,13 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-15 (iPhone top gap) — iPhone app: removed the doubled top space
+
+- Ken's first TestFlight screenshot from his real iPhone showed a big black gap above the Ensemble Fitness header (and a matching gap under the bottom menu). Cause: the iOS wrapper had `"contentInset": "always"` in `ensemble-fitness-mobile/capacitor.config.json`, which already pushes the page below the notch/status bar AND below the home bar, while our own CSS also adds `env(safe-area-inset-top/bottom)` (every page uses `viewport-fit=cover`). The phone's safe area was being counted twice. Changed iOS to `"contentInset": "never"` so only our CSS handles it. Android is unaffected (iOS-only setting). No website or `www/` file changed.
+- Not testable in the cloud sandbox (needs a real iOS WebView) — to be confirmed on Ken's iPhone and the Simulator.
+
+---
+
 ## 2026-10-15 (sign-up) — Date of birth: type it or tap the calendar
 
 - Ken's test sign-up on the Samsung: the date-of-birth calendar was hard to see and there was no easy way to type the birthday. login.html now shows a normal text box ("MM/DD/YYYY", number keypad, slashes added automatically as you type) with a bright orange 📅 button at the right end. Tapping the button opens the phone's own date picker (the real native date input sits invisibly on top of it, so it works on iPhone and Android with one tap); picking a date fills the text box, and typing a full real date fills the picker.
