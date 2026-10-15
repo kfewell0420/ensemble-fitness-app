@@ -12,6 +12,13 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-15 (late night) — Real food photo for Meal Prep; badge button under the title
+
+- Drawn salad icons kept not reading as food, so the Healthy Meal Prep banner, the meal-prep post heading now use Ken's own bowl photo (chicken, rice, corn, avocado, beans, slaw, carrots, pico) cropped to a circle: new file `assets/mealprep-plate.png` (128 px, 42 KB). **New file — must be copied into `www/assets/` for the phone app too (included in the zip).** Category icon on posts stays 🥗.
+- "💗 💍 🤝 ?" button now sits just under the title row at the right of the top bar (where Ken marked it), inside the header's existing bottom padding so the bar does not grow. On phones narrower than 400 px it tucks under the hearts. Banner title can no longer wrap to two lines on narrow phones ("Community picks" truncates instead).
+
+---
+
 ## 2026-10-15 (night) — Chicken Caesar salad icon; badge button back up in the top bar
 
 - Meal Prep icon redrawn again at Ken's direction: no plate, no white outline — just the food: a ruffled romaine bed with grilled chicken strips (grill marks), croutons, parmesan shavings and a Caesar drizzle. 34 px in the banner, 22 px in the meal-prep post heading.
