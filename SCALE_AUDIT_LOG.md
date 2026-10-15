@@ -12,6 +12,13 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-15 (night) — Chicken Caesar salad icon; badge button back up in the top bar
+
+- Meal Prep icon redrawn again at Ken's direction: no plate, no white outline — just the food: a ruffled romaine bed with grilled chicken strips (grill marks), croutons, parmesan shavings and a Caesar drizzle. 34 px in the banner, 22 px in the meal-prep post heading.
+- The "💗 💍 🤝 ?" button moved back into the phone top bar, right side between the title and the hearts (it cost a whole row when it sat above the meal prep banner). Same key opens on tap. Checked at 393 and 340 px wide.
+
+---
+
 ## 2026-10-15 (late) — Round plate for Healthy Meal Prep; badge key on the phone feed
 
 - Healthy Meal Prep used the 🍱 bento-box emoji (square, looked like sushi): the feed banner, the meal-prep post's heading, and the category icon. Banner and heading now use a small round plate drawing (white plate with greens, chicken, tomato, carrot and corn); the category icon is 🥗. Marketing site untouched (its one 🍱 is a sample card badge on healthy-meal-prep.html — not changed so no whole-site re-drop is needed; say the word if it should change too).
