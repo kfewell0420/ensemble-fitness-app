@@ -12,6 +12,14 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-15 (phone-app header) — Phone app only: more room for the reaction row
+
+- Ken's iPhone (TestFlight) showed the thumbs / heart / muscle / comment row under each post slightly cut off. feed.html now detects when it runs inside the phone app (Capacitor adds `ef-native` to the page; the website never gets it) and, only there: hides the two hearts, moves the "💗 💍 🤝 ?" pill onto the same line as "Ensemble Fitness" at the right edge, trims the bar's bottom padding, makes the Healthy Meal Preps pill shorter (smaller salad icon, less padding) and tightens the story row's spacing.
+- Measured at 393 px wide: the first post now starts 33 px higher than before, which is the room the reaction row needed. Website unchanged. Shared file, so it is mirrored in `www/feed.html`.
+- Companion change from earlier this evening: `capacitor.config.json` iOS `contentInset` "always" → "never" (fixed the doubled top gap; confirmed by Ken on his iPhone).
+
+---
+
 ## 2026-10-15 (iPhone top gap) — iPhone app: removed the doubled top space
 
 - Ken's first TestFlight screenshot from his real iPhone showed a big black gap above the Ensemble Fitness header (and a matching gap under the bottom menu). Cause: the iOS wrapper had `"contentInset": "always"` in `ensemble-fitness-mobile/capacitor.config.json`, which already pushes the page below the notch/status bar AND below the home bar, while our own CSS also adds `env(safe-area-inset-top/bottom)` (every page uses `viewport-fit=cover`). The phone's safe area was being counted twice. Changed iOS to `"contentInset": "never"` so only our CSS handles it. Android is unaffected (iOS-only setting). No website or `www/` file changed.
