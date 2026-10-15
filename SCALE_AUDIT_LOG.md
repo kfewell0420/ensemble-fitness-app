@@ -12,6 +12,13 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-15 (final) — Animated salad-bowl icon for Healthy Meal Prep (Ken picked option B)
+
+- Healthy Meal Prep banner and the meal-prep post heading now use a small drawn, animated teal bowl of salad (greens, chicken, avocado, tomato, corn) with steam rising, a gentle bob, and a glint on the chicken. Inline SVG + CSS (no image file); animation switches off for people who set "reduce motion". 38 px in the banner, 26 px in the heading.
+- Replaces the photo icon from the entry below — `assets/mealprep-plate.png` is no longer used or shipped (delete it from `assets/` and `www/assets/` if already copied).
+
+---
+
 ## 2026-10-15 (late night) — Real food photo for Meal Prep; badge button under the title
 
 - Drawn salad icons kept not reading as food, so the Healthy Meal Prep banner, the meal-prep post heading now use Ken's own bowl photo (chicken, rice, corn, avocado, beans, slaw, carrots, pico) cropped to a circle: new file `assets/mealprep-plate.png` (128 px, 42 KB). **New file — must be copied into `www/assets/` for the phone app too (included in the zip).** Category icon on posts stays 🥗.
