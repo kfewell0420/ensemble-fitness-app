@@ -12,6 +12,24 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-15 (new app icon)
+
+**Mobile app only: new heart-and-dumbbell app icon.** Swapped the old EF icon for the
+new heart + dumbbell logo Ken picked after testing with ~30 people. Files go in
+`ensemble-fitness-mobile/resources/` (project root, not `www/`):
+
+- `icon.png` (1024x1024, no transparency): iPhone app icon and older-Android icon.
+- `icon-foreground.png` + `icon-background.png`: Android adaptive icon layers (the heart
+  sits inside Android's safe zone so round/squircle masks never clip it).
+- `splash.png` / `splash-dark.png`: launch screen now shows the new heart on the same navy.
+- `store-listing/appstore-icon-1024.png` and `playstore-icon-512.png`: for the App Store
+  Connect and Google Play listing pages (upload by hand there; not part of the app build).
+
+After copying, run `npx @capacitor/assets generate ...` (same command as SETUP.md), then
+`npx cap sync`, bump the build number (iOS build 5), and archive/upload again. The app's
+in-page header logo (`assets/logo.png`) and website favicon are unchanged for now.
+
+---
 ## 2026-10-15 (phone-app header) — Phone app only: more room for the reaction row
 
 - Ken's iPhone (TestFlight) showed the thumbs / heart / muscle / comment row under each post slightly cut off. feed.html now detects when it runs inside the phone app (Capacitor adds `ef-native` to the page; the website never gets it) and, only there: hides the two hearts, moves the "💗 💍 🤝 ?" pill onto the same line as "Ensemble Fitness" at the right edge, trims the bar's bottom padding, makes the Healthy Meal Preps pill shorter (smaller salad icon, less padding) and tightens the story row's spacing.
