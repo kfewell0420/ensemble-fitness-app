@@ -157,9 +157,29 @@
   .mix-wave { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; display: none; }
   .mix-handle { flex: 0 0 16px; cursor: ew-resize; touch-action: none; background: rgba(255,255,255,0.92); display: flex; align-items: center; justify-content: center; }
   .mix-handle::after { content: ""; width: 3px; height: 16px; border-radius: 2px; background: #c9431a; }
-  @media (pointer: coarse) { .mix-handle { flex-basis: 24px; } .mix-music, .mix-video { height: 44px; } }
   .mix-handle-l { border-radius: 8px 0 0 8px; }
   .mix-handle-r { border-radius: 0 8px 8px 0; }
+  /* Touch screens (Ken's ask, Oct 2026): the song bar's grab handles used to be full-height tabs down
+     the left and right edges. On a phone the bar sits low on the screen, so a thumb on those edges
+     often ended up at the very bottom, where iOS's swipe-up (app switcher) takes over and the grab
+     failed. Now the two grips are slanted white tabs sitting on the TOP corners of the bar, each with a
+     slanted line in it: put a thumb on the top of the bar and slide left or right. Drag the middle of
+     the bar to slide the whole song. Same elements and ids as before, so all the drag code is unchanged.
+     Mouse/desktop keeps the original vertical handles. */
+  @media (pointer: coarse) {
+    .mix-music, .mix-video { height: 48px; }
+    .mix-handle {
+      position: absolute; top: 0; z-index: 3; width: 46px; max-width: 50%; height: 27px; flex: none;
+      background: #fff;
+    }
+    .mix-handle-l { left: 0; border-radius: 8px 0 0 0; clip-path: polygon(0 0, 100% 0, calc(100% - 15px) 100%, 0 100%); }
+    .mix-handle-r { right: 0; border-radius: 0 8px 0 0; clip-path: polygon(0 0, 100% 0, 100% 100%, 15px 100%); }
+    .mix-handle::after { width: 4px; height: 15px; border-radius: 2px; background: #c9431a; }
+    .mix-handle-l::after { transform: skewX(-16deg); margin-right: 9px; }
+    .mix-handle-r::after { transform: skewX(16deg); margin-left: 9px; }
+    /* the label moves to the lower half so the tabs never sit on top of it */
+    .mix-clip-body { align-items: flex-end; padding: 0 10px 5px; }
+  }
   .clip-tray { margin-top: 6px; }
   #musicSection { padding: 0 !important; border: 0 !important; background: none !important; margin-bottom: 0 !important; }
   #musicSection .field-label-row { margin-bottom: 6px; }

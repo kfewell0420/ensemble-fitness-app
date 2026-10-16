@@ -29,6 +29,16 @@ uploading (Android fine).
 - Checked: page scripts parse cleanly; a simulated iOS-style audio element (no data until play,
   seeks ignored before load) and an Android-style one both land the song at the exact spot.
   NOT tested on a real iPhone yet. Ken/tester to confirm on TestFlight.
+- Same file, Ken's ask: the song bar's grab handles (to shorten the song) are redesigned for touch
+  screens. They used to be full-height tabs down the left and right edges; on a phone the bar sits
+  low, so a thumb often landed at the bottom of the screen where iOS's swipe-up (app switcher) takes
+  over and the grab failed. Now they are two slanted white tabs on the TOP corners of the bar
+  (46 x 27 px each, with a slanted grip line), and the bar is 48 px tall. Drag a tab to trim the
+  front / cut the end of the song; drag the middle of the bar to slide the whole song. The song's
+  label moved to the lower half so the tabs never cover it. Same element ids, so the drag code is
+  unchanged. If a song is cut very short the tabs each take half the bar. Mouse/desktop
+  (fine pointer) keeps the original vertical handles. Checked in a touch-style render at 390 px;
+  the real feel needs a thumb on an iPhone.
 - NOT changed: the feed and profile playback (`wireFeedSound` / `wireNarrationSync` in
   `js/supabaseClient.js`) have the same "seek before the song has loaded" habit but use a
   slower check; no one has reported a problem there. Revisit only if a tester does.
