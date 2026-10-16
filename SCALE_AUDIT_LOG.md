@@ -12,6 +12,27 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-17 (upload preview: song stutter on iPhone)
+
+Ken's tester, on an iPhone, heard the song glitch and never "lock" to the video while
+uploading (Android fine).
+
+- Cause (in `upload.html`, `mixTick`): the preview checks every frame whether the song is more
+  than 0.35 s off the picture and, if so, jumps it back. On iOS a song that was just started is
+  still buffering and its clock lags, so it kept looking "off" and kept being jumped back; each
+  jump restarted buffering (the stutter). iOS also ignores a seek made before the file has
+  loaded, and doesn't load it until play() is called.
+- Fix, upload preview only: a song now starts by calling play() first and placing it at the
+  right spot once its metadata loads (`startMusicInSync`); afterwards drift is only corrected
+  when the song has buffered, isn't mid-seek, is off by more than 0.5 s, and at most about
+  once a second. Android takes the same path with no visible difference.
+- Checked: page scripts parse cleanly; a simulated iOS-style audio element (no data until play,
+  seeks ignored before load) and an Android-style one both land the song at the exact spot.
+  NOT tested on a real iPhone yet. Ken/tester to confirm on TestFlight.
+- NOT changed: the feed and profile playback (`wireFeedSound` / `wireNarrationSync` in
+  `js/supabaseClient.js`) have the same "seek before the song has loaded" habit but use a
+  slower check; no one has reported a problem there. Revisit only if a tester does.
+
 ## 2026-10-17 (profile page: pills + 3-across uploads)
 
 Ken's ask: testers don't want one long scrolling profile. They want a short profile

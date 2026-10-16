@@ -1725,6 +1725,24 @@
   // start of its bar, hold it to "start + time into the bar", and cut it at the
   // end of the bar. Runs every frame so the song stays tight against the picture.
   var mixRaf = null;
+  // iPhone fix (Oct 2026): the tick below runs every frame. On iOS a song that was just started is still
+  // buffering and its clock lags the picture, so "off by more than 0.35 s -> jump it back" fired again and
+  // again, each jump restarting the buffering: a stutter that never locked on. Android never showed it.
+  // Now (1) a song is started the iPhone-safe way -- press play first, then place it once it has loaded
+  // (iOS ignores a seek made before the file is loaded, and won't load it until play), and (2) drift is
+  // only corrected once the song has buffered, is not mid-jump, and at most about once a second.
+  var musicStarting = false, musicLastFix = 0;
+  function musicWantNow() { return musicStartPicker.getValue() + Math.max(0, reelNow() - mDelay); }
+  function startMusicInSync() {
+    var a = musicPreviewAudio;
+    if (musicStarting) return;
+    function place() { musicStarting = false; try { a.currentTime = musicWantNow(); } catch (e) {} musicLastFix = performance.now(); }
+    if (a.readyState >= 1) { place(); a.play().catch(function () {}); return; }
+    musicStarting = true;
+    function onMeta() { a.removeEventListener("loadedmetadata", onMeta); place(); }
+    a.addEventListener("loadedmetadata", onMeta);
+    a.play().catch(function () { a.removeEventListener("loadedmetadata", onMeta); musicStarting = false; });
+  }
   function mixTick() {
     mixRaf = null;
     if (trimPreviewVideo.paused && !(pvSwapper && pvSwapper.busy())) return;
@@ -1739,10 +1757,11 @@
       if (t >= mDelay - 0.02 && t < mDelay + mLen) {
         var want = s + Math.max(0, t - mDelay);
         if (musicPreviewAudio.paused) {
+          startMusicInSync();
+        } else if (!musicStarting && !musicPreviewAudio.seeking && musicPreviewAudio.readyState >= 3 &&
+                   Math.abs(musicPreviewAudio.currentTime - want) > 0.5 && performance.now() - musicLastFix > 1000) {
           try { musicPreviewAudio.currentTime = want; } catch (e) {}
-          musicPreviewAudio.play().catch(function () {});
-        } else if (Math.abs(musicPreviewAudio.currentTime - want) > 0.35) {
-          try { musicPreviewAudio.currentTime = want; } catch (e) {}
+          musicLastFix = performance.now();
         }
       } else if (!musicPreviewAudio.paused && !(t >= vidDur() - 0.15 && songRunsToVideoEnd())) { // (not at the very end: the fade-out tail takes over)
         musicPreviewAudio.pause();
