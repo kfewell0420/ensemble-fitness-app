@@ -1905,12 +1905,14 @@
       // gets well into a long intro: the strip stands for about 24 s of song (never less than the
       // video), i.e. roughly 8x for a 3-second clip, 1x once the video itself is that long.
       var K = Math.max(1, Math.max(vd, Math.min(sd || 0, 24)) / (vd || 1));
-      d = Math.max(d, -D.p0, -D.s0 / K);
-      d = Math.min(d, D.l0 - Math.min(1, D.l0));
-      if (sd) d = Math.min(d, Math.max(0, (sd - 1 - D.s0) / K));
-      mDelay = D.p0 + d;
-      musicStartPicker.setValue(round1(D.s0 + d * K));
-      mLenWanted = D.l0 - d;
+      var dpos = Math.max(0, d), dneg = Math.min(0, d);
+      dpos = Math.min(dpos, D.l0 - Math.min(1, D.l0));
+      if (sd) dpos = Math.min(dpos, Math.max(0, (sd - 1 - D.s0) / K));
+      dneg = Math.max(dneg, -D.s0 / K);          // swiping back: the song can't go before its beginning
+      var bar = dpos + Math.max(dneg, -D.p0);    // the bar's left edge follows the finger (it can't leave the video's start)
+      mDelay = D.p0 + bar;
+      musicStartPicker.setValue(round1(D.s0 + (dpos + dneg) * K));
+      mLenWanted = (D.full && bar <= 0) ? Infinity : D.l0 - bar;
     } else if (D.mode === "right") {
       var maxL = Math.min(vd - D.p0, sd ? sd - D.s0 : Infinity);
       mLenWanted = Math.min(Math.max(Math.min(1, maxL), D.l0 + d), maxL);
@@ -1922,7 +1924,7 @@
     if (!mixDrag || e.pointerId !== mixDrag.pid) return;
     var D = mixDrag;
     mixDrag = null;
-    if (D.mode === "left" && mDelay !== D.p0) {
+    if (D.mode === "left") {
       mixClip.classList.add("mix-snap");
       mDelay = D.p0;
       // the back end stays locked to the video: it runs as long as the video does (or the song
