@@ -12,6 +12,17 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-17 (upload page: left song-bar tab shrinks the bar)
+
+Testers found the left tab on the song bar confusing: on phones it slid the song under a bar
+that stayed the same size. Now (phones and desktop alike) dragging the left tab makes the orange
+bar visibly shrink from the left as the finger moves, with the song's start moving the same
+amount; on release the bar slides back to where it started (the front of the video unless the
+member had moved it) and keeps the trimmed song. The right tab still shortens from the end.
+Removed the phone-only "slide the song at 8x speed" mode; bigger jumps into a long song use the
+"Start the song at" slider. `upload.html` only; fade untouched. Checked with simulated touch drags
+(bar 100% -> 94% -> 86% -> 78% while dragging, back to left 0% on release), no script errors.
+
 ## 2026-10-17 (profile page: light TikTok-style look, Option A)
 
 Ken picked the lighter mockup. `profile.html` only, phones (<= 720px) only; desktop is

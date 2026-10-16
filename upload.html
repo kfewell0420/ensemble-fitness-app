@@ -151,6 +151,7 @@
   .mix-filmstrip { display: flex; height: 100%; pointer-events: none; }
   .mix-filmstrip img { flex: 1 1 0; min-width: 0; height: 100%; object-fit: cover; opacity: 0.9; }
   .mix-music { height: 38px; }
+  .mix-clip.mix-snap { transition: left 0.22s ease-out; }
   .mix-clip { position: absolute; top: 0; bottom: 0; display: flex; border-radius: 8px; background: linear-gradient(90deg, #ff6a1a, #c9431a); box-shadow: 0 0 0 1.5px rgba(255,255,255,0.55) inset; }
   .mix-clip-body { position: relative; flex: 1; min-width: 0; display: flex; align-items: center; padding: 0 6px; cursor: grab; touch-action: none; overflow: hidden; }
   .mix-clip-label { position: relative; font-size: 12px; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; text-shadow: 0 1px 3px rgba(0,0,0,0.6); max-width: 100%; padding: 1px 7px; border-radius: 999px; background: rgba(0,0,0,0.38); }
@@ -1895,19 +1896,10 @@
     var D = mixDrag;
     if (D.mode === "move") {
       mDelay = Math.min(Math.max(0, D.p0 + d), Math.max(0, vd - D.l0));
-    } else if (D.mode === "left" && D.touch && sd) {
-      // Finger on a phone: the strip is only a few hundred pixels wide, so at the
-      // "strip = the video" scale it takes many swipes to get through a long song
-      // intro. Here the strip width stands for up to 8x the video's length (the whole
-      // song when it is that short), so one swipe can travel a long way. The song start moves under the bar (the bar
-      // stays put; the readout shows where in the song you are). Half-second steps.
-      var span = Math.max(vd, Math.min(sd, 40)); // strip width = about 40 s of song (never less than the video), the same feel whether it is one clip or ten
-      var ds = Math.round(((e.clientX - D.x0) / D.w * span) * 2) / 2;
-      var ns = Math.min(Math.max(0, D.s0 + ds), Math.max(0, sd - 1));
-      musicStartPicker.setValue(ns);
-      mLenWanted = D.l0;
     } else if (D.mode === "left") {
-      // trim the front: song start and bar start slide together, bar shrinks/grows
+      // trim the front: the bar's left edge follows the finger and the bar shrinks; the song's
+      // start moves the same amount. On release the bar slides back to where it started (the
+      // front of the video unless it was moved), so you SEE the trim, then it settles.
       d = Math.max(d, -Math.min(D.p0, D.s0));
       d = Math.min(d, D.l0 - Math.min(1, D.l0));
       mDelay = D.p0 + d;
@@ -1922,7 +1914,14 @@
   }
   function mixPointerUp(e) {
     if (!mixDrag || e.pointerId !== mixDrag.pid) return;
+    var D = mixDrag;
     mixDrag = null;
+    if (D.mode === "left" && mDelay !== D.p0) {
+      mixClip.classList.add("mix-snap");
+      mDelay = D.p0;
+      clampWindow();
+      setTimeout(function () { mixClip.classList.remove("mix-snap"); }, 320);
+    }
     hideBubbleSoon();
     scheduleReplay();
   }
