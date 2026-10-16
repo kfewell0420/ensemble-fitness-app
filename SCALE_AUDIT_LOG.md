@@ -42,6 +42,12 @@ uploading (Android fine).
 - Same file, Ken's ask: the "Choose a song" bar (`.mt-choose`) is now a bright white bar with black
   lettering (and a darker orange "3 tracks" count) so it no longer blends into the brown panel. The
   state after a song is picked (orange-tinted card with Change / remove) is unchanged.
+- 2026-10-17 follow-up: the first fix above did NOT cure the iPhone stutter (Ken tested in Safari on
+  the live site: the song plays 3-4 beats, stops, plays 3-4 beats, stops...). Added a hidden
+  troubleshooting view to `upload.html`: open `upload.html?debug=1` and an on-screen log prints every
+  play / pause / seek on the song and video with the code line that asked for it, plus the song/video
+  times and the delay / length / start values the mixer is using. Does nothing without `?debug=1`.
+  Next: read Ken's screenshot, then fix the real cause. Remove the debug block once solved.
 - NOT changed: the feed and profile playback (`wireFeedSound` / `wireNarrationSync` in
   `js/supabaseClient.js`) have the same "seek before the song has loaded" habit but use a
   slower check; no one has reported a problem there. Revisit only if a tester does.
