@@ -12,6 +12,33 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-17 (profile page: pills + 3-across uploads)
+
+Ken's ask: testers don't want one long scrolling profile. They want a short profile
+with small pills (like TikTok's tab row) to open each section, and "My uploads" as a
+tight thumbnail grid instead of big stacked players.
+
+- `profile.html` only. On phone widths (max 720px) the page now opens short: photo +
+  at-a-glance line, followers/following counts, then a pill row: Uploads (default),
+  Music (only if the member has songs), Details, Messages, Blocked, Payouts (only if
+  payouts apply), Security (password + delete account). Each pill just shows one of the
+  EXISTING cards; no card, id, or save/load code was renamed or removed. Wider screens
+  are unchanged (pills hidden, all cards stacked as before).
+- "My uploads" is a 3-across, 3:4 thumbnail grid on phones. Tap a thumbnail to open it
+  full width with its own player, music credit, reject reason and delete button; tap Close
+  (or another thumbnail, or a pill) to put it back. The existing video/music/narration
+  wiring is untouched: closed tiles just have their controls hidden and pointer events off.
+- Only plain CSS/JS that works on iOS 15.6+ Safari and the in-app WebView. Checked at
+  390 px wide with sample tiles (no page errors) and at 1200 px (pills hidden, all cards shown).
+- Also checked: no broken page links across the site; `admin.html`/`approve.html` are not in
+  the mobile www. Known/unchanged: `css/fonts.css` and `js/vendor/supabase.js` are not on disk in
+  the sandbox copy; every page falls back to the CDN for these.
+- Music sync: NOT changed yet. Reading the code, no audio seek (`audio.currentTime = ...` in
+  `wireNarrationSync` / `wireFeedSound`) waits for the audio's metadata to load, and iOS often
+  drops a seek made before that, so on iPhones a song may start from 0:00 instead of its chosen
+  start point until the feed's drift check snaps it into place. Unconfirmed; waiting on the
+  tester's specifics before touching shared playback code.
+
 ## 2026-10-17 (feed videos: more headroom, 3:4 frame to try)
 
 Ken's ask: heads were cut off and overhead dumbbells disappeared in feed
