@@ -12,6 +12,14 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-17 (upload page: chosen-song pill shrunk to one line)
+
+Space matters on phones (especially iPhone). The white chosen-song pill was about 100px tall
+with the title wrapping to two lines. It is now one row (~40px): small round initial, the song
+title on ONE line (a long "artist: song" ends in "..."), Change, and X. The length (e.g. 3:09)
+shows only on wider screens; on phones the title gets that room. CSS plus one line of JS in
+`upload.html`; nothing else touched.
+
 ## 2026-10-17 (upload page: chosen-song pill is white too)
 
 After picking a song, the pill that shows it (title, length, Change, X) was a dark card with an
