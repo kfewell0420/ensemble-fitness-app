@@ -12,6 +12,13 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-17 (upload page: chosen-song pill is white too)
+
+After picking a song, the pill that shows it (title, length, Change, X) was a dark card with an
+orange outline. It is now white with black text, matching the white "Choose a song" bar:
+white background and shadow, black title, grey length, white "Change" button with a light grey
+outline, light grey X. CSS only, `upload.html` (the `.mt-selected` block).
+
 ## 2026-10-17 (upload page: left song-bar tab shrinks the bar)
 
 Testers found the left tab on the song bar confusing: on phones it slid the song under a bar
