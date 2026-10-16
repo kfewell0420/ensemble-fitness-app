@@ -12,7 +12,7 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
-## 2026-10-16 (feed videos: more headroom, 4:5 frame)
+## 2026-10-16 (feed videos: more headroom, 5:6 frame)
 
 Ken's ask: heads were cut off and overhead dumbbells disappeared in feed
 workout videos; the post frame must stay filled edge to edge (a contain /
@@ -25,15 +25,14 @@ blurred-bars version was tried and rejected: the empty sides looked wrong).
   to a bounded card (and the later 4:5 -> 1:1 -> 9:10 shrinking to keep the
   like row on screen) is what introduced the crop.
 - `feed.html`: `.rp-media video { object-position: center 30%; }` — still
-  fills the frame, same frame size, but the crop window is nudged up so more
+  fills the frame, with the crop window nudged up so more
   headroom is kept (floor is cropped instead of heads). Photos unchanged.
 - Same `feed.html` goes to `ensemble-fitness-mobile/www/` (it was identical
   to the website copy before this change).
-- Ken then chose 4:5 ("so that we can keep up with Instagram"): phone
-  `.rp-media` and `.rp-skeleton-media` go from 9:10 to 4:5, so a 9:16 video
-  shows about 71% of its height instead of 63%. About 55px taller on phones,
-  so the like/comment row may sit right at the bottom nav bar on shorter
-  phones; if that annoys, 5:6 is the fallback (68%).
+- Ken tried 4:5 (71%) first; it didn't look as good as hoped, so the phone
+  frame is now 5:6: `.rp-media` and `.rp-skeleton-media` go from 9:10 to 5:6,
+  so a 9:16 video shows about 68% of its height instead of 63%. About 35px
+  taller on phones. Desktop stays 4:5.
 
 ## 2026-10-16 (app icon: larger heart)
 
