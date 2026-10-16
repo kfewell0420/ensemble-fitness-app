@@ -12,6 +12,26 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-17 (profile page: light TikTok-style look, Option A)
+
+Ken picked the lighter mockup. `profile.html` only, phones (<= 720px) only; desktop is
+unchanged (dark, every card stacked). Checked at 390px and 1200px, no script errors.
+
+- Header: large photo with an orange-to-pink ring and orange "+" badge, display name, small
+  chips (wake time / ZIP / looking for / height), Following / Followers / Uploads counts, bio,
+  and an "Edit profile" button (turns into "Done"; opens/closes the Details form).
+- The pills became an icon tab row (grid, music, messages, blocked, [payouts], security) with an
+  orange underline on the open one. Music and Payouts still only appear for members who have them.
+- Every section card, the form, and the pop-ups use a light skin on phones. 3-across uploads
+  grid unchanged (2px gaps). Friendly empty-state icons on uploads / messages / blocked.
+- New light bottom bar on the profile page (Home, Finder, Post, Profile, Products), same links
+  as the feed's bar. Phones only.
+- Technique: first card is `display: contents` on phones so its pieces can be ordered with the
+  stats and tabs; all ids and loading/save/upload logic untouched. A small read-only script copies
+  name / bio / chips / upload count into the header (`window.pfSync`).
+- Empty uploads text now says "tap Post below" (it said "above").
+- Not touched: feed, upload page, supabaseClient.js (fade kept).
+
 ## 2026-10-17 (iPhone fit: upload page + same compact header everywhere)
 
 Ken tested on an iPhone in Safari (the live website) and found three layout problems. (The music in

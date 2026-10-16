@@ -58,21 +58,8 @@
   /* ---- Profile pills + TikTok-style 3-across uploads (phones only) ---------------------
      Only plain CSS that iOS 15+ Safari and the in-app WebView both support. Wider screens
      never see any of this: the pill row is hidden and every card shows, as before. */
-  .pf-pills { display: none; }
+  .pf-pills, .pf-bio, .pf-actions, .pf-stat-uploads, .pf-tabbar, .pf-chips, .pf-name { display: none; }
   @media (max-width: 720px) {
-    .pf-pills {
-      display: flex; gap: 8px; overflow-x: auto; -webkit-overflow-scrolling: touch;
-      margin: 0 0 12px; padding: 2px 2px 6px; scrollbar-width: none;
-    }
-    .pf-pills::-webkit-scrollbar { display: none; }
-    .pf-pill {
-      flex: 0 0 auto; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.16);
-      border-radius: var(--radius-pill); padding: 8px 16px; font-size: 13px; font-weight: 600;
-      color: var(--muted-invert); cursor: pointer; white-space: nowrap; font-family: inherit;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .pf-pill.active { background: var(--accent-tint); border-color: var(--accent); color: #fff; }
-
     /* only the chosen pill's card(s) show */
     .pf-panel { display: none !important; }
     .pf-panel.pf-on { display: block !important; }
@@ -80,19 +67,13 @@
     .pf-d { display: none; }
     body.pf-tab-details .pf-d { display: block; }
     body.pf-tab-details form.pf-d { display: block; }
-    .card .avatar-row { margin-bottom: 4px; }
-    body:not(.pf-tab-details) #avatarStatusSub { display: none; }
-    body.pf-tab-details .card .avatar-row { margin-bottom: 24px; }
-    /* followers / following: just the two counts, no heading or blurb */
-    .pf-network { min-height: 0 !important; padding: 8px 16px !important; }
     .pf-network .eyebrow, .pf-network h2, .pf-network .card-sub { display: none; }
-    .pf-network .follow-stats-row { margin: 0; }
 
     /* My uploads: a tight 3-across thumbnail grid. Tap a thumbnail to open it full width
        (with its own player, music credit and delete button); tap the X to close it. */
-    .pf-uploads { padding: 8px 4px 4px; background: none; border: 0; box-shadow: none; }
+    .pf-uploads { padding: 2px; background: none; border: 0; box-shadow: none; }
     .pf-uploads .eyebrow, .pf-uploads h2, .pf-uploads .card-sub { display: none; }
-    .pf-uploads #mediaGrid { grid-template-columns: repeat(3, 1fr); gap: 3px; }
+    .pf-uploads #mediaGrid { grid-template-columns: repeat(3, 1fr); gap: 2px; }
     .pf-uploads .media-tile-wrap { gap: 0; }
     .pf-uploads .media-tile { aspect-ratio: 3 / 4; border-radius: 4px; border: 0; }
     .pf-uploads .media-tile .kind-badge { top: 4px; left: 4px; font-size: 8.5px; padding: 2px 5px; }
@@ -125,12 +106,150 @@
   }
 </style>
 
+<style>
+/* ======================================================================
+   Light "TikTok-style" profile (phones only, <= 720px). Ken's pick, Oct 2026: Option A.
+   Wider screens never see any of this: the page keeps its dark look and every card stacked.
+   The first card becomes display:contents on phones so its photo row, bio and edit button can
+   be ordered together with the stats and tab row below it. All existing ids/logic are untouched.
+   ====================================================================== */
+@media (max-width: 720px) {
+  body {
+    background: #faf8f5; color: #16181d;
+    --muted-invert: #5f6470; --faint-invert: #8a8f99;
+  }
+  .app-nav { background: #fff; border-bottom: 1px solid #ece7e0; padding: calc(10px + env(safe-area-inset-top, 0px)) 16px 10px; }
+  .app-brand { color: #16181d; font-size: 17px; }
+  .app-shell { display: flex; flex-direction: column; max-width: none; padding: 0 0 calc(96px + env(safe-area-inset-bottom, 0px)); }
+  .app-shell > .card:first-child { display: contents; }
+  .pf-x { display: none !important; }
+
+  /* order on the page */
+  .avatar-row { order: 1; }
+  .pf-network { order: 2; }
+  .pf-bio { order: 3; }
+  .pf-actions { order: 4; }
+  .pf-pills { order: 5; }
+  #profileMsg, #profileForm, .pf-panel { order: 6; }
+  .signout-mobile-card { order: 7; }
+
+  /* photo + name + chips */
+  .avatar-row { padding: 14px 16px 0; margin: 0; gap: 16px; align-items: center; }
+  .avatar-wrap { padding: 4px; border-radius: 50%; background: linear-gradient(135deg, #ff7a1a, #ff3d68); }
+  .avatar-row .avatar-circle { width: 88px; height: 88px; font-size: 32px; background: #fff; color: #ff5a1f; border: 3px solid #fff; }
+  .avatar-circle-uploadable:hover, .avatar-circle-uploadable:focus-visible { box-shadow: none; transform: none; }
+  .avatar-upload-badge {
+    right: -2px; bottom: 0; width: 26px; height: 26px; border-radius: 50%; background: #ff5a1f; color: #fff;
+    display: flex; align-items: center; justify-content: center; font-size: 19px; font-weight: 800; line-height: 1;
+    border: 3px solid #faf8f5; text-shadow: none; box-sizing: content-box; margin: 0;
+  }
+  .pf-ident { flex: 1; min-width: 0; }
+  .pf-name { display: block; font-family: "Poppins", "Inter", sans-serif; font-weight: 800; font-size: 22px; line-height: 1.15; letter-spacing: -0.01em; color: #16181d; word-break: break-word; }
+  .pf-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .pf-chips:empty { display: none; }
+  .pf-chip { font-size: 12px; font-weight: 600; padding: 4px 9px; border-radius: 999px; background: #fff1e6; color: #b4410f; }
+  #avatarStatusLabel, #avatarStatusSub, #profileGlance { display: none !important; }
+  #avatarStatusLabel.pf-note { display: block !important; font-size: 12px; font-weight: 700; color: #b4410f; margin-top: 6px; }
+
+  /* stats */
+  .card.pf-network { background: none; border: 0; border-radius: 0; padding: 16px 16px 0; margin: 0; min-height: 0; }
+  .pf-network .follow-stats-row { gap: 26px; margin: 0; }
+  #followingStat { order: 1; } #followersStat { order: 2; } .pf-stat-uploads { order: 3; display: block; }
+  .pf-network .follow-stats-row { align-items: flex-start; }
+  .follow-stat { text-align: left; display: block; line-height: 1.3; align-self: flex-start; }
+  .follow-stat span { display: block; }
+  .follow-stat strong { font-size: 19px; font-weight: 800; color: #16181d; }
+  .follow-stat span { font-size: 12.5px; font-weight: 600; color: #6b6f78; }
+  .follow-stat:hover strong { color: #ff5a1f; }
+
+  .pf-bio { display: block; padding: 12px 16px 0; font-size: 14px; line-height: 1.4; color: #2a2d35; word-break: break-word; }
+  .pf-bio:empty { display: none; }
+  .pf-actions { display: block; padding: 14px 16px 0; }
+  .pf-actions .btn { width: 100%; border-radius: 12px; padding: 11px 0; font-size: 14px; }
+  .pf-actions .btn.pf-editing { background: #fff; color: #16181d; border: 1px solid #d9d2c7; }
+
+  /* icon tab row */
+  .pf-pills { display: flex; margin: 14px 0 0; padding: 0; gap: 0; overflow: visible; border-bottom: 1px solid #ece7e0; }
+  .pf-pill {
+    flex: 1 1 0; min-width: 0; background: none; border: 0; border-bottom: 3px solid transparent; border-radius: 0;
+    padding: 10px 0 8px; font-size: 19px; line-height: 1; color: #16181d; opacity: 0.45; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; font-family: inherit; -webkit-tap-highlight-color: transparent;
+  }
+  .pf-pill svg { display: block; }
+  .pf-pill.active { opacity: 1; border-bottom-color: #ff5a1f; background: none; color: #16181d; }
+  .pf-pill-details { display: none !important; }
+
+  /* light cards for every section */
+  .card.pf-panel:not(.pf-uploads), #profileForm {
+    background: #fff; border: 1px solid #ece7e0; border-radius: 16px; margin: 14px 16px 0; padding: 16px; min-height: 0; box-shadow: none;
+  }
+  #profileMsg { margin: 12px 16px 0; }
+  body.pf-tab-details .form-msg.pf-d:not(.show) { display: none; }
+  .pf-panel h2, .pf-panel h3 { color: #16181d; }
+  .pf-panel .eyebrow, .simple-modal .eyebrow { color: #c2410c; }
+  .pf-panel p, .pf-panel .card-sub { color: #5f6470; }
+  .field label, #myMusicList label { color: #4b5060; }
+  #myMusicList label { display: block; font-size: 13px; font-weight: 700; margin: 10px 0 4px; }
+  .field input, .field textarea, .field select, #myMusicList input, #myMusicList select, .simple-modal input, .simple-modal textarea {
+    background: #faf8f5; border: 1px solid #e3ddd4; color: #16181d;
+  }
+  #myMusicList input, #myMusicList select { width: 100%; border-radius: 10px; padding: 10px 12px; font-family: inherit; font-size: 14px; }
+  .field input::placeholder, .field textarea::placeholder, .simple-modal input::placeholder { color: #9a9fa8; }
+  .field input:focus, .field textarea:focus, .field select:focus { border-color: #ff5a1f; }
+  .btn-ghost { background: #fff; border: 1px solid #d9d2c7; color: #16181d; }
+  .btn-danger { background: #fdecea; color: #c92a1d; border: 1px solid #f3b8b2; }
+  .btn-primary:disabled { background: #ece7e0; color: #8a8f99; }
+  .form-msg.error { background: #fdecea; color: #b42318; }
+  .form-msg.success { background: #e8f7ef; color: #166a43; }
+  .password-toggle { color: #5f6470; }
+  .password-toggle:hover, .password-toggle:focus { color: #16181d; }
+  .member-row { border-bottom-color: #ece7e0; }
+  .member-row-clickable:hover, .member-row-clickable:focus-visible { background: #faf8f5; }
+  .member-row .avatar-circle { background: #fff1e6; color: #b4410f; border: 0; }
+  .member-row-meta strong { color: #16181d; }
+  .inbox-item { border-bottom-color: #ece7e0; }
+  .inbox-item-name { color: #16181d; }
+  #myMusicList > div { border-top-color: #ece7e0 !important; }
+  #payoutsSteps ol { color: #5f6470 !important; }
+  #payoutsSteps p { color: #9a5b00 !important; }
+
+  /* friendly empty states */
+  .pf-empty-art::before { content: attr(data-art); display: block; font-size: 44px; line-height: 1.1; margin-bottom: 8px; }
+  .pf-uploads .empty-state { padding: 40px 24px; }
+
+  .signout-mobile-card { background: none; border: 0; padding: 0; margin: 22px 16px 0; }
+
+  /* pop-ups follow the same light look */
+  .simple-modal-overlay { background: rgba(22, 24, 29, 0.45); }
+  .simple-modal { background: #fff; border-color: #ece7e0; color: #16181d; }
+  .simple-modal h3, .simple-modal strong { color: #16181d; }
+  .simple-modal label { color: #4b5060; }
+  .simple-modal-close { background: #f0ece6; color: #16181d; }
+  .simple-modal-close:hover { background: #e6e0d7; }
+
+  /* bottom tab bar (same five places as the feed's) */
+  .pf-tabbar {
+    display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; background: #fff;
+    border-top: 1px solid #ece7e0; padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .pf-tab { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 4px; color: #6b6f78; -webkit-tap-highlight-color: transparent; }
+  .pf-tab-icon { font-size: 22px; line-height: 1; height: 30px; display: flex; align-items: center; justify-content: center; }
+  .pf-tab-label { font-size: 10.5px; font-weight: 600; }
+  .pf-tab:not(.active):not(.pf-tab-post) .pf-tab-icon { opacity: 0.7; }
+  .pf-tab.active { color: #ff5a1f; }
+  .pf-tab-post .pf-tab-icon {
+    background: linear-gradient(135deg, #ff7a1a, #ff3d68); color: #fff; border-radius: 11px; width: 44px; height: 30px;
+    text-align: center; font-weight: 800; font-size: 22px;
+  }
+}
+</style>
+
 <div class="app-shell">
 
   <div class="card">
-    <div class="eyebrow pf-d">Your Profile</div>
-    <h2 class="pf-d">Profile details</h2>
-    <p class="card-sub pf-d">This is what shows once your account is live in the app.</p>
+    <div class="eyebrow pf-x">Your Profile</div>
+    <h2 class="pf-x">Profile details</h2>
+    <p class="card-sub pf-x">This is what shows once your account is live in the app.</p>
 
     <div class="avatar-row">
       <!-- Ken's ask (Oct 2026): a real "+" badge, same pattern Instagram
@@ -154,12 +273,17 @@
         <span class="avatar-upload-badge" id="avatarUploadBadge" aria-hidden="true">+</span>
       </div>
       <input type="file" id="avatarFileInput" accept="image/*" style="display:none;" />
-      <div>
+      <div class="pf-ident">
+        <div class="pf-name" id="pfName"></div>
+        <div class="pf-chips" id="pfChips"></div>
         <div style="font-weight:700; font-size:14.5px; margin-bottom:2px;" id="avatarStatusLabel">No profile photo yet</div>
         <span style="font-size:12.5px; color:var(--faint-invert);" id="avatarStatusSub">Tap the circle to upload a photo — it'll appear here right away.</span>
         <div id="profileGlance" style="display:none; margin-top:8px; font-size:13px; color:var(--muted-invert); font-weight:600;"></div>
       </div>
     </div>
+
+    <div class="pf-bio" id="pfBio"></div>
+    <div class="pf-actions"><button type="button" class="btn btn-primary" id="pfEditBtn">Edit profile</button></div>
 
     <div class="form-msg pf-d" id="profileMsg"></div>
 
@@ -213,6 +337,10 @@
         <strong id="followingCount">0</strong>
         <span>Following</span>
       </button>
+      <div class="follow-stat pf-stat-uploads">
+        <strong id="pfUploadsCount">0</strong>
+        <span>Uploads</span>
+      </div>
     </div>
   </div>
 
@@ -222,13 +350,13 @@
        below); wider screens still show everything stacked, exactly as before. Nothing is
        removed or renamed -- each pill just shows one of the existing cards. -->
   <div class="pf-pills" id="pfPills" role="tablist">
-    <button type="button" class="pf-pill active" data-pf="uploads" role="tab">Uploads</button>
-    <button type="button" class="pf-pill" data-pf="music" id="pfPillMusic" role="tab" style="display:none;">Music</button>
-    <button type="button" class="pf-pill" data-pf="details" role="tab">Details</button>
-    <button type="button" class="pf-pill" data-pf="messages" role="tab">Messages</button>
-    <button type="button" class="pf-pill" data-pf="blocked" role="tab">Blocked</button>
-    <button type="button" class="pf-pill" data-pf="payouts" id="pfPillPayouts" role="tab" style="display:none;">Payouts</button>
-    <button type="button" class="pf-pill" data-pf="security" role="tab">Security</button>
+    <button type="button" class="pf-pill active" data-pf="uploads" role="tab" aria-label="Uploads" title="Uploads"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><g fill="currentColor"><rect x="3" y="3" width="5" height="5" rx="1"/><rect x="9.5" y="3" width="5" height="5" rx="1"/><rect x="16" y="3" width="5" height="5" rx="1"/><rect x="3" y="9.5" width="5" height="5" rx="1"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/><rect x="16" y="9.5" width="5" height="5" rx="1"/><rect x="3" y="16" width="5" height="5" rx="1"/><rect x="9.5" y="16" width="5" height="5" rx="1"/><rect x="16" y="16" width="5" height="5" rx="1"/></g></svg></button>
+    <button type="button" class="pf-pill" data-pf="music" id="pfPillMusic" role="tab" aria-label="My music" title="My music" style="display:none;">🎵</button>
+    <button type="button" class="pf-pill" data-pf="messages" role="tab" aria-label="Messages" title="Messages">✉️</button>
+    <button type="button" class="pf-pill" data-pf="blocked" role="tab" aria-label="Blocked members" title="Blocked members">🚫</button>
+    <button type="button" class="pf-pill" data-pf="payouts" id="pfPillPayouts" role="tab" aria-label="Payouts" title="Payouts" style="display:none;">💰</button>
+    <button type="button" class="pf-pill" data-pf="security" role="tab" aria-label="Security" title="Security">🔒</button>
+    <button type="button" class="pf-pill pf-pill-details" data-pf="details" role="tab" aria-label="Edit details" title="Edit details" tabindex="-1">✏️</button>
   </div>
 
   <div class="card compact-card pf-panel" data-pf="messages">
@@ -340,6 +468,15 @@
   </div>
 
 </div>
+
+<!-- Phone-only bottom tab bar (same five places as the feed's bar). Hidden on wider screens. -->
+<nav class="pf-tabbar" aria-label="Main">
+  <a href="feed.html" class="pf-tab" aria-label="Home"><span class="pf-tab-icon">🏠</span><span class="pf-tab-label">Home</span></a>
+  <a href="find.html" class="pf-tab" aria-label="Finder"><span class="pf-tab-icon">🔎</span><span class="pf-tab-label">Finder</span></a>
+  <a href="upload.html" class="pf-tab pf-tab-post" aria-label="Upload a photo, video, or song"><span class="pf-tab-icon">+</span><span class="pf-tab-label">Post</span></a>
+  <a href="profile.html" class="pf-tab active" aria-label="My Profile" aria-current="page"><span class="pf-tab-icon">👤</span><span class="pf-tab-label">Profile</span></a>
+  <a href="gear.html" class="pf-tab" aria-label="Ensemble Approved Products"><span class="pf-tab-icon">🛒</span><span class="pf-tab-label">Products</span></a>
+</nav>
 
 <div class="simple-modal-overlay" id="followListOverlay">
   <div class="simple-modal">
@@ -680,7 +817,7 @@
       .limit(30);
 
     if (error || !data || data.length === 0) {
-      list.innerHTML = '<div class="empty-state">No messages yet — when another member sends you one, it\'ll show up here.</div>';
+      list.innerHTML = '<div class="empty-state pf-empty-art" data-art="💌">No messages yet — when another member sends you one, it\'ll show up here.</div>';
       return;
     }
 
@@ -719,7 +856,7 @@
       return;
     }
     if (!data || data.length === 0) {
-      list.innerHTML = '<div class="empty-state">You haven\'t blocked anyone.</div>';
+      list.innerHTML = '<div class="empty-state pf-empty-art" data-art="🛡️">You haven\'t blocked anyone.</div>';
       return;
     }
 
@@ -1229,7 +1366,7 @@
       return;
     }
     if (!data || data.length === 0) {
-      grid.innerHTML = '<div class="empty-state">Nothing uploaded yet — add your first photo, video, or voice update above.</div>';
+      grid.innerHTML = '<div class="empty-state pf-empty-art" data-art="📸">Nothing here yet — tap Post below to add your first photo, video, or voice update.</div>';
       return;
     }
 
@@ -1436,6 +1573,8 @@
       Array.prototype.forEach.call(pills.querySelectorAll(".pf-pill"), function (b) {
         b.classList.toggle("active", b.getAttribute("data-pf") === current);
       });
+      var eb = document.getElementById("pfEditBtn");
+      if (eb) { eb.textContent = current === "details" ? "Done" : "Edit profile"; eb.classList.toggle("pf-editing", current === "details"); }
     }
     // Music and Payouts only exist for some members: their pills show only while their card is turned on.
     function syncOptional() {
@@ -1492,6 +1631,49 @@
     }
     syncOptional();
     apply();
+    window.pfToggleEdit = function () {
+      pauseAll();
+      current = current === "details" ? "uploads" : "details";
+      apply();
+    };
+  })();
+
+  // Light profile header (phones). Reads what the page already loaded (name, bio, the at-a-glance
+  // line, upload tiles) and mirrors it into the new header pieces. Read-only: it never writes
+  // back to the form or touches loading/uploading, and on wide screens those pieces are hidden.
+  (function () {
+    var nameEl = document.getElementById("pfName"), chipsEl = document.getElementById("pfChips"),
+        bioEl = document.getElementById("pfBio"), cntEl = document.getElementById("pfUploadsCount"),
+        glance = document.getElementById("profileGlance"), label = document.getElementById("avatarStatusLabel"),
+        grid = document.getElementById("mediaGrid"), nameIn = document.getElementById("displayName"),
+        bioIn = document.getElementById("bio"), editBtn = document.getElementById("pfEditBtn");
+    if (!nameEl || !nameIn) return;
+    var synced = false;
+    function sync() {
+      var n = (nameIn.value || "").trim();
+      if (n || synced) nameEl.textContent = n || "Your name";
+      if (n) synced = true;
+      bioEl.textContent = (bioIn && bioIn.value || "").trim();
+      var parts = (glance && glance.textContent || "").split(/\s*·\s*/).map(function (x) { return x.trim(); }).filter(Boolean);
+      chipsEl.innerHTML = "";
+      parts.forEach(function (t) { var c = document.createElement("span"); c.className = "pf-chip"; c.textContent = t; chipsEl.appendChild(c); });
+      if (label) label.classList.toggle("pf-note", /pending|uploading/i.test(label.textContent || ""));
+      if (grid && cntEl) cntEl.textContent = grid.querySelectorAll(".media-tile-wrap").length;
+    }
+    window.pfSync = sync;
+    if (window.MutationObserver) {
+      var mo = new MutationObserver(sync);
+      if (glance) mo.observe(glance, { attributes: true, childList: true, characterData: true, subtree: true });
+      if (label) mo.observe(label, { childList: true, characterData: true, subtree: true });
+      if (grid) mo.observe(grid, { childList: true });
+    }
+    nameIn.addEventListener("input", sync);
+    if (bioIn) bioIn.addEventListener("input", sync);
+    var form = document.getElementById("profileForm");
+    if (form) form.addEventListener("submit", function () { setTimeout(sync, 500); setTimeout(sync, 1500); });
+    var ticks = 0, iv = setInterval(function () { sync(); if (++ticks >= 12) clearInterval(iv); }, 1000);
+    sync();
+    if (editBtn) editBtn.addEventListener("click", function () { window.pfToggleEdit && window.pfToggleEdit(); });
   })();
 </script>
 
