@@ -144,7 +144,7 @@
     border: 3px solid #faf8f5; text-shadow: none; box-sizing: content-box; margin: 0;
   }
   .pf-ident { flex: 1; min-width: 0; }
-  .pf-name { display: block; font-family: "Poppins", "Inter", sans-serif; font-weight: 800; font-size: 22px; line-height: 1.15; letter-spacing: -0.01em; color: #16181d; word-break: break-word; }
+  .pf-name { display: block; font-family: "Poppins", "Inter", sans-serif; font-weight: 800; font-size: 18px; line-height: 1.2; letter-spacing: -0.01em; color: #16181d; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .pf-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
   .pf-chips:empty { display: none; }
   .pf-chip { font-size: 12px; font-weight: 600; padding: 4px 9px; border-radius: 999px; background: #fff1e6; color: #b4410f; }
@@ -162,8 +162,7 @@
   .follow-stat span { font-size: 12.5px; font-weight: 600; color: #6b6f78; }
   .follow-stat:hover strong { color: #ff5a1f; }
 
-  .pf-bio { display: block; padding: 12px 16px 0; font-size: 14px; line-height: 1.4; color: #2a2d35; word-break: break-word; }
-  .pf-bio:empty { display: none; }
+  /* the bio is for other members' eyes (edit it under Edit profile); it isn't repeated here */
   .pf-actions { display: block; padding: 14px 16px 0; }
   .pf-actions .btn { width: 100%; border-radius: 12px; padding: 11px 0; font-size: 14px; }
   .pf-actions .btn.pf-editing { background: #fff; color: #16181d; border: 1px solid #d9d2c7; }
@@ -1649,10 +1648,17 @@
         bioIn = document.getElementById("bio"), editBtn = document.getElementById("pfEditBtn");
     if (!nameEl || !nameIn) return;
     var synced = false;
+    // keep the name on one line: start at 18px and shrink (down to 13px) until it fits
+    function fitName() {
+      nameEl.style.fontSize = "";
+      var size = 18;
+      while (nameEl.scrollWidth > nameEl.clientWidth && size > 13) { size -= 0.5; nameEl.style.fontSize = size + "px"; }
+    }
     function sync() {
       var n = (nameIn.value || "").trim();
       if (n || synced) nameEl.textContent = n || "Your name";
       if (n) synced = true;
+      fitName();
       bioEl.textContent = (bioIn && bioIn.value || "").trim();
       var parts = (glance && glance.textContent || "").split(/\s*·\s*/).map(function (x) { return x.trim(); }).filter(Boolean);
       chipsEl.innerHTML = "";
@@ -1661,6 +1667,9 @@
       if (grid && cntEl) cntEl.textContent = grid.querySelectorAll(".media-tile-wrap").length;
     }
     window.pfSync = sync;
+    window.addEventListener("resize", fitName);
+    window.addEventListener("load", fitName);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitName);
     if (window.MutationObserver) {
       var mo = new MutationObserver(sync);
       if (glance) mo.observe(glance, { attributes: true, childList: true, characterData: true, subtree: true });

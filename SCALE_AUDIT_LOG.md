@@ -30,6 +30,7 @@ unchanged (dark, every card stacked). Checked at 390px and 1200px, no script err
   stats and tabs; all ids and loading/save/upload logic untouched. A small read-only script copies
   name / bio / chips / upload count into the header (`window.pfSync`).
 - Empty uploads text now says "tap Post below" (it said "above").
+- Follow-up (same day): name is now 18px and always one line (shrinks down to 13px for very long names, else ends in "..."). The bio no longer shows in the phone header (still editable under Edit profile; the 280-character limit is unchanged).
 - Not touched: feed, upload page, supabaseClient.js (fade kept).
 
 ## 2026-10-17 (iPhone fit: upload page + same compact header everywhere)
