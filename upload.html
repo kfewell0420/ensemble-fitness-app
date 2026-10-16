@@ -212,6 +212,16 @@
      about 70% of the picture's height shows. Wide videos keep the shorter 4:3 box. */
   #trimPreviewVideo { object-fit: cover; }
   #trimPreviewVideo.portrait { aspect-ratio: 4 / 5; width: 100%; height: auto; }
+  /* Ken's ask (Oct 2026): on an iPhone in Safari the page has less room (status bar on top, the browser's
+     floating bar at the bottom), so the song bar ended up under that bar. On phones the preview box is now
+     capped to a share of the SCREEN HEIGHT (svh = the visible height with the browser bars showing), so it
+     shrinks on shorter screens and the music controls come up into view; the picture is cropped, never
+     stretched (same cover crop as before; the uploaded video is untouched). Plus extra room under the page
+     so the song bar can always be scrolled clear of the browser's bottom bar. */
+  @media (max-width: 560px) {
+    #trimPreviewVideo, #trimPreviewVideo.portrait { max-height: 33svh; }
+    .app-shell { padding-bottom: calc(120px + env(safe-area-inset-bottom, 0px)); }
+  }
   /* Music tracks: summary row on the page + slide-in list (side panel on desktop, bottom sheet on phones) */
   .mt-choose { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 14px; border-radius: 12px; border: 1.5px solid #fff; background: #fff; color: #0b0c0e; font: inherit; font-size: 15px; font-weight: 800; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,0.35); -webkit-tap-highlight-color: transparent; }
   /* Ken's ask (Oct 2026): the "Choose a song" bar blended into the brown panel around it -- now a bright white

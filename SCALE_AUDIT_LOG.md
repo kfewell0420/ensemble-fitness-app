@@ -12,6 +12,28 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-17 (iPhone fit: upload page + same compact header everywhere)
+
+Ken tested on an iPhone in Safari (the live website) and found three layout problems. (The music in
+the upload preview played cleanly in that test after the earlier fix; the first "still skipping"
+test was most likely the cached old page.)
+
+- `upload.html` (phones, max 560px): the preview video box is now capped at 33% of the screen height
+  (`svh`, the visible height with the browser bars showing) so it shrinks on short screens (iPhone Safari)
+  and the song bar / waveform come up into view; it is cropped, never stretched, and the uploaded video is
+  untouched. The page also gets 120px of extra room at the bottom (plus the iPhone safe area) so the song
+  bar can always be scrolled clear of Safari's floating bottom bar. Measured: at a 700px-tall screen the
+  preview goes from 381px to 231px tall, which lifts everything below it by 150px (124px at 780px tall).
+- `feed.html`: the compact phone header (badge pill "heart ring handshake ?" on the SAME line as
+  "Ensemble Fitness", smaller Healthy Meal Preps pill, tighter bar) used to apply only inside the phone
+  app (`html.ef-native`). It now applies on ANY screen narrower than 900px (Safari/Chrome on the website
+  too), so the website on a phone matches the app. Verified: header/pill/banner positions are identical
+  with and without the app flag. The two big hearts in the top bar are hidden at phone width, as in the app.
+- Note for testing: Safari has its own floating bar; the real app (TestFlight) has none, so the app always
+  has a bit more room than Safari does.
+- The troubleshooting view (`upload.html?debug=1`) is still in the file; it does nothing without
+  `?debug=1`. Remove it once the music issue is confirmed fixed on a TestFlight build.
+
 ## 2026-10-17 (upload preview: song stutter on iPhone)
 
 Ken's tester, on an iPhone, heard the song glitch and never "lock" to the video while

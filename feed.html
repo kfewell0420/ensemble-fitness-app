@@ -69,12 +69,17 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
   /* PHONE APP ONLY (html.ef-native): Ken's iPhone test showed the reaction row under each post cut off.
      To win the room back: the two hearts leave the top bar, the "💗 💍 🤝 ?" pill takes their place on the
      same line as "Ensemble Fitness", and the bar, the Healthy Meal Preps pill and the story row all get shorter. */
-  html.ef-native #rpAppNav > .app-nav-connect { display: none; }
-  html.ef-native #rpAppNav { padding-bottom: 8px; }
-  html.ef-native .conn-key-pill { top: 0; left: 0; margin: 0 0 0 auto; }
-  html.ef-native .rp-mealprep { padding: 6px 0 4px; }
-  html.ef-native .rp-mealprep-banner { padding: 4px 12px 4px 10px; margin: 0 14px 6px; }
-  html.ef-native .rp-mealprep-banner-icon svg { width: 28px; height: 28px; }
+  /* Ken's ask (Oct 2026): the same compact phone header now applies on ANY phone-size screen (Safari / Chrome on
+     the website too), not only inside the phone app, so the badge pill sits on the same line as "Ensemble
+     Fitness" and the Healthy Meal Preps pill is the same size everywhere. Was "html.ef-native ..." rules. */
+  @media (max-width: 899px) {
+    #rpAppNav > .app-nav-connect { display: none; }
+    #rpAppNav { padding-bottom: 8px; }
+    .conn-key-pill { top: 0; left: 0; margin: 0 0 0 auto; }
+    .rp-mealprep { padding: 6px 0 4px; }
+    .rp-mealprep-banner { padding: 4px 12px 4px 10px; margin: 0 14px 6px; }
+    .rp-mealprep-banner-icon svg { width: 28px; height: 28px; }
+  }
   @media (max-width: 350px) { .conn-key-pill { font-size: 11px; letter-spacing: 0; padding: 2px 6px; } }
   .rp-mealprep-banner-text { white-space: nowrap; }
   .rp-mealprep-banner-sub { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
