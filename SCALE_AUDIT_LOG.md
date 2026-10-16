@@ -39,6 +39,9 @@ uploading (Android fine).
   unchanged. If a song is cut very short the tabs each take half the bar. Mouse/desktop
   (fine pointer) keeps the original vertical handles. Checked in a touch-style render at 390 px;
   the real feel needs a thumb on an iPhone.
+- Same file, Ken's ask: the "Choose a song" bar (`.mt-choose`) is now a bright white bar with black
+  lettering (and a darker orange "3 tracks" count) so it no longer blends into the brown panel. The
+  state after a song is picked (orange-tinted card with Change / remove) is unchanged.
 - NOT changed: the feed and profile playback (`wireFeedSound` / `wireNarrationSync` in
   `js/supabaseClient.js`) have the same "seek before the song has loaded" habit but use a
   slower check; no one has reported a problem there. Revisit only if a tester does.
