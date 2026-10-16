@@ -19,9 +19,9 @@ that stayed the same size. Now (phones and desktop alike) dragging the left tab 
 bar visibly shrink from the left as the finger moves, with the song's start moving the same
 amount; on release the bar slides back to where it started (the front of the video unless the
 member had moved it) and keeps the trimmed song. The right tab still shortens from the end.
-Removed the phone-only "slide the song at 8x speed" mode; bigger jumps into a long song use the
+Follow-up: on release the bar's back end re-locks to the end of the video (it runs as long as the video does, or until the song runs out), so a front trim only changes where in the song it begins; if the member had cut the song earlier with the right tab, that length is kept. Removed the phone-only "slide the song at 8x speed" mode; bigger jumps into a long song use the
 "Start the song at" slider. `upload.html` only; fade untouched. Checked with simulated touch drags
-(bar 100% -> 94% -> 86% -> 78% while dragging, back to left 0% on release), no script errors.
+(bar 100% -> 94% -> 86% -> 78% while dragging, back to left 0% / width 100% on release), no script errors.
 
 ## 2026-10-17 (profile page: light TikTok-style look, Option A)
 
