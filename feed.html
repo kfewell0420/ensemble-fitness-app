@@ -492,7 +492,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
      the rule above. Trade-off: tall portrait photos/videos still crop in
      tighter than the original 4:5, just not as tight as a flat square. */
   @media (max-width: 899px) {
-    .rp-media { aspect-ratio: 9 / 10; }
+    .rp-media { aspect-ratio: 4 / 5; }
   }
   .rp-media img, .rp-media video {
     width: 100%;
@@ -500,6 +500,17 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     object-fit: cover;
     animation: rpMediaFadeIn 0.3s ease;
   }
+  /* Ken's ask (Oct 2026): heads were being cut off on tall phone videos and
+     overhead dumbbells disappeared. The frame must stay filled edge to edge
+     (no side bars), so the video still crops — but instead of cropping
+     equally top and bottom (object-position: center), the crop window is
+     nudged up (30%) so more headroom is kept and a bit more of the floor is
+     cropped instead. Photos stay centered.
+     Same ask, second step: the phone frame goes back to 4:5 (Instagram's own
+     feed shape) from 9:10, so a tall phone video shows about 71% of its
+     height instead of 63% — the 9:10 setting above (and its skeleton
+     placeholder) is replaced, not added to. */
+  .rp-media video { object-position: center 30%; }
   @keyframes rpMediaFadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
@@ -527,7 +538,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
   @media (max-width: 899px) {
     .rp-skeleton-card { margin: 0 0 10px; background: transparent; border: none; border-bottom: 1px solid rgba(255,255,255,0.08); border-radius: 0; }
   }
-  .rp-skeleton-media { aspect-ratio: 9 / 10; }
+  .rp-skeleton-media { aspect-ratio: 4 / 5; }
   @media (min-width: 900px) {
     .rp-skeleton-media { aspect-ratio: 4 / 5; }
   }

@@ -12,24 +12,53 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
-## 2026-10-15 (new app icon)
+## 2026-10-16 (feed videos: more headroom, 4:5 frame)
 
-**Mobile app only: new heart-and-dumbbell app icon.** Swapped the old EF icon for the
-new heart + dumbbell logo Ken picked after testing with ~30 people. Files go in
-`ensemble-fitness-mobile/resources/` (project root, not `www/`):
+Ken's ask: heads were cut off and overhead dumbbells disappeared in feed
+workout videos; the post frame must stay filled edge to edge (a contain /
+blurred-bars version was tried and rejected: the empty sides looked wrong).
 
-- `icon.png` (1024x1024, no transparency): iPhone app icon and older-Android icon.
-- `icon-foreground.png` + `icon-background.png`: Android adaptive icon layers (the heart
-  sits inside Android's safe zone so round/squircle masks never clip it).
-- `splash.png` / `splash-dark.png`: launch screen now shows the new heart on the same navy.
-- `store-listing/appstore-icon-1024.png` and `playstore-icon-512.png`: for the App Store
-  Connect and Google Play listing pages (upload by hand there; not part of the app build).
+- Cause (found, not a zoom): `.rp-media` is 9:10 on phones with
+  `object-fit: cover`, so a 9:16 phone video loses about 37% of its height.
+  The uploaded file is untouched; only the display crops. The original app
+  used a full-screen swipe layout (whole video visible); the Sept 2026 move
+  to a bounded card (and the later 4:5 -> 1:1 -> 9:10 shrinking to keep the
+  like row on screen) is what introduced the crop.
+- `feed.html`: `.rp-media video { object-position: center 30%; }` — still
+  fills the frame, same frame size, but the crop window is nudged up so more
+  headroom is kept (floor is cropped instead of heads). Photos unchanged.
+- Same `feed.html` goes to `ensemble-fitness-mobile/www/` (it was identical
+  to the website copy before this change).
+- Ken then chose 4:5 ("so that we can keep up with Instagram"): phone
+  `.rp-media` and `.rp-skeleton-media` go from 9:10 to 4:5, so a 9:16 video
+  shows about 71% of its height instead of 63%. About 55px taller on phones,
+  so the like/comment row may sit right at the bottom nav bar on shorter
+  phones; if that annoys, 5:6 is the fallback (68%).
 
-After copying, run `npx @capacitor/assets generate ...` (same command as SETUP.md), then
-`npx cap sync`, bump the build number (iOS build 5), and archive/upload again. The app's
-in-page header logo (`assets/logo.png`) and website favicon are unchanged for now.
+## 2026-10-16 (app icon: larger heart)
 
----
+Ken's feedback after seeing build 5 on his Android phone: the black was
+"devouring" the space around the heart and dumbbell, so the artwork should be
+bigger.
+
+- `ensemble-fitness-mobile/resources/icon.png`: heart now fills 86% of the
+  tile width (was 72%). Used for iOS and as the Android legacy icon.
+- `ensemble-fitness-mobile/resources/icon-foreground.png`: Android adaptive
+  heart now 70% of the canvas (was 56%). Checked against both the circle and
+  Samsung rounded-square masks; nothing clips.
+- `store-listing/appstore-icon-1024.png` and `playstore-icon-512.png`
+  regenerated from the new icon.
+- Not changed: `icon-background.png`, splash files, in-page logo.
+- To apply: copy into `resources/`, run
+  `npx @capacitor/assets generate --iconBackgroundColor '#0B0C0E' --splashBackgroundColor '#05070d'`
+  (same command as SETUP.md), then `npx cap sync`.
+- iOS build 6 (already in TestFlight review) still has the smaller heart; the
+  larger heart reaches iPhones with the next iOS build (7).
+- Also noted this pass (no code change yet): the feed media frame
+  (`.rp-media` in `feed.html`) is 9:10 on phones with `object-fit: cover`, so
+  tall 9:16 phone videos lose about 37% of their height (heads cut off). The
+  uploaded video file is untouched; only the display crops it.
+
 ## 2026-10-15 (phone-app header) — Phone app only: more room for the reaction row
 
 - Ken's iPhone (TestFlight) showed the thumbs / heart / muscle / comment row under each post slightly cut off. feed.html now detects when it runs inside the phone app (Capacitor adds `ef-native` to the page; the website never gets it) and, only there: hides the two hearts, moves the "💗 💍 🤝 ?" pill onto the same line as "Ensemble Fitness" at the right edge, trims the bar's bottom padding, makes the Healthy Meal Preps pill shorter (smaller salad icon, less padding) and tightens the story row's spacing.
