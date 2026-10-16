@@ -12,7 +12,7 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
-## 2026-10-16 (feed videos: more headroom, 5:6 frame)
+## 2026-10-17 (feed videos: more headroom, 3:4 frame to try)
 
 Ken's ask: heads were cut off and overhead dumbbells disappeared in feed
 workout videos; the post frame must stay filled edge to edge (a contain /
@@ -29,10 +29,12 @@ blurred-bars version was tried and rejected: the empty sides looked wrong).
   headroom is kept (floor is cropped instead of heads). Photos unchanged.
 - Same `feed.html` goes to `ensemble-fitness-mobile/www/` (it was identical
   to the website copy before this change).
-- Ken tried 4:5 (71%) first; it didn't look as good as hoped, so the phone
-  frame is now 5:6: `.rp-media` and `.rp-skeleton-media` go from 9:10 to 5:6,
-  so a 9:16 video shows about 68% of its height instead of 63%. About 35px
-  taller on phones. Desktop stays 4:5.
+- Ken tried 4:5 (71%), then 5:6 (68%); after sleeping on it he asked to see
+  3:4 (75%) on his Android phone. Phone `.rp-media` and `.rp-skeleton-media`
+  go from 9:10 to 3:4, so a 9:16 video shows about 75% of its height instead
+  of 63%. About 90px taller than the old 9:10 frame; the first post's like
+  row will sit lower and may need a small scroll. Desktop stays 4:5. Easy to
+  step back to 5:6 if it feels too tall.
 
 ## 2026-10-16 (app icon: larger heart)
 

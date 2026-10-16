@@ -492,7 +492,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
      the rule above. Trade-off: tall portrait photos/videos still crop in
      tighter than the original 4:5, just not as tight as a flat square. */
   @media (max-width: 899px) {
-    .rp-media { aspect-ratio: 5 / 6; }
+    .rp-media { aspect-ratio: 3 / 4; }
   }
   .rp-media img, .rp-media video {
     width: 100%;
@@ -506,10 +506,11 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
      equally top and bottom (object-position: center), the crop window is
      nudged up (30%) so more headroom is kept and a bit more of the floor is
      cropped instead. Photos stay centered.
-     Same ask, second step: the phone frame goes from 9:10 to 5:6, so a tall
-     phone video shows about 68% of its height instead of 63%. (4:5, which
-     shows 71%, was tried first and Ken found it didn't look better, and it
-     crowded the like row.) The 9:10 setting above, and its skeleton
+     Same ask, second step: the phone frame goes from 9:10 to 3:4, so a tall
+     phone video shows about 75% of its height instead of 63%. (4:5 = 71% and
+     5:6 = 68% were tried first; Ken asked to see 3:4 on his real phone.
+     Trade-off: the like/comment row on the first post sits lower and may
+     need a small scroll.) The 9:10 setting above, and its skeleton
      placeholder, are replaced, not added to. */
   .rp-media video { object-position: center 30%; }
   @keyframes rpMediaFadeIn {
@@ -539,7 +540,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
   @media (max-width: 899px) {
     .rp-skeleton-card { margin: 0 0 10px; background: transparent; border: none; border-bottom: 1px solid rgba(255,255,255,0.08); border-radius: 0; }
   }
-  .rp-skeleton-media { aspect-ratio: 5 / 6; }
+  .rp-skeleton-media { aspect-ratio: 3 / 4; }
   @media (min-width: 900px) {
     .rp-skeleton-media { aspect-ratio: 4 / 5; }
   }
