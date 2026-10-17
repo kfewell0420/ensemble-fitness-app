@@ -12,6 +12,13 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-17 (products page: new intro wording)
+
+`gear.html` only. Heading is now "Real Products. Real Experience. Real Trust." with Ken's new
+paragraph ("We don't recommend products we haven't personally purchased and used. Every product
+featured here has earned its place through real experience—not popularity or paid placement.").
+The eyebrow, search, filters, grid and the disclosure at the bottom are unchanged.
+
 ## 2026-10-17 (products intro, playlist rows, song-sheet title fix)
 
 - `gear.html`: the "Honest disclosure" box no longer sits above the products (it pushed them down
