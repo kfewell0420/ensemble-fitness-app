@@ -1220,29 +1220,14 @@
       if (uploadError) throw uploadError;
       uploadedPath = path;
 
-      var { data: insertedRow, error: insertError } = await window.sb.from("media").insert({
+      var { error: insertError } = await window.sb.from("media").insert({
         user_id: currentUser.id,
         kind: "photo",
         storage_path: path,
         is_profile_photo: true,
         status: "approved"
-      }).select("id").single();
+      });
       if (insertError) throw insertError;
-
-      // Swapping the picture replaces the old one: tidy away this member's
-      // previous profile-photo rows and files (best effort, never blocks the swap).
-      try {
-        var newId = insertedRow && insertedRow.id;
-        var { data: oldRows } = await window.sb.from("media").select("id, storage_path")
-          .eq("user_id", currentUser.id).eq("is_profile_photo", true);
-        var stale = (oldRows || []).filter(function (r) { return r.id !== newId && r.storage_path !== path; });
-        if (newId && stale.length) {
-          var { error: delErr } = await window.sb.from("media").delete().in("id", stale.map(function (r) { return r.id; }));
-          if (!delErr) {
-            await window.sb.storage.from("media").remove(stale.map(function (r) { return r.storage_path; }).filter(Boolean));
-          }
-        }
-      } catch (tidyErr) { /* best effort */ }
 
       setAvatarPreview(localPreviewUrl, "Profile photo live", "Tap the circle to upload a new one.");
       showMsg(document.getElementById("profileMsg"), "Profile photo updated!", "success");

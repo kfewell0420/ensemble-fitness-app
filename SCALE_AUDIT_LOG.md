@@ -12,6 +12,33 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-17 (REVERT: feed shows profile-picture posts again; profile no longer deletes old pictures)
+Ken: the feed is supposed to show photo AND video posts, and members' profile-picture photos are
+curated into it on purpose (admin > Profile Photos tab, category "Strike a Pose"). The earlier
+filters hid them (first `.eq(false)`, then `.not(is true)`), which looked like members had been
+deleted. Reverted: `feed.html` has NO is_profile_photo filter again (identical behaviour to before today).
+`profile.html`: removed the "delete this member's previous profile-picture rows + files after a swap"
+step -- those old rows can be posts in the feed/Strike a Pose, so they must never be auto-deleted.
+(If any member changed their picture while that step was live, only THEIR OLD profile-picture rows
+were removed, never videos or other members' posts. Ken to check his own old pictures.)
+STILL OPEN (Ken to decide): profile "My uploads" currently hides profile-picture rows, so a member whose
+picture is also a feed post (Strike a Pose) sees fewer uploads than posts. Options: (A) show
+profile-picture rows that have a category (workout_type) in My uploads + count, plain avatars stay hidden;
+(B) hide them everywhere. Not changed yet.
+
+---
+
+## 2026-10-17 (URGENT correction: feed hid other members' older posts)
+The feed change earlier today used `.eq("is_profile_photo", false)`. Rows whose flag is EMPTY (NULL)
+don't match `= false` in Postgres, so other members' older posts (made before the flag was always
+set) disappeared from the feed -- only Ken's newer posts (flag explicitly false) were left. NOTHING
+was deleted (no delete runs in that change; profile.html only ever deletes the signed-in member's own
+OLD profile-picture rows). `feed.html`: the three queries now use `.not("is_profile_photo","is",true)`
+= "everything except profile pictures", NULL included. profile.html's uploads filter already handled
+NULL (`is.null` or `eq.false`). Lesson: never filter a boolean with `.eq(false)` on this table.
+
+---
+
 ## 2026-10-17 (upload page on phones: orange backdrop around the dark-brown video box)
 Ken: the upload page was dark in three layers (near-black page, gray-outlined card, dark-brown
 video box); keep the dark-brown box and the gray fields, make the OUTER layers the Journeys orange.

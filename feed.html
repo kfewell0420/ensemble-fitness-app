@@ -2874,7 +2874,6 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
       .from("media")
       .select("id, user_id, kind, storage_path, poster_path, caption, workout_type, location, signature, created_at, trim_start, trim_end, profiles!media_user_id_fkey(display_name)")
       .eq("status", "approved")
-      .eq("is_profile_photo", false) // a profile picture is just the member's icon, never a feed post
       .in("kind", ["video", "photo"]);
     // NOTE: plain .neq("workout_type", "Meal Prep") silently drops every row
     // where workout_type is NULL (Postgres: NULL <> 'x' is NULL, not true —
@@ -2917,7 +2916,6 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
       .from("media")
       .select("id, user_id, kind, storage_path, poster_path, caption, workout_type, location, signature, created_at, trim_start, trim_end, profiles!media_user_id_fkey(display_name)")
       .eq("status", "approved")
-      .eq("is_profile_photo", false) // a profile picture is just the member's icon, never a feed post
       .in("kind", ["video", "photo"]);
     if (filterType && filterType !== "All") {
       query = query.eq("workout_type", filterType);
@@ -4669,7 +4667,6 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
       .from("media")
       .select("id, user_id, kind, storage_path, poster_path, caption, workout_type, location, signature, created_at, profiles!media_user_id_fkey(display_name)")
       .eq("status", "approved")
-      .eq("is_profile_photo", false) // profile pictures are never feed posts
       .in("kind", ["video", "photo"])
       .eq("workout_type", "Meal Prep")
       .order("created_at", { ascending: false })
