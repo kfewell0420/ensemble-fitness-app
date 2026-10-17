@@ -12,6 +12,31 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-17 (journeys page: warm peach/pink redesign, mini hero, cheer chips)
+Ken showed a Google-made mock-up of the Journeys page and asked for ours to
+feel as inspiring without a tall hero. `fitness-journeys.html`, phones only
+(<=899px; desktop untouched):
+- Page background: peach-to-pink gradient instead of tan; the white bar at
+  the top is gone (nav is transparent).
+- Mini hero: "Stronger Together / Post an update" is now one ~108px rounded
+  peach banner with an original inline-SVG illustration on the right (sunset,
+  layered mountains, two hikers, one pulling the other up the slope). The old
+  separate "Post an update" h2 is hidden on phones (the same words live in the
+  banner as `.fj-hero-title`). Hero stays hidden on desktop.
+- Post headlines now sit in a soft pink-outlined box with an icon picked from
+  keywords in the headline (tree for park, trophy for a win/pounds, muscle,
+  swimmer, runner, walker, salad, etc.), falling back to the category icon;
+  helper `headlineIcon()` / `headlineBox()` in the page script.
+- Category chip is a deeper pink pill; reaction pills peach with orange
+  outline; comments sit in a soft tinted strip; form fields and cards peach-
+  tinted with warm borders.
+- New "Show some support" row of three tap-to-cheer chips (That's amazing! /
+  Love this! / Keep being you!) above the comment box. On real posts a tap
+  posts that text as a comment through the existing `postReply` (so the poster
+  style/italic rule for own replies still applies). On the example posts the
+  same chips show but are inert. Hidden on desktop.
+Website-only until next app build.
+
 ## 2026-10-17 (journeys page: headline back to upright)
 Correction from Ken: the bold post headline ("I went to the park...", "Down
 22 lbs...") is NOT slanted. `fitness-journeys.html`: `.fj-headline` back to
