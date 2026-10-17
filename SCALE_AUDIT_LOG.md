@@ -12,6 +12,16 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-17 (admin: new "Product" category for Approved Products) -- website only
+Ken: add one more category/tab called "Product" to the Approved Products Category drop-down.
+`admin.html`: `GEAR_CATEGORIES` now ends "... Health Care, Nutrition, Product" (before "Other...");
+used by both the Add Pick and Edit forms. The public Products page builds its filter chips from
+the categories that actually exist on picks (`gear.html` `gearCategories`), so a "Product" chip
+appears automatically once a pick is saved with that category. No database change; admin.html is
+website-only.
+
+---
+
 ## 2026-10-17 (REVERT: feed shows profile-picture posts again; profile no longer deletes old pictures)
 Ken: the feed is supposed to show photo AND video posts, and members' profile-picture photos are
 curated into it on purpose (admin > Profile Photos tab, category "Strike a Pose"). The earlier
