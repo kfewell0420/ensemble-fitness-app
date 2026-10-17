@@ -12,6 +12,21 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-17 (journeys page: decisively darker background)
+Ken: "don't be afraid to darken it." `fitness-journeys.html` phone skin only:
+page background #ddd5c9 -> #cdc3b3 (warm tan), fields/chips #e3dbcd, borders
+#b5aa98, eyebrow text #a8360a and intro/count text #3f434c so text on the
+darker page stays readable. White cards now clearly stand out. Desktop
+unchanged. Website-only until next app build.
+
+## 2026-10-17 (journeys page: darker again, member writing in black)
+`fitness-journeys.html` phone skin only: page background #ebe5dc -> #ddd5c9,
+fields/chips #e6dfd3, borders #c6bcad. Everything a member writes is now pure
+black so it stands out: the post headline (activity; was orange), the quote
+(notes, medium weight), the date/"Felt ..." line, member names, and every
+comment (name and text). Metadata like "Member since" stays grey, category
+chip stays orange. Desktop unchanged. Website-only until next app build.
+
 ## 2026-10-17 (journeys page: slightly deeper off-white; yellow count)
 Ken: the Journeys page was a touch too bright. `fitness-journeys.html` phone
 skin: page background #faf8f5 -> #ebe5dc, form fields / reaction chips / reply
