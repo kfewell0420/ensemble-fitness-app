@@ -12,6 +12,19 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-17 (profile: new profile photo no longer shows up in My uploads)
+Ken: changing the profile icon also saved it as an upload; it should live only
+as the profile picture. `profile.html`:
+- `loadMyMedia()` now skips `is_profile_photo` rows (null or false only), so the
+  avatar no longer appears in the "My uploads" grid or in the uploads count
+  (the count reads the grid tiles). Old avatars already saved stop showing too.
+- After a successful swap, this member's previous profile-photo rows and storage
+  files are deleted (best effort; if delete RLS blocks it, they are just hidden).
+- Avatar display (`loadAvatar`, feed, Journeys, members) unchanged.
+- Ships in mobile build 10 (`mobile-www-updated/profile.html`).
+
+---
+
 ## 2026-10-17 (feed: Your Journeys pill tighter; count locked to a minimum of 1)
 Ken: shrink the red pill from its LEFT side only (right edge stays aligned with
 the page) and keep the words centred; and always show a number so members
