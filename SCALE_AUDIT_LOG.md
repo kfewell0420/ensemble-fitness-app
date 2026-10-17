@@ -12,6 +12,19 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-17 (upload page on phones: orange backdrop around the dark-brown video box)
+Ken: the upload page was dark in three layers (near-black page, gray-outlined card, dark-brown
+video box); keep the dark-brown box and the gray fields, make the OUTER layers the Journeys orange.
+`upload.html`, phones only (<=899px; desktop unchanged): page background = the Journeys gradient
+(#ffbd6c -> #ff8f40); nav transparent; the outer card has no fill/border; the dark-brown video/music
+box (`.narration-section`) and the Category/Caption/Location fields get their solid dark colors so
+they look as before; headings/labels/hints sitting on the orange are dark brown; category tiles are
+white cards (like Journeys); dropzone is a light frosted panel; disabled "Select a file above"
+button is dark brown. The music tracks sheet (separate overlay) is unchanged.
+Also in this file right now: iPhone 17 music-sync experiments (stallguard2) -- see the entries above.
+
+---
+
 ## 2026-10-17 (feed: profile pictures no longer appear as feed posts; Ken's "3 posts vs 2 uploads")
 Ken's profile showed 2 uploads while the website showed 3 posts for him. Cause (confirmed in code,
 and it was the open question in the 2026-10-10 Profile Photos entry): `feed.html` queried ALL
