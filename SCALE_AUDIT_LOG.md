@@ -12,6 +12,19 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-17 (upload: iPhone 17 screen recording -- video creeps while the song is seeked every second)
+Recording of the debug log (iOS 18_7 UA, iPhone 17, stallguard1 + wave off confirmed):
+the preview video's clock moved in ~2.25 s jumps roughly every 6 s (4.51, 6.76, 9.01,
+with a video "seeking" each time, readyState 4) while mixTick sought the song every ~1 s.
+Stall guard from fix2 never fired because the video reported `seeking` the whole time.
+Also seen: the silent-WAV unlock clip errors (MEDIA_ERR_DECODE) on that phone -- harmless so far.
+`upload.html` (build=stallguard2): iPhone/iPad drift correction only when the song is >2.5 s
+adrift and at most once per 4 s (was 0.5 s / 1 s) so song seeks stop starving the video decoder;
+stall guard threshold 1.5 s and it now counts a stuck `seeking` picture as stalled.
+Hypothesis, not yet confirmed -- next test: same ?debug=1 flow on the iPhone 17.
+
+---
+
 ## 2026-10-17 (upload: iPhone 17 song skipping -- found in the troubleshooting log)
 Log from the artist's iPhone 17 (works on iPhone 11): the VIDEO clock froze (v=6.76
 for many seconds, still "playing") while the song kept running; `mixTick` then

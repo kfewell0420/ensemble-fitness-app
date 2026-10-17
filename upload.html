@@ -1802,7 +1802,7 @@
     // and give the video a nudge; the moment the picture moves again the song comes back in step.
     var nowMs = performance.now(), vt = trimPreviewVideo.currentTime;
     if (vt !== mixTick.lastVT) { mixTick.lastVT = vt; mixTick.lastVTAt = nowMs; }
-    var picStalled = !trimPreviewVideo.paused && !trimPreviewVideo.seeking && !(pvSwapper && pvSwapper.busy()) && (nowMs - (mixTick.lastVTAt || nowMs)) > 600;
+    var picStalled = !trimPreviewVideo.paused && !(pvSwapper && pvSwapper.busy()) && (nowMs - (mixTick.lastVTAt || nowMs)) > 1500; // (a picture stuck 'seeking' counts as stalled too)
     if (picStalled) {
       if (!musicPreviewAudio.paused) musicPreviewAudio.pause();
       if (nowMs - (mixTick.lastKick || 0) > 2000) { mixTick.lastKick = nowMs; trimPreviewVideo.play().catch(function () {}); }
@@ -1817,7 +1817,10 @@
         if (musicPreviewAudio.paused) {
           startMusicInSync();
         } else if (!musicStarting && !musicPreviewAudio.seeking && musicPreviewAudio.readyState >= 3 &&
-                   Math.abs(musicPreviewAudio.currentTime - want) > 0.5 && performance.now() - musicLastFix > 1000) {
+                   Math.abs(musicPreviewAudio.currentTime - want) > (IS_IOS_DEVICE ? 2.5 : 0.5) && performance.now() - musicLastFix > (IS_IOS_DEVICE ? 4000 : 1000)) {
+          // (iPhone: the log from an iPhone 17 showed this seek firing every second while the picture crept along in
+          // 2-second jumps -- each song seek seems to starve the video decoder. On iPhones the song now free-runs and
+          // is only pulled back when it is more than 2.5 s adrift, and no more than once every 4 s.)
           try { musicPreviewAudio.currentTime = want; } catch (e) {}
           musicLastFix = performance.now();
         }
@@ -2933,7 +2936,7 @@
     ["play", "pause", "waiting", "stalled", "seeking", "ended"].forEach(function (n) {
       v.addEventListener(n, function () { log("  video event: " + n + " rs=" + v.readyState); });
     });
-    log("UA " + navigator.userAgent.replace(/.*(OS [0-9_]+).*/, "$1") + " | video dur " + f2(v.duration) + " loop=" + v.loop + " | build=stallguard1 wave=" + (IS_IOS_DEVICE ? "off" : "on") + " " + v.videoWidth + "x" + v.videoHeight);
+    log("UA " + navigator.userAgent.replace(/.*(OS [0-9_]+).*/, "$1") + " | video dur " + f2(v.duration) + " loop=" + v.loop + " | build=stallguard2 wave=" + (IS_IOS_DEVICE ? "off" : "on") + " " + v.videoWidth + "x" + v.videoHeight);
     setInterval(function () {
       if (v.paused && a.paused) return;
       log("tick a=" + f2(a.currentTime) + (a.paused ? "(P)" : "") + " v=" + f2(v.currentTime) + (v.paused ? "(P)" : "") + " vrS=" + v.readyState + " arS=" + a.readyState + " aDur=" + f2(a.duration) + " delay=" + f2(mDelay) + " len=" + f2(mLen) + " start=" + f2(musicStartPicker.getValue()));
