@@ -278,9 +278,10 @@
    white cards, dark easy-to-read writing. Phones only (<= 899px, same cut-off as the phone rules above);
    desktop keeps the dark look. Pure CSS: ids, classes and logic are untouched.
    ====================================================================== */
-/* Ken (Oct 2026): what the POSTER writes (headline, notes, date/feeling line, and the poster's own replies) is in the
+/* Ken (Oct 2026): what the POSTER writes in the notes, the date/feeling line, and the poster's own replies (the bold headline stays upright) is in the
    slanted style, like handwriting; what OTHER members reply is upright. */
-.fj-headline, .fj-quote, .fj-meta-line, .fj-reply-author { font-style: italic; }
+.fj-quote, .fj-meta-line, .fj-reply-author { font-style: italic; }
+.fj-headline { font-style: normal; }
 .fj-reply-text { font-style: normal; font-family: Arial, Helvetica, sans-serif; }
 .fj-reply-text.fj-reply-author { font-style: italic; }
 @media (max-width: 899px) {

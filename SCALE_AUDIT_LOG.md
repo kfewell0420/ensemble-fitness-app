@@ -12,6 +12,13 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-17 (journeys page: headline back to upright)
+Correction from Ken: the bold post headline ("I went to the park...", "Down
+22 lbs...") is NOT slanted. `fitness-journeys.html`: `.fj-headline` back to
+upright (stays bold black). Still slanted: the notes quote, the date/"Felt..."
+line and the poster's own replies; other members' comments stay upright dark
+grey. Same on real and example posts.
+
 ## 2026-10-17 (journeys page: slanted poster writing, upright darker comments)
 `fitness-journeys.html`: what the POSTER writes (headline, notes quote, the
 date/"Felt..." line) is now italic ("slant") with pure black text and a touch
