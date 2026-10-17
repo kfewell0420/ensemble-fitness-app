@@ -230,9 +230,10 @@
       .eq("status", "approved")
       .order("created_at", { ascending: false });
 
-    // The profile photo itself already shows up in the header above, so
-    // leave it out of the grid below to avoid showing it twice.
-    var items = (data || []).filter(function (item) { return !item.is_profile_photo; });
+    // The plain profile photo already shows up in the header above, so leave it out of the grid below to
+    // avoid showing it twice. A categorized profile-picture post ("Strike a Pose") and every video are real
+    // posts (the feed shows them) and stay in the grid, matching the member's own "My uploads".
+    var items = (data || []).filter(function (item) { return !(item.kind === "photo" && item.is_profile_photo === true && !item.workout_type); });
 
     eyebrow.style.display = "block";
     heading.style.display = "block";

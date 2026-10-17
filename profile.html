@@ -1385,18 +1385,20 @@
     var grid = document.getElementById("mediaGrid");
     var { data, error } = await window.sb
       .from("media")
-      .select("id, kind, storage_path, poster_path, status, narration_path, trim_start, trim_end, reject_reason, music_track_id, tracks(storage_path, title, artist_name)")
+      .select("id, kind, storage_path, poster_path, status, narration_path, trim_start, trim_end, reject_reason, music_track_id, is_profile_photo, workout_type, tracks(storage_path, title, artist_name)")
       .eq("user_id", currentUser.id)
-      // Profile photos are kept separate: they live only as the profile picture
-      // and never show up in (or count toward) "My uploads".
-      .or("is_profile_photo.is.null,is_profile_photo.eq.false")
       .order("created_at", { ascending: false });
 
     if (error) {
       grid.innerHTML = '<div class="empty-state">Couldn\'t load your uploads.</div>';
       return;
     }
-    if (!data || data.length === 0) {
+    // Ken's rule (Oct 2026): only a PLAIN profile picture (a photo flagged as the avatar that was never
+    // posted with a category like "Strike a Pose") stays out of My uploads and the Uploads count. Every
+    // real post counts -- including a categorized profile-picture post and any video, even if an old row
+    // was wrongly flagged is_profile_photo. Done here (not in the query) so NULL flags can never hide a post.
+    data = (data || []).filter(function (r) { return !(r.kind === "photo" && r.is_profile_photo === true && !r.workout_type); });
+    if (data.length === 0) {
       grid.innerHTML = '<div class="empty-state pf-empty-art" data-art="📸">Nothing here yet — tap Post below to add your first photo, video, or voice update.</div>';
       return;
     }

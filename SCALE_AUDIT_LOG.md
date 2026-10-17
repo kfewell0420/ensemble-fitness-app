@@ -12,6 +12,21 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-17 (profile "Uploads" count was missing real posts) -- website + phone app
+Ken: Inspired365Network has 4 posts but the profile showed 2 uploads. Diagnosed from the media table (5 rows
+for the account): 2 photos flagged is_profile_photo (one plain avatar, one categorized "Strike a Pose"),
+1 normal video, 1 video ALSO flagged is_profile_photo=true (same timestamp as the normal one, so a
+wrongly flagged/duplicate row -- videos should never carry that flag), 1 normal photo. `loadMyMedia` hid every
+is_profile_photo row, so it dropped the Strike a Pose profile post AND the flagged video.
+Fix: `profile.html` now hides ONLY a plain avatar (kind photo + is_profile_photo true + no workout_type);
+filtering is done in JS after the query so NULL flags can never hide a post. `member.html` (public profile
+grid) uses the same rule so what other members see matches the owner's own count. Result for Ken: 4 uploads.
+Read-only change, nothing deleted. OPEN: the flagged duplicate video row (same created_at as its twin) could
+be cleaned with `update media set is_profile_photo=false where kind<>'photo' and is_profile_photo` -- not run;
+other members may have the same wrongly flagged video rows (this rule shows them anyway).
+
+---
+
 ## 2026-10-17 (phone comments sit above the keyboard; followers show profile photos) -- website + phone app
 Ken: (1) on a phone the keyboard covered the video when tapping Comment; (2) the Followers list showed only
 initials instead of profile photos.
