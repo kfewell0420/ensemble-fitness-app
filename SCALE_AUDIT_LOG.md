@@ -12,6 +12,23 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-17 (journeys page: photo as full-page backdrop bleeding into orange)
+Ken: the photo should be a backdrop, not a pill, and the page should be an
+engaging orange rather than pink. `fitness-journeys.html`, phones only:
+- The "pill" banner is gone. The sunset photo (re-exported at 1000px wide,
+  ~80KB, `assets/journeys-help.jpg`, same filename so just replace it) now
+  runs edge to edge from the very top behind the home/bell icons and the
+  "Stronger Together / Post an update" words (new `.fj-backdrop` element at
+  the top of <body>, height min(54vw, 250px)), with a left-side warm wash for
+  text legibility and a bottom fade into the page colour so it bleeds into
+  the page instead of ending in a box.
+- Page colour is now a vivid but not dark orange gradient (#ffbd6c -> #ffa44f
+  -> #ff8f40) matching the photo's sunset; page text/eyebrows are dark brown;
+  card borders, pills and chips stay warm orange (no pink).
+- Cards, headline pills, cheer chips unchanged apart from colours.
+Desktop untouched. Website-only until next app build. Both folders need the
+updated jpg (member-app/assets and mobile www/assets).
+
 ## 2026-10-17 (journeys page: orange-leaning backdrop, real photo hero, no icons)
 Ken's feedback on the warm redesign. `fitness-journeys.html` phone skin:
 - Page background is now orange-peach going to a soft coral (#ffdcbc ->

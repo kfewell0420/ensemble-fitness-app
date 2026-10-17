@@ -200,6 +200,8 @@
 </style>
 </head>
 <body>
+<!-- Ken (Oct 2026): phones only. The sunset photo is the page backdrop: full width at the top, fading into the orange page colour. -->
+<div class="fj-backdrop" aria-hidden="true"><img src="assets/journeys-help.jpg" alt="" decoding="async" /></div>
 
 <!-- Ken's ask (Nov 2026): this page should NOT show the usual site-wide
      header/nav (logo, Community/Share Your Journey/Gear/etc. links, Sign
@@ -283,15 +285,15 @@
 .fj-quote, .fj-meta-line, .fj-reply-author { font-style: italic; }
 .fj-headline { font-style: normal; }
 /* new in Oct 2026 (phones only; shown by the phone block below) */
-.fj-hero-title, .fj-hero-art, .fj-support { display: none; }
+.fj-hero-title, .fj-backdrop, .fj-support { display: none; }
 .fj-headline-box { display: block; }
 .fj-reply-text { font-style: normal; font-family: Arial, Helvetica, sans-serif; }
 .fj-reply-text.fj-reply-author { font-style: italic; }
 @media (max-width: 899px) {
-  body { background: linear-gradient(180deg,#ffdcbc 0%,#ffc79e 45%,#ffb691 100%) fixed; color: #16181d; --muted-invert: #5f6470; --faint-invert: #8a8f99; }
-  h1, h2, h3, h4 { color: #16181d; }
-  p, .card-sub { color: #3f434c; }
-  .eyebrow { color: #a8360a; }
+  body { position: relative; background: linear-gradient(180deg,#ffbd6c 0%,#ffa44f 45%,#ff8f40 100%); color: #16181d; --muted-invert: #5f6470; --faint-invert: #8a8f99; }
+  h1, h2, h3, h4 { color: #3a1608; }
+  p, .card-sub { color: #5a2a10; }
+  .eyebrow { color: #7a2a08; }
   .app-nav { background: transparent; border-bottom: 0; }
   .app-shell { padding-left: 16px; padding-right: 16px; padding-bottom: 40px; }
   .card { background: #fff; border: 1px solid #e4bfae; box-shadow: none; }
@@ -306,7 +308,7 @@
   .empty-state { color: #6b6f78; }
 
   /* filter pills */
-  .fj-count-line { color: #3f434c; }
+  .fj-count-line { color: #5a2a10; }
   .fj-pill { background: #fff; border: 1px solid #e4bfae; color: #5f6470; }
   .fj-pill.active { background: #fff1e6; border-color: #ff5a1f; color: #b4410f; }
 
@@ -344,26 +346,29 @@
   .simple-modal-overlay { background: rgba(22,24,29,0.45); }
   .simple-modal h3, .simple-modal label { color: #16181d; }
   .simple-modal p, .simple-modal .card-sub { color: #5f6470; }
-  .simple-modal .eyebrow { color: #a8360a; }
+  .simple-modal .eyebrow { color: #7a2a08; }
   .simple-modal input, .simple-modal textarea, .simple-modal select { background: #faf8f5; border: 1px solid #e3ddd4; color: #16181d; }
   .simple-modal-close { background: #f1ece5; color: #16181d; }
   .simple-modal .report-target-preview { background: #faf8f5; color: #5f6470; }
 
   /* ---- Round 2 (Ken, Oct 2026): warmer, more inspiring look: peach/pink page, mini hero with two hikers,
      pink-outlined headline boxes, deeper pink category chips, tap-to-cheer chips. ---- */
-  .fj-hero { position: relative; min-height: 108px; padding: 14px 16px; margin: 6px 0 14px; border-radius: 18px; overflow: hidden;
-    display: flex; flex-direction: column; justify-content: center;
-    background: linear-gradient(90deg,#ffb868,#ffa24b 55%,#ff9843); box-shadow: 0 2px 8px rgba(150,60,10,0.22); }
+  .fj-backdrop { display: block; position: absolute; z-index: 0; top: 0; left: 0; right: 0; height: min(54vw, 250px); overflow: hidden; pointer-events: none; }
+  .fj-backdrop img { width: 100%; height: 100%; object-fit: cover; object-position: 70% 40%; display: block; }
+  .fj-backdrop::after { content: ""; position: absolute; inset: 0;
+    background: linear-gradient(90deg, rgba(255,176,88,0.80) 0%, rgba(255,176,88,0.45) 38%, rgba(255,176,88,0) 62%),
+                linear-gradient(180deg, rgba(255,189,108,0) 45%, #ffbd6c 100%); }
+  .app-nav, .app-shell { position: relative; z-index: 1; }
+  .fj-hero { position: relative; min-height: 104px; padding: 12px 4px 8px; margin: 0 0 14px; border-radius: 0; overflow: visible;
+    display: flex; flex-direction: column; justify-content: center; background: none; box-shadow: none; }
   .fj-hero > * { position: relative; z-index: 1; }
-  .fj-hero > .fj-hero-art { display: block; position: absolute; z-index: 0; right: 0; bottom: 0; top: 0; height: 100%; width: 54%; object-fit: cover; object-position: 80% 40%;
-    -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 30%); mask-image: linear-gradient(90deg, transparent 0, #000 30%); }
-  .fj-hero .fj-hero-script { font-size: 26px; line-height: 1.1; color: #8a2c08; margin: 0 0 2px; }
+  .fj-hero .fj-hero-script { font-size: 26px; line-height: 1.1; color: #7a2a08; margin: 0 0 2px; }
   .fj-hero .fj-hero-title { display: block; font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 23px; line-height: 1.1; color: #3a1608; }
   .fj-narrow:not(.fj-how) > h2 { display: none; }
   #fjComposerAnchor { display: none; }
 
-  .fj-card { border: 1px solid #f2b896; box-shadow: 0 2px 8px rgba(150,60,10,0.14); }
-  .fj-pill { border: 1px solid #f0b08c; }
+  .fj-card { border: 1px solid #ffc896; box-shadow: 0 2px 8px rgba(150,60,10,0.14); }
+  .fj-pill { border: 1px solid rgba(255,255,255,0.9); }
   .fj-pill.active { background: #ffe3d6; border-color: #ff5a1f; color: #b4410f; }
   .fj-headline-box { display: flex; align-items: center; gap: 10px; background: #fff0e2; border: 1.5px solid #f08a5a; border-radius: 14px; padding: 10px 12px; margin-bottom: 10px; }
   .fj-headline-box .fj-headline { margin: 0; font-size: 15.5px; line-height: 1.25; }
@@ -384,7 +389,6 @@
   <div class="fj-hero">
     <div class="fj-hero-script">Stronger Together</div>
     <div class="fj-hero-title">Post an update</div>
-    <img class="fj-hero-art" src="assets/journeys-help.jpg" alt="" decoding="async" />
     <h1>Real people. Real progress.</h1>
     <p>Every post here is from a real Ensemble Fitness member — the wins, the hard days,<br>and everything in between. Share where you're at, and cheer someone else on.</p>
     <!-- Ken's ask (Oct 2026, round 8): "View Recent Journeys" wasn't doing
