@@ -12,6 +12,18 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-17 (comments: the comment box is ready to type the moment comments open) -- website + phone app
+Ken: tapping Comment on a post just opened the comments page; members had to tap the box before typing.
+`feed.html`: `openCommentsModal` now builds the "Add a comment..." row immediately (`buildCommentInputRow`)
+and focuses it inside the tap, so the keyboard/cursor are ready while the comments load. `loadComments`
+keeps the existing row for the same post (no duplicate / no lost typing) and removes a stale row from a
+different post. After Post the box is refocused for a quick follow-up. Same treatment for Journey
+replies (`buildJourneyReplyRow`, `openJourneyReplyModal`, `loadJourneyReplies`, `postJourneyReply`).
+Signed-out viewers still see no input. No database change, nothing hidden or deleted. Phone app picks it
+up with the next build (mobile www/feed.html mirrored).
+
+---
+
 ## 2026-10-17 (admin: new "Product" category for Approved Products) -- website only
 Ken: add one more category/tab called "Product" to the Approved Products Category drop-down.
 `admin.html`: `GEAR_CATEGORIES` now ends "... Health Care, Nutrition, Product, Wellness" (before "Other..."; Wellness added right after at Ken's request);

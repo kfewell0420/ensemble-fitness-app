@@ -4378,7 +4378,35 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
       : '<img src="' + (item.imgUrl || item.url) + '" data-orig="' + item.url + '" onerror="if(this.dataset.orig&&this.src!==this.dataset.orig){this.src=this.dataset.orig}" alt="" />';
 
     modal.hidden = false;
+    // Ken's ask (Oct 2026): tapping Comment should put the cursor straight in the box so the member can type
+    // right away. The row is built and focused HERE, inside the tap itself (phones only open the keyboard for a
+    // focus that happens inside the tap, not after the comments finish loading); loadComments below keeps it.
+    var staleRow = panel.querySelector(".rp-comment-input-row");
+    if (staleRow) staleRow.remove();
+    panel.dataset.inputFor = "";
+    if (currentUserId) buildCommentInputRow(item, panel, true);
     loadComments(item, panel);
+  }
+
+  // The "Add a comment…" box + Post button at the bottom of the comments panel.
+  function buildCommentInputRow(item, panel, focusIt) {
+    var inputRow = document.createElement("div");
+    inputRow.className = "rp-comment-input-row";
+    inputRow.innerHTML =
+      '<input type="text" class="rp-comment-input" maxlength="300" placeholder="Add a comment…" />' +
+      '<button type="button" class="rp-comment-send">Post</button>';
+    panel.appendChild(inputRow);
+    panel.dataset.inputFor = String(item.id);
+    var sendBtn = inputRow.querySelector(".rp-comment-send");
+    sendBtn.addEventListener("click", function () { postComment(item, panel); });
+    // keep the cursor (and the phone keyboard) in the box while tapping Post, so they can keep typing
+    sendBtn.addEventListener("mousedown", function (e) { e.preventDefault(); });
+    var inputEl = inputRow.querySelector(".rp-comment-input");
+    inputEl.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") postComment(item, panel);
+    });
+    if (focusIt) { try { inputEl.focus({ preventScroll: true }); } catch (e) { inputEl.focus(); } }
+    return inputEl;
   }
 
   function closeCommentsModal() {
@@ -4397,7 +4425,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     // Reopening for a different post while an input row from the last one
     // is still attached would otherwise stack a second input row below it.
     var oldInputRow = panel.querySelector(".rp-comment-input-row");
-    if (oldInputRow) oldInputRow.remove();
+    if (oldInputRow && panel.dataset.inputFor !== String(item.id)) { oldInputRow.remove(); oldInputRow = null; }
 
     var { data: comments } = await window.sb
       .from("media_comments")
@@ -4418,18 +4446,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     var listEl = panel.querySelector(".rp-comments-list");
     listEl.innerHTML = listHtml;
 
-    if (currentUserId) {
-      var inputRow = document.createElement("div");
-      inputRow.className = "rp-comment-input-row";
-      inputRow.innerHTML =
-        '<input type="text" class="rp-comment-input" maxlength="300" placeholder="Add a comment…" />' +
-        '<button type="button" class="rp-comment-send">Post</button>';
-      panel.appendChild(inputRow);
-      inputRow.querySelector(".rp-comment-send").addEventListener("click", function () { postComment(item, panel); });
-      inputRow.querySelector(".rp-comment-input").addEventListener("keydown", function (e) {
-        if (e.key === "Enter") postComment(item, panel);
-      });
-    }
+    if (currentUserId && !oldInputRow) buildCommentInputRow(item, panel, false);
   }
 
   async function postComment(item, panel) {
@@ -4439,6 +4456,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     input.value = "";
     await window.sb.from("media_comments").insert({ media_id: item.id, user_id: currentUserId, body: body });
     loadComments(item, panel);
+    try { input.focus({ preventScroll: true }); } catch (e) { /* fine */ }
     var commentBtn = document.querySelector("#rpActions-" + item.id + " .rp-comment-btn");
     if (commentBtn) {
       var countEl = commentBtn.querySelector(".rp-action-count");
@@ -4464,14 +4482,38 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     headerText.textContent = (item.name || "A member") + "'s journey";
 
     modal.hidden = false;
+    // same as video comments: the cursor lands in the reply box inside the tap itself
+    var staleRow = panel.querySelector(".rp-comment-input-row");
+    if (staleRow) staleRow.remove();
+    panel.dataset.inputFor = "";
+    if (currentUserId) buildJourneyReplyRow(item, panel, true);
     loadJourneyReplies(item, panel);
+  }
+
+  function buildJourneyReplyRow(item, panel, focusIt) {
+    var inputRow = document.createElement("div");
+    inputRow.className = "rp-comment-input-row";
+    inputRow.innerHTML =
+      '<input type="text" class="rp-comment-input" maxlength="500" placeholder="Add a reply…" />' +
+      '<button type="button" class="rp-comment-send">Post</button>';
+    panel.appendChild(inputRow);
+    panel.dataset.inputFor = "j" + String(item.id);
+    var sendBtn = inputRow.querySelector(".rp-comment-send");
+    sendBtn.addEventListener("click", function () { postJourneyReply(item, panel); });
+    sendBtn.addEventListener("mousedown", function (e) { e.preventDefault(); });
+    var inputEl = inputRow.querySelector(".rp-comment-input");
+    inputEl.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") postJourneyReply(item, panel);
+    });
+    if (focusIt) { try { inputEl.focus({ preventScroll: true }); } catch (e) { inputEl.focus(); } }
+    return inputEl;
   }
 
   async function loadJourneyReplies(item, panel) {
     var listEl = panel.querySelector(".rp-comments-list");
     listEl.innerHTML = "Loading…";
     var oldInputRow = panel.querySelector(".rp-comment-input-row");
-    if (oldInputRow) oldInputRow.remove();
+    if (oldInputRow && panel.dataset.inputFor !== "j" + String(item.id)) { oldInputRow.remove(); oldInputRow = null; }
 
     var { data: replies } = await window.sb
       .from("story_replies")
@@ -4492,18 +4534,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     listEl = panel.querySelector(".rp-comments-list");
     listEl.innerHTML = listHtml;
 
-    if (currentUserId) {
-      var inputRow = document.createElement("div");
-      inputRow.className = "rp-comment-input-row";
-      inputRow.innerHTML =
-        '<input type="text" class="rp-comment-input" maxlength="500" placeholder="Add a reply…" />' +
-        '<button type="button" class="rp-comment-send">Post</button>';
-      panel.appendChild(inputRow);
-      inputRow.querySelector(".rp-comment-send").addEventListener("click", function () { postJourneyReply(item, panel); });
-      inputRow.querySelector(".rp-comment-input").addEventListener("keydown", function (e) {
-        if (e.key === "Enter") postJourneyReply(item, panel);
-      });
-    }
+    if (currentUserId && !oldInputRow) buildJourneyReplyRow(item, panel, false);
   }
 
   async function postJourneyReply(item, panel) {
@@ -4513,6 +4544,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     input.value = "";
     await window.sb.from("story_replies").insert({ question_id: item.id, user_id: currentUserId, reply_text: body });
     loadJourneyReplies(item, panel);
+    try { input.focus({ preventScroll: true }); } catch (e) { /* fine */ }
     var countEl = document.querySelector('[data-real-id="' + item.id + '"] .rp-comment-btn .rp-action-count');
     if (countEl) countEl.textContent = (parseInt(countEl.textContent || "0", 10) || 0) + 1;
   }
