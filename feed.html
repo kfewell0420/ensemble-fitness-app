@@ -87,7 +87,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     /* Ken (round 2): the red pill only needs the room its words take, pushed to the right edge (it shrinks from the left),
        with white writing. */
     .rp-journeys-pill { flex: 0 1 auto; min-width: 0; margin-left: auto; display: flex; align-items: center; justify-content: space-between; gap: 8px;
-      position: relative; padding: 4px 14px; border-radius: 14px; background: #e5322d; color: #fff; text-decoration: none; font-family: 'Poppins','Inter',sans-serif; }
+      position: relative; padding: 4px 9px; justify-content: center; border-radius: 14px; background: #e5322d; color: #fff; text-decoration: none; font-family: 'Poppins','Inter',sans-serif; }
     .rp-jp-text { font-size: 12px; font-weight: 800; line-height: 1.15; letter-spacing: 0.01em; white-space: nowrap; }
     /* Ken (round 3): the count is its own little entity, half inside / half outside the top-right corner of the pill: just a yellow
        number (no circle), and it never changes the pill's size. */
@@ -1934,7 +1934,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
       <!-- Ken's ask (Oct 2026): phone-only "Your Journeys" pill beside the (now shorter) Healthy Meal Preps pill.
            Red with black writing; the small count is how many new journeys were shared since the member last tapped it. -->
       <a class="rp-journeys-pill" id="rpJourneysPill" href="fitness-journeys.html" aria-label="Your Journeys">
-        <span class="rp-jp-text">Your Journeys</span><span class="rp-jp-num" id="rpJourneysPillNum" hidden></span>
+        <span class="rp-jp-text">Your Journeys</span><span class="rp-jp-num" id="rpJourneysPillNum">1</span>
       </a>
       </div>
       <div class="rp-mealprep-track" id="rpMealPrepTrack"></div>
@@ -2538,9 +2538,18 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
   // One saved "last looked" time PER MEMBER (keyed by their user id), so two members on the same phone never share it,
   // and one member tapping never touches anyone else's count.
   function journeysSeenKey() { return "efJourneysSeenAt:" + (currentUserId || "anon"); }
+  // Ken (Oct 2026): until the community is busy, the pill ALWAYS shows at least this number so members see it is a live
+  // button and tap it. Real new journeys push it higher (2, 3, 4 ...). Set to 0 to let it disappear when nothing is new.
+  // (Reminder set for ~January 2027 to revisit this once there are plenty of members.)
+  var JOURNEYS_MIN_BADGE = 1;
   async function refreshJourneysPill() {
     var num = document.getElementById("rpJourneysPillNum");
     if (!num) return;
+    function show(n) {
+      n = Math.max(JOURNEYS_MIN_BADGE, n || 0);
+      if (n > 0) { num.textContent = n > 99 ? "99+" : String(n); num.hidden = false; }
+      else { num.hidden = true; }
+    }
     var since = null;
     try { since = localStorage.getItem(journeysSeenKey()); } catch (e) {}
     if (!since || isNaN(Date.parse(since))) since = new Date(Date.now() - 7 * 86400000).toISOString();
@@ -2549,10 +2558,8 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
         .select("id", { count: "exact", head: true })
         .eq("status", "approved")
         .gt("created_at", since);
-      var n = res && res.count ? res.count : 0;
-      if (n > 0) { num.textContent = n > 99 ? "99+" : String(n); num.hidden = false; }
-      else { num.hidden = true; }
-    } catch (e) { num.hidden = true; }
+      show(res && res.count ? res.count : 0);
+    } catch (e) { show(0); }
   }
   // Come back to the feed (from the Journeys page, or switching apps) -> recount, so a journey you just posted shows up.
   window.addEventListener("pageshow", function (e) { if (e.persisted) refreshJourneysPill(); });

@@ -12,6 +12,23 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-17 (feed: Your Journeys pill tighter; count locked to a minimum of 1)
+Ken: shrink the red pill from its LEFT side only (right edge stays aligned with
+the page) and keep the words centred; and always show a number so members
+discover it is a live button. `feed.html`:
+- Pill padding 4px 14px -> 4px 9px with centred text; right edge unchanged
+  (395px at a 409px phone), left edge moved ~10px right.
+- `JOURNEYS_MIN_BADGE = 1`: the number is never lower than 1 (also shown from
+  first paint: the markup now starts with "1" instead of hidden). Real new
+  journeys since the member last tapped push it higher (2, 3, 4 ...). Tapping
+  still resets each member's own count, which then falls back to the locked 1.
+- TO REVISIT ~early Jan 2027 (reminder scheduled, trig_01JFNKDfenyNSMDXkAbzmMnw):
+  set `JOURNEYS_MIN_BADGE = 0` once there are plenty of members/posts so the
+  number can clear.
+- Also noted by Ken for later (nothing changed): tapping the "Ensemble Fitness"
+  logo just reloads the feed, and the Healthy Meal Preps pill isn't tappable.
+Website-only until next app build (iOS 10 / Android 4).
+
 ## 2026-10-17 (feed: "Your Journeys" count saved per member)
 Ken asked that one member viewing journeys must not clear the number for other
 members. It never could (the "last looked" time lives in each phone's own
