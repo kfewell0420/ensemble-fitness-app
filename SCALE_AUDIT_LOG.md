@@ -12,6 +12,15 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-17 (feed: Your Journeys count no longer grows the pill)
+Ken: when a new journey was posted the pill grew. `feed.html` phone header:
+the "Your Journeys" pill is now a fixed one-line pill (no inner number, text
+nowrap, 4px/14px padding) and the count is an absolutely positioned yellow
+number (17px, heavy, dark outline shadow, no circle) sitting half in / half out
+of the pill's top-right corner (`top:-9px; right:4px`), so showing, hiding or
+changing the number never changes the pill's size. Same count logic as before.
+Website-only until next app build.
+
 ## 2026-10-17 (journeys page: hearts removed)
 `fitness-journeys.html` only: the two-hearts "connection key" icon in the
 top-right corner is hidden on this page (`.app-nav-connect {display:none}`
