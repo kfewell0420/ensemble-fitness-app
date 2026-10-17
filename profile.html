@@ -709,31 +709,33 @@
     currentUser = await requireAuth();
     if (!currentUser) return;
     setModerationUser(currentUser.id);
-    await loadBlockedIds();
 
-    if (await isCurrentUserAdmin()) {
-      document.getElementById("adminLink").style.display = "inline";
-    }
-
-    await loadProfile();
-    await loadAvatar();
-    await loadMyMedia();
-    try { await loadMyMusic(); } catch (e) { console.error("loadMyMusic", e); }
-    await loadFollowCounts();
-    await loadInbox();
-    await loadBlockedMembers();
+    // Speed (Ken, Oct 2026): these used to run one after another (~15 round trips, each ~100-130 ms on a
+    // phone => 2+ s before the page settled). None of them depends on another's result, so they all start
+    // together and the page is ready after the slowest one (~the My uploads picture list) instead of the sum.
+    function safely(label, p) { return Promise.resolve(p).catch(function (e) { console.error(label, e); }); }
+    await Promise.all([
+      safely("blocked", loadBlockedIds()),
+      safely("admin", isCurrentUserAdmin().then(function (isAdmin) {
+        if (isAdmin) document.getElementById("adminLink").style.display = "inline";
+      })),
+      safely("profile", loadProfile()),
+      safely("avatar", loadAvatar()),
+      safely("uploads", loadMyMedia()),
+      safely("music", loadMyMusic()),
+      safely("follows", loadFollowCounts()),
+      safely("inbox", loadInbox()),
+      safely("blockedList", loadBlockedMembers())
+    ]);
   }
 
   // ---- Followers / Following ---------------------------------------------
   async function loadFollowCounts() {
-    var { count: followerCount } = await window.sb
-      .from("follows")
-      .select("follower_id", { count: "exact", head: true })
-      .eq("followee_id", currentUser.id);
-    var { count: followingCount } = await window.sb
-      .from("follows")
-      .select("followee_id", { count: "exact", head: true })
-      .eq("follower_id", currentUser.id);
+    var fcRes = await Promise.all([
+      window.sb.from("follows").select("follower_id", { count: "exact", head: true }).eq("followee_id", currentUser.id),
+      window.sb.from("follows").select("followee_id", { count: "exact", head: true }).eq("follower_id", currentUser.id)
+    ]);
+    var followerCount = fcRes[0].count, followingCount = fcRes[1].count;
 
     document.getElementById("followersCount").textContent = followerCount || 0;
     document.getElementById("followingCount").textContent = followingCount || 0;
@@ -972,21 +974,24 @@
 
     // Connection status lives in its own best-effort query so this page keeps
     // working even before sql/connection-status.sql has been run.
+    // (both lookups start together -- they used to run back to back)
+    var csPromise = window.sb.from("profiles").select("connection_status").eq("id", currentUser.id).maybeSingle();
+    var mainPromise = window.sb
+      .from("profiles")
+      .select("display_name, bio, zip_code, wake_time_category, relationship_intent, is_artist, height_inches, fitness_plus_active")
+      .eq("id", currentUser.id)
+      .maybeSingle();
     try {
-      var csRes = await window.sb.from("profiles").select("connection_status").eq("id", currentUser.id).maybeSingle();
+      var csRes = await csPromise;
       if (csRes && !csRes.error && csRes.data) {
         document.getElementById("connectionStatus").value = csRes.data.connection_status || "";
       }
     } catch (csErr) { /* column not there yet — ignore */ }
 
-    var { data, error } = await window.sb
-      .from("profiles")
-      .select("display_name, bio, zip_code, wake_time_category, relationship_intent, is_artist, height_inches, fitness_plus_active")
-      .eq("id", currentUser.id)
-      .maybeSingle();
+    var { data, error } = await mainPromise;
     if (data && data.is_artist) {
       document.getElementById("payoutsCard").style.display = "block";
-      await loadPayoutStatus();
+      loadPayoutStatus(); // its own slow call to the payments server must not hold up the rest of the page
     }
     if (data) {
       document.getElementById("displayName").value = data.display_name || "";
@@ -1413,7 +1418,10 @@
     // "Keep my video's own sound" flags — own best-effort query so this page keeps
     // working before sql/keep-original-audio.sql has been run.
     var keepOriginalById = {}, musicStartById = {}, musicWinById = {}, clipDursById = {};
-    if (videoIds.length) {
+    var clipsByMediaId = {};
+    // (the two lookups below used to run one after the other; they are independent, so they run together)
+    async function loadKeepFlags() {
+      if (!videoIds.length) return;
       try {
         var keepRes = await window.sb.from("media").select("id, keep_original_audio, music_start_seconds, music_delay_seconds, music_length_seconds, clip_durations").in("id", videoIds);
         if (keepRes && keepRes.error) keepRes = await window.sb.from("media").select("id, keep_original_audio, music_start_seconds, music_delay_seconds, music_length_seconds").in("id", videoIds);
@@ -1430,8 +1438,8 @@
         }
       } catch (keepErr) { /* columns not there yet — ignore */ }
     }
-    var clipsByMediaId = {};
-    if (videoIds.length) {
+    async function loadClipRows() {
+      if (!videoIds.length) return;
       try {
         var { data: clipRows } = await window.sb
           .from("media_clips")
@@ -1444,6 +1452,7 @@
         });
       } catch (e) { /* table not migrated yet, or a network hiccup — posts just show as single-clip */ }
     }
+    await Promise.all([loadKeepFlags(), loadClipRows()]);
 
     // Same fix as the main feed: fetch every item's signed URLs in
     // parallel instead of one item at a time, so this list doesn't sit
@@ -1454,6 +1463,9 @@
       var wantsPoster = item.kind === "video" && !!item.poster_path;
       var extraClipRows = clipsByMediaId[item.id] || [];
 
+      var extraClipSignedPromise = Promise.all(extraClipRows.map(function (c) {
+        return window.sb.storage.from("media").createSignedUrl(c.storage_path, 3600);
+      }));
       var results = await Promise.all([
         window.sb.storage.from("media").createSignedUrl(item.storage_path, 3600),
         wantsNarration ? window.sb.storage.from("media").createSignedUrl(item.narration_path, 3600) : Promise.resolve({ data: null }),
@@ -1461,11 +1473,9 @@
         wantsPoster ? window.sb.storage.from("media").createSignedUrl(item.poster_path, 3600) : Promise.resolve({ data: null })
       ]);
 
-      // Extra clips reuse this exact same one-signed-URL-per-file approach
-      // as everything else on this page — no separate signing mechanism.
-      var extraClipSigned = await Promise.all(extraClipRows.map(function (c) {
-        return window.sb.storage.from("media").createSignedUrl(c.storage_path, 3600);
-      }));
+      // Extra clips reuse this exact same one-signed-URL-per-file approach as everything else on this page;
+      // they are signed at the same time as the main file (above), not after it.
+      var extraClipSigned = await extraClipSignedPromise;
 
       return {
         raw: item,
@@ -1503,10 +1513,10 @@
       // (wireNarrationSync below) — a plain video plays with its own real
       // sound the moment someone presses play, no separate unmute needed.
       var mediaEl = item.kind === "video"
-        ? '<video src="' + url + '"' + (posterUrl ? ' poster="' + posterUrl + '"' : '') + (soundUrl && !keepOriginal ? " muted" : "") + ' controls playsinline></video>' + (soundUrl ? '<audio class="' + soundClass + '" src="' + soundUrl + '" preload="auto"></audio>' : '')
+        ? '<video src="' + url + '"' + (posterUrl ? ' poster="' + posterUrl + '"' : '') + ' preload="metadata"' + (soundUrl && !keepOriginal ? " muted" : "") + ' controls playsinline></video>' + (soundUrl ? '<audio class="' + soundClass + '" src="' + soundUrl + '" preload="auto"></audio>' : '')
         : item.kind === "audio"
         ? '<div class="audio-card"><span class="audio-ico">🎙️</span><audio src="' + url + '" controls></audio></div>'
-        : '<img src="' + url + '" alt="Upload" />';
+        : '<img src="' + url + '" alt="Upload" loading="lazy" decoding="async" />';
 
       tile.innerHTML =
         mediaEl +

@@ -12,6 +12,23 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-17 (speed: Profile page loads its parts at the same time) -- website + phone app
+Ken: Profile takes a while to load; keep everything fast and competitive with other social apps.
+Cause (code read, `profile.html` `init`): about 15-20 database round trips ran ONE AFTER ANOTHER (blocked list ->
+admin check -> profile (2 lookups) -> avatar (1-3) -> My uploads (list, then sound flags, then clips, then picture
+links, then extra-clip links) -> music -> follower counts (2) -> messages -> blocked members), ~100-130 ms each on a
+phone = 2+ s. Artists also waited on a call to the payments server.
+Fix (no behavior change, same data, same screens): `init` starts all nine loaders together; profile's two
+lookups, the two follower counts, My uploads' sound-flag + clip lookups, and the extra-clip links now run together;
+the artist payout call no longer blocks the page; each loader is wrapped so one failing can't stop the others;
+grid photos get `loading="lazy" decoding="async"`, grid videos `preload="metadata"` (explicit, same as before).
+Simulated with 120 ms per call: grid ready 1702 ms -> 466 ms. Real-phone numbers still to confirm (Speed Check page).
+Considered and NOT done: `preload="none"` on tile videos (trim/music sync wiring may need metadata); thumbnails via
+server-side resize (switched off 2026-10-12 for crop issues); public/stable media links (privacy decision for Ken).
+Other pages not yet audited this way: member.html, members.html, find.html.
+
+---
+
 ## 2026-10-17 (profile "Uploads" count was missing real posts) -- website + phone app
 Ken: Inspired365Network has 4 posts but the profile showed 2 uploads. Diagnosed from the media table (5 rows
 for the account): 2 photos flagged is_profile_photo (one plain avatar, one categorized "Strike a Pose"),
