@@ -12,6 +12,18 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-17 (music library: browse tracks is now the full-width song sheet)
+Ken asked that Music Library > Browse Playlist look exactly like the upload
+page's Choose a song > Music tracks sheet. `music-library.html` only: the
+centered pop-up card was replaced by the same bottom sheet (full width on a
+phone, 380px side panel on desktop; dark panel, "Music tracks" header + X,
+search "Search songs or artists", round play circle / title / artist rows).
+New header line: "Tap a track to listen, use it in your video, or tip the
+artist. More tracks coming soon." Each row keeps its length and Tip button;
+All Tracks / By Artist, search and tip messages use the same ids and code as
+before. Tested at 390px and 1200px (all, artist roster, artist drill-down,
+close). Website-only until the next app build (iOS 10 / Android 4).
+
 ## 2026-10-17 (products page: new intro wording)
 
 `gear.html` only. Heading is now "Real Products. Real Experience. Real Trust." with Ken's new

@@ -239,27 +239,21 @@
        on .simple-modal (see app.css) still caps this back down to fit a
        narrow phone screen automatically — this only changes the ceiling on
        wider screens. -->
-  <div class="simple-modal-overlay" id="playlistModalOverlay">
-    <div class="simple-modal" style="max-width:640px;">
-      <button type="button" class="simple-modal-close" id="playlistModalClose" aria-label="Close">&times;</button>
-      <div class="eyebrow" style="margin-bottom:2px;">Workout Playlist</div>
-      <h3 style="margin-bottom:4px;">Tap a track to listen, tip, and use it in a video</h3>
-      <p class="card-sub" style="margin-bottom:16px;">More tracks coming soon.</p>
-      <!-- Ken's ask (Oct 2026): tipping shouldn't require leaving this list
-           to open a track's full page — a one-tap "$2" button right on each
-           row (see buildTrackRow) sends the tip immediately, and the result
-           (thanks / on hold / hit a snag) shows right here so there's never
-           a reason to click through just to support an artist. Opening the
-           track itself is still there for anyone who wants the player, the
-           artist's bio, or a different tip amount — this is just the fast
-           path for "send $2 and be done." -->
+  <!-- Oct 2026, Ken's ask: this browse pop-up now uses the SAME bottom-sheet
+       layout as the "Choose a song > Music tracks" sheet on the upload page
+       (full width on a phone, 380px side panel on desktop): header + X,
+       search box, then rows with a round play circle, title, artist
+       underneath. Only the wording at the top differs, and each row also
+       keeps its length and the Tip button. All ids/behaviour (All Tracks /
+       By Artist, search, tip messages) are unchanged — only the look moved. -->
+  <div class="ml-sheet-overlay" id="playlistModalOverlay">
+    <div class="ml-sheet" role="dialog" aria-label="Music tracks">
+      <div class="ml-sheet-head">
+        <b>Music tracks</b>
+        <button type="button" class="ml-sheet-close" id="playlistModalClose" aria-label="Close">&#10005;</button>
+      </div>
+      <p class="ml-sheet-hint">Tap a track to listen, use it in your video, or tip the artist. <span>More tracks coming soon.</span></p>
       <div class="form-msg" id="playlistMsg"></div>
-      <!-- Nov 2026, Ken's ask: a way to browse "by artist" in addition to the
-           flat, searchable list of every track — see browseMode/renderArtistList
-           below. All Tracks stays the default (unchanged behavior); By Artist
-           swaps the same list box into an alphabetical roster of artist names,
-           tap one to drill into just their tracks (artistBackRow below gets
-           you back out). -->
       <div class="browse-toggle-row">
         <button type="button" class="browse-toggle-btn active" id="browseAllBtn">All Tracks</button>
         <button type="button" class="browse-toggle-btn" id="browseArtistBtn">By Artist</button>
@@ -268,9 +262,7 @@
         <button type="button" class="artist-back-btn" id="artistBackBtn">‹ All Artists</button>
         <span class="artist-back-name" id="artistBackName"></span>
       </div>
-      <div class="track-search-row">
-        <input type="search" id="trackSearchInput" class="track-search-input" placeholder="Search by title…" autocomplete="off">
-      </div>
+      <input type="search" id="trackSearchInput" class="ml-sheet-search" placeholder="Search songs or artists" autocomplete="off">
       <div class="track-table" id="tracksList">
         <div class="empty-state">Loading…</div>
       </div>
@@ -743,6 +735,34 @@
      the iTunes reference screenshot does. */
   .track-table-row:nth-child(even) { background: rgba(255, 255, 255, 0.02); }
   .track-table-row:nth-child(even):hover, .track-table-row:nth-child(even):focus-visible { background: rgba(255, 255, 255, 0.045); }
+
+  /* ---- Browse sheet (Oct 2026, Ken's ask) — mirrors upload.html's .mt-* song
+     sheet: dark #15151a panel, bottom sheet on a phone, side panel on desktop. */
+  .ml-sheet-overlay { position: fixed; inset: 0; z-index: 2000; background: rgba(0,0,0,0.55); display: none; }
+  .ml-sheet-overlay.show { display: flex; justify-content: flex-end; align-items: stretch; }
+  .ml-sheet { width: 380px; max-width: 100%; height: 100%; background: #15151a; color: #fff; display: flex; flex-direction: column; box-shadow: -8px 0 30px rgba(0,0,0,0.5); min-height: 0; }
+  .ml-sheet-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 16px 4px; font-size: 17px; }
+  .ml-sheet-close { width: 34px; height: 34px; border-radius: 50%; border: none; background: rgba(255,255,255,0.1); color: #fff; font-size: 15px; cursor: pointer; }
+  .ml-sheet-hint { margin: 0 16px 8px; font-size: 13px; line-height: 1.4; color: var(--muted-invert, #b5bad0); }
+  .ml-sheet-hint span { color: var(--faint-invert, #9aa0b4); }
+  .ml-sheet .form-msg { margin: 0 16px 8px; }
+  .ml-sheet .browse-toggle-row { margin: 0 16px 8px; }
+  .ml-sheet .artist-back-row { margin: 0 16px 8px; }
+  .ml-sheet-search { margin: 4px 16px 10px; padding: 11px 14px; border-radius: 10px; border: 1.5px solid rgba(255,255,255,0.14); background: rgba(255,255,255,0.06); color: #fff; font: inherit; font-size: 16px; width: auto; box-sizing: border-box; flex: none; }
+  .ml-sheet-search::placeholder { color: var(--faint-invert, #9aa0b4); }
+  .ml-sheet-search:focus { outline: none; border-color: var(--accent); }
+  .ml-sheet .track-table { flex: 1; min-height: 0; max-height: none; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 0 8px 20px; }
+  .ml-sheet .track-table-head { background: #15151a; padding: 4px 10px 8px; }
+  .ml-sheet .track-table-row { padding: 9px 10px; gap: 12px; border-bottom: none; border-radius: 10px; background: none; }
+  .ml-sheet .track-table-row:nth-child(even) { background: none; }
+  .ml-sheet .track-table-row:hover, .ml-sheet .track-table-row:focus-within { background: rgba(255,255,255,0.06); }
+  .ml-sheet .track-table-title { font-size: 15px; }
+  .ml-sheet .track-tip-btn-full { display: none; }
+  .ml-sheet .track-tip-btn-short { display: inline; }
+  @media (max-width: 560px) {
+    .ml-sheet-overlay.show { align-items: flex-end; }
+    .ml-sheet { width: 100%; height: 82vh; border-radius: 18px 18px 0 0; box-shadow: 0 -8px 30px rgba(0,0,0,0.5); }
+  }
 
   /* ---- Bottom tagline ----------------------------------------------------- */
   .ml-tagline {
@@ -1265,7 +1285,7 @@
     currentSearchQuery = "";
     var input = document.getElementById("trackSearchInput");
     input.value = "";
-    input.placeholder = "Search by title…";
+    input.placeholder = "Search songs or artists";
     document.getElementById("artistBackRow").style.display = "none";
     setActiveBrowseToggle("browseAllBtn");
     renderTrackList();
