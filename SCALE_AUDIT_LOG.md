@@ -15,10 +15,14 @@ briefly as a reminder; only new findings need the full writeup.
 ## 2026-10-17 (phone comments sit above the keyboard; followers show profile photos) -- website + phone app
 Ken: (1) on a phone the keyboard covered the video when tapping Comment; (2) the Followers list showed only
 initials instead of profile photos.
-(1) `feed.html`: phones (<900px) get a full-screen comments sheet sized to `window.visualViewport`
-(`syncCommentsViewport`, runs on open and on every keyboard show/hide): video/photo on top (38%),
-comments in the middle, "Add a comment..." box right above the keys. Video autoplays muted in the sheet and
-is cleared on close. Desktop two-pane modal and the Journey reply sheet (no media) are unchanged.
+(1) `feed.html` (REVISED after Ken saw the first version: the small video window and other members'
+comments were not wanted): on phones (<900px, signed in) Comment no longer opens a pop-up. The post's own
+feed card is scrolled to the top of the screen and only a slim bar -- X, "Add a comment...", Post -- sits
+right above the keyboard (`rp-compose-only`, `syncCommentsViewport` keeps it exactly above the keys). No
+second video, no controls/play button, other members' comments not shown or fetched. Posting, the X, or
+dismissing the keyboard closes the bar and scrolls back to where the member was; a "Comment posted" toast
+confirms and the card's comment count goes up. Desktop two-pane modal and the Journey reply sheet unchanged;
+signed-out phones keep the old sheet (no input).
 (2) `profile.html` `renderFollowList` (Followers AND Following): one batched lookup of each person's newest
 approved profile photo (`media` is_profile_photo=true, status approved, `createSignedUrls`), initial letter
 only when they have no photo. Read-only; nothing hidden or deleted. If the photo lookup fails the list still

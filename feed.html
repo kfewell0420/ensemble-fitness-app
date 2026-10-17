@@ -1238,39 +1238,48 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     cursor: pointer;
   }
 
-  /* Ken's ask (Oct 2026): on a phone the keyboard used to cover the video when tapping Comment.
-     Now the comments sheet fills the screen ABOVE the keyboard (JS sizes .rp-comments-modal to the
-     visible area, see syncCommentsViewport): the video/photo sits at the top, the comments in the
-     middle, and the "Add a comment…" box right above the keyboard. Phones only; desktop keeps its
-     two-pane modal, Journey replies keep the small bottom sheet. */
+  /* Ken's ask (Oct 2026): on a phone, tapping Comment must NOT shrink the video into a small window or
+     show other people's comments -- just slide the post up and show a slim "Add a comment..." bar right
+     above the keyboard (JS sizes .rp-comments-modal to the area the keyboard leaves free, see
+     syncCommentsViewport / openCommentsModal). The post itself is the real feed card, so there is no second
+     video to load and no play button. Posting (or the X) closes the bar and scrolls back to where you were.
+     Phones only; desktop keeps its two-pane modal, Journey replies keep their small bottom sheet. */
+  .rp-comment-cancel { display: none; }
   @media (max-width: 899px) {
-    .rp-comments-modal .rp-comments-modal-backdrop { background: rgba(0,0,0,0.85); }
-    .rp-comments-modal .rp-comments-modal-box:not(.rp-no-media) {
+    .rp-comments-modal.rp-compose-only { pointer-events: none; }
+    .rp-comments-modal.rp-compose-only .rp-comments-modal-backdrop { display: none; }
+    .rp-comments-modal.rp-compose-only .rp-comments-modal-box {
       max-width: none;
-      height: 100%;
       max-height: none;
-      border-radius: 0;
+      background: transparent;
       box-shadow: none;
-      padding-top: env(safe-area-inset-top, 0px);
+      border-radius: 0;
+      pointer-events: none;
     }
-    .rp-comments-modal .rp-comments-modal-box:not(.rp-no-media) .rp-comments-modal-media {
-      display: flex;
+    .rp-comments-modal.rp-compose-only .rp-comments-modal-media,
+    .rp-comments-modal.rp-compose-only .rp-comments-header,
+    .rp-comments-modal.rp-compose-only .rp-comments-list { display: none !important; }
+    .rp-comments-modal.rp-compose-only .rp-comment-input-row {
+      pointer-events: auto;
       align-items: center;
-      justify-content: center;
-      flex: 0 0 38%;
-      min-height: 110px;
-      background: #000;
-      overflow: hidden;
+      background: rgba(10,14,24,0.97);
+      border-top: 1px solid rgba(255,255,255,0.12);
+      padding: 8px 12px calc(env(safe-area-inset-bottom, 0px) + 8px);
     }
-    .rp-comments-modal .rp-comments-modal-box:not(.rp-no-media) .rp-comments-modal-media img,
-    .rp-comments-modal .rp-comments-modal-box:not(.rp-no-media) .rp-comments-modal-media video {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
+    .rp-comments-modal.rp-compose-only .rp-comment-cancel {
+      display: block;
+      flex: 0 0 auto;
+      background: none; border: none; color: rgba(255,255,255,0.75);
+      font-size: 18px; line-height: 1; padding: 6px 4px; cursor: pointer;
     }
-    .rp-comments-modal .rp-comments-modal-box:not(.rp-no-media) .rp-comments-header { padding: 8px 14px; }
-    .rp-comments-modal .rp-comments-modal-box:not(.rp-no-media) .rp-comments-list { min-height: 48px; }
-    .rp-comments-modal .rp-comments-modal-box:not(.rp-no-media) .rp-comment-input-row { padding-top: 8px; }
+    .rp-comments-modal.rp-compose-only .rp-comment-input { font-size: 16px; padding: 10px 14px; }
+    .rp-comments-modal.rp-compose-only .rp-comment-send { padding: 10px 18px; }
+  }
+  .rp-comment-toast {
+    position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%);
+    background: rgba(20,24,34,0.95); color: #fff; font-size: 13px; font-weight: 700;
+    padding: 9px 16px; border-radius: 999px; z-index: 70; pointer-events: none;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.35);
   }
 
   .rp-empty-reel {
@@ -4409,8 +4418,23 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     // The media pane is desktop-only (see CSS) — built either way since
     // it's cheap and the signed URL is already sitting on `item`.
     mediaEl.innerHTML = item.kind === "video"
-      ? '<video src="' + item.url + '" controls loop muted autoplay playsinline></video>'
+      ? '<video src="' + item.url + '" controls loop muted playsinline></video>'
       : '<img src="' + (item.imgUrl || item.url) + '" data-orig="' + item.url + '" onerror="if(this.dataset.orig&&this.src!==this.dataset.orig){this.src=this.dataset.orig}" alt="" />';
+
+    // Phones: no pop-up window at all -- scroll this post to the top of the screen and show only the slim
+    // comment bar above the keyboard (see the CSS comment). The slide is the real feed card already on screen.
+    var slideEl = null;
+    var actionsEl = document.getElementById("rpActions-" + item.id);
+    if (actionsEl && actionsEl.closest) slideEl = actionsEl.closest(".rp-slide");
+    composeOnly = !!(slideEl && window.matchMedia("(max-width: 899px)").matches && currentUserId);
+    modal.classList.toggle("rp-compose-only", composeOnly);
+    if (composeOnly) {
+      composeReturnY = window.pageYOffset || document.documentElement.scrollTop || 0;
+      composeOpenVvH = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+      composeSawKeyboard = false;
+      try { window.scrollTo({ top: slideEl.getBoundingClientRect().top + composeReturnY, behavior: "smooth" }); }
+      catch (e) { window.scrollTo(0, slideEl.getBoundingClientRect().top + composeReturnY); }
+    }
 
     modal.hidden = false;
     syncCommentsViewport();
@@ -4421,7 +4445,19 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     if (staleRow) staleRow.remove();
     panel.dataset.inputFor = "";
     if (currentUserId) buildCommentInputRow(item, panel, true);
-    loadComments(item, panel);
+    if (!composeOnly) loadComments(item, panel);
+  }
+
+  // phone "slim comment bar" state (see openCommentsModal)
+  var composeOnly = false, composeReturnY = 0, composeOpenVvH = 0, composeSawKeyboard = false;
+
+  function showCommentToast(text) {
+    var t = document.createElement("div");
+    t.className = "rp-comment-toast";
+    t.textContent = text;
+    document.body.appendChild(t);
+    setTimeout(function () { t.style.transition = "opacity .4s"; t.style.opacity = "0"; }, 1400);
+    setTimeout(function () { if (t.parentNode) t.parentNode.removeChild(t); }, 1900);
   }
 
   // The "Add a comment…" box + Post button at the bottom of the comments panel.
@@ -4429,10 +4465,12 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     var inputRow = document.createElement("div");
     inputRow.className = "rp-comment-input-row";
     inputRow.innerHTML =
+      '<button type="button" class="rp-comment-cancel" aria-label="Close">✕</button>' +
       '<input type="text" class="rp-comment-input" maxlength="300" placeholder="Add a comment…" />' +
       '<button type="button" class="rp-comment-send">Post</button>';
     panel.appendChild(inputRow);
     panel.dataset.inputFor = String(item.id);
+    inputRow.querySelector(".rp-comment-cancel").addEventListener("click", closeCommentsModal);
     var sendBtn = inputRow.querySelector(".rp-comment-send");
     sendBtn.addEventListener("click", function () { postComment(item, panel); });
     // keep the cursor (and the phone keyboard) in the box while tapping Post, so they can keep typing
@@ -4459,6 +4497,11 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     modal.style.top = vv.offsetTop + "px";
     modal.style.height = vv.height + "px";
     modal.style.bottom = "auto";
+    // slim bar: if the member dismissed the keyboard (back gesture / tapping Done), put the page back
+    if (composeOnly) {
+      if (vv.height < composeOpenVvH - 120) composeSawKeyboard = true;
+      else if (composeSawKeyboard && vv.height >= composeOpenVvH - 40) closeCommentsModal();
+    }
   }
   if (window.visualViewport) {
     window.visualViewport.addEventListener("resize", syncCommentsViewport);
@@ -4467,8 +4510,15 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
 
   function closeCommentsModal() {
     var m = document.getElementById("rpCommentsModal");
+    var wasCompose = composeOnly && !m.hidden;
+    composeOnly = false;
     m.hidden = true;
+    m.classList.remove("rp-compose-only");
     syncCommentsViewport();
+    if (wasCompose) {
+      try { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); } catch (e) { /* fine */ }
+      try { window.scrollTo({ top: composeReturnY, behavior: "smooth" }); } catch (e) { window.scrollTo(0, composeReturnY); }
+    }
     // stop the video that was playing in the comments sheet (it is rebuilt on every open)
     var me = document.getElementById("rpCommentsModalMedia");
     if (me) me.innerHTML = "";
@@ -4515,9 +4565,15 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     var body = input.value.trim();
     if (!body) return;
     input.value = "";
+    var wasCompose = composeOnly;
     await window.sb.from("media_comments").insert({ media_id: item.id, user_id: currentUserId, body: body });
-    loadComments(item, panel);
-    try { input.focus({ preventScroll: true }); } catch (e) { /* fine */ }
+    if (wasCompose) {
+      closeCommentsModal();           // slim bar: done -> keyboard down, page back where it was
+      showCommentToast("Comment posted ✓");
+    } else {
+      loadComments(item, panel);
+      try { input.focus({ preventScroll: true }); } catch (e) { /* fine */ }
+    }
     var commentBtn = document.querySelector("#rpActions-" + item.id + " .rp-comment-btn");
     if (commentBtn) {
       var countEl = commentBtn.querySelector(".rp-action-count");
@@ -4539,6 +4595,8 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     var panel = modal.querySelector(".rp-comments-modal-panel");
 
     box.classList.add("rp-no-media");
+    composeOnly = false;
+    modal.classList.remove("rp-compose-only");
     mediaEl.innerHTML = "";
     headerText.textContent = (item.name || "A member") + "'s journey";
 
