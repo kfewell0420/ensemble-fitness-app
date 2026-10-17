@@ -283,12 +283,12 @@
 .fj-quote, .fj-meta-line, .fj-reply-author { font-style: italic; }
 .fj-headline { font-style: normal; }
 /* new in Oct 2026 (phones only; shown by the phone block below) */
-.fj-hero-title, .fj-hero-art, .fj-hl-icon, .fj-support { display: none; }
+.fj-hero-title, .fj-hero-art, .fj-support { display: none; }
 .fj-headline-box { display: block; }
 .fj-reply-text { font-style: normal; font-family: Arial, Helvetica, sans-serif; }
 .fj-reply-text.fj-reply-author { font-style: italic; }
 @media (max-width: 899px) {
-  body { background: linear-gradient(180deg,#f9dccb 0%,#f3cbb8 50%,#eec5b2 100%) fixed; color: #16181d; --muted-invert: #5f6470; --faint-invert: #8a8f99; }
+  body { background: linear-gradient(180deg,#ffdcbc 0%,#ffc79e 45%,#ffb691 100%) fixed; color: #16181d; --muted-invert: #5f6470; --faint-invert: #8a8f99; }
   h1, h2, h3, h4 { color: #16181d; }
   p, .card-sub { color: #3f434c; }
   .eyebrow { color: #a8360a; }
@@ -353,25 +353,24 @@
      pink-outlined headline boxes, deeper pink category chips, tap-to-cheer chips. ---- */
   .fj-hero { position: relative; min-height: 108px; padding: 14px 16px; margin: 6px 0 14px; border-radius: 18px; overflow: hidden;
     display: flex; flex-direction: column; justify-content: center;
-    background: linear-gradient(135deg,#ffe6cf,#ffc9b3); box-shadow: 0 2px 8px rgba(120,50,30,0.14); }
+    background: linear-gradient(90deg,#ffb868,#ffa24b 55%,#ff9843); box-shadow: 0 2px 8px rgba(150,60,10,0.22); }
   .fj-hero > * { position: relative; z-index: 1; }
-  .fj-hero > .fj-hero-art { display: block; position: absolute; z-index: 0; right: 0; bottom: 0; top: 0; height: 100%; width: 62%;
-    -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 28%); mask-image: linear-gradient(90deg, transparent 0, #000 28%); }
-  .fj-hero .fj-hero-script { font-size: 26px; line-height: 1.1; color: #e8490f; margin: 0 0 2px; }
-  .fj-hero .fj-hero-title { display: block; font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 23px; line-height: 1.1; color: #2b1713; }
+  .fj-hero > .fj-hero-art { display: block; position: absolute; z-index: 0; right: 0; bottom: 0; top: 0; height: 100%; width: 54%; object-fit: cover; object-position: 80% 40%;
+    -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 30%); mask-image: linear-gradient(90deg, transparent 0, #000 30%); }
+  .fj-hero .fj-hero-script { font-size: 26px; line-height: 1.1; color: #8a2c08; margin: 0 0 2px; }
+  .fj-hero .fj-hero-title { display: block; font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 23px; line-height: 1.1; color: #3a1608; }
   .fj-narrow:not(.fj-how) > h2 { display: none; }
   #fjComposerAnchor { display: none; }
 
-  .fj-card { border: 1px solid #efc9b8; box-shadow: 0 2px 8px rgba(120,50,30,0.10); }
-  .fj-pill { border: 1px solid #e8b8a4; }
+  .fj-card { border: 1px solid #f2b896; box-shadow: 0 2px 8px rgba(150,60,10,0.14); }
+  .fj-pill { border: 1px solid #f0b08c; }
   .fj-pill.active { background: #ffe3d6; border-color: #ff5a1f; color: #b4410f; }
-  .fj-headline-box { display: flex; align-items: center; gap: 10px; background: #fdeadf; border: 1.5px solid #f2a0ae; border-radius: 14px; padding: 9px 12px; margin-bottom: 10px; }
-  .fj-hl-icon { display: block; flex: none; font-size: 26px; line-height: 1; }
+  .fj-headline-box { display: flex; align-items: center; gap: 10px; background: #fff0e2; border: 1.5px solid #f08a5a; border-radius: 14px; padding: 10px 12px; margin-bottom: 10px; }
   .fj-headline-box .fj-headline { margin: 0; font-size: 15.5px; line-height: 1.25; }
-  .fj-cat-chip { background: #f9c9d2; border: 1px solid #ee9aab; color: #a8203a; }
-  .fj-reaction-pill { background: #fff1e8; border: 1.5px solid #f0b79d; color: #4b2a20; }
+  .fj-cat-chip { background: #ffd2bd; border: 1px solid #f4946f; color: #a8300f; }
+  .fj-reaction-pill { background: #fff1e4; border: 1.5px solid #f0a67c; color: #4b2a20; }
   .fj-reaction-pill.active { background: #ffe0d0; border-color: #ff5a1f; color: #b4410f; }
-  .fj-reply-item { background: #fbf1ea; border-radius: 12px; padding: 7px 10px; align-items: center; }
+  .fj-reply-item { background: #fff3e8; border-radius: 12px; padding: 7px 10px; align-items: center; }
   .fj-support { display: block; margin: 2px 0 10px; }
   .fj-support-label { font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: #c2410c; margin-bottom: 6px; }
   .fj-support-chips { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -385,32 +384,7 @@
   <div class="fj-hero">
     <div class="fj-hero-script">Stronger Together</div>
     <div class="fj-hero-title">Post an update</div>
-    <svg class="fj-hero-art" viewBox="0 0 240 120" preserveAspectRatio="xMaxYMax slice" aria-hidden="true" focusable="false">
-      <defs>
-        <linearGradient id="fjSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffb08a"/><stop offset="0.55" stop-color="#ffd2a1"/><stop offset="1" stop-color="#ffe7bf"/></linearGradient>
-        <radialGradient id="fjSun" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#fff6dc" stop-opacity="1"/><stop offset="1" stop-color="#fff6dc" stop-opacity="0"/></radialGradient>
-      </defs>
-      <rect width="240" height="120" fill="url(#fjSky)"/>
-      <circle cx="150" cy="52" r="46" fill="url(#fjSun)"/>
-      <path d="M0 78 L38 44 L62 64 L96 30 L140 74 L176 52 L240 88 L240 120 L0 120Z" fill="#f4a885" opacity="0.75"/>
-      <path d="M-10 104 L40 92 L92 54 L128 80 L170 46 L240 96 L240 120 L-10 120Z" fill="#d9775a" opacity="0.9"/>
-      <path d="M90 120 L136 78 C150 70 164 62 176 40 L204 36 L240 50 L240 120Z" fill="#8f3f33"/>
-      <path d="M136 78 C150 70 164 62 176 40 L204 36" fill="none" stroke="#b9573f" stroke-width="2"/>
-      <g stroke="#2b1713" stroke-linecap="round" stroke-linejoin="round" fill="none">
-        <!-- upper hiker, reaching a hand down -->
-        <circle cx="181" cy="22" r="5.2" fill="#2b1713" stroke="none"/>
-        <path d="M181 29 L178 44" stroke-width="6.5"/>
-        <path d="M179 31 L166 43" stroke-width="3.6"/>
-        <path d="M178 44 L186 50 L180 58" stroke-width="4.6"/>
-        <path d="M178 44 L172 54 L176 62" stroke-width="4.6"/>
-        <!-- lower hiker, reaching up -->
-        <circle cx="152" cy="46" r="5" fill="#2b1713" stroke="none"/>
-        <path d="M152 53 L150 69" stroke-width="6.5"/>
-        <path d="M152 56 L164 46" stroke-width="3.6"/>
-        <path d="M150 69 L158 74 L152 82" stroke-width="4.6"/>
-        <path d="M150 69 L144 78 L146 86" stroke-width="4.6"/>
-      </g>
-    </svg>
+    <img class="fj-hero-art" src="assets/journeys-help.jpg" alt="" decoding="async" />
     <h1>Real people. Real progress.</h1>
     <p>Every post here is from a real Ensemble Fitness member — the wins, the hard days,<br>and everything in between. Share where you're at, and cheer someone else on.</p>
     <!-- Ken's ask (Oct 2026, round 8): "View Recent Journeys" wasn't doing
@@ -824,28 +798,9 @@
     { name: "Priya S.", age: 27, category: "Beginners", memberSinceLabel: "May 2025", headline: "Daily 20-minute walks, 6 weeks straight", quote: "Twenty minutes a day sounded too small to matter. Now it's the thing I look forward to most.", reactions: { clap: 37, heart: 71, thumbs_up: 99 }, replies: [{ name: "Amina S.", body: "One step at a time — you're doing great!" }, { name: "Sam K.", body: "Keep going! 💪" }] }
   ];
 
-  // Ken (Oct 2026): each post's headline sits in a soft pink box with a little icon that fits what was said
-  // (a tree for the park, a trophy for a win...). First keyword match wins; otherwise the category icon.
-  var HEADLINE_ICONS = [
-    [/tree|park|nature|outside|outdoor|forest/i, "🌳"],
-    [/lbs|pounds|lost|down \d|weight|scale|milestone|goal|first 5k|win/i, "🏆"],
-    [/hik|trail|mountain|climb/i, "🥾"],
-    [/swim|pool/i, "🏊"],
-    [/run|jog|5k|10k|marathon/i, "🏃"],
-    [/walk|steps/i, "🚶"],
-    [/bike|cycl|ride/i, "🚴"],
-    [/meal|prep|eat|food|cook|nutrition|lunch|dinner/i, "🥗"],
-    [/yoga|stretch|recover|knee|injur|rest/i, "🧘"],
-    [/sleep/i, "😴"],
-    [/strength|lift|gym|weights|squat|push|muscle/i, "💪"]
-  ];
-  function headlineIcon(text, category) {
-    for (var i = 0; i < HEADLINE_ICONS.length; i++) if (HEADLINE_ICONS[i][0].test(text || "")) return HEADLINE_ICONS[i][1];
-    return CATEGORY_ICON[category] || "✨";
-  }
-  function headlineBox(text, category) {
-    return '<div class="fj-headline-box"><span class="fj-hl-icon" aria-hidden="true">' + headlineIcon(text, category) + '</span>' +
-      '<div class="fj-headline">' + escapeHtml(text) + '</div></div>';
+  // Ken (Oct 2026): each post's headline sits in a soft rounded box that stands out (no icons).
+  function headlineBox(text) {
+    return '<div class="fj-headline-box"><div class="fj-headline">' + escapeHtml(text) + '</div></div>';
   }
   var SUPPORT_CHIPS = ["That's amazing!", "Love this!", "Keep being you!"];
   function supportRow(live) {
@@ -870,7 +825,7 @@
         '<span class="fj-example-tag">Example</span>' +
       '</div>' +
       '<div class="fj-card-body">' +
-        headlineBox(item.headline, item.category) +
+        headlineBox(item.headline) +
         '<div class="fj-cat-chip">' + icon + ' ' + escapeHtml(item.category) + '</div>' +
         '<div class="fj-quote">“' + escapeHtml(item.quote) + '”</div>' +
       '</div>' +
@@ -991,7 +946,7 @@
         '</div>' +
       '</div>' +
       '<div class="fj-card-body" data-body>' +
-        headlineBox(headline, item.category) +
+        headlineBox(headline) +
         (item.category ? '<div class="fj-cat-chip">' + icon + ' ' + escapeHtml(item.category) + '</div>' : '') +
         (item.notes ? '<div class="fj-quote">“' + escapeHtml(item.notes) + '”</div>' : '') +
         '<div class="fj-meta-line">' + [dateLabel ? escapeHtml(dateLabel) : '', item.mood ? 'Felt ' + escapeHtml(item.mood) : ''].filter(Boolean).join(' · ') + '</div>' +

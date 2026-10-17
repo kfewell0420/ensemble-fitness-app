@@ -12,6 +12,22 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-17 (journeys page: orange-leaning backdrop, real photo hero, no icons)
+Ken's feedback on the warm redesign. `fitness-journeys.html` phone skin:
+- Page background is now orange-peach going to a soft coral (#ffdcbc ->
+  #ffc79e -> #ffb691) instead of pink-peach; headline boxes, category chips,
+  reaction pills, card borders and shadows shifted to matching warm orange.
+- Mini hero now uses Ken's photo of two hikers helping each other up a
+  mountain at sunset (new `assets/journeys-help.jpg`, 760px wide, ~51KB,
+  resized from his upload) on the right of the banner, fading into a sunset-
+  orange panel on the left that holds "Stronger Together / Post an update" in
+  dark brown. The drawn SVG hikers are gone.
+- Headline icons (tree, trophy, etc.) removed: headlines are just the bold
+  text in a rounded, orange-outlined pill box. (`headlineIcon()` helper and
+  the keyword table were deleted.)
+New file must be in BOTH `member-app/assets/` and the mobile `www/assets/`.
+Website-only until next app build.
+
 ## 2026-10-17 (journeys page: warm peach/pink redesign, mini hero, cheer chips)
 Ken showed a Google-made mock-up of the Journeys page and asked for ours to
 feel as inspiring without a tall hero. `fitness-journeys.html`, phones only
