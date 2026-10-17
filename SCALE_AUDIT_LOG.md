@@ -12,6 +12,13 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-17 (music library sheet: sizes made identical to the upload sheet)
+Follow-up: Ken saw bigger fonts / a bigger play button than the upload page's
+Music tracks sheet. `music-library.html` sheet now uses the exact same sizes:
+28px play circle with 15px glyph, 13.5px bold title, 12px artist, 9px/10px row
+padding, 12px gap (measured side by side in a headless browser at 390px: row
+height 57.5px in both). Time and Tip button are 12px.
+
 ## 2026-10-17 (music library: browse tracks is now the full-width song sheet)
 Ken asked that Music Library > Browse Playlist look exactly like the upload
 page's Choose a song > Music tracks sheet. `music-library.html` only: the

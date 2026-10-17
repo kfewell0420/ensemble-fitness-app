@@ -756,7 +756,14 @@
   .ml-sheet .track-table-row { padding: 9px 10px; gap: 12px; border-bottom: none; border-radius: 10px; background: none; }
   .ml-sheet .track-table-row:nth-child(even) { background: none; }
   .ml-sheet .track-table-row:hover, .ml-sheet .track-table-row:focus-within { background: rgba(255,255,255,0.06); }
-  .ml-sheet .track-table-title { font-size: 15px; }
+  /* Same sizes as upload.html's .mt-row: 28px play circle (15px glyph), 13.5px bold
+     title, 12px artist, 9px/10px row padding, 12px gap. */
+  .ml-sheet .track-table-art, .ml-sheet .track-table-play { width: 28px; height: 28px; border-radius: 50%; font-size: 15px; padding-left: 0; }
+  .ml-sheet .track-table-title { font-size: 13.5px; font-weight: 700; }
+  .ml-sheet .track-table-artist { font-size: 12px; margin-top: 0; color: var(--faint-invert, #9aa0b4); }
+  .ml-sheet .track-table-duration { font-size: 12px; }
+  .ml-sheet .track-tip-btn { font-size: 12px; padding: 5px 10px; }
+  .ml-sheet .track-table-head { font-size: 11px; }
   .ml-sheet .track-tip-btn-full { display: none; }
   .ml-sheet .track-tip-btn-short { display: inline; }
   @media (max-width: 560px) {
