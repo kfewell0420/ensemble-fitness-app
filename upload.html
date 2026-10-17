@@ -1632,7 +1632,13 @@
       x.send();
     });
   }
+  // iPhone fix (Oct 2026): drawing the waveform means downloading the whole song a second time and decoding it
+  // in the page (plus a second audio engine). On iPhones that choked the song that is playing -- it skipped
+  // every few bars and the timeline froze. iPhones/iPads now skip the picture (the bar just stays plain,
+  // everything else works the same); Android and desktop keep it.
+  var IS_IOS_DEVICE = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
   function ensureWave(trackId) {
+    if (IS_IOS_DEVICE) return;
     if (!trackId || wavePeaks[trackId] || waveLoading[trackId]) return;
     var t = tracksById[trackId];
     if (!t) return;

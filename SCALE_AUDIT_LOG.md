@@ -12,6 +12,18 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-17 (upload: iPhone music skipping / frozen timeline when adding music)
+Ken's iOS tester (TestFlight build 9): video loads fine, but after "add music" the
+song skips every few bars and the timeline can't be used; Android is fine.
+Likely cause: `ensureWave()` (called from `renderTimeline()` as soon as a song is
+chosen) downloads the whole song again and decodes it with an AudioContext to draw
+the waveform; iOS can't do that and play the preview smoothly. `upload.html`:
+`IS_IOS_DEVICE` check -> `ensureWave` returns early on iPhone/iPad (plain bar,
+song name label instead of the wave). Android/desktop unchanged. NOT yet confirmed
+on a device -- test in Safari after the website push, then ship in iOS build 11.
+
+---
+
 ## 2026-10-17 (gear: shorter, more inspiring line under "Real Products. Real Experience. Real Trust.")
 Ken rewrote the two-line blurb to cut scrolling before the products. `gear.html`:
 now reads "We personally buy and use every product we recommend. No generic Top 10
