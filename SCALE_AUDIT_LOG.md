@@ -12,6 +12,14 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-17 (gear: shorter, more inspiring line under "Real Products. Real Experience. Real Trust.")
+Ken rewrote the two-line blurb to cut scrolling before the products. `gear.html`:
+now reads "We personally buy and use every product we recommend. No generic Top 10
+lists—just real experience and products we trust." Text only. Ships in build 10
+(`mobile-www-updated/gear.html`).
+
+---
+
 ## 2026-10-17 (profile: new profile photo no longer shows up in My uploads)
 Ken: changing the profile icon also saved it as an upload; it should live only
 as the profile picture. `profile.html`:
