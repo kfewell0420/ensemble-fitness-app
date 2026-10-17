@@ -14,7 +14,7 @@ briefly as a reminder; only new findings need the full writeup.
 
 ## 2026-10-17 (admin: new "Product" category for Approved Products) -- website only
 Ken: add one more category/tab called "Product" to the Approved Products Category drop-down.
-`admin.html`: `GEAR_CATEGORIES` now ends "... Health Care, Nutrition, Product" (before "Other...");
+`admin.html`: `GEAR_CATEGORIES` now ends "... Health Care, Nutrition, Product, Wellness" (before "Other..."; Wellness added right after at Ken's request);
 used by both the Add Pick and Edit forms. The public Products page builds its filter chips from
 the categories that actually exist on picks (`gear.html` `gearCategories`), so a "Product" chip
 appears automatically once a pick is saved with that category. No database change; admin.html is
