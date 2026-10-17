@@ -44,6 +44,9 @@ window.SUPABASE_ANON_KEY = "sb_publishable_4sbGE70Sh5gkgpmBqdGVBg_VkqjzJVx";
   });
   window.addEventListener("unhandledrejection", function (e) {
     var reason = e.reason;
+    // A video/song whose play() was interrupted by a pause/seek rejects with AbortError ("The operation
+    // was aborted"). That is normal and harmless, so it no longer pops the red banner.
+    if (reason && reason.name === "AbortError") return;
     var msg = (reason && reason.message) ? reason.message : String(reason);
     showErrorBanner(msg);
   });

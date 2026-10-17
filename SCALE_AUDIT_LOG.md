@@ -12,6 +12,21 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-17 (upload: iPhone 17 song skipping -- found in the troubleshooting log)
+Log from the artist's iPhone 17 (works on iPhone 11): the VIDEO clock froze (v=6.76
+for many seconds, still "playing") while the song kept running; `mixTick` then
+sought the song back to the frozen time about once a second = same bar repeating.
+`upload.html`: `mixTick` now treats a picture that hasn't moved for >0.6 s as stalled:
+the song is held (paused, no seeking), the video gets a play() nudge every 2 s, and the
+song re-enters in step when the picture moves (not applied while a multi-clip swap
+is busy; clock reset on every `play`). Debug log now prints `build=stallguard1`,
+wave on/off, video size, and `vrS` (video readyState) per tick. `js/config.js`: harmless
+AbortError ("The operation was aborted", interrupted play()) no longer shows the red banner.
+Root cause of the video freeze itself NOT yet known (waveform decode earlier fix is
+also in). If it still freezes: read the log lines from the moment music is added.
+
+---
+
 ## 2026-10-17 (upload: iPhone music skipping / frozen timeline when adding music)
 Ken's iOS tester (TestFlight build 9): video loads fine, but after "add music" the
 song skips every few bars and the timeline can't be used; Android is fine.
