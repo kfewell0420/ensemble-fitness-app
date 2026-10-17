@@ -12,6 +12,14 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-17 (journeys page: notifications panel gets a darker light-brown backdrop)
+Ken: the bell panel blended into the orange page. `fitness-journeys.html`
+phones only: panel background is now a tan/light brown (#d2a679) with a 2px
+darker brown border (#8a5a33) and a heavier shadow, header bar a shade darker
+(#c39464, sticks to the top while scrolling), unread rows lighter tan
+(#ebcba3), dark brown text (#2b1408, #000 for unread) and brown timestamps.
+CSS only; `js/notifications.js` untouched. Website-only until next app build.
+
 ## 2026-10-17 (notifications panel in front + count number font)
 1) `fitness-journeys.html`, phones: tapping the bell opened the notifications
 panel BEHIND the page (my backdrop change gave `.app-shell` the same stacking
