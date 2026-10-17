@@ -12,6 +12,15 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-17 (feed: "Your Journeys" count saved per member)
+Ken asked that one member viewing journeys must not clear the number for other
+members. It never could (the "last looked" time lives in each phone's own
+storage, not the database), but the key was the same for every account on a
+device. `feed.html`: key is now `efJourneysSeenAt:<user id>`, so each member
+has their own. Old shared key is ignored (first load after this counts the
+last 7 days again). Not synced across a member's different devices (would
+need a column on profiles; offered to Ken). Website-only until next app build.
+
 ## 2026-10-17 (journeys page: notifications panel gets a darker light-brown backdrop)
 Ken: the bell panel blended into the orange page. `fitness-journeys.html`
 phones only: panel background is now a tan/light brown (#d2a679) with a 2px

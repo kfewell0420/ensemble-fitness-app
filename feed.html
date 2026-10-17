@@ -2535,12 +2535,14 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
   // anything shared since this member last tapped the pill (kept on this device). First time ever (nothing saved
   // yet) it counts the last 7 days so the pill is never blank for a new install. Tapping saves "now" and opens
   // the Fitness Journeys page.
-  var JOURNEYS_SEEN_KEY = "efJourneysSeenAt";
+  // One saved "last looked" time PER MEMBER (keyed by their user id), so two members on the same phone never share it,
+  // and one member tapping never touches anyone else's count.
+  function journeysSeenKey() { return "efJourneysSeenAt:" + (currentUserId || "anon"); }
   async function refreshJourneysPill() {
     var num = document.getElementById("rpJourneysPillNum");
     if (!num) return;
     var since = null;
-    try { since = localStorage.getItem(JOURNEYS_SEEN_KEY); } catch (e) {}
+    try { since = localStorage.getItem(journeysSeenKey()); } catch (e) {}
     if (!since || isNaN(Date.parse(since))) since = new Date(Date.now() - 7 * 86400000).toISOString();
     try {
       var res = await window.sb.from("community_questions")
@@ -2559,7 +2561,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     var pill = document.getElementById("rpJourneysPill");
     if (!pill) return;
     pill.addEventListener("click", function () {
-      try { localStorage.setItem(JOURNEYS_SEEN_KEY, new Date().toISOString()); } catch (e) {}
+      try { localStorage.setItem(journeysSeenKey(), new Date().toISOString()); } catch (e) {}
     });
   })();
 
