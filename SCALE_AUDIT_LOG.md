@@ -12,6 +12,19 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-17 (journeys page: slightly deeper off-white; yellow count)
+Ken: the Journeys page was a touch too bright. `fitness-journeys.html` phone
+skin: page background #faf8f5 -> #ebe5dc, form fields / reaction chips / reply
+and edit inputs #faf8f5 -> #efe9e0 with darker borders (#d3cabd), card and nav
+borders darkened, cards get a soft shadow, placeholder and count-line text
+darkened a little, so the white cards and pills stand out. `feed.html`: the
+count in the "Your Journeys" pill is now yellow (#ffd23f, 12px) on its black
+dot, and it re-counts whenever the feed becomes visible again (pageshow /
+visibilitychange) so a journey just posted shows up without a reload. The
+count itself is automatic: approved journeys posted since the member last
+tapped the pill (new posts are saved as approved straight away).
+Website-only until the next app build (iOS 10 / Android 4).
+
 ## 2026-10-17 (journeys page: bright phone look; Your Journeys pill follow-up)
 1) `fitness-journeys.html`: new phone-only (<=899px) light skin appended after
 the existing phone rules, same warm-white palette as the Profile page (page

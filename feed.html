@@ -89,7 +89,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     .rp-journeys-pill { flex: 0 1 auto; min-width: 0; margin-left: auto; display: flex; align-items: center; justify-content: space-between; gap: 8px;
       padding: 4px 8px 4px 14px; border-radius: 14px; background: #e5322d; color: #fff; text-decoration: none; font-family: 'Poppins','Inter',sans-serif; }
     .rp-jp-text { font-size: 12px; font-weight: 800; line-height: 1.15; letter-spacing: 0.01em; white-space: nowrap; }
-    .rp-jp-num { flex: none; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 999px; background: #000; color: #fff; font-size: 11px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; line-height: 1; }
+    .rp-jp-num { flex: none; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 999px; background: #000; color: #ffd23f; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; line-height: 1; }
     .rp-jp-num[hidden] { display: none; }
   }
   @media (max-width: 899px) and (max-width: 385px) { .rp-jp-text { white-space: normal; } .rp-journeys-pill { padding-left: 10px; } }
@@ -2549,6 +2549,9 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
       else { num.hidden = true; }
     } catch (e) { num.hidden = true; }
   }
+  // Come back to the feed (from the Journeys page, or switching apps) -> recount, so a journey you just posted shows up.
+  window.addEventListener("pageshow", function (e) { if (e.persisted) refreshJourneysPill(); });
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) refreshJourneysPill(); });
   (function () {
     var pill = document.getElementById("rpJourneysPill");
     if (!pill) return;
