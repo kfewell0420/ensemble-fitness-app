@@ -12,6 +12,22 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-17 (feed: red "Your Journeys" pill beside Healthy Meal Preps, phone only)
+Ken noticed the phone app had no way into Fitness Journeys. `feed.html`: the
+Healthy Meal Preps pill is now shorter (orange bar on both sides, text a touch
+smaller, icon unchanged) and a red pill with black writing, "Your Journeys",
+fills the freed space; a small white-on-black count sits in its right corner.
+Tapping goes to `fitness-journeys.html`. The count = approved journeys
+(`community_questions`, status approved) created since the member last tapped
+the pill (timestamp `efJourneysSeenAt` in this device's localStorage); first
+ever load counts the last 7 days; 0 hides the number (pill stays). One cheap
+head-count query, run alongside the existing journeys-badge query. Only shows
+below 900px; desktop sidebar untouched. Existing "Journeys" filter-chip badge
+(total count) unchanged. Empty-state message for the meal-prep strip now
+inserts after the new `.rp-mp-toprow` wrapper. Tested at 409, 360 and 1200px.
+At 360px "Your Journeys" wraps onto two lines inside the same pill height.
+Needs the next app build to reach TestFlight/Play; website shows it on push.
+
 ## 2026-10-17 (music library sheet: sizes made identical to the upload sheet)
 Follow-up: Ken saw bigger fonts / a bigger play button than the upload page's
 Music tracks sheet. `music-library.html` sheet now uses the exact same sizes:
