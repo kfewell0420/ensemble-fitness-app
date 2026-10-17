@@ -278,6 +278,11 @@
    white cards, dark easy-to-read writing. Phones only (<= 899px, same cut-off as the phone rules above);
    desktop keeps the dark look. Pure CSS: ids, classes and logic are untouched.
    ====================================================================== */
+/* Ken (Oct 2026): what the POSTER writes (headline, notes, date/feeling line, and the poster's own replies) is in the
+   slanted style, like handwriting; what OTHER members reply is upright. */
+.fj-headline, .fj-quote, .fj-meta-line, .fj-reply-author { font-style: italic; }
+.fj-reply-text { font-style: normal; font-family: Arial, Helvetica, sans-serif; }
+.fj-reply-text.fj-reply-author { font-style: italic; }
 @media (max-width: 899px) {
   body { background: #cdc3b3; color: #16181d; --muted-invert: #5f6470; --faint-invert: #8a8f99; }
   h1, h2, h3, h4 { color: #16181d; }
@@ -303,6 +308,7 @@
 
   /* journey cards */
   .fj-card { background: #fff; border: 1px solid #b5aa98; box-shadow: 0 2px 6px rgba(22,24,29,0.08); }
+  .fj-card-example { opacity: 1; }
   .fj-card-name { color: #000; }
   .fj-card-sub { color: #8a8f99; }
   .fj-card-icon { background: #fff1e6; border: 1px solid #f3d9c6; }
@@ -315,11 +321,12 @@
   .fj-menu-item.danger { color: #c92a1d; }
   .fj-headline { color: #000; }
   .fj-cat-chip { color: #b4410f; background: #fff1e6; border: 1px solid #f3d9c6; }
-  .fj-quote { color: #000; font-weight: 500; }
-  .fj-meta-line { color: #000; font-weight: 500; }
+  .fj-quote { color: #000; font-weight: 600; font-size: 14.5px; }
+  .fj-meta-line { color: #000; font-weight: 600; font-size: 13.5px; line-height: 1.5; }
   .fj-reaction-pill { color: #4b5060; background: #e3dbcd; border: 1px solid #b5aa98; }
   .fj-reaction-pill.active { background: #fff1e6; border-color: #ff5a1f; color: #c2410c; }
-  .fj-reply-text { color: #000; }
+  .fj-reply-text { color: #1f2227; font-size: 13.5px; line-height: 1.45; }
+  .fj-reply-text.fj-reply-author { color: #000; font-weight: 600; }
   .fj-reply-text strong { color: #000; }
   .fj-reply-input, .fj-edit-row select, .fj-edit-row input, .fj-edit-row textarea { background: #e3dbcd; border: 1px solid #b5aa98; color: #000; }
   .fj-reply-input::placeholder { color: #80858f; }
@@ -990,7 +997,7 @@
     repliesEl.innerHTML = visible.map(function (r) {
       var name = (r.profiles && r.profiles.display_name) || "A member";
       return '<div class="fj-reply-item">' + avatarHtml({ user_id: r.user_id, asker_name: name, avatarUrl: r.avatarUrl }, 26) +
-        '<div class="fj-reply-text"><strong>' + escapeHtml(name) + '</strong> ' + escapeHtml(r.reply_text) + '</div></div>';
+        '<div class="fj-reply-text' + (r.user_id === item.user_id ? ' fj-reply-author' : '') + '"><strong>' + escapeHtml(name) + '</strong> ' + escapeHtml(r.reply_text) + '</div></div>';
     }).join("");
   }
 

@@ -12,6 +12,17 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-17 (journeys page: slanted poster writing, upright darker comments)
+`fitness-journeys.html`: what the POSTER writes (headline, notes quote, the
+date/"Felt..." line) is now italic ("slant") with pure black text and a touch
+bolder/larger (14.5px quote, 13.5px date line); the poster's own replies in
+their thread are italic black too (new `.fj-reply-author` class added in
+`loadReplies` when reply user_id = post user_id). Everyone else's replies are
+upright Arial, dark grey (#1f2227), 13.5px, names black. Applied through shared
+classes so real and example posts all look the same; example cards no longer
+dimmed (opacity 1) on phones. Italic/upright rules are global (desktop too);
+colours/sizes are phone-only. Website-only until next app build.
+
 ## 2026-10-17 (journeys page: decisively darker background)
 Ken: "don't be afraid to darken it." `fitness-journeys.html` phone skin only:
 page background #ddd5c9 -> #cdc3b3 (warm tan), fields/chips #e3dbcd, borders
