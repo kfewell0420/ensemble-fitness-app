@@ -12,6 +12,22 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-17 (journeys page: bright phone look; Your Journeys pill follow-up)
+1) `fitness-journeys.html`: new phone-only (<=899px) light skin appended after
+the existing phone rules, same warm-white palette as the Profile page (page
+#faf8f5, white cards with soft borders, orange eyebrows/headlines, dark easy
+reading text, light inputs/pills/reaction chips/menus/pop-ups). Pure CSS, no
+markup or logic changes; desktop keeps the dark look. Checked at 409px with
+sample cards (form, filter pills, a journey card with reactions/reply row,
+How It Works).
+2) `feed.html` pill follow-up: the red "Your Journeys" pill is now only as wide
+as its words, pushed to the right edge (shrinks from the left), white text
+(#e5322d red, count stays white on a black dot); the Healthy Meal Preps pill
+content is centered between its two orange bars (bowl and text moved left,
+equal gaps, ~8px each). Under ~385px wide the pill text may wrap to two lines
+rather than overflow.
+Website-only until the next app build (iOS 10 / Android 4).
+
 ## 2026-10-17 (feed: red "Your Journeys" pill beside Healthy Meal Preps, phone only)
 Ken noticed the phone app had no way into Fitness Journeys. `feed.html`: the
 Healthy Meal Preps pill is now shorter (orange bar on both sides, text a touch

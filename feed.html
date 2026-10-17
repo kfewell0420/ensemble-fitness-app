@@ -82,14 +82,17 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     /* Ken's ask (Oct 2026): Healthy Meal Preps shrinks to its own pill with an orange bar on BOTH sides, and a red
        "Your Journeys" pill takes the freed-up space beside it. */
     .rp-mp-toprow { display: flex; align-items: stretch; gap: 8px; margin: 0 14px 6px; }
-    .rp-mp-toprow .rp-mealprep-banner { margin: 0; flex: 0 0 auto; padding: 4px 7px 4px 10px; border-right: 3px solid var(--accent-2); gap: 7px; }
+    .rp-mp-toprow .rp-mealprep-banner { margin: 0; flex: 0 0 auto; padding: 4px 8px 4px 6px; border-right: 3px solid var(--accent-2); gap: 6px; justify-content: center; }
     .rp-mp-toprow .rp-mealprep-banner-text { font-size: 12.5px; letter-spacing: 0.02em; }
-    .rp-journeys-pill { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 6px;
-      padding: 4px 8px 4px 12px; border-radius: 14px; background: #ef4444; color: #000; text-decoration: none; font-family: 'Poppins','Inter',sans-serif; }
-    .rp-jp-text { font-size: 12px; font-weight: 800; line-height: 1.15; letter-spacing: 0.01em; }
+    /* Ken (round 2): the red pill only needs the room its words take, pushed to the right edge (it shrinks from the left),
+       with white writing. */
+    .rp-journeys-pill { flex: 0 1 auto; min-width: 0; margin-left: auto; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      padding: 4px 8px 4px 14px; border-radius: 14px; background: #e5322d; color: #fff; text-decoration: none; font-family: 'Poppins','Inter',sans-serif; }
+    .rp-jp-text { font-size: 12px; font-weight: 800; line-height: 1.15; letter-spacing: 0.01em; white-space: nowrap; }
     .rp-jp-num { flex: none; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 999px; background: #000; color: #fff; font-size: 11px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; line-height: 1; }
     .rp-jp-num[hidden] { display: none; }
   }
+  @media (max-width: 899px) and (max-width: 385px) { .rp-jp-text { white-space: normal; } .rp-journeys-pill { padding-left: 10px; } }
   @media (min-width: 900px) { .rp-journeys-pill { display: none; } .rp-mp-toprow { display: contents; } }
   @media (max-width: 350px) { .conn-key-pill { font-size: 11px; letter-spacing: 0; padding: 2px 6px; } }
   .rp-mealprep-banner-text { white-space: nowrap; }

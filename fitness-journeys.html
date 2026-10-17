@@ -272,6 +272,74 @@
   }
 </style>
 
+<style>
+/* ======================================================================
+   Bright, inviting look on phones (Ken, Oct 2026): same warm white as the Profile page, orange wording,
+   white cards, dark easy-to-read writing. Phones only (<= 899px, same cut-off as the phone rules above);
+   desktop keeps the dark look. Pure CSS: ids, classes and logic are untouched.
+   ====================================================================== */
+@media (max-width: 899px) {
+  body { background: #faf8f5; color: #16181d; --muted-invert: #5f6470; --faint-invert: #8a8f99; }
+  h1, h2, h3, h4 { color: #16181d; }
+  p, .card-sub { color: #5f6470; }
+  .eyebrow { color: #c2410c; }
+  .app-nav { background: #fff; border-bottom: 1px solid #ece7e0; }
+  .app-shell { padding-left: 16px; padding-right: 16px; padding-bottom: 40px; }
+  .card { background: #fff; border: 1px solid #ece7e0; box-shadow: none; }
+  .fj-hero-script { color: #ff5a1f; }
+
+  /* form */
+  .field label { color: #4b5060; }
+  .field input, .field textarea, .field select { background: #faf8f5; border: 1px solid #e3ddd4; color: #16181d; }
+  .field input::placeholder, .field textarea::placeholder { color: #9a9fa8; }
+  .field input:focus, .field textarea:focus, .field select:focus { border-color: #ff5a1f; outline: none; }
+  .btn-ghost { background: #fff; border: 1px solid #d9d2c7; color: #16181d; }
+  .empty-state { color: #6b6f78; }
+
+  /* filter pills */
+  .fj-count-line { color: #8a8f99; }
+  .fj-pill { background: #fff; border: 1px solid #e3ddd4; color: #5f6470; }
+  .fj-pill.active { background: #fff1e6; border-color: #ff5a1f; color: #b4410f; }
+
+  /* journey cards */
+  .fj-card { background: #fff; border: 1px solid #ece7e0; box-shadow: 0 1px 2px rgba(22,24,29,0.04); }
+  .fj-card-name { color: #16181d; }
+  .fj-card-sub { color: #8a8f99; }
+  .fj-card-icon { background: #fff1e6; border: 1px solid #f3d9c6; }
+  .fj-example-tag { color: #8a8f99; background: #faf8f5; border: 1px solid #e3ddd4; }
+  .fj-menu-btn { color: #5f6470; }
+  .fj-menu-btn:hover { color: #16181d; }
+  .fj-menu-dropdown { background: #fff; border: 1px solid #e3ddd4; box-shadow: 0 14px 34px rgba(22,24,29,0.16); }
+  .fj-menu-item { color: #16181d; }
+  .fj-menu-item:hover { background: #faf8f5; }
+  .fj-menu-item.danger { color: #c92a1d; }
+  .fj-headline { color: #c2410c; }
+  .fj-cat-chip { color: #b4410f; background: #fff1e6; border: 1px solid #f3d9c6; }
+  .fj-quote { color: #16181d; }
+  .fj-meta-line { color: #4b5060; }
+  .fj-reaction-pill { color: #4b5060; background: #faf8f5; border: 1px solid #e3ddd4; }
+  .fj-reaction-pill.active { background: #fff1e6; border-color: #ff5a1f; color: #c2410c; }
+  .fj-reply-text { color: #5f6470; }
+  .fj-reply-text strong { color: #16181d; }
+  .fj-reply-input, .fj-edit-row select, .fj-edit-row input, .fj-edit-row textarea { background: #faf8f5; border: 1px solid #e3ddd4; color: #16181d; }
+  .fj-reply-input::placeholder { color: #9a9fa8; }
+
+  /* how it works */
+  .fj-how-step strong { color: #16181d; }
+  .fj-how-step span { color: #5f6470; }
+
+  /* pop-ups (report etc.) */
+  .simple-modal { background: #fff; border: 1px solid #ece7e0; color: #16181d; box-shadow: 0 20px 50px rgba(22,24,29,0.2); }
+  .simple-modal-overlay { background: rgba(22,24,29,0.45); }
+  .simple-modal h3, .simple-modal label { color: #16181d; }
+  .simple-modal p, .simple-modal .card-sub { color: #5f6470; }
+  .simple-modal .eyebrow { color: #c2410c; }
+  .simple-modal input, .simple-modal textarea, .simple-modal select { background: #faf8f5; border: 1px solid #e3ddd4; color: #16181d; }
+  .simple-modal-close { background: #f1ece5; color: #16181d; }
+  .simple-modal .report-target-preview { background: #faf8f5; color: #5f6470; }
+}
+</style>
+
 <div class="app-shell">
 
   <div class="fj-hero">
