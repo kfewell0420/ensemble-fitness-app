@@ -12,6 +12,20 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-17 (feed: profile pictures no longer appear as feed posts; Ken's "3 posts vs 2 uploads")
+Ken's profile showed 2 uploads while the website showed 3 posts for him. Cause (confirmed in code,
+and it was the open question in the 2026-10-10 Profile Photos entry): `feed.html` queried ALL
+approved photo/video rows with no `is_profile_photo` filter, so a member's profile picture also
+showed in the community feed as a photo post, while the profile's "My uploads" (correctly, since
+today) leaves it out. `feed.html`: the three post queries (`fetchBatch`, `fetchNewMediaSince`,
+`fetchNewMealPrepPosts`) now add `.eq("is_profile_photo", false)` (column is NOT NULL default false).
+Effect for EVERY member: old and new profile pictures stop appearing as feed posts; real posts are
+unchanged; feed count = profile uploads count = admin Feed Photos/Videos. Profile pictures still show
+as avatars (feed cards, Members, Journeys, member page). Ships in the mobile build (feed.html in www).
+Note: admin "Profile Photos" tab still lists profile pictures (that is its job).
+
+---
+
 ## 2026-10-17 (admin.html on phones: straight to the approvals; member links gone) -- website only
 Ken: the "New video pending review" email link opened admin.html with the whole member menu
 (Community, Fitness+, Quotes ...) on top, then the long side menu, with New Enrollments first.
