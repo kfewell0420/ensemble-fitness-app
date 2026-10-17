@@ -771,16 +771,45 @@
     var byId = {};
     (profilesData || []).forEach(function (p) { byId[p.id] = p; });
 
+    // Ken's ask (Oct 2026): show each person's profile photo; fall back to their first initial only when
+    // they have none. One batched lookup for the newest approved profile photo of everyone in the list.
+    var avatarByUser = {};
+    try {
+      var { data: photoRows } = await window.sb
+        .from("media")
+        .select("user_id, storage_path, created_at")
+        .in("user_id", ids)
+        .eq("kind", "photo")
+        .eq("is_profile_photo", true)
+        .eq("status", "approved")
+        .order("created_at", { ascending: false });
+      var pathByUser = {};
+      (photoRows || []).forEach(function (r) { if (!pathByUser[r.user_id]) pathByUser[r.user_id] = r.storage_path; });
+      var uidsWithPhoto = Object.keys(pathByUser);
+      if (uidsWithPhoto.length) {
+        var { data: signedList } = await window.sb.storage.from("media")
+          .createSignedUrls(uidsWithPhoto.map(function (u) { return pathByUser[u]; }), 3600);
+        (signedList || []).forEach(function (sg) {
+          if (!sg || !sg.signedUrl) return;
+          uidsWithPhoto.forEach(function (u) { if (pathByUser[u] === sg.path) avatarByUser[u] = sg.signedUrl; });
+        });
+      }
+    } catch (e) { /* photos are a nicety — initials still show */ }
+
     body.innerHTML = "";
     for (var i = 0; i < ids.length; i++) {
       var p = byId[ids[i]];
       var name = (p && p.display_name) || "A member";
+      var initialHtml = escapeHtml(name.trim().charAt(0).toUpperCase() || "?");
+      var avatarHtml = avatarByUser[ids[i]]
+        ? '<img src="' + avatarByUser[ids[i]] + '" alt="' + escapeHtml(name) + '" loading="lazy" />'
+        : initialHtml;
       var row = document.createElement("div");
       row.className = "member-row member-row-clickable";
       row.setAttribute("role", "button");
       row.setAttribute("tabindex", "0");
       row.innerHTML =
-        '<div class="avatar-circle">' + escapeHtml(name.trim().charAt(0).toUpperCase() || "?") + "</div>" +
+        '<div class="avatar-circle">' + avatarHtml + "</div>" +
         '<div class="member-row-meta"><strong>' + escapeHtml(name) + "</strong>" +
         (p && p.bio ? "<p>" + escapeHtml(p.bio) + "</p>" : "") +
         "</div>";

@@ -12,6 +12,20 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-17 (phone comments sit above the keyboard; followers show profile photos) -- website + phone app
+Ken: (1) on a phone the keyboard covered the video when tapping Comment; (2) the Followers list showed only
+initials instead of profile photos.
+(1) `feed.html`: phones (<900px) get a full-screen comments sheet sized to `window.visualViewport`
+(`syncCommentsViewport`, runs on open and on every keyboard show/hide): video/photo on top (38%),
+comments in the middle, "Add a comment..." box right above the keys. Video autoplays muted in the sheet and
+is cleared on close. Desktop two-pane modal and the Journey reply sheet (no media) are unchanged.
+(2) `profile.html` `renderFollowList` (Followers AND Following): one batched lookup of each person's newest
+approved profile photo (`media` is_profile_photo=true, status approved, `createSignedUrls`), initial letter
+only when they have no photo. Read-only; nothing hidden or deleted. If the photo lookup fails the list still
+shows initials. Phone app picks both up with the next build (mobile www feed.html + profile.html mirrored).
+
+---
+
 ## 2026-10-17 (comments: the comment box is ready to type the moment comments open) -- website + phone app
 Ken: tapping Comment on a post just opened the comments page; members had to tap the box before typing.
 `feed.html`: `openCommentsModal` now builds the "Add a comment..." row immediately (`buildCommentInputRow`)

@@ -1238,6 +1238,41 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     cursor: pointer;
   }
 
+  /* Ken's ask (Oct 2026): on a phone the keyboard used to cover the video when tapping Comment.
+     Now the comments sheet fills the screen ABOVE the keyboard (JS sizes .rp-comments-modal to the
+     visible area, see syncCommentsViewport): the video/photo sits at the top, the comments in the
+     middle, and the "Add a comment…" box right above the keyboard. Phones only; desktop keeps its
+     two-pane modal, Journey replies keep the small bottom sheet. */
+  @media (max-width: 899px) {
+    .rp-comments-modal .rp-comments-modal-backdrop { background: rgba(0,0,0,0.85); }
+    .rp-comments-modal .rp-comments-modal-box:not(.rp-no-media) {
+      max-width: none;
+      height: 100%;
+      max-height: none;
+      border-radius: 0;
+      box-shadow: none;
+      padding-top: env(safe-area-inset-top, 0px);
+    }
+    .rp-comments-modal .rp-comments-modal-box:not(.rp-no-media) .rp-comments-modal-media {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 38%;
+      min-height: 110px;
+      background: #000;
+      overflow: hidden;
+    }
+    .rp-comments-modal .rp-comments-modal-box:not(.rp-no-media) .rp-comments-modal-media img,
+    .rp-comments-modal .rp-comments-modal-box:not(.rp-no-media) .rp-comments-modal-media video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .rp-comments-modal .rp-comments-modal-box:not(.rp-no-media) .rp-comments-header { padding: 8px 14px; }
+    .rp-comments-modal .rp-comments-modal-box:not(.rp-no-media) .rp-comments-list { min-height: 48px; }
+    .rp-comments-modal .rp-comments-modal-box:not(.rp-no-media) .rp-comment-input-row { padding-top: 8px; }
+  }
+
   .rp-empty-reel {
     display: flex;
     align-items: center;
@@ -4374,10 +4409,11 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     // The media pane is desktop-only (see CSS) — built either way since
     // it's cheap and the signed URL is already sitting on `item`.
     mediaEl.innerHTML = item.kind === "video"
-      ? '<video src="' + item.url + '" controls loop muted playsinline></video>'
+      ? '<video src="' + item.url + '" controls loop muted autoplay playsinline></video>'
       : '<img src="' + (item.imgUrl || item.url) + '" data-orig="' + item.url + '" onerror="if(this.dataset.orig&&this.src!==this.dataset.orig){this.src=this.dataset.orig}" alt="" />';
 
     modal.hidden = false;
+    syncCommentsViewport();
     // Ken's ask (Oct 2026): tapping Comment should put the cursor straight in the box so the member can type
     // right away. The row is built and focused HERE, inside the tap itself (phones only open the keyboard for a
     // focus that happens inside the tap, not after the comments finish loading); loadComments below keeps it.
@@ -4409,8 +4445,33 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     return inputEl;
   }
 
+  // Phones: keep the comments sheet exactly the size of the area NOT covered by the keyboard, so the
+  // video stays visible and the comment box sits right above the keys (iPhone Safari, Android Chrome
+  // and the Capacitor apps all report that area through window.visualViewport).
+  function syncCommentsViewport() {
+    var modal = document.getElementById("rpCommentsModal");
+    if (!modal) return;
+    var vv = window.visualViewport;
+    if (modal.hidden || !vv || !window.matchMedia("(max-width: 899px)").matches) {
+      modal.style.top = ""; modal.style.height = ""; modal.style.bottom = "";
+      return;
+    }
+    modal.style.top = vv.offsetTop + "px";
+    modal.style.height = vv.height + "px";
+    modal.style.bottom = "auto";
+  }
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", syncCommentsViewport);
+    window.visualViewport.addEventListener("scroll", syncCommentsViewport);
+  }
+
   function closeCommentsModal() {
-    document.getElementById("rpCommentsModal").hidden = true;
+    var m = document.getElementById("rpCommentsModal");
+    m.hidden = true;
+    syncCommentsViewport();
+    // stop the video that was playing in the comments sheet (it is rebuilt on every open)
+    var me = document.getElementById("rpCommentsModalMedia");
+    if (me) me.innerHTML = "";
   }
 
   document.getElementById("rpCommentsClose").addEventListener("click", closeCommentsModal);
@@ -4482,6 +4543,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     headerText.textContent = (item.name || "A member") + "'s journey";
 
     modal.hidden = false;
+    syncCommentsViewport();
     // same as video comments: the cursor lands in the reply box inside the tap itself
     var staleRow = panel.querySelector(".rp-comment-input-row");
     if (staleRow) staleRow.remove();
