@@ -12,6 +12,25 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-17 (admin.html on phones: straight to the approvals; member links gone) -- website only
+Ken: the "New video pending review" email link opened admin.html with the whole member menu
+(Community, Fitness+, Quotes ...) on top, then the long side menu, with New Enrollments first.
+(The one-tap shortcut he remembered is `approve.html`, which only the new-member ENROLLMENT email
+uses; the video email has always linked to plain admin.html.) `admin.html`:
+- Opens on **Queue** (photos/videos/voice approvals) instead of New Enrollments. `?tab=...` links
+  still work (e.g. `?tab=members`, `?tab=enrollments`).
+- Phones (<900px): the member links row is hidden; the side menu becomes one sideways-scrolling
+  row of pill buttons (group labels hidden), so the approvals start right under the logo.
+  Desktop is unchanged (full header + side menu).
+- The tapped pill scrolls into view in the row.
+- NOT touched: the email text/link in Supabase (still `.../admin.html`; now lands on Queue).
+- Checked (nothing changed): profile "Uploads" count = the tiles shown in My uploads; since the
+  profile-photo change (earlier today) profile pictures are not counted -- if a member's
+  profile picture used to be the 3rd "upload", the count drops by one on purpose.
+Website-only; admin.html never goes in the mobile www.
+
+---
+
 ## 2026-10-17 (upload: iPhone 17 screen recording -- video creeps while the song is seeked every second)
 Recording of the debug log (iOS 18_7 UA, iPhone 17, stallguard1 + wave off confirmed):
 the preview video's clock moved in ~2.25 s jumps roughly every 6 s (4.51, 6.76, 9.01,
