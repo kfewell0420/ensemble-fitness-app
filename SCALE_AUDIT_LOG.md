@@ -12,6 +12,23 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-17 (products intro, playlist rows, song-sheet title fix)
+
+- `gear.html`: the "Honest disclosure" box no longer sits above the products (it pushed them down
+  the screen on phones). The full text is unchanged and now sits at the end of the product list.
+  NOTE for Ken: affiliate programs (Amazon Associates, TikTok Shop) expect a clear disclosure
+  where the links are; the bottom of the page is acceptable but a short line near the top is
+  safer if you ever want one back.
+- `music-library.html`: the "Workout Playlist" pop-up's track rows now use the same layout as the
+  song picker on the upload page: round play circle, song title on its own line, artist
+  underneath, then length and the Tip button. No more "Title - Artist" squeezed onto one line.
+  "By Artist" browsing and the Tip button are unchanged. The blurb now reads "More tracks coming
+  soon." (it used to say "Just two tracks so far...", which was also wrong with 3 tracks).
+- `upload.html` BUG FIX: my earlier white chosen-song pill also turned the song TITLES in the
+  "Music tracks" sheet near-black on a dark background (names unreadable). Black title now only
+  applies inside the chosen-song pill; sheet titles are white again. This bug is in iOS build 9 and
+  Android bundle (versionCode 3), so it needs the next build (iOS 10, Android 4).
+
 ## 2026-10-17 (upload page: chosen-song pill shrunk to one line)
 
 Space matters on phones (especially iPhone). The white chosen-song pill was about 100px tall

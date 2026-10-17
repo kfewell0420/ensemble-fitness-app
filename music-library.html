@@ -244,7 +244,7 @@
       <button type="button" class="simple-modal-close" id="playlistModalClose" aria-label="Close">&times;</button>
       <div class="eyebrow" style="margin-bottom:2px;">Workout Playlist</div>
       <h3 style="margin-bottom:4px;">Tap a track to listen, tip, and use it in a video</h3>
-      <p class="card-sub" style="margin-bottom:16px;">Just two tracks so far — more get added here the moment they're approved.</p>
+      <p class="card-sub" style="margin-bottom:16px;">More tracks coming soon.</p>
       <!-- Ken's ask (Oct 2026): tipping shouldn't require leaving this list
            to open a track's full page — a one-tap "$2" button right on each
            row (see buildTrackRow) sends the tip immediately, and the result
@@ -662,6 +662,16 @@
     background: linear-gradient(135deg, var(--accent), var(--accent-dark));
     display: flex; align-items: center; justify-content: center;
     font-size: 16px;
+  }
+  .track-table-play {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: #fff1e6; color: var(--accent-dark, #c2410c);
+    font-size: 15px; padding-left: 2px; box-sizing: border-box;
+  }
+  .track-table-artist {
+    display: block;
+    font-size: 12.5px; color: var(--muted-invert); margin-top: 2px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .track-table-main { flex: 1; min-width: 0; }
   .track-table-title {
@@ -1297,18 +1307,17 @@
     var link = document.createElement("a");
     link.className = "track-row-link";
     link.href = "track.html?id=" + encodeURIComponent(track.id);
-    var subtitle = track.tagline || "";
-    var titleLine = track.artist_name
-      ? escapeHtml(track.title) + " — " + escapeHtml(track.artist_name)
-      : escapeHtml(track.title);
+    // Oct 2026, Ken's ask: same row layout as the song picker on the upload page — round play
+    // circle, the song title on top, the artist underneath (then the length and the Tip button
+    // on the right). Built to scale to thousands of songs.
+    var subtitle = track.artist_name || track.tagline || "";
     link.innerHTML =
-      '<span class="track-table-art">🎵</span>' +
+      '<span class="track-table-art track-table-play">▶</span>' +
       '<span class="track-table-main">' +
-        '<span class="track-table-title">' + titleLine + '</span>' +
-        (subtitle ? '<span class="track-table-tagline">' + escapeHtml(subtitle) + '</span>' : '') +
+        '<span class="track-table-title">' + escapeHtml(track.title) + '</span>' +
+        (subtitle ? '<span class="track-table-artist">' + escapeHtml(subtitle) + '</span>' : '') +
       '</span>' +
-      (track.duration_seconds ? '<span class="track-table-duration">' + formatTrackDuration(track.duration_seconds) + '</span>' : '') +
-      '<span class="track-table-chevron">›</span>';
+      (track.duration_seconds ? '<span class="track-table-duration">' + formatTrackDuration(track.duration_seconds) + '</span>' : '');
     row.appendChild(link);
 
     // Oct 2026, Ken's ask: instead of a flat $2 on every row, the button now
