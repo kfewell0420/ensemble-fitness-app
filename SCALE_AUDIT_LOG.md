@@ -12,6 +12,20 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-17 (notifications panel in front + count number font)
+1) `fitness-journeys.html`, phones: tapping the bell opened the notifications
+panel BEHIND the page (my backdrop change gave `.app-shell` the same stacking
+level as the nav, and it comes later in the page) and 320px wide so it was cut
+off on the right. Fix: `.app-nav` z-index 30 (above the page), panel anchored
+to the nav, full phone width minus 12px margins, max height min(300px, 50vh),
+bright white panel with dark text and a peach highlight for unread rows (same
+look as the cards). Panel markup/logic in `js/notifications.js` untouched; the
+change is CSS inside this page only.
+2) `feed.html`: the yellow count on the "Your Journeys" pill now uses Inter 800
+(the same font the rest of the app uses for numbers, e.g. the Like/Love counts)
+instead of inheriting Poppins heavy, whose "1" looked odd. 17px.
+Website-only until next app build.
+
 ## 2026-10-17 (feed: Your Journeys count no longer grows the pill)
 Ken: when a new journey was posted the pill grew. `feed.html` phone header:
 the "Your Journeys" pill is now a fixed one-line pill (no inner number, text

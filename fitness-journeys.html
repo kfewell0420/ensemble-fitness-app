@@ -360,7 +360,20 @@
   .fj-backdrop::after { content: ""; position: absolute; inset: 0;
     background: linear-gradient(90deg, rgba(255,176,88,0.80) 0%, rgba(255,176,88,0.45) 38%, rgba(255,176,88,0) 62%),
                 linear-gradient(180deg, rgba(255,189,108,0) 45%, #ffbd6c 100%); }
-  .app-nav, .app-shell { position: relative; z-index: 1; }
+  .app-nav { position: relative; z-index: 30; }  /* above the page so the bell's panel opens IN FRONT of everything */
+  .app-shell { position: relative; z-index: 1; }
+  /* Notifications panel (bell): compact, bright, full phone width, in front. Ken, Oct 2026: it opened behind the page, was cut off
+     on the right and read as a big dark block. */
+  .efit-notif-wrap { position: static; }
+  .efit-notif-panel { position: absolute; left: 12px; right: 12px; top: 100%; margin-top: 4px; width: auto; max-width: none; max-height: min(300px, 50vh);
+    background: #fff; border: 1px solid #ffc896; border-radius: 16px; box-shadow: 0 12px 34px rgba(90,40,10,0.35); z-index: 1200; }
+  .efit-notif-panel-header { color: #3a1608; border-bottom: 1px solid #f2d9c6; padding: 11px 14px; font-size: 14px; }
+  .efit-notif-mark-all { color: #c2410c; }
+  .efit-notif-item { color: #3a1608; border-bottom: 1px solid #f5e6d8; padding: 10px 14px; font-size: 14px; }
+  .efit-notif-item:hover { background: #fff6ee; }
+  .efit-notif-item.unread { background: #fff0e2; color: #000; }
+  .efit-notif-item-time { color: #8a6a58; }
+  .efit-notif-panel .empty-state { color: #5a2a10; padding: 16px 14px; }
   .fj-hero { position: relative; min-height: 104px; padding: 12px 4px 8px; margin: 0 0 14px; border-radius: 0; overflow: visible;
     display: flex; flex-direction: column; justify-content: center; background: none; box-shadow: none; }
   .fj-hero > * { position: relative; z-index: 1; }
