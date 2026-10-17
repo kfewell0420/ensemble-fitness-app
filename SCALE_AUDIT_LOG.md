@@ -12,6 +12,12 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-17 (journeys page: hearts removed)
+`fitness-journeys.html` only: the two-hearts "connection key" icon in the
+top-right corner is hidden on this page (`.app-nav-connect {display:none}`
+in the page's own style block). Other pages keep it. Home and bell icons are
+untouched. Website-only until next app build.
+
 ## 2026-10-17 (journeys page: photo as full-page backdrop bleeding into orange)
 Ken: the photo should be a backdrop, not a pill, and the page should be an
 engaging orange rather than pink. `fitness-journeys.html`, phones only:
