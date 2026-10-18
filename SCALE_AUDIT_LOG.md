@@ -12,6 +12,16 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-18 (night) — Upload page black, Followers/Following sheet in Finder navy
+
+**Colors only (phones).**
+
+- upload.html: page and top bar are now true black; the Photo / Videos / Song tiles use the Finder list-card navy `#0b0f1a` with the faint outline. (The Artist Upload bank-link cards keep Ken's mock-up colors.)
+- profile.html: the Followers / Following pop-up background is the same navy `#0b0f1a` as the Finder "Explore" list cards (sampled from Ken's screenshot), with a faint outline; the search box, the gray "Following" buttons and the photo-ring gap were shifted to matching navy shades.
+- Mirrored both files into `ensemble-fitness-mobile/www/`.
+
+---
+
 ## 2026-10-18 (evening) — Artist Upload page tightened, automatic bank-link check
 
 **upload.html only (Song bank-link screen). No database changes.**

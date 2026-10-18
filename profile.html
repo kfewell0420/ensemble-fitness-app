@@ -252,7 +252,7 @@
 /* Ken's ask (Oct 2026): Followers / Following pop-up redone in the TikTok style — just a photo, a name and a
    follow button on each row (no bios), Following/Followers tabs on top, a search box. Dark look on a computer,
    bottom sheet on a phone. Only this pop-up is touched. */
-.fl-sheet { padding: 0 !important; display: flex; flex-direction: column; overflow: hidden !important; max-width: 460px; max-height: 80vh; background: #141517 !important; }
+.fl-sheet { padding: 0 !important; display: flex; flex-direction: column; overflow: hidden !important; max-width: 460px; max-height: 80vh; background: #0b0f1a !important; border: 1px solid rgba(255,255,255,0.1) !important; }  /* Ken, Oct 18: same navy as the Finder list cards */
 .fl-head { position: relative; height: 54px; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; }
 .fl-head .simple-modal-close { top: 12px; right: 14px; width: 32px; height: 32px; font-size: 20px; line-height: 1; }
 .fl-head-title { font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #ff7a1a; }
@@ -261,17 +261,17 @@
 .fl-tab b { font-weight: 800; margin-left: 4px; }
 .fl-tab.active { color: #fff; border-bottom-color: #ff5a1f; }
 .fl-search { flex: 0 0 auto; padding: 12px 16px 6px; }
-.fl-search input { width: 100%; box-sizing: border-box; border: 0; border-radius: 10px; padding: 10px 14px; font: inherit; font-size: 16px; background: #26272b; color: #fff; }
+.fl-search input { width: 100%; box-sizing: border-box; border: 0; border-radius: 10px; padding: 10px 14px; font: inherit; font-size: 16px; background: #161c2c; color: #fff; }
 .fl-search input::placeholder { color: rgba(255,255,255,0.48); }
 .fl-list { flex: 1 1 auto; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 4px 16px calc(14px + env(safe-area-inset-bottom, 0px)); min-height: 180px; }
 /* Instagram-style rows (Ken, Oct 18): ringed photo, name, orange button, and an X to remove a follower */
 .fl-row { display: flex; align-items: center; gap: 12px; padding: 7px 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .fl-ava { width: 54px; height: 54px; padding: 2px; border-radius: 50%; flex: 0 0 auto; background: linear-gradient(135deg, #ff7a1a, #ff3d68); }
-.fl-ava-in { width: 100%; height: 100%; border-radius: 50%; overflow: hidden; border: 2px solid #141517; box-sizing: border-box; display: flex; align-items: center; justify-content: center; background: #3a2a22; color: #ffb27a; font-weight: 800; font-size: 19px; }
+.fl-ava-in { width: 100%; height: 100%; border-radius: 50%; overflow: hidden; border: 2px solid #0b0f1a; box-sizing: border-box; display: flex; align-items: center; justify-content: center; background: #3a2a22; color: #ffb27a; font-weight: 800; font-size: 19px; }
 .fl-ava-in img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .fl-name { flex: 1; min-width: 0; font-size: 15.5px; font-weight: 700; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fl-btn { flex: 0 0 auto; min-width: 100px; height: 34px; padding: 0 14px; border: 0; border-radius: 9px; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; background: linear-gradient(135deg, #ff5a1f, #c2410c); color: #fff; -webkit-tap-highlight-color: transparent; }
-.fl-btn.on { background: #2b2c30; color: #fff; }
+.fl-btn.on { background: #1d2437; color: #fff; }
 .fl-btn:disabled { opacity: 0.6; }
 .fl-x { flex: 0 0 auto; width: 34px; height: 34px; border: 0; background: none; color: rgba(255,255,255,0.85); cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; margin-right: -6px; -webkit-tap-highlight-color: transparent; }
 .fl-x svg { display: block; }
