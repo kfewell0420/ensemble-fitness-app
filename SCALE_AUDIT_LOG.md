@@ -12,6 +12,25 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-18 (round 2: song bar shows the sound again, no wording on it; no 3-second fade) -- upload.html + js/supabaseClient.js, website + phone app
+Ken (artist's iPhone 17 recording IMG_2222, after the root-cause fix): "almost 100%" fixed; the scrub line is locked to
+picture and song. Remaining asks: (1) the orange song bar repeated the song title (already in the white row above) and had
+no waveform on iPhones -> no wording on the bar, show the sound itself; (2) nobody likes the 3-second fade after the video
+ends -> cut, no fade.
+(1) `.mix-clip-label` hidden for good (CSS !important). The waveform had been switched off on iPhones during the
+skipping hunt (`ensureWave` returned early for `IS_IOS_DEVICE`); the real cause was the thumbnail seeking, so it is back
+on iPhones (decode of the song for the bars, same as Android). Debug line is now `build=stallguard4 wave=on`; if iPhone
+skipping ever returns right after picking a song, the wave decode is the first suspect (re-add the early return).
+Also: the iPhone "wake the hidden player" step moved into `withTempVideo` so the clip tile thumbnail (was black in the
+recording while the filmstrip was fine) gets it too.
+(2) `createSongTail().start()` now returns false unless `SONG_TAIL_ENABLED` (new flag in js/supabaseClient.js, false), so
+every caller (upload preview, feed, profile "My uploads", review queue) ends the old way: the song stops with the picture.
+Flip the flag to true to bring the fade back. Tested (Chromium, default and iPhone UA): label hidden, waveform drawn,
+song paused within 250 ms of the video ending (volume stays 1, no ramp). NOTE: js/supabaseClient.js is shared by the whole
+site, so this changes how music-videos END for every member -- check one in the feed after the push.
+
+---
+
 ## 2026-10-18 (iPhone 17 music skipping: ROOT CAUSE found + player scrub bar locked to picture and song) -- upload.html, website + phone app
 Ken sent two screen recordings from the artist's iPhone 17 (UA "iPhone OS 18_7", debug build stallguard2): IMG_2221 = video
 only, IMG_2220 = song added with "Keep original sound" ticked.

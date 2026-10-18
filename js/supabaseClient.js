@@ -270,6 +270,7 @@ function audioVolumeWorks() {
 }
 // getBase(): the volume the song normally plays at. start(done) -> true if a tail began (done() runs when
 // it has finished), false if there is nothing to fade (caller ends things the normal way).
+var SONG_TAIL_ENABLED = false; // flip to true to bring back the 3-second fade-out
 function createSongTail(video, audio, getBase) {
   var TAIL = 3; // seconds the song fades out after the video ends
   var raf = null, t0 = 0, active = false, onEnd = null, works = null, io = null, visible = true;
@@ -295,6 +296,10 @@ function createSongTail(video, audio, getBase) {
   return {
     active: function () { return active; },
     start: function (done) {
+      // Ken (Oct 2026): "no one likes the 3-second fade after the video is gone -- just cut it." The tail is switched
+      // off everywhere (upload preview, feed, profile, review queue): returning false makes every caller end the
+      // way it did before the tail existed -- the song stops with the picture.
+      if (!SONG_TAIL_ENABLED) return false;
       if (active) return true;
       if (works === null) works = audioVolumeWorks();
       if (!works || audio.paused || audio.ended || audio.muted) return false;

@@ -180,6 +180,8 @@
   .mix-track { position: relative; height: 40px; border-radius: 8px; background: rgba(255,255,255,0.05); margin-bottom: 6px; overflow: hidden; touch-action: none; }
   .mix-video { cursor: pointer; background: #000; }
   .mix-filmstrip { display: flex; height: 100%; pointer-events: none; }
+  /* Ken (Oct 2026): no wording on the orange song bar -- the song's name is already in the white row above; the bar shows the sound itself. */
+  .mix-clip-label, #mixClipLabel { display: none !important; }
   .mix-filmstrip img { flex: 1 1 0; min-width: 0; height: 100%; object-fit: cover; opacity: 0.9; }
   .mix-music { height: 38px; }
   .mix-clip.mix-snap { transition: left 0.22s ease-out, width 0.22s ease-out; }
@@ -1154,9 +1156,6 @@
     var firstClip = clips[0] || { url: videoEl.currentSrc || videoEl.src };
     var blankInARow = 0;
     await withTempVideo(firstClip, async function (v) {
-      if (IS_IOS_DEVICE) { // wake the hidden player so it really paints frames (a never-played iPhone video can hand back black)
-        try { await Promise.race([v.play(), new Promise(function (r) { setTimeout(r, 1500); })]); v.pause(); } catch (e) {}
-      }
       var waited = 0;
       for (var i = 0; i < count; i++) {
         if (myGeneration !== filmstripGeneration) return;
@@ -1265,7 +1264,12 @@
         v.remove();
         resolve(val);
       }
-      v.addEventListener("loadedmetadata", function () { Promise.resolve(fn(v)).then(fin, function () { fin(null); }); });
+      v.addEventListener("loadedmetadata", async function () {
+        if (IS_IOS_DEVICE) { // wake the hidden player so it really paints frames (a never-played iPhone video can hand back black)
+          try { await Promise.race([v.play(), new Promise(function (r) { setTimeout(r, 1500); })]); v.pause(); } catch (e) {}
+        }
+        Promise.resolve(fn(v)).then(fin, function () { fin(null); });
+      });
       v.addEventListener("error", function () { fin(null); });
       setTimeout(function () { fin(null); }, maxMs || 20000);
       v.src = c.url;
@@ -1690,13 +1694,11 @@
       x.send();
     });
   }
-  // iPhone fix (Oct 2026): drawing the waveform means downloading the whole song a second time and decoding it
-  // in the page (plus a second audio engine). On iPhones that choked the song that is playing -- it skipped
-  // every few bars and the timeline froze. iPhones/iPads now skip the picture (the bar just stays plain,
-  // everything else works the same); Android and desktop keep it.
+  // (Oct 2026) The waveform picture was switched off on iPhones while the iPhone skipping was being chased. The real
+  // cause turned out to be the preview thumbnails seeking the watched player (fixed), so the picture is back on iPhones
+  // too, as Ken asked: the orange bar shows the song's real volume/pitch bars, with no wording on it.
   var IS_IOS_DEVICE = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
   function ensureWave(trackId) {
-    if (IS_IOS_DEVICE) return;
     if (!trackId || wavePeaks[trackId] || waveLoading[trackId]) return;
     var t = tracksById[trackId];
     if (!t) return;
@@ -3007,7 +3009,7 @@
     ["play", "pause", "waiting", "stalled", "seeking", "ended"].forEach(function (n) {
       v.addEventListener(n, function () { log("  video event: " + n + " rs=" + v.readyState); });
     });
-    log("UA " + navigator.userAgent.replace(/.*(OS [0-9_]+).*/, "$1") + " | video dur " + f2(v.duration) + " loop=" + v.loop + " | build=stallguard3 wave=" + (IS_IOS_DEVICE ? "off" : "on") + " " + v.videoWidth + "x" + v.videoHeight);
+    log("UA " + navigator.userAgent.replace(/.*(OS [0-9_]+).*/, "$1") + " | video dur " + f2(v.duration) + " loop=" + v.loop + " | build=stallguard4 wave=on " + v.videoWidth + "x" + v.videoHeight);
     setInterval(function () {
       if (v.paused && a.paused) return;
       log("tick a=" + f2(a.currentTime) + (a.paused ? "(P)" : "") + " v=" + f2(v.currentTime) + (v.paused ? "(P)" : "") + " vrS=" + v.readyState + " arS=" + a.readyState + " aDur=" + f2(a.duration) + " delay=" + f2(mDelay) + " len=" + f2(mLen) + " start=" + f2(musicStartPicker.getValue()));
