@@ -12,6 +12,14 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## Oct 18, 2026 — Removed the upload troubleshooting view
+
+**Ask:** Clean up before wider release.
+**Change:** `upload.html` only. Deleted the `?debug=1` on-screen troubleshooting block (it only ever ran when `?debug=1` was in the address). Nothing members see or use changes. No other code referenced it.
+**Check:** Upload page opens, picks a video, preview/music/post work as before.
+
+---
+
 ## 2026-10-18 (round 3: Home video "glitch" at the loop point + upload preview showing the grey default player) -- upload.html + js/supabaseClient.js, website + phone app
 Ken (Android, then confirmed on iPhone for the preview): (a) Home still showed him working out, glitched, worked out again;
 (b) after choosing a video the upload preview showed Chrome's grey "default player" picture with a giant play triangle

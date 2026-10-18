@@ -2996,38 +2996,6 @@
     }
   });
 
-  // ---- Troubleshooting view (only with ?debug=1 in the address; nobody sees it otherwise) ------------------
-  // Added Oct 2026 to find why the song skips on iPhones: prints, on screen, every play / pause / seek on the
-  // song and the video, plus which part of the page asked for it, so a screenshot shows what is stopping it.
-  (function () {
-    if (!/[?&]debug=1\b/.test(location.search)) return;
-    var a = musicPreviewAudio, v = trimPreviewVideo;
-    var box = document.createElement("pre");
-    box.style.cssText = "position:fixed;left:0;right:0;bottom:0;max-height:42vh;overflow:hidden;margin:0;padding:6px 8px;background:rgba(0,0,0,0.9);color:#9f9;font:10px/1.25 Menlo,monospace;z-index:2147483647;white-space:pre-wrap;pointer-events:none;";
-    document.body.appendChild(box);
-    var lines = [], t0 = performance.now();
-    function log(m) { lines.push(((performance.now() - t0) / 1000).toFixed(2) + " " + m); if (lines.length > 34) lines.shift(); box.textContent = lines.join("\n"); }
-    function who() { var st = (new Error().stack || "").split("\n"); if (/^Error/.test(st[0])) st.shift(); return st.slice(2, 4).map(function (x) { return x.replace(/https?:\/\/[^ )]*\//, "").trim(); }).join(" < ").slice(0, 110); }
-    function f2(n) { return isFinite(n) ? Number(n).toFixed(2) : String(n); }
-    ["play", "pause"].forEach(function (n) {
-      var oa = a[n]; a[n] = function () { log("AUDIO." + n + "() by " + who() + " | a=" + f2(a.currentTime) + " v=" + f2(v.currentTime)); return oa.apply(a, arguments); };
-      var ov = v[n]; v[n] = function () { log("VIDEO." + n + "() by " + who()); return ov.apply(v, arguments); };
-    });
-    var d = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "currentTime");
-    Object.defineProperty(a, "currentTime", { configurable: true, get: function () { return d.get.call(a); }, set: function (x) { log("AUDIO.seek -> " + f2(x) + " by " + who()); d.set.call(a, x); } });
-    ["playing", "pause", "waiting", "stalled", "seeking", "seeked", "ended", "error", "emptied", "canplay"].forEach(function (n) {
-      a.addEventListener(n, function () { log("  audio event: " + n + " rs=" + a.readyState + " ns=" + a.networkState + (a.error ? " err=" + a.error.code : "")); });
-    });
-    ["play", "pause", "waiting", "stalled", "seeking", "ended"].forEach(function (n) {
-      v.addEventListener(n, function () { log("  video event: " + n + " rs=" + v.readyState); });
-    });
-    log("UA " + navigator.userAgent.replace(/.*(OS [0-9_]+).*/, "$1") + " | video dur " + f2(v.duration) + " loop=" + v.loop + " | build=stallguard4 wave=on " + v.videoWidth + "x" + v.videoHeight);
-    setInterval(function () {
-      if (v.paused && a.paused) return;
-      log("tick a=" + f2(a.currentTime) + (a.paused ? "(P)" : "") + " v=" + f2(v.currentTime) + (v.paused ? "(P)" : "") + " vrS=" + v.readyState + " arS=" + a.readyState + " aDur=" + f2(a.duration) + " delay=" + f2(mDelay) + " len=" + f2(mLen) + " start=" + f2(musicStartPicker.getValue()));
-    }, 700);
-  })();
-
   init();
 </script>
 
