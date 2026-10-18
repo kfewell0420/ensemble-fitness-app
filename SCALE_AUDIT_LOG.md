@@ -12,6 +12,14 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## Oct 18, 2026 — Profile gray panel, envelope outline, video/music box gray (phones)
+
+**Ask (colors only):** (1) Profile: everything under the Edit profile button on the Finder gray to split the page; (2) the envelope icon looked like a plain white box; (3) the dark-brown video/music box on Upload should be the same gray.
+**Change:** `profile.html`: the icon row and all content under it sit on the Finder gray (#0b0f1a, sampled from the Finder card), the top part stays black; the gray always runs down to the tab bar even with little content (page is a column at least one screen tall; no extra scrolling); cards/fields inside it use the next navy step so they still stand out. The Messages icon is now an outlined envelope drawn as a picture (white outline with the flap line) instead of the emoji, which Android showed as a flat white rectangle. `upload.html`: the video/music box (and its nested music row) is the Finder gray with a faint light outline instead of dark brown. Phones only; computer layout unchanged.
+**Check:** Profile on a phone: black above the icon row, gray below; tap the envelope: outlined envelope, flap visible. Upload > Video: gray box.
+
+---
+
 ## Oct 18, 2026 — Journeys and Upload pages recolored charcoal (phones)
 
 **Ask (colors only):** Same consistency as Profile — "darker, not black". Keep the sunset photo; make everything below it charcoal.

@@ -115,7 +115,7 @@
   /* Ken (Oct 2026): first the phone page was dark, then orange. Oct 18, 2026 (Ken): now charcoal gray so it
      matches Home, Finder, Profile and Journeys — the orange page made the white wording unreadable.
      Same palette as the Journeys page: page #15171c, cards #1f2229, fields #2a2e37, orange highlights.
-     Only COLORS; the dark-maroon video/music box keeps its look. Phones only (<= 899px); desktop is untouched. */
+     Only COLORS (the video/music box was dark brown; it is now the Finder gray). Phones only (<= 899px); desktop is untouched. */
   @media (max-width: 899px) {
     body { background: #15171c; }
     .app-nav { background: #15171c; border-bottom: 1px solid rgba(255,255,255,0.08); }
@@ -132,9 +132,10 @@
     .dropzone { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.28); }
     .dropzone strong { color: #fff; }
     .dropzone span { color: rgba(255,255,255,0.7); }
-    /* the dark-maroon video/music box keeps its solid colors; the gray fields use the shared field gray */
+    /* Ken (Oct 18): the dark-brown video/music box is now the same gray as the Finder cards (#0b0f1a), with a faint outline */
     #songPayoutGate .card { background: #1f2229; border: 1px solid rgba(255,255,255,0.1); box-shadow: none; }
-    #uploadCard .narration-section { background: #33191a; border-color: #6b2230; }
+    #uploadCard .narration-section { background: #0b0f1a; border-color: rgba(255,255,255,0.14); }
+    #uploadCard .narration-section.more-option-compact { background: none; }
     #uploadFlow .field input:not([type="checkbox"]), #uploadFlow .field textarea, #uploadFlow .field select { background: #2a2e37; border-color: rgba(255,255,255,0.16); color: #fff; }
     #profilePhotoField label { color: #fff !important; font-weight: 700; }
     #uploadFlow .btn-primary { box-shadow: 0 3px 10px rgba(0,0,0,0.4); }

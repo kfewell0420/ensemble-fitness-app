@@ -172,7 +172,14 @@
 
   /* icon tab row — Ken (Oct 18): the envelope, block and lock looked faint; now full strength, a touch
      larger and brightened, with the orange underline alone showing which one is open */
-  .pf-pills { display: flex; margin: 14px 0 0; padding: 0; gap: 0; overflow: visible; border-bottom: 1px solid rgba(255,255,255,0.1); }
+  /* Ken (Oct 18): the icon row and everything under it sit on the Finder gray (#0b0f1a), the part above
+     (photo, name, stats, Edit profile) stays black — it breaks the page into two clear zones. The gray is
+     painted behind the row by a tall ::before that the page shell clips at its bottom; the page is a column
+     that is at least one screen tall so the gray always runs down to the tab bar, even with little content. */
+  body { display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; }
+  .app-shell { flex: 1 0 auto; width: 100%; box-sizing: border-box; position: relative; z-index: 0; overflow: hidden; overflow: clip; }
+  .pf-pills { position: relative; display: flex; margin: 14px 0 0; padding: 0; gap: 0; overflow: visible; border-bottom: 1px solid rgba(255,255,255,0.1); }
+  .pf-pills::before { content: ""; position: absolute; z-index: -1; left: 0; right: 0; top: 0; bottom: -9999px; background: #0b0f1a; pointer-events: none; }
   .pf-pill {
     flex: 1 1 0; min-width: 0; background: none; border: 0; border-bottom: 3px solid transparent; border-radius: 0;
     padding: 11px 0 9px; font-size: 22px; line-height: 1; color: rgba(255,255,255,0.92); opacity: 1; cursor: pointer;
@@ -185,7 +192,7 @@
 
   /* navy cards for every section (same navy as the Finder list) */
   .card.pf-panel:not(.pf-uploads), #profileForm {
-    background: #0b0f1a; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; margin: 14px 16px 0; padding: 16px; min-height: 0; box-shadow: none;
+    background: #121a2c; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; margin: 14px 16px 0; padding: 16px; min-height: 0; box-shadow: none;
   }
   #profileMsg { margin: 12px 16px 0; }
   body.pf-tab-details .form-msg.pf-d:not(.show) { display: none; }
@@ -195,7 +202,7 @@
   .field label, #myMusicList label { color: rgba(255,255,255,0.78); }
   #myMusicList label { display: block; font-size: 13px; font-weight: 700; margin: 10px 0 4px; }
   .field input, .field textarea, .field select, #myMusicList input, #myMusicList select, .simple-modal input, .simple-modal textarea {
-    background: #121a2c; border: 1px solid rgba(255,255,255,0.16); color: #fff;
+    background: #1c2740; border: 1px solid rgba(255,255,255,0.16); color: #fff;
   }
   #myMusicList input, #myMusicList select { width: 100%; border-radius: 10px; padding: 10px 12px; font-family: inherit; font-size: 14px; }
   .field input::placeholder, .field textarea::placeholder, .simple-modal input::placeholder { color: rgba(255,255,255,0.42); }
@@ -381,7 +388,7 @@
   <div class="pf-pills" id="pfPills" role="tablist">
     <button type="button" class="pf-pill active" data-pf="uploads" role="tab" aria-label="Uploads" title="Uploads"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><g fill="currentColor"><rect x="3" y="3" width="5" height="5" rx="1"/><rect x="9.5" y="3" width="5" height="5" rx="1"/><rect x="16" y="3" width="5" height="5" rx="1"/><rect x="3" y="9.5" width="5" height="5" rx="1"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/><rect x="16" y="9.5" width="5" height="5" rx="1"/><rect x="3" y="16" width="5" height="5" rx="1"/><rect x="9.5" y="16" width="5" height="5" rx="1"/><rect x="16" y="16" width="5" height="5" rx="1"/></g></svg></button>
     <button type="button" class="pf-pill" data-pf="music" id="pfPillMusic" role="tab" aria-label="My music" title="My music" style="display:none;">🎵</button>
-    <button type="button" class="pf-pill" data-pf="messages" role="tab" aria-label="Messages" title="Messages">✉️</button>
+    <button type="button" class="pf-pill" data-pf="messages" role="tab" aria-label="Messages" title="Messages"><svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" stroke-linecap="round"><rect x="2.5" y="5" width="19" height="14" rx="2.6"/><path d="M3.3 6.6 12 13.2l8.7-6.6"/></svg></button>
     <button type="button" class="pf-pill" data-pf="blocked" role="tab" aria-label="Blocked members" title="Blocked members">🚫</button>
     <button type="button" class="pf-pill" data-pf="payouts" id="pfPillPayouts" role="tab" aria-label="Payouts" title="Payouts" style="display:none;">💰</button>
     <button type="button" class="pf-pill" data-pf="security" role="tab" aria-label="Security" title="Security">🔒</button>
