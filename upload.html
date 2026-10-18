@@ -112,33 +112,33 @@
   .extra-clip-controls button:disabled { opacity: 0.3; cursor: default; }
 </style>
 <style>
-  /* Ken (Oct 2026): on phones the upload page was dark all the way round (near-black page, a dark card, then
-     the dark-brown video box). Only the OUTER layers change: the page and its card now wear the same
-     inspirational orange as the Journeys page. The dark-brown video/music box and the gray fields keep
-     their look. Phones only (<= 899px); desktop is untouched. Pure CSS. */
+  /* Ken (Oct 2026): first the phone page was dark, then orange. Oct 18, 2026 (Ken): now charcoal gray so it
+     matches Home, Finder, Profile and Journeys — the orange page made the white wording unreadable.
+     Same palette as the Journeys page: page #15171c, cards #1f2229, fields #2a2e37, orange highlights.
+     Only COLORS; the dark-maroon video/music box keeps its look. Phones only (<= 899px); desktop is untouched. */
   @media (max-width: 899px) {
-    body { background: linear-gradient(180deg,#ffbd6c 0%,#ffa44f 45%,#ff8f40 100%) fixed; background-color: #ffa44f; }
-    .app-nav { background: transparent; border-bottom: 0; }
+    body { background: #15171c; }
+    .app-nav { background: #15171c; border-bottom: 1px solid rgba(255,255,255,0.08); }
     #uploadCard { background: transparent; border: 0; box-shadow: none; padding-left: 4px; padding-right: 4px; }
-    #uploadEyebrow { color: #7a2a08; }
-    #uploadHeading, #uploadCard > h2 { color: #3a1608; }
-    #uploadSub { color: #5a2a10; }
-    #uploadFlow > .field > label, #uploadFlow > .field > .field-label-row label { color: #3a1608; }
-    #uploadFlow > .field .field-hint { color: #5a2a10; }
-    .upload-back-link { color: #7a2a08; }
-    .upload-category-tile { background: #fff; border: 1px solid #e4bfae; }
-    .upload-category-tile strong { color: #3a1608; }
-    .upload-category-tile span { color: #5f6470; }
-    .dropzone { background: rgba(255,255,255,0.55); border-color: rgba(122,42,8,0.45); }
-    .dropzone strong { color: #3a1608; }
-    .dropzone span { color: #5a2a10; }
-    /* keep the dark-brown video/music box and the gray fields exactly as they looked on the dark page
-       (they were see-through, so on orange they would turn orange: give them their solid colors) */
+    #uploadEyebrow { color: #ff7a3d; }
+    #uploadHeading, #uploadCard > h2 { color: #fff; }
+    #uploadSub { color: rgba(255,255,255,0.74); }
+    #uploadFlow > .field > label, #uploadFlow > .field > .field-label-row label { color: rgba(255,255,255,0.9); }
+    #uploadFlow > .field .field-hint { color: rgba(255,255,255,0.62); }
+    .upload-back-link { color: #ff7a3d; }
+    .upload-category-tile { background: #1f2229; border: 1px solid rgba(255,255,255,0.1); }
+    .upload-category-tile strong { color: #fff; }
+    .upload-category-tile span { color: rgba(255,255,255,0.68); }
+    .dropzone { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.28); }
+    .dropzone strong { color: #fff; }
+    .dropzone span { color: rgba(255,255,255,0.7); }
+    /* the dark-maroon video/music box keeps its solid colors; the gray fields use the shared field gray */
+    #songPayoutGate .card { background: #1f2229; border: 1px solid rgba(255,255,255,0.1); box-shadow: none; }
     #uploadCard .narration-section { background: #33191a; border-color: #6b2230; }
-    #uploadFlow .field input:not([type="checkbox"]), #uploadFlow .field textarea, #uploadFlow .field select { background: #1b1d25; border-color: #3b3e4a; color: #fff; }
-    #profilePhotoField label { color: #3a1608 !important; font-weight: 700; }
-    #uploadFlow .btn-primary { box-shadow: 0 3px 10px rgba(58,22,8,0.4); }
-    #uploadFlow .btn-primary:disabled { background: rgba(58,22,8,0.6); color: #ffe6d2; opacity: 1; box-shadow: none; }
+    #uploadFlow .field input:not([type="checkbox"]), #uploadFlow .field textarea, #uploadFlow .field select { background: #2a2e37; border-color: rgba(255,255,255,0.16); color: #fff; }
+    #profilePhotoField label { color: #fff !important; font-weight: 700; }
+    #uploadFlow .btn-primary { box-shadow: 0 3px 10px rgba(0,0,0,0.4); }
+    #uploadFlow .btn-primary:disabled { background: #2a2e37; color: #7f8798; opacity: 1; box-shadow: none; }
   }
 </style>
 

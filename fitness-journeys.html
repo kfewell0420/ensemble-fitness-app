@@ -278,8 +278,8 @@
 
 <style>
 /* ======================================================================
-   Bright, inviting look on phones (Ken, Oct 2026): same warm white as the Profile page, orange wording,
-   white cards, dark easy-to-read writing. Phones only (<= 899px, same cut-off as the phone rules above);
+   Phone look (Ken, Oct 2026; recolored charcoal Oct 18, 2026 — see the block below). First version was bright:
+   warm white, orange wording, white cards. Phones only (<= 899px, same cut-off as the phone rules above);
    desktop keeps the dark look. Pure CSS: ids, classes and logic are untouched.
    ====================================================================== */
 /* Ken (Oct 2026): what the POSTER writes in the notes, the date/feeling line, and the poster's own replies (the bold headline stays upright) is in the
@@ -292,88 +292,90 @@
 .fj-reply-text { font-style: normal; font-family: Arial, Helvetica, sans-serif; }
 .fj-reply-text.fj-reply-author { font-style: italic; }
 @media (max-width: 899px) {
-  body { position: relative; background: linear-gradient(180deg,#ffbd6c 0%,#ffa44f 45%,#ff8f40 100%); color: #16181d; --muted-invert: #5f6470; --faint-invert: #8a8f99; }
-  h1, h2, h3, h4 { color: #3a1608; }
-  p, .card-sub { color: #5a2a10; }
-  .eyebrow { color: #7a2a08; }
+  /* Ken (Oct 18, 2026): the sunset photo at the top stays exactly as it was; everything BELOW it is now
+     charcoal gray (not black) so the page matches Home, Finder and Profile. Cards are a slightly lighter
+     charcoal, fields and pills a lighter gray again, orange is the highlight. Colors only. */
+  body { position: relative; background: #15171c; color: #fff; --muted-invert: rgba(255,255,255,0.7); --faint-invert: rgba(255,255,255,0.55); }
+  h1, h2, h3, h4 { color: #fff; }
+  p, .card-sub { color: rgba(255,255,255,0.74); }
+  .eyebrow { color: #ff7a3d; }
   .app-nav { background: transparent; border-bottom: 0; }
   .app-shell { padding-left: 16px; padding-right: 16px; padding-bottom: 40px; }
-  .card { background: #fff; border: 1px solid #e4bfae; box-shadow: none; }
+  .card { background: #1f2229; border: 1px solid rgba(255,255,255,0.1); box-shadow: none; }
   .fj-hero-script { color: #ff5a1f; }
 
   /* form */
-  .field label { color: #4b5060; }
-  .field input, .field textarea, .field select { background: #fcefe7; border: 1px solid #e4bfae; color: #16181d; }
-  .field input::placeholder, .field textarea::placeholder { color: #80858f; }
+  .field label { color: rgba(255,255,255,0.88); }
+  .field input, .field textarea, .field select { background: #2a2e37; border: 1px solid rgba(255,255,255,0.16); color: #fff; color-scheme: dark; }
+  .field input::placeholder, .field textarea::placeholder { color: rgba(255,255,255,0.46); }
   .field input:focus, .field textarea:focus, .field select:focus { border-color: #ff5a1f; outline: none; }
-  .btn-ghost { background: #fff; border: 1px solid #d9d2c7; color: #16181d; }
-  .empty-state { color: #6b6f78; }
+  .btn-ghost { background: transparent; border: 1px solid rgba(255,255,255,0.26); color: #fff; }
+  .empty-state { color: rgba(255,255,255,0.62); }
 
-  /* filter pills */
-  .fj-count-line { color: #5a2a10; }
-  .fj-pill { background: #fff; border: 1px solid #e4bfae; color: #5f6470; }
-  .fj-pill.active { background: #fff1e6; border-color: #ff5a1f; color: #b4410f; }
+  /* filter pills: gray, with the open one in solid orange */
+  .fj-count-line { color: rgba(255,255,255,0.72); }
+  .fj-pill { background: #2a2e37; border: 1px solid rgba(255,255,255,0.14); color: #eceef3; }
+  .fj-pill.active { background: #ff5a1f; border-color: #ff5a1f; color: #fff; }
 
   /* journey cards */
-  .fj-card { background: #fff; border: 1px solid #e4bfae; box-shadow: 0 2px 6px rgba(22,24,29,0.08); }
+  .fj-card { background: #1f2229; border: 1px solid rgba(255,255,255,0.1); box-shadow: none; }
   .fj-card-example { opacity: 1; }
-  .fj-card-name { color: #000; }
-  .fj-card-sub { color: #8a8f99; }
-  .fj-card-icon { background: #fff1e6; border: 1px solid #f3d9c6; }
-  .fj-example-tag { color: #6b6f78; background: #fcefe7; border: 1px solid #e4bfae; }
-  .fj-menu-btn { color: #5f6470; }
-  .fj-menu-btn:hover { color: #16181d; }
-  .fj-menu-dropdown { background: #fff; border: 1px solid #e3ddd4; box-shadow: 0 14px 34px rgba(22,24,29,0.16); }
-  .fj-menu-item { color: #16181d; }
-  .fj-menu-item:hover { background: #faf8f5; }
-  .fj-menu-item.danger { color: #c92a1d; }
-  .fj-headline { color: #000; }
-  .fj-cat-chip { color: #b4410f; background: #fff1e6; border: 1px solid #f3d9c6; }
-  .fj-quote { color: #000; font-weight: 600; font-size: 14.5px; }
-  .fj-meta-line { color: #000; font-weight: 600; font-size: 13.5px; line-height: 1.5; }
-  .fj-reaction-pill { color: #4b5060; background: #fcefe7; border: 1px solid #e4bfae; }
-  .fj-reaction-pill.active { background: #fff1e6; border-color: #ff5a1f; color: #c2410c; }
-  .fj-reply-text { color: #1f2227; font-size: 13.5px; line-height: 1.45; }
-  .fj-reply-text.fj-reply-author { color: #000; font-weight: 600; }
-  .fj-reply-text strong { color: #000; }
-  .fj-reply-input, .fj-edit-row select, .fj-edit-row input, .fj-edit-row textarea { background: #fcefe7; border: 1px solid #e4bfae; color: #000; }
-  .fj-reply-input::placeholder { color: #80858f; }
+  .fj-card-name { color: #fff; }
+  .fj-card-sub { color: rgba(255,255,255,0.6); }
+  .fj-card-icon { background: rgba(255,90,31,0.16); border: 1px solid rgba(255,122,61,0.35); }
+  .fj-example-tag { color: rgba(255,255,255,0.7); background: #2a2e37; border: 1px solid rgba(255,255,255,0.14); }
+  .fj-menu-btn { color: rgba(255,255,255,0.72); }
+  .fj-menu-btn:hover { color: #fff; }
+  .fj-menu-dropdown { background: #262a33; border: 1px solid rgba(255,255,255,0.14); box-shadow: 0 14px 34px rgba(0,0,0,0.5); }
+  .fj-menu-item { color: #fff; }
+  .fj-menu-item:hover { background: rgba(255,255,255,0.08); }
+  .fj-menu-item.danger { color: #ff8f84; }
+  .fj-headline { color: #fff; }
+  .fj-cat-chip { color: #ffb27a; background: rgba(255,90,31,0.18); border: 1px solid rgba(255,122,61,0.5); }
+  .fj-quote { color: #fff; font-weight: 600; font-size: 14.5px; }
+  .fj-meta-line { color: rgba(255,255,255,0.86); font-weight: 600; font-size: 13.5px; line-height: 1.5; }
+  .fj-reaction-pill { color: #eceef3; background: #2a2e37; border: 1px solid rgba(255,255,255,0.16); }
+  .fj-reaction-pill.active { background: rgba(255,90,31,0.2); border-color: #ff5a1f; color: #ffb27a; }
+  .fj-reply-text { color: #e6e8ee; font-size: 13.5px; line-height: 1.45; }
+  .fj-reply-text.fj-reply-author { color: #fff; font-weight: 600; }
+  .fj-reply-text strong { color: #fff; }
+  .fj-reply-input, .fj-edit-row select, .fj-edit-row input, .fj-edit-row textarea { background: #2a2e37; border: 1px solid rgba(255,255,255,0.16); color: #fff; }
+  .fj-reply-input::placeholder { color: rgba(255,255,255,0.46); }
 
   /* how it works */
-  .fj-how-step strong { color: #16181d; }
-  .fj-how-step span { color: #5f6470; }
+  .fj-how-step strong { color: #fff; }
+  .fj-how-step span { color: rgba(255,255,255,0.7); }
 
   /* pop-ups (report etc.) */
-  .simple-modal { background: #fff; border: 1px solid #ece7e0; color: #16181d; box-shadow: 0 20px 50px rgba(22,24,29,0.2); }
-  .simple-modal-overlay { background: rgba(22,24,29,0.45); }
-  .simple-modal h3, .simple-modal label { color: #16181d; }
-  .simple-modal p, .simple-modal .card-sub { color: #5f6470; }
-  .simple-modal .eyebrow { color: #7a2a08; }
-  .simple-modal input, .simple-modal textarea, .simple-modal select { background: #faf8f5; border: 1px solid #e3ddd4; color: #16181d; }
-  .simple-modal-close { background: #f1ece5; color: #16181d; }
-  .simple-modal .report-target-preview { background: #faf8f5; color: #5f6470; }
+  .simple-modal { background: #1f2229; border: 1px solid rgba(255,255,255,0.12); color: #fff; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+  .simple-modal-overlay { background: rgba(5,7,13,0.72); }
+  .simple-modal h3, .simple-modal label { color: #fff; }
+  .simple-modal p, .simple-modal .card-sub { color: rgba(255,255,255,0.72); }
+  .simple-modal .eyebrow { color: #ff7a3d; }
+  .simple-modal input, .simple-modal textarea, .simple-modal select { background: #2a2e37; border: 1px solid rgba(255,255,255,0.16); color: #fff; }
+  .simple-modal-close { background: rgba(255,255,255,0.1); color: #fff; }
+  .simple-modal .report-target-preview { background: #2a2e37; color: rgba(255,255,255,0.72); }
 
-  /* ---- Round 2 (Ken, Oct 2026): warmer, more inspiring look: peach/pink page, mini hero with two hikers,
-     pink-outlined headline boxes, deeper pink category chips, tap-to-cheer chips. ---- */
-  .fj-backdrop { display: block; position: absolute; z-index: 0; top: 0; left: 0; right: 0; height: min(54vw, 250px); overflow: hidden; pointer-events: none; }
+  /* ---- Round 2 (Ken, Oct 2026): mini hero with the two hikers, orange-outlined headline boxes, tap-to-cheer chips.
+     Oct 18: the photo's lower edge now melts into the charcoal page instead of into orange. ---- */
+  .fj-backdrop { display: block; position: absolute; z-index: 0; top: 0; left: 0; right: 0; height: min(62vw, 262px); overflow: hidden; pointer-events: none; }
   .fj-backdrop img { width: 100%; height: 100%; object-fit: cover; object-position: 70% 40%; display: block; }
   .fj-backdrop::after { content: ""; position: absolute; inset: 0;
-    background: linear-gradient(90deg, rgba(255,176,88,0.80) 0%, rgba(255,176,88,0.45) 38%, rgba(255,176,88,0) 62%),
-                linear-gradient(180deg, rgba(255,189,108,0) 45%, #ffbd6c 100%); }
+    background: linear-gradient(180deg, rgba(21,23,28,0) 62%, #15171c 100%),
+                linear-gradient(90deg, rgba(255,176,88,0.80) 0%, rgba(255,176,88,0.45) 38%, rgba(255,176,88,0) 62%); }
   .app-nav { position: relative; z-index: 30; }  /* above the page so the bell's panel opens IN FRONT of everything */
   .app-shell { position: relative; z-index: 1; }
-  /* Notifications panel (bell): compact, bright, full phone width, in front. Ken, Oct 2026: it opened behind the page, was cut off
-     on the right and read as a big dark block. */
+  /* Notifications panel (bell): compact, full phone width, in front; charcoal like everything else now. */
   .efit-notif-wrap { position: static; }
   .efit-notif-panel { position: absolute; left: 12px; right: 12px; top: 100%; margin-top: 4px; width: auto; max-width: none; max-height: min(300px, 50vh);
-    background: #d2a679; border: 2px solid #8a5a33; border-radius: 16px; box-shadow: 0 14px 38px rgba(40,18,6,0.55); z-index: 1200; overflow-y: auto; }
-  .efit-notif-panel-header { color: #2b1408; background: #c39464; border-bottom: 1px solid #a8774c; padding: 11px 14px; font-size: 14px; position: sticky; top: 0; }
-  .efit-notif-mark-all { color: #7a2a08; }
-  .efit-notif-item { color: #2b1408; border-bottom: 1px solid #b98a5d; padding: 10px 14px; font-size: 14px; }
-  .efit-notif-item:hover { background: #dcb88e; }
-  .efit-notif-item.unread { background: #ebcba3; color: #000; }
-  .efit-notif-item-time { color: #5b3a22; }
-  .efit-notif-panel .empty-state { color: #2b1408; padding: 16px 14px; }
+    background: #1f2229; border: 1px solid rgba(255,255,255,0.14); border-radius: 16px; box-shadow: 0 14px 38px rgba(0,0,0,0.6); z-index: 1200; overflow-y: auto; }
+  .efit-notif-panel-header { color: #fff; background: #2a2e37; border-bottom: 1px solid rgba(255,255,255,0.1); padding: 11px 14px; font-size: 14px; position: sticky; top: 0; }
+  .efit-notif-mark-all { color: #ff7a3d; }
+  .efit-notif-item { color: #fff; border-bottom: 1px solid rgba(255,255,255,0.08); padding: 10px 14px; font-size: 14px; }
+  .efit-notif-item:hover { background: rgba(255,255,255,0.06); }
+  .efit-notif-item.unread { background: rgba(255,90,31,0.14); color: #fff; }
+  .efit-notif-item-time { color: rgba(255,255,255,0.6); }
+  .efit-notif-panel .empty-state { color: rgba(255,255,255,0.7); padding: 16px 14px; }
   .fj-hero { position: relative; min-height: 104px; padding: 12px 4px 8px; margin: 0 0 14px; border-radius: 0; overflow: visible;
     display: flex; flex-direction: column; justify-content: center; background: none; box-shadow: none; }
   .fj-hero > * { position: relative; z-index: 1; }
@@ -382,20 +384,14 @@
   .fj-narrow:not(.fj-how) > h2 { display: none; }
   #fjComposerAnchor { display: none; }
 
-  .fj-card { border: 1px solid #ffc896; box-shadow: 0 2px 8px rgba(150,60,10,0.14); }
-  .fj-pill { border: 1px solid rgba(255,255,255,0.9); }
-  .fj-pill.active { background: #ffe3d6; border-color: #ff5a1f; color: #b4410f; }
-  .fj-headline-box { display: flex; align-items: center; gap: 10px; background: #fff0e2; border: 1.5px solid #f08a5a; border-radius: 14px; padding: 10px 12px; margin-bottom: 10px; }
+  .fj-headline-box { display: flex; align-items: center; gap: 10px; background: rgba(255,90,31,0.12); border: 1.5px solid #ff7a3d; border-radius: 14px; padding: 10px 12px; margin-bottom: 10px; }
   .fj-headline-box .fj-headline { margin: 0; font-size: 15.5px; line-height: 1.25; }
-  .fj-cat-chip { background: #ffd2bd; border: 1px solid #f4946f; color: #a8300f; }
-  .fj-reaction-pill { background: #fff1e4; border: 1.5px solid #f0a67c; color: #4b2a20; }
-  .fj-reaction-pill.active { background: #ffe0d0; border-color: #ff5a1f; color: #b4410f; }
-  .fj-reply-item { background: #fff3e8; border-radius: 12px; padding: 7px 10px; align-items: center; }
+  .fj-reply-item { background: #2a2e37; border-radius: 12px; padding: 7px 10px; align-items: center; }
   .fj-support { display: block; margin: 2px 0 10px; }
-  .fj-support-label { font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: #c2410c; margin-bottom: 6px; }
+  .fj-support-label { font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: #ff7a3d; margin-bottom: 6px; }
   .fj-support-chips { display: flex; flex-wrap: wrap; gap: 6px; }
-  .fj-support-chip { flex: 1 1 auto; font: inherit; font-size: 12px; font-weight: 700; color: #c2410c; background: #fff;
-    border: 1.5px solid #f06a3f; border-radius: 999px; padding: 6px 7px; text-align: center; cursor: pointer; white-space: nowrap; }
+  .fj-support-chip { flex: 1 1 auto; font: inherit; font-size: 12px; font-weight: 700; color: #ffb27a; background: #2a2e37;
+    border: 1.5px solid #ff7a3d; border-radius: 999px; padding: 6px 7px; text-align: center; cursor: pointer; white-space: nowrap; }
 }
 </style>
 

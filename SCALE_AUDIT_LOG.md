@@ -12,6 +12,14 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## Oct 18, 2026 — Journeys and Upload pages recolored charcoal (phones)
+
+**Ask (colors only):** Same consistency as Profile — "darker, not black". Keep the sunset photo; make everything below it charcoal.
+**Change:** `fitness-journeys.html` and `upload.html`, phone layout only (<= 899px). One shared palette: page charcoal #15171c, cards #1f2229, fields/pills #2a2e37, white text, orange for highlights. Journeys: sunset photo unchanged, its lower edge now fades into charcoal; the form card, filter pills (gray, open one solid orange), journey cards, reaction/cheer chips, reply boxes, menus, pop-ups and the bell's panel all recolored. Upload: the orange page (white wording was unreadable) is now charcoal; type tiles, drop box, fields, back link and the "Link your bank account" card recolored; the dark-maroon video/music box is untouched. Layout, wording and behavior unchanged; computer layout unchanged.
+**Check:** Journeys: top photo, form, filter pills, a journey card. Upload: type chooser, Photo flow, and (for a member without a bank account) tap Song.
+
+---
+
 ## Oct 18, 2026 — Profile page colors now match Home and Finder (phones)
 
 **Ask (colors only):** One consistent look across the app, like Instagram's dark theme. Profile was light; Home and Finder are black.
