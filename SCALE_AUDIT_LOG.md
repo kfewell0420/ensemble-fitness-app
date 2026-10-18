@@ -12,6 +12,12 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-18 — Other-member profile (member.html) is now a compact Instagram-style header on phones
+
+- `member.html`: on phone-width screens the member card is compact: small photo with the name right beside it and the follower count under the name, the bio (max 2 lines) below, and Following / Message / Report / Block as small pills on ONE line (checked at 360 and 390 px wide, no horizontal scroll). The emoji key row ("What do these mean?") and the ZIP / wake-time line are hidden on phones (the heart next to the name still opens the key). Desktop layout unchanged. CSS plus a few class names in the card markup only; no data or logic changes.
+
+---
+
 ## 2026-10-18 — Full "Checking your bank account…" screen and bold "You're confirmed!" screen
 
 - `upload.html`: tapping Song now (when nothing is remembered yet, or the first time an artist opens Song after linking on that phone) shows a full screen with a spinner, "Checking your bank account…", rotating status lines, a progress bar and "Double-checking your information" (at least ~2 seconds so it never flashes), then a big animated blue check with "You're confirmed!" and a Continue to Upload button (auto-continues after ~3 seconds), then the form with its "Your bank account is linked!" box. After the first time it is skipped so linked artists never wait. Artists who link from the bank-link page go straight to the "You're confirmed!" screen. Not linked: after the check, the bank-link page as before. To see it again: add `?confirmtest=1` to the page address. State kept in localStorage (`efit_song_confirmed_<user id>`). Photo/Video untouched; display-only, no payout logic touched.

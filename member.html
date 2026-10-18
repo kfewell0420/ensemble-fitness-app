@@ -37,8 +37,30 @@
   /* Phone-size screens: another member's profile shows ONLY the profile — the page-link menu
      (Community, Members, Fitness+, ...) is hidden, leaving the logo row (home / bell / heart) and
      the "Back to Find Members" arrow below it. Desktop keeps the full menu. */
+  .mp-bio-phone { display: none; }
   @media (max-width: 720px) {
     .app-nav-links { display: none; }
+
+    /* Compact, Instagram-style header (Ken, Oct 2026): small photo with the name right beside it, a short
+       bio, and Follow / Message / Report / Block as small pills on ONE line. The relationship-emoji key
+       row ("What do these mean?") is hidden here (the heart next to the name still opens it), as are the
+       ZIP / wake-time details, to save space. Desktop keeps the full card. */
+    #profileCard { padding: 14px 14px 14px; }
+    #profileCard .mp-head { display: flex; align-items: center; gap: 14px; flex-wrap: nowrap; }
+    #profileCard .avatar-circle { width: 64px !important; height: 64px !important; font-size: 22px !important; flex: 0 0 auto; }
+    #profileCard .mp-main { flex: 1 1 auto; min-width: 0 !important; }
+    #profileCard .mp-name { font-size: 20px !important; margin: 0 0 2px !important; line-height: 1.15; }
+    #profileCard .mp-meta { font-size: 13.5px !important; }
+    #profileCard .mp-zip, #profileCard .mp-key { display: none !important; }
+    #profileCard .mp-bio-desktop { display: none !important; }
+    #profileCard .mp-bio-phone { font-size: 14px; line-height: 1.35; color: var(--muted-invert); margin: 10px 0 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    #profileCard #memberActions { flex-wrap: nowrap; gap: 6px; margin-top: 12px !important; }
+    #profileCard #memberActions .btn { flex: 0 1 auto; padding: 7px 12px; font-size: 13px; line-height: 1.2; min-height: 0; white-space: nowrap; }
+    .app-shell > a[href="members.html"] { margin-bottom: 10px !important; }
+  }
+  @media (max-width: 380px) {
+    #profileCard #memberActions { gap: 5px; }
+    #profileCard #memberActions .btn { padding: 6px 9px; font-size: 12.5px; }
   }
 </style>
 
@@ -143,19 +165,20 @@
     var isOwnProfile = !!currentUserId && memberId === currentUserId;
 
     card.innerHTML =
-      '<div style="display:flex; gap:18px; align-items:center; flex-wrap:wrap;">' +
+      '<div class="mp-head" style="display:flex; gap:18px; align-items:center; flex-wrap:wrap;">' +
         '<div class="avatar-circle" style="width:84px; height:84px; font-size:26px; margin:0;">' + avatarInner + '</div>' +
-        '<div style="flex:1; min-width:200px;">' +
-          '<h1 style="font-size:22px; margin-bottom:4px;">' + escapeHtml(member.display_name || "A member") + connectionBadgeHtml(memberConnStatuses[memberId]) + '</h1>' +
-          (member.bio ? '<p style="font-size:14px; color:var(--muted-invert); margin-bottom:6px;">' + escapeHtml(member.bio) + '</p>' : '') +
-          '<span style="font-size:12.5px; color:var(--faint-invert);">' +
-            (member.zip_code ? 'ZIP ' + escapeHtml(member.zip_code) : '') +
-            (wakeLabel ? ' · ' + escapeHtml(wakeLabel) : '') +
-            ' · ' + (followerCount || 0) + (followerCount === 1 ? ' follower' : ' followers') +
+        '<div class="mp-main" style="flex:1; min-width:200px;">' +
+          '<h1 class="mp-name" style="font-size:22px; margin-bottom:4px;">' + escapeHtml(member.display_name || "A member") + connectionBadgeHtml(memberConnStatuses[memberId]) + '</h1>' +
+          (member.bio ? '<p class="mp-bio mp-bio-desktop" style="font-size:14px; color:var(--muted-invert); margin-bottom:6px;">' + escapeHtml(member.bio) + '</p>' : '') +
+          '<span class="mp-meta" style="font-size:12.5px; color:var(--faint-invert);">' +
+            '<span class="mp-zip">' + (member.zip_code ? 'ZIP ' + escapeHtml(member.zip_code) : '') +
+            (wakeLabel ? ' · ' + escapeHtml(wakeLabel) : '') + ' · </span>' +
+            (followerCount || 0) + (followerCount === 1 ? ' follower' : ' followers') +
           '</span>' +
-          (memberConnStatuses[memberId] ? '<div style="margin-top:4px;">' + connectionKeyLinkHtml() + '</div>' : '') +
+          (memberConnStatuses[memberId] ? '<div class="mp-key" style="margin-top:4px;">' + connectionKeyLinkHtml() + '</div>' : '') +
         '</div>' +
       '</div>' +
+      (member.bio ? '<p class="mp-bio-phone">' + escapeHtml(member.bio) + '</p>' : '') +
       (isOwnProfile ? '' : '<div class="follow-actions-row" style="justify-content:flex-start; margin-top:16px;" id="memberActions"></div>');
 
     if (!isOwnProfile) {
