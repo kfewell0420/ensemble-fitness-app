@@ -185,6 +185,10 @@
   #songGateRecheckBtn.linked { border-color: #2f7bff; }
   #songGateRecheckBtn.linked .ag-chk { background: #fff; border-color: #fff; }
   #songGateRecheckBtn.linked .ag-chk svg { display: block; }
+  /* confirmation row at the top of the song upload form: bank is linked */
+  #songLinkedBadge { display: none; align-items: center; gap: 12px; background: #17181f; border: 1.5px solid #2f7bff; border-radius: 14px; padding: 11px 14px; margin: 0 0 12px; color: #fff; font-size: 15px; font-weight: 700; }
+  #songLinkedBadge .ag-chk2 { display: inline-flex; width: 26px; height: 26px; border-radius: 7px; background: #fff; align-items: center; justify-content: center; flex: 0 0 auto; }
+  #songLinkedBadge small { display: block; color: rgba(255,255,255,0.6); font-size: 12.5px; font-weight: 500; margin-top: 1px; }
 </style>
 
 </head>
@@ -448,6 +452,8 @@
          live on the Profile page, just isolated to its own page and shown
          one category at a time. -->
     <div id="uploadFlow" style="display:none;">
+
+      <div id="songLinkedBadge" role="status"><span class="ag-chk2" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#2f7bff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span>Bank account linked<small>Tips go straight to you</small></span></div>
 
       <!-- The file input is nested inside this label (the standard way to
            build a custom-styled upload button around a hidden native input —
@@ -1020,6 +1026,7 @@
     // The workout Category and Location fields only ever apply to a photo
     // or video post — a song publishes with just a title, no feed category.
     var isSong = category === "song";
+    document.getElementById("songLinkedBadge").style.display = isSong ? "flex" : "none";
     var isPhoto = category === "photo";
     workoutTypeField.style.display = isSong ? "none" : "block";
     locationField.style.display = isSong ? "none" : "block";

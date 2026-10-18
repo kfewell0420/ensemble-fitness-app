@@ -12,6 +12,13 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-18 — "Bank account linked" confirmation on the song upload form
+
+- `upload.html`: once an artist is linked, the Song upload form now opens with a compact blue-check "Bank account linked / Tips go straight to you" row above the file box, so artists see their bank is set up right before they submit. Shown for Song only (not photo/video). Display-only; no new queries, no payout logic touched.
+- Marketing site (separate Netlify Drop folder): `stripe-webhook.js` now accepts a second signing secret (`STRIPE_CONNECT_WEBHOOK_SECRET`) so Stripe's new Connected-accounts destination (`account.updated`) verifies; `payout-status.js` has a read-only Stripe fallback. Ken's own `creator_payout_accounts.payouts_enabled` was set true by one-time SQL.
+
+---
+
 ## 2026-10-18 (late) — Profile page backdrop is now the Finder navy
 
 **profile.html only, phones, colors only.**
