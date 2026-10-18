@@ -1145,16 +1145,29 @@
     coverPicker.style.display = "block";
     selectedCoverTime = null;
 
+    // iPhone 17 fix #2 (Oct 2026): the previews used to be taken by seeking the SAME player the member watches
+    // (and that the song is locked to). On an iPhone 17 each of those 8 seeks took ~3 s, so for the first ~25 s
+    // the picture crept along in 2-second jumps, the song was yanked after it ("skipping"), and the picture froze.
+    // Now the previews come from their own hidden player, so the one the member watches is never touched; and on
+    // iPhones the hidden player waits whenever the member is playing the preview, so it never competes with it.
     var frames = [];
-    for (var i = 0; i < count; i++) {
-      // A frame right at 0 or right at the very end is often a half-decoded
-      // black/blank edge case — the same 0.05s/duration-0.05s clamp
-      // captureVideoPosterBlob already uses for the real poster capture.
-      var t = Math.min(Math.max((duration * i) / (count - 1), 0.05), Math.max(duration - 0.05, 0));
-      var dataUrl = await captureFrameDataUrl(videoEl, t);
-      if (myGeneration !== filmstripGeneration) return; // a newer file took over mid-generation
-      if (dataUrl) frames.push({ time: t, dataUrl: dataUrl });
-    }
+    var firstClip = clips[0] || { url: videoEl.currentSrc || videoEl.src };
+    var blankInARow = 0;
+    await withTempVideo(firstClip, async function (v) {
+      if (IS_IOS_DEVICE) { // wake the hidden player so it really paints frames (a never-played iPhone video can hand back black)
+        try { await Promise.race([v.play(), new Promise(function (r) { setTimeout(r, 1500); })]); v.pause(); } catch (e) {}
+      }
+      var waited = 0;
+      for (var i = 0; i < count; i++) {
+        if (myGeneration !== filmstripGeneration) return;
+        while (IS_IOS_DEVICE && !trimPreviewVideo.paused && waited < 30000) { await new Promise(function (r) { setTimeout(r, 400); }); waited += 400; if (myGeneration !== filmstripGeneration) return; }
+        var t = Math.min(Math.max((duration * i) / (count - 1), 0.05), Math.max(duration - 0.05, 0));
+        var dataUrl = await captureFrameDataUrl(v, t, IS_IOS_DEVICE);
+        if (myGeneration !== filmstripGeneration) return; // a newer file took over mid-generation
+        if (dataUrl) { frames.push({ time: t, dataUrl: dataUrl }); blankInARow = 0; }
+        else if (IS_IOS_DEVICE && ++blankInARow >= 2 && !frames.length) return; // this phone hands back black pictures: stop wasting time
+      }
+    }, 90000);
     if (myGeneration !== filmstripGeneration) return;
 
     if (!frames.length) {
@@ -1239,7 +1252,7 @@
   // ---- Several clips in one post --------------------------------------------
   // A hidden, off-screen <video> used only to read a clip's length and grab small frames, so the
   // main preview player is never disturbed.
-  function withTempVideo(c, fn) {
+  function withTempVideo(c, fn, maxMs) {
     return new Promise(function (resolve) {
       var v = document.createElement("video");
       v.muted = true; v.playsInline = true; v.preload = "auto";
@@ -1254,7 +1267,7 @@
       }
       v.addEventListener("loadedmetadata", function () { Promise.resolve(fn(v)).then(fin, function () { fin(null); }); });
       v.addEventListener("error", function () { fin(null); });
-      setTimeout(function () { fin(null); }, 20000);
+      setTimeout(function () { fin(null); }, maxMs || 20000);
       v.src = c.url;
     });
   }
@@ -1502,24 +1515,38 @@
         resolve(result);
       }
       function onSeeked() {
-        try {
-          var w = videoEl.videoWidth, h = videoEl.videoHeight;
-          if (!w || !h) { done(null); return; }
-          var canvas = document.createElement("canvas");
-          canvas.width = w;
-          canvas.height = h;
-          canvas.getContext("2d").drawImage(videoEl, 0, 0, w, h);
-          canvas.toBlob(function (blob) { done(blob); }, "image/jpeg", 0.82);
-        } catch (e) {
-          done(null);
+        // (Oct 2026) a frame grabbed the instant a seek finishes can come back black on newer iPhones; look again
+        // shortly, and if it is still black upload NO cover rather than a black one (the feed then simply
+        // shows the video itself, instead of a black picture while it loads).
+        function grabPoster(attempt) {
+          try {
+            var w = videoEl.videoWidth, h = videoEl.videoHeight;
+            if (!w || !h) { done(null); return; }
+            var canvas = document.createElement("canvas");
+            canvas.width = w;
+            canvas.height = h;
+            canvas.getContext("2d").drawImage(videoEl, 0, 0, w, h);
+            var small = document.createElement("canvas"); small.width = 32; small.height = 32;
+            var sg = small.getContext("2d"); sg.drawImage(videoEl, 0, 0, 32, 32);
+            var px = sg.getImageData(0, 0, 32, 32).data, sum = 0, n = 0;
+            for (var i = 0; i < px.length; i += 16) { sum += px[i] + px[i + 1] + px[i + 2]; n += 3; }
+            if (n && (sum / n) < 4) {
+              if (attempt < 3) { setTimeout(function () { grabPoster(attempt + 1); }, 150); return; }
+              done(null); return;
+            }
+            canvas.toBlob(function (blob) { done(blob); }, "image/jpeg", 0.82);
+          } catch (e) {
+            done(null);
+          }
         }
+        grabPoster(0);
       }
       if (!videoEl.duration || isNaN(videoEl.duration)) { done(null); return; }
       var target = Math.min(Math.max(seekTime || 0, 0.05), Math.max(videoEl.duration - 0.05, 0));
       videoEl.addEventListener("seeked", onSeeked);
       // Never let an unusual file hang the upload waiting for a "seeked"
       // event that might not come.
-      setTimeout(function () { done(null); }, 4000);
+      setTimeout(function () { done(null); }, 6000);
       videoEl.currentTime = target;
     });
   }
@@ -1903,6 +1930,19 @@
     musicPreviewAudio.pause();
   });
   trimPreviewVideo.addEventListener("seeked", function () { updatePlayhead(); if (trimPreviewVideo.paused) renderTimeline(); });
+  // Ken's ask (Oct 2026): the player's own bar (white line with the ball) must be locked to the picture AND the
+  // song, so nobody is confused about what is steering what. The bar IS the picture's clock, so it already
+  // moves the picture; now it also (1) holds the song silent the moment the member starts moving it (mixTick
+  // brings the song back in at exactly the matching spot the instant the picture is playing again; while paused
+  // the song waits and re-places itself on Play), and (2) moves the white line on the song/filmstrip track live,
+  // while dragging, not only when the drag ends.
+  trimPreviewVideo.addEventListener("seeking", function () {
+    if (reelSwitching || autoAdvancing || (pvSwapper && pvSwapper.busy())) return; // our own clip hand-over, not the member
+    mixTick.lastVTAt = performance.now(); // a seek is not a freeze
+    if (hasMusicSelected() && !musicPreviewAudio.paused && !previewTail.active()) musicPreviewAudio.pause();
+    updatePlayhead();
+  });
+  trimPreviewVideo.addEventListener("timeupdate", function () { if (!reelSwitching) updatePlayhead(); });
   trimPreviewVideo.addEventListener("loadedmetadata", function () {
     trimPreviewVideo.classList.toggle("portrait", trimPreviewVideo.videoHeight > trimPreviewVideo.videoWidth);
     clampWindow(); updatePlayhead();
@@ -2967,7 +3007,7 @@
     ["play", "pause", "waiting", "stalled", "seeking", "ended"].forEach(function (n) {
       v.addEventListener(n, function () { log("  video event: " + n + " rs=" + v.readyState); });
     });
-    log("UA " + navigator.userAgent.replace(/.*(OS [0-9_]+).*/, "$1") + " | video dur " + f2(v.duration) + " loop=" + v.loop + " | build=stallguard2 wave=" + (IS_IOS_DEVICE ? "off" : "on") + " " + v.videoWidth + "x" + v.videoHeight);
+    log("UA " + navigator.userAgent.replace(/.*(OS [0-9_]+).*/, "$1") + " | video dur " + f2(v.duration) + " loop=" + v.loop + " | build=stallguard3 wave=" + (IS_IOS_DEVICE ? "off" : "on") + " " + v.videoWidth + "x" + v.videoHeight);
     setInterval(function () {
       if (v.paused && a.paused) return;
       log("tick a=" + f2(a.currentTime) + (a.paused ? "(P)" : "") + " v=" + f2(v.currentTime) + (v.paused ? "(P)" : "") + " vrS=" + v.readyState + " arS=" + a.readyState + " aDur=" + f2(a.duration) + " delay=" + f2(mDelay) + " len=" + f2(mLen) + " start=" + f2(musicStartPicker.getValue()));

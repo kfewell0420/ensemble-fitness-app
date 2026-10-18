@@ -12,6 +12,33 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-18 (iPhone 17 music skipping: ROOT CAUSE found + player scrub bar locked to picture and song) -- upload.html, website + phone app
+Ken sent two screen recordings from the artist's iPhone 17 (UA "iPhone OS 18_7", debug build stallguard2): IMG_2221 = video
+only, IMG_2220 = song added with "Keep original sound" ticked.
+ROOT CAUSE (read off the debug log): in BOTH recordings the watched player's clock sat still for ~2-3 s, then jumped exactly
++2.25 s (v=2.25, 4.50, 6.76, 9.01 ... = clip length 15.77 s / 7) with a "video event: seeking" between each. That is
+`generateTrimFilmstrip` taking its 8 preview thumbnails by seeking the SAME `trimPreviewVideo` the member watches and the song
+follows. On an iPhone 17 each seek took ~3 s (~25 s total, starting the moment a video is picked), so the picture crept/froze,
+the song was re-placed after every jump (`AUDIO.seek -> 2.25 by place` in the log) = "a couple of bars here, a couple
+there", and my earlier stall guard / drift thresholds only treated symptoms. Also in both recordings the clip tile and filmstrip
+thumbnails were BLACK (frames grabbed from a video that is not playing come back black on that phone).
+FIX (`upload.html`): (1) previews are now taken from their own hidden player (`withTempVideo`, timeout raised to 90 s), the
+watched player is never seeked by them (test: 8 seeks on the watched player before, 0 after; still 8 filmstrip frames + 4 cover
+choices; same with an iPhone user-agent). (2) iPhone only: the hidden player is woken with a muted play/pause first, waits while
+the member is playing the preview (max 30 s), rejects black frames, and stops after 2 black frames in a row instead of wasting
+time. (3) Submit-time cover capture (`captureVideoPosterBlob`) now re-looks up to 3x if the frame is black and uploads NO cover
+rather than a black one (the feed then shows the video itself). (4) Debug line now says `build=stallguard3`.
+Scrub bar (Ken: the player's white-line-with-ball bar must be locked to picture AND song): the bar is the picture's own clock,
+so the picture was already locked; added: on a member's seek the song is held silent immediately (and mixTick puts it back at
+exactly the matching spot as soon as the picture plays; while paused it re-places on Play), and the white line on the
+song/filmstrip track now follows live on `timeupdate`/`seeking`, not only when the drag ends. Test: song held at seek =
+true (was false), re-locks within a frame (song 2.49 vs wanted 2.56 after scrub), paused scrub moves the white line.
+NOT verifiable here: real iPhone 17 behavior. Needs the artist to retry on build stallguard3 (first debug line must end
+`build=stallguard3`); if black thumbnails persist the cover picker simply hides on that phone. Remove the `?debug=1` block once
+confirmed. Android build 11 / iOS build 11 still on hold until then.
+
+---
+
 ## 2026-10-17 (speed: Profile page loads its parts at the same time) -- website + phone app
 Ken: Profile takes a while to load; keep everything fast and competitive with other social apps.
 Cause (code read, `profile.html` `init`): about 15-20 database round trips ran ONE AFTER ANOTHER (blocked list ->
