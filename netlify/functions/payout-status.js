@@ -44,12 +44,30 @@ exports.handler = async function (event) {
     if (!user) return lib.json(401, { error: "Sign in required." });
 
     var mine = await lib.supabaseRest(
-      "/creator_payout_accounts?email=eq." + encodeURIComponent(user.email) + "&select=payouts_enabled,onboarding_link_sent_at"
+      "/creator_payout_accounts?email=eq." + encodeURIComponent(user.email) + "&select=payouts_enabled,onboarding_link_sent_at,stripe_connect_account_id"
     );
     var row = mine && mine[0];
+    var enabled = row ? !!row.payouts_enabled : false;
+
+    // Safety net (Oct 2026): our payouts_enabled flag is only flipped by
+    // Stripe's account.updated webhook, and if that message is late (or a
+    // Connect webhook isn't set up) an artist who really did finish linking
+    // their bank is stuck on the "link your bank" screen. So when our flag
+    // says no, ask Stripe directly. This is READ-ONLY on purpose — it never
+    // writes the flag or pays anything out; the webhook stays the only place
+    // that flips payouts_enabled and releases blocked tips.
+    if (row && !enabled && row.stripe_connect_account_id) {
+      try {
+        var live = await lib.stripeGet("accounts/" + encodeURIComponent(row.stripe_connect_account_id));
+        if (live && live.payouts_enabled) enabled = true;
+      } catch (e) {
+        // Stripe hiccup — fall back to what our own record says.
+      }
+    }
+
     return lib.json(200, {
       has_account: !!row,
-      payouts_enabled: row ? row.payouts_enabled : false
+      payouts_enabled: enabled
     });
   } catch (err) {
     return lib.json(500, { error: err.message || "Couldn't check payout status." });
