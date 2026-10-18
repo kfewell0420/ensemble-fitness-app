@@ -133,7 +133,6 @@
     .dropzone strong { color: #fff; }
     .dropzone span { color: rgba(255,255,255,0.7); }
     /* Ken (Oct 18): the dark-brown video/music box is now a light gray (#2a2b2f) with a faint outline */
-    #songPayoutGate .card { background: #1e1f22; border: 1px solid rgba(255,255,255,0.1); box-shadow: none; }
     #uploadCard .narration-section { background: #26272b; border-color: rgba(255,255,255,0.18); }
     #uploadCard .narration-section input:not([type="checkbox"]):not([type="range"]), #uploadCard .narration-section select, #uploadCard .narration-section textarea { background: #141517; }
     #uploadCard .narration-section.more-option-compact { background: none; }
@@ -142,6 +141,47 @@
     #uploadFlow .btn-primary { box-shadow: 0 3px 10px rgba(0,0,0,0.4); }
     #uploadFlow .btn-primary:disabled { background: #2a2b2f; color: #7f8798; opacity: 1; box-shadow: none; }
   }
+</style>
+
+<style>
+  /* Ken (Oct 18): the Song bank-link screen was rebuilt to his own mock-up ("Artist Upload / Upload Your Music"):
+     3-step progress, one Stripe card, "What You'll Need", and a verify pill. Colors copied from the mock-up. */
+  #songPayoutGate .ag-eyebrow { color: #fa6527; font-size: 12.5px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; margin: 6px 0 6px; }
+  #songPayoutGate .ag-title { color: #fff; font-size: 28px; line-height: 1.12; margin: 0 0 8px; }
+  #songPayoutGate .ag-sub { color: rgba(255,255,255,0.74); font-size: 15px; line-height: 1.45; margin: 0 0 18px; }
+  .ag-steps { display: flex; align-items: flex-start; margin: 0 0 18px; }
+  .ag-step { display: flex; flex-direction: column; align-items: center; gap: 7px; width: 84px; flex: 0 0 auto; text-align: center; }
+  .ag-step b { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 800; color: #a5a6af; background: #23252d; border: 2px solid #444752; box-sizing: border-box; }
+  .ag-step em { font-style: normal; font-size: 12.5px; font-weight: 700; color: #a5a6af; line-height: 1.2; }
+  .ag-step.on b, .ag-step.done b { background: #fa6527; border-color: #fa6527; color: #fff; }
+  .ag-step.on em, .ag-step.done em { color: #fff; }
+  .ag-line { flex: 1 1 0; height: 2px; background: #444752; margin-top: 19px; }
+  .ag-line.done { background: #fa6527; }
+  .ag-card { background: #17181f; border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 18px 16px; margin: 0 0 14px; }
+  .ag-head { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; }
+  .ag-ico { width: 56px; height: 56px; border-radius: 50%; background: #4c241a; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; color: #f76e2f; }
+  .ag-card h3 { color: #fff; font-size: 20px; line-height: 1.2; margin: 0; }
+  .ag-card p { color: rgba(255,255,255,0.74); font-size: 15px; line-height: 1.45; margin: 0 0 14px; }
+  .ag-feat { display: flex; align-items: center; gap: 12px; margin: 0 0 12px; }
+  .ag-feat .ag-ico { width: 40px; height: 40px; }
+  .ag-feat strong { display: block; color: #fff; font-size: 15px; line-height: 1.25; }
+  .ag-feat span { display: block; color: rgba(255,255,255,0.64); font-size: 13px; line-height: 1.3; }
+  .ag-note { text-align: center; color: rgba(255,255,255,0.6); font-size: 13.5px; margin: 10px 0 0 !important; }
+  #songGateLinkBtn { width: 100%; margin-top: 4px; }
+  .ag-need h3 { font-size: 18px; margin-bottom: 4px; }
+  .ag-need p { margin-bottom: 12px; }
+  .ag-need li { list-style: none; display: flex; gap: 12px; align-items: flex-start; margin: 0 0 12px; }
+  .ag-need li:last-child { margin-bottom: 0; }
+  .ag-tick { width: 30px; height: 30px; border-radius: 50%; background: #fa6527; color: #1a0d08; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+  .ag-need li strong { display: block; color: #fff; font-size: 15.5px; font-weight: 500; line-height: 1.25; }
+  .ag-need li span { display: block; color: rgba(255,255,255,0.6); font-size: 13px; line-height: 1.3; margin-top: 2px; }
+  .ag-need ul { margin: 0; padding: 0; }
+  .ag-need li span.ag-tick { display: flex; width: 30px; height: 30px; margin: 0; color: #1a0d08; font-size: 0; }
+  #songGateRecheckBtn.ag-continue { width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; background: #17181f; border: 1.5px solid #3a3c44; color: #fff; border-radius: 999px; padding: 15px 16px; font-size: 16px; font-weight: 700; font-family: inherit; cursor: pointer; }
+  #songGateRecheckBtn.ag-continue:disabled { opacity: 0.7; cursor: default; }
+  #songGateRecheckBtn .ag-chk { display: none; width: 24px; height: 24px; border-radius: 6px; background: #fff; align-items: center; justify-content: center; flex: 0 0 auto; }
+  #songGateRecheckBtn.linked { border-color: #2f7bff; }
+  #songGateRecheckBtn.linked .ag-chk { display: inline-flex; }
 </style>
 
 </head>
@@ -344,7 +384,7 @@
       <button type="button" class="upload-category-tile" data-category="song">
         <span class="upload-category-icon">🎵</span>
         <strong>Song</strong>
-        <span>A track — live in the Music Library, under your name</span>
+        <span>Artist upload</span>
       </button>
     </div>
 
@@ -359,25 +399,45 @@
          approval email flow) or they're hitting this gate before they've
          uploaded anything at all. -->
     <div id="songPayoutGate" style="display:none;">
-      <button type="button" class="upload-back-link" id="songGateBackBtn">← Choose a different type</button>
-      <div class="card">
-        <div class="eyebrow">Payouts</div>
-        <h2 style="font-size:18px;">Link your bank account to upload music</h2>
-        <p class="card-sub">So tips from members can pay out straight to you, every song in the Music Library needs a linked bank account first — this only takes a few minutes, and Ensemble Fitness never sees your bank details, only Stripe does.</p>
-        <div style="margin-bottom:20px;">
-          <strong style="font-size:13.5px;">Before you start, have these ready:</strong>
-          <ul style="margin:8px 0 12px; padding-left:20px; font-size:13.5px; color:var(--muted-invert); line-height:1.6;">
-            <li>Your full legal name and date of birth, matching a government-issued ID</li>
-            <li>Your home address (a P.O. box won't work)</li>
-            <li>Your Social Security Number</li>
-            <li>Your bank account and routing numbers</li>
-          </ul>
-          <p style="font-size:13px; color:var(--amber); margin:0;">Stripe may also ask for a quick photo of your driver's license or passport to confirm your identity — that's normal.</p>
-        </div>
-        <div class="form-msg" id="songGateMsg"></div>
-        <button type="button" class="btn btn-primary" id="songGateLinkBtn" style="margin-bottom:10px;">Link Your Bank Account</button>
-        <button type="button" class="btn btn-ghost" id="songGateRecheckBtn">I just finished — check again</button>
+      <button type="button" class="upload-back-link" id="songGateBackBtn">← Back to Upload Options</button>
+      <div class="ag-eyebrow">Artist Upload</div>
+      <h2 class="ag-title">Upload Your Music</h2>
+      <p class="ag-sub">Share your music with the community. Members can listen, enjoy, and tip you if they like your work.</p>
+
+      <div class="ag-steps" aria-label="Steps">
+        <div class="ag-step on" id="agStep1"><b>1</b><em>Link Bank</em></div>
+        <div class="ag-line" id="agLine1"></div>
+        <div class="ag-step" id="agStep2"><b>2</b><em>Upload Music</em></div>
+        <div class="ag-line"></div>
+        <div class="ag-step" id="agStep3"><b>3</b><em>Share &amp; Get Tips</em></div>
       </div>
+
+      <div class="ag-card">
+        <div class="ag-head">
+          <div class="ag-ico"><svg viewBox="0 0 24 24" width="30" height="30" fill="currentColor"><path d="M9 17.5V6.2l10-2v11.3"/><path d="M9 6.2l10-2v3.4L9 9.6z"/><circle cx="6.5" cy="17.5" r="3"/><circle cx="16.5" cy="15.5" r="3"/></svg></div>
+          <h3>Link Your Bank Account to Receive Tips</h3>
+        </div>
+        <p>Members can tip you directly for your music. To receive tips, you'll need to link your bank account through Stripe. This is fast, secure, and only takes a few minutes.</p>
+        <div class="ag-feat"><div class="ag-ico"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3l7.5 2.8v5.6c0 4.6-3.1 8.2-7.5 9.6-4.4-1.4-7.5-5-7.5-9.6V5.8z"/></svg></div><div><strong>Secure &amp; reliable</strong><span>Handled by Stripe — a trusted payment partner</span></div></div>
+        <div class="ag-feat"><div class="ag-ico"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M7 10V8a5 5 0 0110 0v2h1.2a1.3 1.3 0 011.3 1.3v8.4a1.3 1.3 0 01-1.3 1.3H5.8a1.3 1.3 0 01-1.3-1.3v-8.4A1.3 1.3 0 015.8 10zm2 0h6V8a3 3 0 00-6 0z"/></svg></div><div><strong>Your information is private</strong><span>Ensemble Fitness never sees your bank details</span></div></div>
+        <div class="ag-feat"><div class="ag-ico"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M13.5 2L5 13.5h5.7L9.5 22 19 9.8h-5.8z"/></svg></div><div><strong>Quick setup</strong><span>Just a few minutes to get started</span></div></div>
+        <div class="form-msg" id="songGateMsg"></div>
+        <button type="button" class="btn btn-primary" id="songGateLinkBtn">Link Your Bank Account</button>
+        <p class="ag-note">You'll be taken to Stripe to complete a secure setup.</p>
+      </div>
+
+      <div class="ag-card ag-need">
+        <h3>What You'll Need</h3>
+        <p>Have the following information ready:</p>
+        <ul>
+          <li><span class="ag-tick"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><div><strong>Your full legal name and date of birth</strong><span>Must match a government-issued ID</span></div></li>
+          <li><span class="ag-tick"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><div><strong>Your home address</strong><span>A P.O. box won't work</span></div></li>
+          <li><span class="ag-tick"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><div><strong>Your bank account and routing numbers</strong><span>Found on your bank account</span></div></li>
+        </ul>
+      </div>
+
+      <div class="form-msg" id="songGateVerifyMsg"></div>
+      <button type="button" class="ag-continue" id="songGateRecheckBtn"><span class="ag-chk" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#2f7bff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span id="songGateRecheckLabel">I've Linked My Account — Continue</span></button>
     </div>
 
     <!-- Step 2: the actual upload flow — hidden until a category is picked
@@ -789,23 +849,46 @@
     }
   });
 
+  var songGateLinked = false;
+  function songGateShowLinked() {
+    songGateLinked = true;
+    var btn = document.getElementById("songGateRecheckBtn");
+    btn.classList.add("linked");
+    btn.disabled = false;
+    document.getElementById("songGateRecheckLabel").textContent = "Bank account linked — Continue";
+    document.getElementById("agStep1").className = "ag-step done";
+    document.getElementById("agLine1").className = "ag-line done";
+    document.getElementById("agStep2").className = "ag-step on";
+    document.getElementById("agStep1").firstChild.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+  }
+
+  // Ken (Oct 18): "I've Linked My Account — Continue" is a real test — it asks Stripe (via payout-status) whether
+  // the bank account is fully set up. If yes, the pill gets a white square with a blue check and the next tap
+  // opens the song upload; if not, a short message says so and nothing else changes.
   document.getElementById("songGateRecheckBtn").addEventListener("click", async function () {
     var btn = document.getElementById("songGateRecheckBtn");
+    var label = document.getElementById("songGateRecheckLabel");
+    var msg = document.getElementById("songGateVerifyMsg");
+    if (songGateLinked) { selectCategory("song"); return; }
+    hideMsg(msg);
     btn.disabled = true;
-    btn.textContent = "Checking…";
+    label.textContent = "Checking with Stripe…";
     await loadSongPayoutGate();
-    btn.disabled = false;
-    btn.textContent = "I just finished — check again";
     if (songPayoutsEnabled) {
-      selectCategory("song");
+      songGateShowLinked();
     } else {
-      showMsg(document.getElementById("songGateMsg"), "Stripe doesn't have you fully set up yet — if you just finished, give it a minute and try again.", "error");
+      btn.disabled = false;
+      label.textContent = "I've Linked My Account — Continue";
+      showMsg(msg, "Stripe doesn't show your bank account as fully linked yet — tap Link Your Bank Account above to finish, or if you just did, give it a minute and try again.", "error");
     }
   });
 
   document.getElementById("songGateBackBtn").addEventListener("click", function () {
     categoryGrid.style.display = "grid";
     document.getElementById("songPayoutGate").style.display = "none";
+    uploadEyebrow.style.display = "";
+    uploadHeading.style.display = "";
+    uploadSub.style.display = "";
     uploadHeading.textContent = "What would you like to upload?";
     uploadSub.textContent = "Pick a type to get started — you'll only see what's relevant to it.";
   });
@@ -875,10 +958,16 @@
     if (category === "song" && !songPayoutsEnabled) {
       categoryGrid.style.display = "none";
       document.getElementById("uploadFlow").style.display = "none";
+      // the bank-link screen has its own "Artist Upload" heading, so the generic
+      // "Upload / What would you like to upload?" lines above it are hidden
+      uploadEyebrow.style.display = "none";
+      uploadHeading.style.display = "none";
+      uploadSub.style.display = "none";
       document.getElementById("songPayoutGate").style.display = "block";
       return;
     }
 
+    document.getElementById("songPayoutGate").style.display = "none"; // leaving the bank-link screen for the real flow
     var meta = CATEGORY_META[category];
     fileInput.accept = meta.accept;
     fileInput.multiple = (category === "video" || category === "media"); // several clips at once (up to 10)

@@ -12,6 +12,17 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-18 (later) — Profile back to black, Artist Upload bank-link page
+
+**Colors and one screen's layout. No database changes.**
+
+- profile.html (phones): the gray panel under Edit profile went back to true black (Ken: gray didn't stand out enough); cards navy `#0b0f1a`, fields `#05070d`, as before the gray experiment.
+- upload.html: Song tile now reads "Song / Artist upload" (was "A track — live in the Music Library, under your name").
+- upload.html: the Song bank-link gate rebuilt to Ken's mock-up — "Artist Upload / Upload Your Music", 3-step progress (Link Bank, Upload Music, Share & Get Tips), one Stripe card whose button goes straight to Stripe (same `create-connect-link` call), a "What You'll Need" card, and an "I've Linked My Account — Continue" pill. The pill now truly checks `payout-status`; when Stripe says payouts are enabled it shows a white square with a blue check ("Bank account linked — Continue"), step 1 becomes a check and step 2 lights up; the next tap opens the song upload. If not linked it shows a short message and changes nothing. The generic "Upload / What would you like to upload?" lines are hidden on this screen. The gate is also now hidden when the real song flow opens.
+- Mirrored profile.html and upload.html into `ensemble-fitness-mobile/www/`.
+
+---
+
 ## 2026-10-18 — Neutral grays, Instagram-style followers list, Find Members cleanup
 
 **Colors only + one new optional DB policy. No data touched.**
