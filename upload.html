@@ -146,10 +146,10 @@
 <style>
   /* Ken (Oct 18): the Song bank-link screen was rebuilt to his own mock-up ("Artist Upload / Upload Your Music"):
      3-step progress, one Stripe card, "What You'll Need", and a verify pill. Colors copied from the mock-up. */
-  #songPayoutGate .ag-eyebrow { color: #fa6527; font-size: 12.5px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; margin: 6px 0 6px; }
-  #songPayoutGate .ag-title { color: #fff; font-size: 28px; line-height: 1.12; margin: 0 0 8px; }
-  #songPayoutGate .ag-sub { color: rgba(255,255,255,0.74); font-size: 15px; line-height: 1.45; margin: 0 0 18px; }
-  .ag-steps { display: flex; align-items: flex-start; margin: 0 0 18px; }
+  #songPayoutGate .ag-eyebrow { color: #fa6527; font-size: 12.5px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; margin: 2px 0 4px; }
+  #songPayoutGate .ag-title { color: #fff; font-size: 28px; line-height: 1.12; margin: 0 0 6px; }
+  #songPayoutGate .ag-sub { color: rgba(255,255,255,0.74); font-size: 15px; line-height: 1.4; margin: 0 0 12px; }
+  .ag-steps { display: flex; align-items: flex-start; margin: 0 0 12px; }
   .ag-step { display: flex; flex-direction: column; align-items: center; gap: 7px; width: 84px; flex: 0 0 auto; text-align: center; }
   .ag-step b { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 800; color: #a5a6af; background: #23252d; border: 2px solid #444752; box-sizing: border-box; }
   .ag-step em { font-style: normal; font-size: 12.5px; font-weight: 700; color: #a5a6af; line-height: 1.2; }
@@ -157,31 +157,34 @@
   .ag-step.on em, .ag-step.done em { color: #fff; }
   .ag-line { flex: 1 1 0; height: 2px; background: #444752; margin-top: 19px; }
   .ag-line.done { background: #fa6527; }
-  .ag-card { background: #17181f; border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 18px 16px; margin: 0 0 14px; }
-  .ag-head { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; }
-  .ag-ico { width: 56px; height: 56px; border-radius: 50%; background: #4c241a; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; color: #f76e2f; }
-  .ag-card h3 { color: #fff; font-size: 20px; line-height: 1.2; margin: 0; }
-  .ag-card p { color: rgba(255,255,255,0.74); font-size: 15px; line-height: 1.45; margin: 0 0 14px; }
-  .ag-feat { display: flex; align-items: center; gap: 12px; margin: 0 0 12px; }
-  .ag-feat .ag-ico { width: 40px; height: 40px; }
+  .ag-card { background: #17181f; border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 14px 14px; margin: 0 0 12px; }
+  .ag-head { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .ag-ico { width: 48px; height: 48px; border-radius: 50%; background: #4c241a; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; color: #f76e2f; }
+  .ag-card h3 { color: #fff; font-size: 18px; line-height: 1.2; margin: 0; }
+  .ag-card p { color: rgba(255,255,255,0.74); font-size: 15px; line-height: 1.4; margin: 0 0 12px; }
+  .ag-feat { display: flex; align-items: center; gap: 12px; margin: 0 0 10px; }
+  .ag-feat .ag-ico { width: 38px; height: 38px; }
   .ag-feat strong { display: block; color: #fff; font-size: 15px; line-height: 1.25; }
   .ag-feat span { display: block; color: rgba(255,255,255,0.64); font-size: 13px; line-height: 1.3; }
-  .ag-note { text-align: center; color: rgba(255,255,255,0.6); font-size: 13.5px; margin: 10px 0 0 !important; }
+  .ag-note { text-align: center; color: rgba(255,255,255,0.6); font-size: 13.5px; margin: 8px 0 0 !important; }
   #songGateLinkBtn { width: 100%; margin-top: 4px; }
   .ag-need h3 { font-size: 18px; margin-bottom: 4px; }
   .ag-need p { margin-bottom: 12px; }
-  .ag-need li { list-style: none; display: flex; gap: 12px; align-items: flex-start; margin: 0 0 12px; }
+  .ag-need li { list-style: none; display: flex; gap: 12px; align-items: flex-start; margin: 0 0 10px; }
   .ag-need li:last-child { margin-bottom: 0; }
   .ag-tick { width: 30px; height: 30px; border-radius: 50%; background: #fa6527; color: #1a0d08; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
   .ag-need li strong { display: block; color: #fff; font-size: 15.5px; font-weight: 500; line-height: 1.25; }
   .ag-need li span { display: block; color: rgba(255,255,255,0.6); font-size: 13px; line-height: 1.3; margin-top: 2px; }
   .ag-need ul { margin: 0; padding: 0; }
   .ag-need li span.ag-tick { display: flex; width: 30px; height: 30px; margin: 0; color: #1a0d08; font-size: 0; }
-  #songGateRecheckBtn.ag-continue { width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; background: #17181f; border: 1.5px solid #3a3c44; color: #fff; border-radius: 999px; padding: 15px 16px; font-size: 16px; font-weight: 700; font-family: inherit; cursor: pointer; }
-  #songGateRecheckBtn.ag-continue:disabled { opacity: 0.7; cursor: default; }
-  #songGateRecheckBtn .ag-chk { display: none; width: 24px; height: 24px; border-radius: 6px; background: #fff; align-items: center; justify-content: center; flex: 0 0 auto; }
+  #songGateRecheckBtn.ag-continue { width: 100%; min-height: 68px; display: flex; align-items: center; justify-content: center; gap: 14px; background: #17181f; border: 1.5px solid #3a3c44; color: #fff; border-radius: 18px; padding: 18px 16px; font-size: 17px; font-weight: 700; font-family: inherit; cursor: pointer; }
+  #songGateRecheckBtn.ag-continue:disabled { opacity: 0.75; cursor: default; }
+  /* the square is always there: empty outline until Stripe confirms, then white with a blue check */
+  #songGateRecheckBtn .ag-chk { display: inline-flex; width: 30px; height: 30px; border-radius: 8px; border: 2px solid #6b6e78; box-sizing: border-box; align-items: center; justify-content: center; flex: 0 0 auto; }
+  #songGateRecheckBtn .ag-chk svg { display: none; }
   #songGateRecheckBtn.linked { border-color: #2f7bff; }
-  #songGateRecheckBtn.linked .ag-chk { display: inline-flex; }
+  #songGateRecheckBtn.linked .ag-chk { background: #fff; border-color: #fff; }
+  #songGateRecheckBtn.linked .ag-chk svg { display: block; }
 </style>
 
 </head>
@@ -402,7 +405,7 @@
       <button type="button" class="upload-back-link" id="songGateBackBtn">← Back to Upload Options</button>
       <div class="ag-eyebrow">Artist Upload</div>
       <h2 class="ag-title">Upload Your Music</h2>
-      <p class="ag-sub">Share your music with the community. Members can listen, enjoy, and tip you if they like your work.</p>
+      <p class="ag-sub">Share your music with the community.</p>
 
       <div class="ag-steps" aria-label="Steps">
         <div class="ag-step on" id="agStep1"><b>1</b><em>Link Bank</em></div>
@@ -437,7 +440,7 @@
       </div>
 
       <div class="form-msg" id="songGateVerifyMsg"></div>
-      <button type="button" class="ag-continue" id="songGateRecheckBtn"><span class="ag-chk" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#2f7bff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span id="songGateRecheckLabel">I've Linked My Account — Continue</span></button>
+      <button type="button" class="ag-continue" id="songGateRecheckBtn"><span class="ag-chk" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#2f7bff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span id="songGateRecheckLabel">I've linked my bank account</span></button>
     </div>
 
     <!-- Step 2: the actual upload flow — hidden until a category is picked
@@ -849,39 +852,66 @@
     }
   });
 
-  var songGateLinked = false;
+  var songGateLinked = false, songGateChecking = false, songGateTicks = 0;
+  function songGateVisible() { return document.getElementById("songPayoutGate").style.display === "block"; }
   function songGateShowLinked() {
     songGateLinked = true;
     var btn = document.getElementById("songGateRecheckBtn");
     btn.classList.add("linked");
     btn.disabled = false;
-    document.getElementById("songGateRecheckLabel").textContent = "Bank account linked — Continue";
+    hideMsg(document.getElementById("songGateVerifyMsg"));
+    document.getElementById("songGateRecheckLabel").textContent = "Bank account linked";
     document.getElementById("agStep1").className = "ag-step done";
     document.getElementById("agLine1").className = "ag-line done";
     document.getElementById("agStep2").className = "ag-step on";
     document.getElementById("agStep1").firstChild.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
   }
 
-  // Ken (Oct 18): "I've Linked My Account — Continue" is a real test — it asks Stripe (via payout-status) whether
-  // the bank account is fully set up. If yes, the pill gets a white square with a blue check and the next tap
-  // opens the song upload; if not, a short message says so and nothing else changes.
-  document.getElementById("songGateRecheckBtn").addEventListener("click", async function () {
-    var btn = document.getElementById("songGateRecheckBtn");
+  // Ken (Oct 18): the box under the cards is the confirmation. While the Artist Upload screen is open the page
+  // asks payout-status on its own (every 5 seconds, whenever the member comes back to the page, and when they
+  // tap the box); the moment Stripe says the bank account is linked the square gets its blue check, and about
+  // two seconds later the song upload opens by itself (without popping the file picker). Tapping the box
+  // after that opens it right away. Stripe's "linked" flag arrives by webhook a few seconds after they finish,
+  // which is why the page keeps asking instead of asking once.
+  async function songGateCheck(manual) {
+    if (songGateLinked || songGateChecking) return;
     var label = document.getElementById("songGateRecheckLabel");
     var msg = document.getElementById("songGateVerifyMsg");
-    if (songGateLinked) { selectCategory("song"); return; }
-    hideMsg(msg);
-    btn.disabled = true;
-    label.textContent = "Checking with Stripe…";
+    songGateChecking = true;
+    if (manual) { hideMsg(msg); label.textContent = "Checking with Stripe…"; }
     await loadSongPayoutGate();
+    songGateChecking = false;
     if (songPayoutsEnabled) {
       songGateShowLinked();
-    } else {
-      btn.disabled = false;
-      label.textContent = "I've Linked My Account — Continue";
-      showMsg(msg, "Stripe doesn't show your bank account as fully linked yet — tap Link Your Bank Account above to finish, or if you just did, give it a minute and try again.", "error");
+      setTimeout(function () { if (songGateVisible()) selectCategory("song", { skipAutoOpen: true }); }, 2000);
+    } else if (manual) {
+      label.textContent = "I've linked my bank account";
+      showMsg(msg, "Stripe doesn't show your bank account as fully linked yet — tap Link Your Bank Account above to finish, or if you just did, give it a few seconds and tap again.", "error");
     }
+  }
+
+  document.getElementById("songGateRecheckBtn").addEventListener("click", function () {
+    if (songGateLinked) { selectCategory("song"); return; }
+    songGateCheck(true);
   });
+
+  function songGateStartWatch() {
+    songGateTicks = 0;
+    if (window.__songGateTimer) return;
+    window.__songGateTimer = setInterval(function () {
+      songGateTicks++;
+      if (!songGateVisible() || songGateLinked || songGateTicks > 120) { clearInterval(window.__songGateTimer); window.__songGateTimer = null; return; }
+      if (!document.hidden) songGateCheck(false);
+    }, 5000);
+  }
+  function songGateWake() {
+    var b = document.getElementById("songGateLinkBtn");
+    // coming back from Stripe with the Back button: undo the "Taking you to Stripe…" state
+    if (b && b.disabled && b.textContent.indexOf("Taking you") === 0) { b.disabled = false; b.textContent = "Link Your Bank Account"; }
+    if (songGateVisible()) { songGateStartWatch(); songGateCheck(false); }
+  }
+  window.addEventListener("pageshow", songGateWake);
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) songGateWake(); });
 
   document.getElementById("songGateBackBtn").addEventListener("click", function () {
     categoryGrid.style.display = "grid";
@@ -964,6 +994,7 @@
       uploadHeading.style.display = "none";
       uploadSub.style.display = "none";
       document.getElementById("songPayoutGate").style.display = "block";
+      songGateStartWatch();
       return;
     }
 

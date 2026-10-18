@@ -12,6 +12,18 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-18 (evening) — Artist Upload page tightened, automatic bank-link check
+
+**upload.html only (Song bank-link screen). No database changes.**
+
+- Subtitle is now just "Share your music with the community."; spacing tightened and the card title/icon made smaller so the Stripe card sits higher and the title wraps to two lines on phones.
+- The bottom box now reads "I've linked my bank account" (no "Continue"), is larger, and always shows a square on its left. When Stripe confirms the bank account the square turns white with a blue check and the label becomes "Bank account linked"; step 1 becomes a check and step 2 lights up.
+- The check is automatic: while the screen is open the page asks `payout-status` every 5 seconds (up to 10 minutes), and again whenever the member returns to the page or taps the box. About 2 seconds after it confirms, the song upload opens by itself (file picker not auto-opened). Tapping the box after it's linked opens the upload right away.
+- Fixed: coming back from Stripe with the Back button left the orange button stuck on "Taking you to Stripe…"; it now resets.
+- Mirrored to `ensemble-fitness-mobile/www/upload.html`.
+
+---
+
 ## 2026-10-18 (later) — Profile back to black, Artist Upload bank-link page
 
 **Colors and one screen's layout. No database changes.**
