@@ -270,7 +270,10 @@ function audioVolumeWorks() {
 }
 // getBase(): the volume the song normally plays at. start(done) -> true if a tail began (done() runs when
 // it has finished), false if there is nothing to fade (caller ends things the normal way).
-var SONG_TAIL_ENABLED = false; // flip to true to bring back the 3-second fade-out
+// Flip to true to bring back the 3-second fade-out. While it is false the tail objects are not even created, so a looping
+// post video keeps its browser-native seamless loop (the tail code used to stop the loop and restart the clip by hand,
+// which with no 3-second hold showed up as a visible hitch every time the clip came round -- Ken, Android, Oct 2026).
+var SONG_TAIL_ENABLED = false;
 function createSongTail(video, audio, getBase) {
   var TAIL = 3; // seconds the song fades out after the video ends
   var raf = null, t0 = 0, active = false, onEnd = null, works = null, io = null, visible = true;
@@ -357,7 +360,7 @@ function wireNarrationSync(video, audio, keepOriginal, musicStart, trimStart, mu
   }
   // fade (music only): when the video ends, the song carries on for 3 seconds, fading out (see createSongTail).
   var baseVol = keepOriginal ? 0.35 : 1;
-  var tail = fade ? createSongTail(video, audio, function () { return baseVol; }) : null;
+  var tail = (fade && SONG_TAIL_ENABLED) ? createSongTail(video, audio, function () { return baseVol; }) : null;
   if (tail && reel && reel.onFinish) {
     reel.onFinish(function () { return tail.start(function () { audio.currentTime = offset; reel.restart(); }); });
   }
@@ -454,7 +457,7 @@ function wireFeedSound(video, audio, keepOriginal, trimStart, musicStart, musicW
   // fade (music only): when the video ends, the picture holds on its last frame while the song carries on
   // for 3 seconds, fading out; then the video starts over (see createSongTail).
   var baseVol = keepOriginal ? 0.35 : 1;
-  var tail = fade ? createSongTail(video, audio, function () { return baseVol; }) : null;
+  var tail = (fade && SONG_TAIL_ENABLED) ? createSongTail(video, audio, function () { return baseVol; }) : null;
   var wasLoop = !!(tail && !reel && video.loop);
   if (wasLoop) video.loop = false; // so the clip reaches its end (and the tail can play) before starting over
   function songRunsToEnd() {

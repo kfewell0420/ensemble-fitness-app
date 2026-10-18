@@ -1075,7 +1075,7 @@
   // ever exist to populate the filmstrip/cover-picker UI. The REAL poster
   // that gets uploaded is always captured fresh, at full resolution, by
   // captureVideoPosterBlob at submit time — these are preview-only.
-  function captureFrameDataUrl(videoEl, time, rejectBlack) {
+  function captureFrameDataUrl(videoEl, time, rejectBlack, widthPx) {
     return new Promise(function (resolve) {
       var settled = false;
       function done(result) {
@@ -1089,7 +1089,7 @@
         try {
           var w = videoEl.videoWidth, h = videoEl.videoHeight;
           if (!w || !h) { done(null); return; }
-          var targetW = 120;
+          var targetW = widthPx || 120;
           var canvas = document.createElement("canvas");
           canvas.width = targetW;
           canvas.height = Math.round((h / w) * targetW);
@@ -1161,13 +1161,18 @@
         if (myGeneration !== filmstripGeneration) return;
         while (IS_IOS_DEVICE && !trimPreviewVideo.paused && waited < 30000) { await new Promise(function (r) { setTimeout(r, 400); }); waited += 400; if (myGeneration !== filmstripGeneration) return; }
         var t = Math.min(Math.max((duration * i) / (count - 1), 0.05), Math.max(duration - 0.05, 0));
-        var dataUrl = await captureFrameDataUrl(v, t, IS_IOS_DEVICE);
+        var dataUrl = await captureFrameDataUrl(v, t, IS_IOS_DEVICE, i === 0 ? 360 : 0); // (first one is bigger: it doubles as the player's cover picture)
         if (myGeneration !== filmstripGeneration) return; // a newer file took over mid-generation
         if (dataUrl) { frames.push({ time: t, dataUrl: dataUrl }); blankInARow = 0; }
         else if (IS_IOS_DEVICE && ++blankInARow >= 2 && !frames.length) return; // this phone hands back black pictures: stop wasting time
       }
     }, 90000);
     if (myGeneration !== filmstripGeneration) return;
+
+    // Belt and braces for the "grey default player with a giant play triangle" (Android AND iPhone, Ken Oct 2026): the
+    // clip's own first picture is also set as the player's cover, so something real shows even if the browser has not
+    // painted the video's first frame yet. It disappears the moment the clip plays.
+    try { if (frames.length && frames[0].time < 0.5) trimPreviewVideo.poster = frames[0].dataUrl; } catch (e) {}
 
     if (!frames.length) {
       coverPicker.style.display = "none";
@@ -1210,6 +1215,7 @@
     trimPreviewObjectUrl = null;
     trimPreviewVideo.pause();
     trimPreviewVideo.removeAttribute("src");
+    trimPreviewVideo.removeAttribute("poster");
     trimPreviewVideo.load();
     selectedCoverTime = null;
     coverPicker.style.display = "none";
@@ -1225,10 +1231,16 @@
   function loadTrimPreview(keepWindow) {
     if (!keepWindow) { mDelay = 0; mLenWanted = Infinity; }
     reelIdx = 0; clipSel = 0; reelSwitching = false; reelPending = null; reelLoadTok++;
+    trimPreviewVideo.preload = "auto";
     trimPreviewVideo.src = clips[0].url;
     trimPreviewVideo.onloadedmetadata = function () {
       trimPreviewVideo.onloadedmetadata = null; // one-shot: later clip swaps must not regenerate the covers
       var duration = trimPreviewVideo.duration || 0;
+      // Ken (Oct 2026, Android): the preview showed Chrome's grey "default player" picture with a giant play triangle
+      // instead of the clip. It used to look right only because the thumbnail maker was seeking THIS player, which forces
+      // a real frame to be drawn; now that the thumbnails use their own hidden player this one is left at "never
+      // decoded". A tiny nudge forward makes the browser paint the clip's first frame, with no sound or playback.
+      try { if (duration > 0.05 && trimPreviewVideo.paused && trimPreviewVideo.currentTime === 0) trimPreviewVideo.currentTime = 0.01; } catch (e) {}
       if (clips.length === 1) clips[0].dur = duration;
       generateTrimFilmstrip(trimPreviewVideo, duration);
     };

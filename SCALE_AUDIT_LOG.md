@@ -12,6 +12,26 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-18 (round 3: Home video "glitch" at the loop point + upload preview showing the grey default player) -- upload.html + js/supabaseClient.js, website + phone app
+Ken (Android, then confirmed on iPhone for the preview): (a) Home still showed him working out, glitched, worked out again;
+(b) after choosing a video the upload preview showed Chrome's grey "default player" picture with a giant play triangle
+instead of the clip.
+(a) Cause found by a loop test (Chromium, looping video + song through `wireFeedSound`): with the fade-out switched off by
+my previous change, the fade machinery was still created, and it turns the browser's seamless native loop OFF and replaces it
+with a hand-made restart: events were pause -> ended -> seek -> play = a visible hitch every time the clip comes round
+(before, the 3-second hold hid it). Fix: `SONG_TAIL_ENABLED=false` now also stops the tail objects being created at all
+(`var tail = (fade && SONG_TAIL_ENABLED) ? ... : null` in `wireNarrationSync` and `wireFeedSound`), so the video keeps its
+native loop. Test: loop stays on, only seeking@0 at the wrap, song stays on the picture's clock (1.64 vs 1.64). Earlier this
+round's feed fix (keep identical instant cards, `loadMoreReel`) stays: it covers the Home swap; this covers the loop point.
+(b) Cause: the preview player used to be seeked by the thumbnail maker, which forces a frame to be drawn; with the thumbnails
+now on their own hidden player this one sat at "never decoded". Fix: `preload="auto"` + a 0.01 s nudge once metadata is in
+(paints the first frame), and the first thumbnail (360 px wide) is also set as the player's `poster` so something real shows
+even before that; poster cleared in `resetTrimUI`. Test: one tiny seek to 0.01, poster set, everything else unchanged.
+NOT verifiable here: real Android/iPhone rendering. SITE-WIDE NOTE: js/supabaseClient.js is used by every video player (feed,
+profile, review queue) -- after pushing, watch a looping music video in the feed: it should loop with no pause.
+
+---
+
 ## 2026-10-18 (Home "works out, glitches, works out again" on Android: fresh load no longer rebuilds identical cards) -- feed.html, website + phone app
 Ken (Android): after going Back to Home the post showed him working out, glitched, and worked out again.
 Cause: not a regression of the old black-frame bug -- the by-design "instant screen" (last visit's posts, saved up to 6 h)
