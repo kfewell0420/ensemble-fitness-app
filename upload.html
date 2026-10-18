@@ -185,10 +185,21 @@
   #songGateRecheckBtn.linked { border-color: #2f7bff; }
   #songGateRecheckBtn.linked .ag-chk { background: #fff; border-color: #fff; }
   #songGateRecheckBtn.linked .ag-chk svg { display: block; }
-  /* "Checking your account…" while we confirm the bank link (only ever a moment) */
-  #songChecking { align-items: center; justify-content: center; gap: 12px; min-height: 55vh; color: rgba(255,255,255,0.85); font-size: 16px; font-weight: 600; }
-  .sg-spin { width: 22px; height: 22px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.18); border-top-color: #2f7bff; animation: sgspin 0.8s linear infinite; }
+  /* Full "checking your bank account" screen, then a bold "You're confirmed" screen */
+  #songChecking { flex-direction: column; align-items: center; justify-content: center; text-align: center; min-height: 62vh; padding: 0 8px; color: #fff; }
+  #songChecking .sc-view { display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 380px; }
+  .sg-spin { width: 64px; height: 64px; border-radius: 50%; border: 6px solid rgba(255,255,255,0.14); border-top-color: #2f7bff; animation: sgspin 0.9s linear infinite; margin-bottom: 22px; }
   @keyframes sgspin { to { transform: rotate(360deg); } }
+  #songChecking h3 { margin: 0; font-size: 24px; font-weight: 800; line-height: 1.2; }
+  #songChecking .sc-line { margin: 10px 0 0; font-size: 16px; color: rgba(255,255,255,0.78); min-height: 22px; }
+  #songChecking .sc-note { margin: 8px 0 0; font-size: 14px; color: rgba(255,255,255,0.55); }
+  .sc-bar { width: 100%; height: 8px; border-radius: 8px; background: rgba(255,255,255,0.12); overflow: hidden; margin-top: 24px; }
+  .sc-bar i { display: block; height: 100%; width: 0; border-radius: 8px; background: linear-gradient(90deg, #2f7bff, #6aa6ff); transition: width 0.35s ease-out; }
+  .sc-bigcheck { width: 124px; height: 124px; border-radius: 50%; background: #2f7bff; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 10px rgba(47,123,255,0.22), 0 0 0 22px rgba(47,123,255,0.10); margin-bottom: 30px; animation: sgpop 0.55s cubic-bezier(.2,1.4,.4,1) both; }
+  .sc-bigcheck path { stroke-dasharray: 30; stroke-dashoffset: 30; animation: sgdraw 0.45s 0.3s ease-out forwards; }
+  @keyframes sgdraw { to { stroke-dashoffset: 0; } }
+  #songChecking .sc-done-title { font-size: 34px; font-weight: 900; letter-spacing: -0.5px; }
+  .sc-go { margin-top: 26px; width: 100%; min-height: 56px; border: 0; border-radius: 16px; background: #2f7bff; color: #fff; font-size: 17px; font-weight: 800; font-family: inherit; cursor: pointer; }
   /* confirmation at the top of the song upload form: the bank is linked */
   #songLinkedBadge { display: none; align-items: center; gap: 16px; background: linear-gradient(135deg, #13244a, #17181f 70%); border: 1.5px solid #2f7bff; border-radius: 18px; padding: 16px 16px; margin: 0 0 14px; color: #fff; }
   #songLinkedBadge .ag-bigchk { display: inline-flex; width: 58px; height: 58px; border-radius: 50%; background: #2f7bff; align-items: center; justify-content: center; flex: 0 0 auto; box-shadow: 0 0 0 6px rgba(47,123,255,0.22); animation: sgpop 0.5s cubic-bezier(.2,1.4,.4,1) both; }
@@ -412,7 +423,21 @@
          it, whether their content is already approved (the old post-
          approval email flow) or they're hitting this gate before they've
          uploaded anything at all. -->
-    <div id="songChecking" role="status" style="display:none;"><span class="sg-spin" aria-hidden="true"></span><span>Checking your account…</span></div>
+    <div id="songChecking" role="status" aria-live="polite" style="display:none;">
+      <div class="sc-view" id="scCheckView">
+        <span class="sg-spin" aria-hidden="true"></span>
+        <h3>Checking your bank account&hellip;</h3>
+        <p class="sc-line" id="scLine">Securely connecting to Stripe&hellip;</p>
+        <div class="sc-bar" aria-hidden="true"><i id="scBar"></i></div>
+        <p class="sc-note">Double-checking your information. This only takes a moment.</p>
+      </div>
+      <div class="sc-view" id="scDoneView" style="display:none;">
+        <div class="sc-bigcheck" aria-hidden="true"><svg viewBox="0 0 24 24" width="72" height="72" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+        <h3 class="sc-done-title">You&rsquo;re confirmed!</h3>
+        <p class="sc-line">Your bank account is linked. You&rsquo;re ready to upload your music and start receiving tips.</p>
+        <button type="button" class="sc-go" id="scGoBtn">Continue to Upload</button>
+      </div>
+    </div>
 
     <div id="songPayoutGate" style="display:none;">
       <button type="button" class="upload-back-link" id="songGateBackBtn">← Back to Upload Options</button>
@@ -918,7 +943,7 @@
     songGateChecking = false;
     if (songPayoutsEnabled) {
       songGateShowLinked();
-      setTimeout(function () { if (songGateVisible()) selectCategory("song", { skipAutoOpen: true }); }, 2000);
+      setTimeout(function () { if (songGateVisible()) selectCategory("song", { skipAutoOpen: true, fromGate: true }); }, 2000);
     } else if (manual) {
       label.textContent = "I've linked my bank account";
       showMsg(msg, "Stripe doesn't show your bank account as fully linked yet — tap Link Your Bank Account above to finish, or if you just did, give it a few seconds and tap again.", "error");
@@ -926,7 +951,7 @@
   }
 
   document.getElementById("songGateRecheckBtn").addEventListener("click", function () {
-    if (songGateLinked) { selectCategory("song"); return; }
+    if (songGateLinked) { selectCategory("song", { skipAutoOpen: true, fromGate: true }); return; }
     songGateCheck(true);
   });
 
@@ -1020,21 +1045,21 @@
     // songPayoutsEnabled above) — showing the gate panel instead of opening
     // the Song flow at all, for both a direct tile click and the ?type=song
     // deep link (applyDeepLinkType calls this same function).
-    // Status not back yet and nothing remembered: show a clear "Checking…" instead of
-    // flashing the bank-link page at someone who is already linked, then route on the
-    // real answer. (Skip the auto file picker after the wait: it is no longer a direct
-    // tap, so the phone would block it; the big upload box is right there to tap.)
-    if (category === "song" && !songPayoutsEnabled && !songPayoutsKnown && songPayoutsPromise) {
-      categoryGrid.style.display = "none";
-      uploadEyebrow.style.display = "none";
-      uploadHeading.style.display = "none";
-      uploadSub.style.display = "none";
-      document.getElementById("songChecking").style.display = "flex";
-      songPayoutsPromise.then(function () {
-        document.getElementById("songChecking").style.display = "none";
-        selectCategory("song", { skipAutoOpen: true });
-      });
-      return;
+    // "Checking your bank account..." then "You're confirmed!" (Ken, Oct 2026). Shown when
+    // the answer is not back yet and nothing is remembered, and once on a phone the first
+    // time an artist opens Song after linking (add ?confirmtest=1 to the page address to
+    // see it again). Skipped after that so a linked artist is never made to wait.
+    // (The auto file picker is skipped after the wait: it is no longer a direct tap, so the
+    // phone would block it; the big upload box is right there to tap.)
+    if (category === "song" && !opts.afterCheck && songPayoutsPromise) {
+      var ceremonyKey = currentUser ? "efit_song_confirmed_" + currentUser.id : null;
+      var ceremonySeen = false;
+      try { ceremonySeen = !!ceremonyKey && localStorage.getItem(ceremonyKey) === "1"; } catch (e) {}
+      var forceCeremony = /[?&]confirmtest=1/.test(window.location.search);
+      if (forceCeremony || (!songPayoutsKnown && !songPayoutsEnabled) || (songPayoutsEnabled && !ceremonySeen)) {
+        runSongCheckScreen(ceremonyKey, !!opts.fromGate && songPayoutsEnabled);
+        return;
+      }
     }
 
     if (category === "song" && !songPayoutsEnabled) {
@@ -1097,6 +1122,68 @@
       // every browser treats it as a real user gesture and allows it.
       fileInput.click();
     }
+  }
+
+  var scTimers = [];
+  function runSongCheckScreen(ceremonyKey, alreadyConfirmed) {
+    var box = document.getElementById("songChecking");
+    var checkView = document.getElementById("scCheckView");
+    var doneView = document.getElementById("scDoneView");
+    var bar = document.getElementById("scBar");
+    var line = document.getElementById("scLine");
+    var MIN_MS = 2200, started = Date.now(), finished = false;
+    scTimers.forEach(function (t) { clearTimeout(t); clearInterval(t); });
+    scTimers = [];
+    categoryGrid.style.display = "none";
+    uploadEyebrow.style.display = "none";
+    uploadHeading.style.display = "none";
+    uploadSub.style.display = "none";
+    document.getElementById("songPayoutGate").style.display = "none";
+    uploadFlow.style.display = "none";
+    checkView.style.display = "flex";
+    doneView.style.display = "none";
+    box.style.display = "flex";
+    // the bar eases toward ~90% while we wait and jumps to full when the answer is in
+    bar.style.width = "6%";
+    var lines = ["Securely connecting to Stripe\u2026", "Verifying your bank account\u2026", "Double-checking your details\u2026"], li = 0;
+    line.textContent = lines[0];
+    scTimers.push(setInterval(function () {
+      li = Math.min(li + 1, lines.length - 1);
+      line.textContent = lines[li];
+      var w = parseFloat(bar.style.width) || 6;
+      bar.style.width = Math.min(90, w + (90 - w) * 0.38) + "%";
+    }, 750));
+    function leave() {
+      if (finished) return; finished = true;
+      scTimers.forEach(function (t) { clearTimeout(t); clearInterval(t); });
+      box.style.display = "none";
+      selectCategory("song", { skipAutoOpen: true, afterCheck: true });
+    }
+    if (alreadyConfirmed) {
+      // came from the bank-link page, which already confirmed with Stripe: go straight to the big "confirmed" screen
+      scTimers.forEach(function (t) { clearInterval(t); });
+      try { if (ceremonyKey) localStorage.setItem(ceremonyKey, "1"); } catch (e) {}
+      checkView.style.display = "none";
+      doneView.style.display = "flex";
+      scTimers.push(setTimeout(leave, 3200));
+      document.getElementById("scGoBtn").onclick = leave;
+      return;
+    }
+    songPayoutsPromise.then(function () {
+      var wait = Math.max(0, MIN_MS - (Date.now() - started));
+      scTimers.push(setTimeout(function () {
+        bar.style.width = "100%";
+        if (!songPayoutsEnabled) { scTimers.push(setTimeout(leave, 250)); return; }
+        try { if (ceremonyKey) localStorage.setItem(ceremonyKey, "1"); } catch (e) {}
+        scTimers.forEach(function (t) { clearInterval(t); });
+        scTimers.push(setTimeout(function () {
+          checkView.style.display = "none";
+          doneView.style.display = "flex";
+          scTimers.push(setTimeout(leave, 3200));
+        }, 350));
+      }, wait));
+    });
+    document.getElementById("scGoBtn").onclick = leave;
   }
 
   Array.prototype.forEach.call(categoryGrid.querySelectorAll(".upload-category-tile"), function (tile) {
