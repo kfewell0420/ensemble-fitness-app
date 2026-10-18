@@ -12,6 +12,18 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-18 — Neutral grays, Instagram-style followers list, Find Members cleanup
+
+**Colors only + one new optional DB policy. No data touched.**
+
+- profile.html / upload.html / fitness-journeys.html: all lavender-tinted grays replaced with neutral charcoal (profile panel `#1f2023`, cards `#2a2b2f`, fields `#151618`; upload music/video box `#26272b`; Journeys/Upload page `#141517`, cards `#1e1f22`).
+- profile.html Followers/Following sheet restyled like Instagram: dark gray sheet, ringed round photos, name, orange "Follow back" / gray "Following", compact rows. Followers tab shows an X to remove a follower (confirm first).
+- NEW `sql/remove-follower.sql`: adds RLS policy `follows_delete_as_followee` so a member can delete rows where they are the followee (only their own followers). Safe to re-run. Until it is run, the X shows a "couldn't remove" message and nothing changes.
+- members.html (Find Members Near You): black backdrop, bio removed, ZIP + wake-up time on one line, shorter "Same ZIP code" / "Same wake-up time" chips, slimmer rows.
+- Mirrored all four HTML files to `ensemble-fitness-mobile/www/` (needs next iOS build 12 / Android versionCode 6 to reach the apps).
+
+---
+
 ## Oct 18, 2026 — Lighter gray (profile panel, upload video/music box)
 
 **Ask (colors only):** The gray under Edit profile was too close to black; the video/music box should be light gray, not near-black.

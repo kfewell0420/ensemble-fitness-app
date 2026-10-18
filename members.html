@@ -47,6 +47,22 @@
   .app-shell > .card .field input { padding-top: 9px; padding-bottom: 9px; }
   .app-shell > .card .btn { padding-top: 10px; padding-bottom: 10px; }
   .app-shell .member-row-clickable { padding: 8px 10px; }
+  .mr-line { display: block; font-size: 12.5px; color: rgba(255,255,255,0.64); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mr-match { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .mr-match span { font-size: 11.5px; font-weight: 700; color: #ffb27a; background: rgba(255,90,31,0.16); border-radius: 999px; padding: 2px 9px; white-space: nowrap; }
+
+  /* Phones (Ken, Oct 18, 2026): true black page like Home and Finder (it was reading dark brown from the
+     page's purple-brown glow), navy Finder-colored boxes, and slimmer member rows so more people fit. */
+  @media (max-width: 899px) {
+    body { background: #000; }
+    .app-nav { background: #000; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .app-shell > .card { background: #0b0f1a; border: 1px solid rgba(255,255,255,0.1); box-shadow: none; }
+    .app-shell .conn-key-inline { background: #0b0f1a; border-color: rgba(255,255,255,0.1); }
+    .app-shell .member-row { gap: 12px; border-bottom-color: rgba(255,255,255,0.07); }
+    .app-shell .member-row-clickable { padding: 7px 10px; }
+    .app-shell .member-row .avatar-circle { width: 48px; height: 48px; font-size: 16px; }
+    .app-shell .member-row-meta strong { font-size: 15px; margin-bottom: 1px; }
+  }
 </style>
 
 <div class="app-shell">
@@ -134,6 +150,11 @@
   var othersOffset = 0;   // paging position in the "everyone else" list
   var loadSeq = 0;        // guards against two overlapping loads landing out of order
 
+  // "Early Bird — before 6:00 AM" -> "Early Bird · before 6 AM" so it fits on one line on a phone.
+  function shortWakeLabel(label) {
+    return String(label).replace(/:00/g, "").replace(/\s*[—–]\s*/, " · ");
+  }
+
   function buildMemberRow(member, avatarUrl, connStatus) {
     var row = document.createElement("div");
     row.className = "member-row member-row-clickable";
@@ -151,10 +172,13 @@
       '<div class="avatar-circle">' + avatarInner + '</div>' +
       '<div class="member-row-meta">' +
         '<strong>' + escapeHtml(member.display_name || "A member") + connectionBadgeHtml(connStatus) + '</strong>' +
-        (member.bio ? '<p>' + escapeHtml(member.bio) + '</p>' : '') +
-        '<span>' + (member.zip_code ? 'ZIP ' + escapeHtml(member.zip_code) : '') + (wakeLabel ? (member.zip_code ? ' · ' : '') + escapeHtml(wakeLabel) : '') + '</span>' +
-        (sameZip ? '<span style="display:block; color:var(--accent-2); font-weight:700; margin-top:3px;">📍 Same ZIP code as you</span>' : '') +
-        (sameWakeTime ? '<span style="display:block; color:var(--accent-2); font-weight:700; margin-top:3px;">🌞 Same wake-up time as you</span>' : '') +
+        // Ken (Oct 18, 2026): no bio in this list — it has to stay a quick scan even with thousands of members.
+        // ZIP and wake-up time sit on ONE line (wake-up label shortened: "Early Bird · before 6 AM"), and the two
+        // "same as you" matches are small one-row chips.
+        '<span class="mr-line">' + (member.zip_code ? 'ZIP ' + escapeHtml(member.zip_code) : '') + (wakeLabel ? (member.zip_code ? ' · ' : '') + escapeHtml(shortWakeLabel(wakeLabel)) : '') + '</span>' +
+        ((sameZip || sameWakeTime)
+          ? '<div class="mr-match">' + (sameZip ? '<span>📍 Same ZIP code</span>' : '') + (sameWakeTime ? '<span>🌞 Same wake-up time</span>' : '') + '</div>'
+          : '') +
       '</div>';
 
     row.addEventListener("click", function () {
