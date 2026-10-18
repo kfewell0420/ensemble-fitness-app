@@ -12,6 +12,14 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-18 — Song tile no longer flashes the bank-link page; bigger "linked" confirmation
+
+- `upload.html`: the "is their bank linked?" check now starts the moment the page loads (before the profile lookup) and is remembered on that phone once confirmed (localStorage `efit_song_linked_<user id>`, only ever set from a real server answer, corrected by the next real answer). If someone taps Song before the answer is back and nothing is remembered, they see a "Checking your account…" spinner instead of the bank-link page, then go straight to the form (linked) or the bank-link page (not linked). 10-second timeout so it can never hang. Photo/Video untouched.
+- The confirmation at the top of the song form is now a large blue check circle with "Your bank account is linked! You're all set. Tips from the community go straight to you."
+- Database: ran the five `alter table public.media add column if not exists ...` lines (music_start_seconds, music_delay_seconds, music_length_seconds, keep_original_audio, clip_durations) in production; they were missing, which silently dropped song start/placement on new video posts.
+
+---
+
 ## 2026-10-18 — "Bank account linked" confirmation on the song upload form
 
 - `upload.html`: once an artist is linked, the Song upload form now opens with a compact blue-check "Bank account linked / Tips go straight to you" row above the file box, so artists see their bank is set up right before they submit. Shown for Song only (not photo/video). Display-only; no new queries, no payout logic touched.
