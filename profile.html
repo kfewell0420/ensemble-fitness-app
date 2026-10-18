@@ -172,14 +172,14 @@
 
   /* icon tab row — Ken (Oct 18): the envelope, block and lock looked faint; now full strength, a touch
      larger and brightened, with the orange underline alone showing which one is open */
-  /* Ken (Oct 18): the icon row and everything under it sit on the Finder gray (#0b0f1a), the part above
+  /* Ken (Oct 18): the icon row and everything under it sit on a clearly lighter gray (#2a2e37), the part above
      (photo, name, stats, Edit profile) stays black — it breaks the page into two clear zones. The gray is
      painted behind the row by a tall ::before that the page shell clips at its bottom; the page is a column
      that is at least one screen tall so the gray always runs down to the tab bar, even with little content. */
   body { display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; }
   .app-shell { flex: 1 0 auto; width: 100%; box-sizing: border-box; position: relative; z-index: 0; overflow: hidden; overflow: clip; }
   .pf-pills { position: relative; display: flex; margin: 14px 0 0; padding: 0; gap: 0; overflow: visible; border-bottom: 1px solid rgba(255,255,255,0.1); }
-  .pf-pills::before { content: ""; position: absolute; z-index: -1; left: 0; right: 0; top: 0; bottom: -9999px; background: #0b0f1a; pointer-events: none; }
+  .pf-pills::before { content: ""; position: absolute; z-index: -1; left: 0; right: 0; top: 0; bottom: -9999px; background: #2a2e37; pointer-events: none; }
   .pf-pill {
     flex: 1 1 0; min-width: 0; background: none; border: 0; border-bottom: 3px solid transparent; border-radius: 0;
     padding: 11px 0 9px; font-size: 22px; line-height: 1; color: rgba(255,255,255,0.92); opacity: 1; cursor: pointer;
@@ -192,7 +192,7 @@
 
   /* navy cards for every section (same navy as the Finder list) */
   .card.pf-panel:not(.pf-uploads), #profileForm {
-    background: #121a2c; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; margin: 14px 16px 0; padding: 16px; min-height: 0; box-shadow: none;
+    background: #353a47; border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; margin: 14px 16px 0; padding: 16px; min-height: 0; box-shadow: none;
   }
   #profileMsg { margin: 12px 16px 0; }
   body.pf-tab-details .form-msg.pf-d:not(.show) { display: none; }
@@ -202,14 +202,14 @@
   .field label, #myMusicList label { color: rgba(255,255,255,0.78); }
   #myMusicList label { display: block; font-size: 13px; font-weight: 700; margin: 10px 0 4px; }
   .field input, .field textarea, .field select, #myMusicList input, #myMusicList select, .simple-modal input, .simple-modal textarea {
-    background: #1c2740; border: 1px solid rgba(255,255,255,0.16); color: #fff;
+    background: #22262e; border: 1px solid rgba(255,255,255,0.16); color: #fff;
   }
   #myMusicList input, #myMusicList select { width: 100%; border-radius: 10px; padding: 10px 12px; font-family: inherit; font-size: 14px; }
   .field input::placeholder, .field textarea::placeholder, .simple-modal input::placeholder { color: rgba(255,255,255,0.42); }
   .field input:focus, .field textarea:focus, .field select:focus { border-color: #ff5a1f; }
   .btn-ghost { background: transparent; border: 1px solid rgba(255,255,255,0.24); color: #fff; }
   .btn-danger { background: rgba(226,72,58,0.14); color: #ff8f84; border: 1px solid rgba(226,72,58,0.45); }
-  .btn-primary:disabled { background: #1c2740; color: #6f7a92; }
+  .btn-primary:disabled { background: #22262e; color: #8a93a6; }
   .form-msg.error { background: rgba(226,72,58,0.14); color: #ff9a8f; }
   .form-msg.success { background: rgba(31,174,110,0.14); color: #5fd6a0; }
   .password-toggle { color: rgba(255,255,255,0.64); }

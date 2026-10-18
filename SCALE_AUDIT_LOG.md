@@ -12,6 +12,14 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## Oct 18, 2026 — Lighter gray (profile panel, upload video/music box)
+
+**Ask (colors only):** The gray under Edit profile was too close to black; the video/music box should be light gray, not near-black.
+**Change:** One shared light gray, #2a2e37 (several steps lighter than before). `profile.html`: the panel under the icon row uses it; cards inside it are a lighter step (#353a47), fields inside a darker step (#22262e) so they still read. `upload.html`: the video/music box uses it, with fields inside it a darker step. Phones only.
+**Check:** Profile: clear line between the black top and the gray section. Upload > Video: light gray box.
+
+---
+
 ## Oct 18, 2026 — Profile gray panel, envelope outline, video/music box gray (phones)
 
 **Ask (colors only):** (1) Profile: everything under the Edit profile button on the Finder gray to split the page; (2) the envelope icon looked like a plain white box; (3) the dark-brown video/music box on Upload should be the same gray.
