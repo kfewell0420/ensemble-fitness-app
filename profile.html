@@ -109,7 +109,7 @@
 <style>
 /* ======================================================================
    "TikTok-style" profile layout (phones only, <= 720px). Ken's pick, Oct 2026: Option A layout.
-   Oct 18, 2026 (Ken): colors now match Home and Finder — true black page, navy cards, white text, the
+   Oct 18, 2026 (Ken): colors now match Home and Finder — page backdrop is the Finder navy #0b0f1a (was true black), cards a shade lighter (#151c2e), white text, the
    same black bottom bar with the outlined "+" Post button — so the whole app looks like one product.
    Only COLORS changed from the light version; the layout and every id/behaviour are untouched.
    Wider screens never see any of this: the page keeps its dark look and every card stacked.
@@ -118,11 +118,12 @@
    ====================================================================== */
 @media (max-width: 720px) {
   body {
-    background: #000; color: #fff;
+    background: #0b0f1a; color: #fff;
     --muted-invert: rgba(255,255,255,0.64); --faint-invert: rgba(255,255,255,0.5);
   }
-  .app-nav { background: #000; border-bottom: 1px solid rgba(255,255,255,0.08); padding: calc(10px + env(safe-area-inset-top, 0px)) 16px 10px; }
+  .app-nav { background: #0b0f1a; border-bottom: 1px solid rgba(255,255,255,0.08); padding: calc(10px + env(safe-area-inset-top, 0px)) 16px 10px; }
   .app-brand { color: #fff; font-size: 17px; }
+  .app-brand-mark img { mix-blend-mode: lighten; } /* the logo file has a black square behind it; on navy this makes the square disappear */
   .app-shell { display: flex; flex-direction: column; max-width: none; padding: 0 0 calc(96px + env(safe-area-inset-bottom, 0px)); }
   .app-shell > .card:first-child { display: contents; }
   .pf-x { display: none !important; }
@@ -139,12 +140,12 @@
   /* photo + name + chips */
   .avatar-row { padding: 14px 16px 0; margin: 0; gap: 16px; align-items: center; }
   .avatar-wrap { padding: 4px; border-radius: 50%; background: linear-gradient(135deg, #ff7a1a, #ff3d68); }
-  .avatar-row .avatar-circle { width: 88px; height: 88px; font-size: 32px; background: #121a2c; color: #ff7a3d; border: 3px solid #000; }
+  .avatar-row .avatar-circle { width: 88px; height: 88px; font-size: 32px; background: #121a2c; color: #ff7a3d; border: 3px solid #0b0f1a; }
   .avatar-circle-uploadable:hover, .avatar-circle-uploadable:focus-visible { box-shadow: none; transform: none; }
   .avatar-upload-badge {
     right: -2px; bottom: 0; width: 26px; height: 26px; border-radius: 50%; background: #ff5a1f; color: #fff;
     display: flex; align-items: center; justify-content: center; font-size: 19px; font-weight: 800; line-height: 1;
-    border: 3px solid #000; text-shadow: none; box-sizing: content-box; margin: 0;
+    border: 3px solid #0b0f1a; text-shadow: none; box-sizing: content-box; margin: 0;
   }
   .pf-ident { flex: 1; min-width: 0; }
   .pf-name { display: block; font-family: "Poppins", "Inter", sans-serif; font-weight: 800; font-size: 18px; line-height: 1.2; letter-spacing: -0.01em; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -168,7 +169,7 @@
   /* the bio is for other members' eyes (edit it under Edit profile); it isn't repeated here */
   .pf-actions { display: block; padding: 14px 16px 0; }
   .pf-actions .btn { width: 100%; border-radius: 12px; padding: 11px 0; font-size: 14px; }
-  .pf-actions .btn.pf-editing { background: #0b0f1a; color: #fff; border: 1px solid rgba(255,255,255,0.22); }
+  .pf-actions .btn.pf-editing { background: #151c2e; color: #fff; border: 1px solid rgba(255,255,255,0.22); }
 
   /* icon tab row — Ken (Oct 18): the envelope, block and lock looked faint; now full strength, a touch
      larger and brightened, with the orange underline alone showing which one is open */
@@ -179,7 +180,7 @@
   body { display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; }
   .app-shell { flex: 1 0 auto; width: 100%; box-sizing: border-box; position: relative; z-index: 0; overflow: hidden; overflow: clip; }
   .pf-pills { position: relative; display: flex; margin: 14px 0 0; padding: 0; gap: 0; overflow: visible; border-bottom: 1px solid rgba(255,255,255,0.1); }
-  .pf-pills::before { content: ""; position: absolute; z-index: -1; left: 0; right: 0; top: 0; bottom: -9999px; background: #000; pointer-events: none; }
+  .pf-pills::before { content: ""; position: absolute; z-index: -1; left: 0; right: 0; top: 0; bottom: -9999px; background: #0b0f1a; pointer-events: none; }
   .pf-pill {
     flex: 1 1 0; min-width: 0; background: none; border: 0; border-bottom: 3px solid transparent; border-radius: 0;
     padding: 11px 0 9px; font-size: 22px; line-height: 1; color: rgba(255,255,255,0.92); opacity: 1; cursor: pointer;
@@ -192,7 +193,7 @@
 
   /* navy cards for every section (same navy as the Finder list) */
   .card.pf-panel:not(.pf-uploads), #profileForm {
-    background: #0b0f1a; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; margin: 14px 16px 0; padding: 16px; min-height: 0; box-shadow: none;
+    background: #151c2e; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; margin: 14px 16px 0; padding: 16px; min-height: 0; box-shadow: none;
   }
   #profileMsg { margin: 12px 16px 0; }
   body.pf-tab-details .form-msg.pf-d:not(.show) { display: none; }

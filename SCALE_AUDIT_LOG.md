@@ -12,6 +12,17 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-18 (late) — Profile page backdrop is now the Finder navy
+
+**profile.html only, phones, colors only.**
+
+- Ken asked to try the Finder "Explore" card navy (`#0b0f1a`) as the whole Profile backdrop instead of black: top bar, the area around the photo/stats/Edit profile, the icon row and the space under the uploads grid. Cards (Edit profile form etc.) are a shade lighter, `#151c2e`, so they still stand out; input boxes stay dark. Bottom tab bar stays black like Home and Finder.
+- The logo image has a black square behind it; on navy it is hidden with `mix-blend-mode: lighten` on the top-bar logo (this page only).
+- Easy to undo: the four values are in the phone block at the top of the Profile styles (`body`, `.app-nav`, `.pf-pills::before`, card background).
+- Mirrored into `ensemble-fitness-mobile/www/profile.html`.
+
+---
+
 ## 2026-10-18 (night) — Upload page black, Followers/Following sheet in Finder navy
 
 **Colors only (phones).**
