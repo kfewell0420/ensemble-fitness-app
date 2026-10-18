@@ -12,6 +12,14 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## Oct 18, 2026 — Profile page colors now match Home and Finder (phones)
+
+**Ask (colors only):** One consistent look across the app, like Instagram's dark theme. Profile was light; Home and Finder are black.
+**Change:** `profile.html` only, phone layout (<= 720px). Page is true black with the same header; cards are the Finder navy with a faint border; text white; form fields, buttons, messages and the Followers/Following sheet recolored to match. Bottom bar is now the same black bar as Home/Finder (white labels, brightened icons, outlined "+" Post). The envelope / block / lock icons under Edit profile are now full strength and brightened (they were 45% faded), with the orange underline showing the open one. Layout, wording and behavior are unchanged; computer layout is unchanged.
+**Check:** Profile on a phone: black page, tap each of the four icons, tap Edit profile, tap Followers.
+
+---
+
 ## Oct 18, 2026 — Followers / Following pop-up redone (TikTok style)
 
 **Ask:** Make the "Your Network" list look like TikTok's: just photo, name and a follow button — no bios.

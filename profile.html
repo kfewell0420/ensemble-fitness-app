@@ -108,18 +108,21 @@
 
 <style>
 /* ======================================================================
-   Light "TikTok-style" profile (phones only, <= 720px). Ken's pick, Oct 2026: Option A.
+   "TikTok-style" profile layout (phones only, <= 720px). Ken's pick, Oct 2026: Option A layout.
+   Oct 18, 2026 (Ken): colors now match Home and Finder — true black page, navy cards, white text, the
+   same black bottom bar with the outlined "+" Post button — so the whole app looks like one product.
+   Only COLORS changed from the light version; the layout and every id/behaviour are untouched.
    Wider screens never see any of this: the page keeps its dark look and every card stacked.
    The first card becomes display:contents on phones so its photo row, bio and edit button can
-   be ordered together with the stats and tab row below it. All existing ids/logic are untouched.
+   be ordered together with the stats and tab row below it.
    ====================================================================== */
 @media (max-width: 720px) {
   body {
-    background: #faf8f5; color: #16181d;
-    --muted-invert: #5f6470; --faint-invert: #8a8f99;
+    background: #000; color: #fff;
+    --muted-invert: rgba(255,255,255,0.64); --faint-invert: rgba(255,255,255,0.5);
   }
-  .app-nav { background: #fff; border-bottom: 1px solid #ece7e0; padding: calc(10px + env(safe-area-inset-top, 0px)) 16px 10px; }
-  .app-brand { color: #16181d; font-size: 17px; }
+  .app-nav { background: #000; border-bottom: 1px solid rgba(255,255,255,0.08); padding: calc(10px + env(safe-area-inset-top, 0px)) 16px 10px; }
+  .app-brand { color: #fff; font-size: 17px; }
   .app-shell { display: flex; flex-direction: column; max-width: none; padding: 0 0 calc(96px + env(safe-area-inset-bottom, 0px)); }
   .app-shell > .card:first-child { display: contents; }
   .pf-x { display: none !important; }
@@ -136,20 +139,20 @@
   /* photo + name + chips */
   .avatar-row { padding: 14px 16px 0; margin: 0; gap: 16px; align-items: center; }
   .avatar-wrap { padding: 4px; border-radius: 50%; background: linear-gradient(135deg, #ff7a1a, #ff3d68); }
-  .avatar-row .avatar-circle { width: 88px; height: 88px; font-size: 32px; background: #fff; color: #ff5a1f; border: 3px solid #fff; }
+  .avatar-row .avatar-circle { width: 88px; height: 88px; font-size: 32px; background: #121a2c; color: #ff7a3d; border: 3px solid #000; }
   .avatar-circle-uploadable:hover, .avatar-circle-uploadable:focus-visible { box-shadow: none; transform: none; }
   .avatar-upload-badge {
     right: -2px; bottom: 0; width: 26px; height: 26px; border-radius: 50%; background: #ff5a1f; color: #fff;
     display: flex; align-items: center; justify-content: center; font-size: 19px; font-weight: 800; line-height: 1;
-    border: 3px solid #faf8f5; text-shadow: none; box-sizing: content-box; margin: 0;
+    border: 3px solid #000; text-shadow: none; box-sizing: content-box; margin: 0;
   }
   .pf-ident { flex: 1; min-width: 0; }
-  .pf-name { display: block; font-family: "Poppins", "Inter", sans-serif; font-weight: 800; font-size: 18px; line-height: 1.2; letter-spacing: -0.01em; color: #16181d; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pf-name { display: block; font-family: "Poppins", "Inter", sans-serif; font-weight: 800; font-size: 18px; line-height: 1.2; letter-spacing: -0.01em; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .pf-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
   .pf-chips:empty { display: none; }
-  .pf-chip { font-size: 12px; font-weight: 600; padding: 4px 9px; border-radius: 999px; background: #fff1e6; color: #b4410f; }
+  .pf-chip { font-size: 12px; font-weight: 600; padding: 4px 9px; border-radius: 999px; background: rgba(255,90,31,0.16); color: #ffb27a; }
   #avatarStatusLabel, #avatarStatusSub, #profileGlance { display: none !important; }
-  #avatarStatusLabel.pf-note { display: block !important; font-size: 12px; font-weight: 700; color: #b4410f; margin-top: 6px; }
+  #avatarStatusLabel.pf-note { display: block !important; font-size: 12px; font-weight: 700; color: #ffb27a; margin-top: 6px; }
 
   /* stats */
   .card.pf-network { background: none; border: 0; border-radius: 0; padding: 16px 16px 0; margin: 0; min-height: 0; }
@@ -158,59 +161,61 @@
   .pf-network .follow-stats-row { align-items: flex-start; }
   .follow-stat { text-align: left; display: block; line-height: 1.3; align-self: flex-start; }
   .follow-stat span { display: block; }
-  .follow-stat strong { font-size: 19px; font-weight: 800; color: #16181d; }
-  .follow-stat span { font-size: 12.5px; font-weight: 600; color: #6b6f78; }
-  .follow-stat:hover strong { color: #ff5a1f; }
+  .follow-stat strong { font-size: 19px; font-weight: 800; color: #fff; }
+  .follow-stat span { font-size: 12.5px; font-weight: 600; color: rgba(255,255,255,0.64); }
+  .follow-stat:hover strong { color: #ff7a3d; }
 
   /* the bio is for other members' eyes (edit it under Edit profile); it isn't repeated here */
   .pf-actions { display: block; padding: 14px 16px 0; }
   .pf-actions .btn { width: 100%; border-radius: 12px; padding: 11px 0; font-size: 14px; }
-  .pf-actions .btn.pf-editing { background: #fff; color: #16181d; border: 1px solid #d9d2c7; }
+  .pf-actions .btn.pf-editing { background: #0b0f1a; color: #fff; border: 1px solid rgba(255,255,255,0.22); }
 
-  /* icon tab row */
-  .pf-pills { display: flex; margin: 14px 0 0; padding: 0; gap: 0; overflow: visible; border-bottom: 1px solid #ece7e0; }
+  /* icon tab row — Ken (Oct 18): the envelope, block and lock looked faint; now full strength, a touch
+     larger and brightened, with the orange underline alone showing which one is open */
+  .pf-pills { display: flex; margin: 14px 0 0; padding: 0; gap: 0; overflow: visible; border-bottom: 1px solid rgba(255,255,255,0.1); }
   .pf-pill {
     flex: 1 1 0; min-width: 0; background: none; border: 0; border-bottom: 3px solid transparent; border-radius: 0;
-    padding: 10px 0 8px; font-size: 19px; line-height: 1; color: #16181d; opacity: 0.45; cursor: pointer;
+    padding: 11px 0 9px; font-size: 22px; line-height: 1; color: rgba(255,255,255,0.92); opacity: 1; cursor: pointer;
     display: flex; align-items: center; justify-content: center; font-family: inherit; -webkit-tap-highlight-color: transparent;
+    filter: brightness(1.7) contrast(1.05) drop-shadow(0 0 3px rgba(255,255,255,0.45));
   }
   .pf-pill svg { display: block; }
-  .pf-pill.active { opacity: 1; border-bottom-color: #ff5a1f; background: none; color: #16181d; }
+  .pf-pill.active { border-bottom-color: #963512; /* darker on purpose: the brightening filter above lifts it to the brand orange */ background: none; color: #fff; }
   .pf-pill-details { display: none !important; }
 
-  /* light cards for every section */
+  /* navy cards for every section (same navy as the Finder list) */
   .card.pf-panel:not(.pf-uploads), #profileForm {
-    background: #fff; border: 1px solid #ece7e0; border-radius: 16px; margin: 14px 16px 0; padding: 16px; min-height: 0; box-shadow: none;
+    background: #0b0f1a; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; margin: 14px 16px 0; padding: 16px; min-height: 0; box-shadow: none;
   }
   #profileMsg { margin: 12px 16px 0; }
   body.pf-tab-details .form-msg.pf-d:not(.show) { display: none; }
-  .pf-panel h2, .pf-panel h3 { color: #16181d; }
-  .pf-panel .eyebrow, .simple-modal .eyebrow { color: #c2410c; }
-  .pf-panel p, .pf-panel .card-sub { color: #5f6470; }
-  .field label, #myMusicList label { color: #4b5060; }
+  .pf-panel h2, .pf-panel h3 { color: #fff; }
+  .pf-panel .eyebrow, .simple-modal .eyebrow { color: #ff7a3d; }
+  .pf-panel p, .pf-panel .card-sub { color: rgba(255,255,255,0.68); }
+  .field label, #myMusicList label { color: rgba(255,255,255,0.78); }
   #myMusicList label { display: block; font-size: 13px; font-weight: 700; margin: 10px 0 4px; }
   .field input, .field textarea, .field select, #myMusicList input, #myMusicList select, .simple-modal input, .simple-modal textarea {
-    background: #faf8f5; border: 1px solid #e3ddd4; color: #16181d;
+    background: #121a2c; border: 1px solid rgba(255,255,255,0.16); color: #fff;
   }
   #myMusicList input, #myMusicList select { width: 100%; border-radius: 10px; padding: 10px 12px; font-family: inherit; font-size: 14px; }
-  .field input::placeholder, .field textarea::placeholder, .simple-modal input::placeholder { color: #9a9fa8; }
+  .field input::placeholder, .field textarea::placeholder, .simple-modal input::placeholder { color: rgba(255,255,255,0.42); }
   .field input:focus, .field textarea:focus, .field select:focus { border-color: #ff5a1f; }
-  .btn-ghost { background: #fff; border: 1px solid #d9d2c7; color: #16181d; }
-  .btn-danger { background: #fdecea; color: #c92a1d; border: 1px solid #f3b8b2; }
-  .btn-primary:disabled { background: #ece7e0; color: #8a8f99; }
-  .form-msg.error { background: #fdecea; color: #b42318; }
-  .form-msg.success { background: #e8f7ef; color: #166a43; }
-  .password-toggle { color: #5f6470; }
-  .password-toggle:hover, .password-toggle:focus { color: #16181d; }
-  .member-row { border-bottom-color: #ece7e0; }
-  .member-row-clickable:hover, .member-row-clickable:focus-visible { background: #faf8f5; }
-  .member-row .avatar-circle { background: #fff1e6; color: #b4410f; border: 0; }
-  .member-row-meta strong { color: #16181d; }
-  .inbox-item { border-bottom-color: #ece7e0; }
-  .inbox-item-name { color: #16181d; }
-  #myMusicList > div { border-top-color: #ece7e0 !important; }
-  #payoutsSteps ol { color: #5f6470 !important; }
-  #payoutsSteps p { color: #9a5b00 !important; }
+  .btn-ghost { background: transparent; border: 1px solid rgba(255,255,255,0.24); color: #fff; }
+  .btn-danger { background: rgba(226,72,58,0.14); color: #ff8f84; border: 1px solid rgba(226,72,58,0.45); }
+  .btn-primary:disabled { background: #1c2740; color: #6f7a92; }
+  .form-msg.error { background: rgba(226,72,58,0.14); color: #ff9a8f; }
+  .form-msg.success { background: rgba(31,174,110,0.14); color: #5fd6a0; }
+  .password-toggle { color: rgba(255,255,255,0.64); }
+  .password-toggle:hover, .password-toggle:focus { color: #fff; }
+  .member-row { border-bottom-color: rgba(255,255,255,0.08); }
+  .member-row-clickable:hover, .member-row-clickable:focus-visible { background: rgba(255,255,255,0.05); }
+  .member-row .avatar-circle { background: rgba(255,90,31,0.16); color: #ffb27a; border: 0; }
+  .member-row-meta strong { color: #fff; }
+  .inbox-item { border-bottom-color: rgba(255,255,255,0.08); }
+  .inbox-item-name { color: #fff; }
+  #myMusicList > div { border-top-color: rgba(255,255,255,0.1) !important; }
+  #payoutsSteps ol { color: rgba(255,255,255,0.68) !important; }
+  #payoutsSteps p { color: #e2a63a !important; }
 
   /* friendly empty states */
   .pf-empty-art::before { content: attr(data-art); display: block; font-size: 44px; line-height: 1.1; margin-bottom: 8px; }
@@ -218,27 +223,20 @@
 
   .signout-mobile-card { background: none; border: 0; padding: 0; margin: 22px 16px 0; }
 
-  /* pop-ups follow the same light look */
-  .simple-modal-overlay { background: rgba(22, 24, 29, 0.45); }
-  .simple-modal { background: #fff; border-color: #ece7e0; color: #16181d; }
-  .simple-modal h3, .simple-modal strong { color: #16181d; }
-  .simple-modal label { color: #4b5060; }
-  .simple-modal-close { background: #f0ece6; color: #16181d; }
-  .simple-modal-close:hover { background: #e6e0d7; }
-
-  /* bottom tab bar (same five places as the feed's) */
+  /* bottom tab bar: the same black bar, white labels, brightened icons and outlined "+" as Home and Finder */
   .pf-tabbar {
-    display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; background: #fff;
-    border-top: 1px solid #ece7e0; padding-bottom: env(safe-area-inset-bottom, 0px);
+    display: flex; align-items: stretch; position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; background: #000;
+    border-top: 1px solid rgba(255,255,255,0.08); padding-bottom: env(safe-area-inset-bottom, 0px);
   }
-  .pf-tab { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 4px; color: #6b6f78; -webkit-tap-highlight-color: transparent; }
-  .pf-tab-icon { font-size: 22px; line-height: 1; height: 30px; display: flex; align-items: center; justify-content: center; }
-  .pf-tab-label { font-size: 10.5px; font-weight: 600; }
-  .pf-tab:not(.active):not(.pf-tab-post) .pf-tab-icon { opacity: 0.7; }
-  .pf-tab.active { color: #ff5a1f; }
+  .pf-tab { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; height: 56px; padding: 0 4px; color: #fff; -webkit-tap-highlight-color: transparent; }
+  .pf-tab-icon { font-size: 20px; line-height: 1; height: auto; display: flex; align-items: center; justify-content: center; }
+  .pf-tab:not([href="feed.html"]) .pf-tab-icon { filter: brightness(1.85) contrast(1.05) drop-shadow(0 0 3px rgba(255,255,255,0.5)); }
+  .pf-tab-label { font-size: 10px; font-weight: 600; letter-spacing: 0.01em; }
+  .pf-tab:not(.active):not(.pf-tab-post) .pf-tab-icon { opacity: 1; }
+  .pf-tab.active { color: #fff; }
   .pf-tab-post .pf-tab-icon {
-    background: linear-gradient(135deg, #ff7a1a, #ff3d68); color: #fff; border-radius: 11px; width: 44px; height: 30px;
-    text-align: center; font-weight: 800; font-size: 22px;
+    background: none; color: #fff; border: 2px solid currentColor; border-radius: 7px; width: 30px; height: 22px;
+    text-align: center; font-weight: 700; font-size: 20px; filter: none;
   }
 }
 </style>
@@ -246,7 +244,7 @@
 <style>
 /* Ken's ask (Oct 2026): Followers / Following pop-up redone in the TikTok style — just a photo, a name and a
    follow button on each row (no bios), Following/Followers tabs on top, a search box. Dark look on a computer,
-   light bottom sheet on a phone like the rest of this page. Only this pop-up is touched. */
+   bottom sheet on a phone. Only this pop-up is touched. */
 .fl-sheet { padding: 0 !important; display: flex; flex-direction: column; overflow: hidden !important; max-width: 460px; max-height: 80vh; }
 .fl-head { position: relative; height: 54px; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; }
 .fl-head .simple-modal-close { top: 12px; right: 14px; width: 32px; height: 32px; font-size: 20px; line-height: 1; }
@@ -270,17 +268,7 @@
 @media (max-width: 720px) {
   #followListOverlay { align-items: flex-end; padding: 0; }
   .fl-sheet { max-width: none !important; width: 100%; height: 86vh; height: 86dvh; max-height: none; border-radius: 22px 22px 0 0 !important; border-bottom: 0 !important; animation: flSheetUp 0.24s ease-out; }
-  .fl-head::before { content: ""; position: absolute; top: 8px; left: 50%; width: 38px; height: 4px; margin-left: -19px; border-radius: 2px; background: #d9d2c7; }
-  .fl-head-title { color: #c2410c; }
-  .fl-tabs { border-bottom-color: #ece7e0; }
-  .fl-tab { color: #8a8f99; }
-  .fl-tab.active { color: #16181d; }
-  .fl-search input { background: #f3efe9 !important; color: #16181d !important; border: 0 !important; }
-  .fl-search input::placeholder { color: #9a9fa8 !important; }
-  .fl-ava { background: #fff1e6; color: #b4410f; }
-  .fl-name { color: #16181d; }
-  .fl-btn.on { background: #eeeae4; color: #16181d; }
-  .fl-empty { color: #6b6f78; }
+  .fl-head::before { content: ""; position: absolute; top: 8px; left: 50%; width: 38px; height: 4px; margin-left: -19px; border-radius: 2px; background: rgba(255,255,255,0.28); }
 }
 @keyframes flSheetUp { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
 </style>
