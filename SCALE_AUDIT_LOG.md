@@ -12,6 +12,21 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-18 (Home "works out, glitches, works out again" on Android: fresh load no longer rebuilds identical cards) -- feed.html, website + phone app
+Ken (Android): after going Back to Home the post showed him working out, glitched, and worked out again.
+Cause: not a regression of the old black-frame bug -- the by-design "instant screen" (last visit's posts, saved up to 6 h)
+is replaced a moment later by the fresh load, and the replacement used to tear down the card and build an identical one.
+For a PHOTO that is invisible; for a VIDEO the new card restarts the video, which looks like the clip playing twice.
+(Ken's top post is now a video, which is why it became noticeable.) Earlier today's harness only covered photos.
+Fix (`loadMoreReel`): if the fresh first screen has exactly the same post ids in the same order as the instant screen AND
+the who-I-follow set is unchanged, the instant cards are KEPT (they become the real cards: `loadedItems` = fresh data,
+`cacheFlashNodes` emptied, extra fresh posts appended after them). Any difference (new post, follow/unfollow, fewer posts)
+takes the old swap path unchanged. Harness (mock backend, return to Home): identical -> DOM changes = skeleton off + one slide
+added, NO slide removed/re-added; changed first id -> old swap still happens; base run.js: no duplicate posts, no errors.
+Website + phone app (mobile www feed.html mirrored). Not verifiable here: real Android video timing.
+
+---
+
 ## 2026-10-18 (round 2: song bar shows the sound again, no wording on it; no 3-second fade) -- upload.html + js/supabaseClient.js, website + phone app
 Ken (artist's iPhone 17 recording IMG_2222, after the root-cause fix): "almost 100%" fixed; the scrub line is locked to
 picture and song. Remaining asks: (1) the orange song bar repeated the song title (already in the white row above) and had

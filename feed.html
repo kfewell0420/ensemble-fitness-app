@@ -2225,6 +2225,12 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
   var FEED_CACHE_MAX_AGE_MS = 6 * 60 * 60 * 1000; // 6 hours
   var cacheFlashNodes = [];
   var renderingCacheFlash = false;
+  // Ken (Oct 2026): coming back to Home showed the last visit's post, then REPLACED it with an identical fresh copy,
+  // which restarted a playing video ("working out, glitch, working out again"). These remember what the instant
+  // screen showed so the fresh load can KEEP those cards when nothing changed (see loadMoreReel).
+  var flashItemIds = [];
+  var flashFollowKey = "";
+  function followKeyOf(arr) { return Array.from(arr || []).map(String).sort().join(","); }
 
   function feedCacheKey(userId, filter) {
     return "efit_feed_cache_" + FEED_CACHE_VERSION + ":" + userId + ":" + filter;
@@ -4799,6 +4805,24 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
       // ~180ms black flash between the skeleton and the first real post
       // actually painting. Same fix as round 14, just no longer gated to
       // the one specific case it originally shipped for.
+      // Ken (Oct 2026): if the fresh first screen is exactly the posts the instant screen already shows (same posts,
+      // same order, same who-I-follow), KEEP those cards instead of tearing them down and rebuilding identical ones --
+      // a rebuilt video card restarts the video, which read as "loads, glitches, loads again". Anything that differs
+      // (a new post, someone followed/unfollowed) takes the normal swap below, exactly as before.
+      var keepFlash = false;
+      if (cacheFlashNodes.length && flashItemIds.length === cacheFlashNodes.length && combined.length >= flashItemIds.length &&
+          flashFollowKey === followKeyOf(followingIds)) {
+        keepFlash = flashItemIds.every(function (id, i) { return String(combined[i].id) === id; });
+      }
+      if (keepFlash) {
+        var keptCount = flashItemIds.length;
+        cacheFlashNodes = [];                       // they are the real cards now, nothing to clear later
+        flashItemIds = [];
+        loadedItems = combined.slice(0, keptCount); // real data for pagination / live-update state
+        combined.slice(keptCount).forEach(appendItem);
+        trackNewest(combined);
+        return;
+      }
       if (cacheFlashNodes.length || document.querySelector(".rp-skeleton-placeholder")) {
         await preloadFirstRealMedia(combined);
       }
@@ -4999,6 +5023,8 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
         } finally {
           renderingCacheFlash = false;
         }
+        flashItemIds = cachedFeed.items.map(function (it) { return String(it.id); });
+        flashFollowKey = followKeyOf(cachedFeed.followingIds);
         loadedItems = []; // flash items are placeholders, not real pagination state
       } else {
         // Nothing cached to wait for (e.g. only the Meal Prep strip had a
