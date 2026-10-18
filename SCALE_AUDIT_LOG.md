@@ -12,6 +12,14 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## Oct 18, 2026 — Followers / Following pop-up redone (TikTok style)
+
+**Ask:** Make the "Your Network" list look like TikTok's: just photo, name and a follow button — no bios.
+**Change:** `profile.html` only (pop-up markup, its own CSS block, and the list code). Phone: a light bottom sheet; computer: dark modal. Following / Followers tabs with counts, a search box, rows with photo (first initial if none), name, and one button — Friends (both follow), Following, Follow back, or Follow. Tapping the button follows/unfollows in place (updates the Following count); tapping the row opens their profile. Rows load 30 at a time while scrolling; the follow-state lookup is one small query per batch, so it stays fast with thousands of followers. Search checks the whole list.
+**Check:** Profile > tap Followers or Following. Tabs switch, search finds a name, buttons flip and flip back.
+
+---
+
 ## Oct 18, 2026 — Removed the upload troubleshooting view
 
 **Ask:** Clean up before wider release.

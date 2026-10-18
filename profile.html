@@ -243,6 +243,48 @@
 }
 </style>
 
+<style>
+/* Ken's ask (Oct 2026): Followers / Following pop-up redone in the TikTok style — just a photo, a name and a
+   follow button on each row (no bios), Following/Followers tabs on top, a search box. Dark look on a computer,
+   light bottom sheet on a phone like the rest of this page. Only this pop-up is touched. */
+.fl-sheet { padding: 0 !important; display: flex; flex-direction: column; overflow: hidden !important; max-width: 460px; max-height: 80vh; }
+.fl-head { position: relative; height: 54px; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; }
+.fl-head .simple-modal-close { top: 12px; right: 14px; width: 32px; height: 32px; font-size: 20px; line-height: 1; }
+.fl-head-title { font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #ff7a1a; }
+.fl-tabs { flex: 0 0 auto; display: flex; border-bottom: 1px solid rgba(255,255,255,0.12); }
+.fl-tab { flex: 1; background: none; border: 0; border-bottom: 3px solid transparent; padding: 12px 4px 11px; font: inherit; font-size: 15px; font-weight: 600; color: rgba(255,255,255,0.6); cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.fl-tab b { font-weight: 800; margin-left: 4px; }
+.fl-tab.active { color: #fff; border-bottom-color: #ff5a1f; }
+.fl-search { flex: 0 0 auto; padding: 12px 16px 6px; }
+.fl-search input { width: 100%; box-sizing: border-box; border: 0; border-radius: 10px; padding: 11px 14px; font: inherit; font-size: 16px; background: rgba(255,255,255,0.08); color: #fff; }
+.fl-search input::placeholder { color: rgba(255,255,255,0.45); }
+.fl-list { flex: 1 1 auto; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 4px 16px calc(14px + env(safe-area-inset-bottom, 0px)); min-height: 180px; }
+.fl-row { display: flex; align-items: center; gap: 14px; padding: 9px 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.fl-ava { width: 54px; height: 54px; border-radius: 50%; flex: 0 0 auto; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #3a2a22; color: #ffb27a; font-weight: 800; font-size: 20px; }
+.fl-ava img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.fl-name { flex: 1; min-width: 0; font-size: 16px; font-weight: 700; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fl-btn { flex: 0 0 auto; min-width: 104px; height: 36px; padding: 0 16px; border: 0; border-radius: 9px; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; background: #ff5a1f; color: #fff; -webkit-tap-highlight-color: transparent; }
+.fl-btn.on { background: rgba(255,255,255,0.12); color: #fff; }
+.fl-btn:disabled { opacity: 0.6; }
+.fl-empty { text-align: center; padding: 42px 16px; color: rgba(255,255,255,0.6); font-size: 15px; }
+@media (max-width: 720px) {
+  #followListOverlay { align-items: flex-end; padding: 0; }
+  .fl-sheet { max-width: none !important; width: 100%; height: 86vh; height: 86dvh; max-height: none; border-radius: 22px 22px 0 0 !important; border-bottom: 0 !important; animation: flSheetUp 0.24s ease-out; }
+  .fl-head::before { content: ""; position: absolute; top: 8px; left: 50%; width: 38px; height: 4px; margin-left: -19px; border-radius: 2px; background: #d9d2c7; }
+  .fl-head-title { color: #c2410c; }
+  .fl-tabs { border-bottom-color: #ece7e0; }
+  .fl-tab { color: #8a8f99; }
+  .fl-tab.active { color: #16181d; }
+  .fl-search input { background: #f3efe9 !important; color: #16181d !important; border: 0 !important; }
+  .fl-search input::placeholder { color: #9a9fa8 !important; }
+  .fl-ava { background: #fff1e6; color: #b4410f; }
+  .fl-name { color: #16181d; }
+  .fl-btn.on { background: #eeeae4; color: #16181d; }
+  .fl-empty { color: #6b6f78; }
+}
+@keyframes flSheetUp { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+</style>
+
 <div class="app-shell">
 
   <div class="card">
@@ -478,11 +520,17 @@
 </nav>
 
 <div class="simple-modal-overlay" id="followListOverlay">
-  <div class="simple-modal">
-    <button type="button" class="simple-modal-close" id="followListClose" aria-label="Close">&times;</button>
-    <div class="eyebrow">Your Network</div>
-    <h3 id="followListTitle" style="margin-bottom:14px;">Followers</h3>
-    <div class="simple-modal-list" id="followListBody"></div>
+  <div class="simple-modal fl-sheet" role="dialog" aria-modal="true" aria-label="Your network">
+    <div class="fl-head">
+      <span class="fl-head-title">Your Network</span>
+      <button type="button" class="simple-modal-close" id="followListClose" aria-label="Close">&times;</button>
+    </div>
+    <div class="fl-tabs">
+      <button type="button" class="fl-tab" id="flTabFollowing" data-kind="following">Following <b id="flCountFollowing">0</b></button>
+      <button type="button" class="fl-tab" id="flTabFollowers" data-kind="followers">Followers <b id="flCountFollowers">0</b></button>
+    </div>
+    <div class="fl-search"><input type="search" id="flSearch" placeholder="Search people" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Search people" /></div>
+    <div class="fl-list" id="followListBody"></div>
   </div>
 </div>
 
@@ -741,95 +789,197 @@
     document.getElementById("followingCount").textContent = followingCount || 0;
   }
 
-  async function renderFollowList(kind) {
-    var overlay = document.getElementById("followListOverlay");
-    var title = document.getElementById("followListTitle");
-    var body = document.getElementById("followListBody");
+  // ---- Followers / Following pop-up (TikTok style: photo, name, follow button) -----------------------------
+  // Ken's ask (Oct 2026). Rows show only the photo (first initial if none), the name and one button:
+  //   I follow them + they follow me -> "Friends"   |  I follow them only -> "Following"
+  //   they follow me only -> "Follow back"          |  neither -> "Follow"
+  // Tapping the button follows / unfollows right there (the row stays, so a mis-tap is one tap to undo);
+  // tapping anywhere else on the row opens their profile. Rows load 30 at a time as you scroll.
+  var FL_PAGE = 30;
+  var fl = { kind: "following", ids: {}, shown: {}, prof: {}, av: {}, rel: {}, seq: 0, busy: false, query: "" };
 
-    title.textContent = kind === "followers" ? "Followers" : "Following";
-    body.innerHTML = '<div class="empty-state">Loading…</div>';
-    overlay.classList.add("show");
-    document.body.style.overflow = "hidden";
+  function flLabel(r) {
+    if (r.i) return { text: r.they ? "Friends" : "Following", on: true };
+    return { text: r.they ? "Follow back" : "Follow", on: false };
+  }
 
-    var query = kind === "followers"
-      ? window.sb.from("follows").select("follower_id").eq("followee_id", currentUser.id)
-      : window.sb.from("follows").select("followee_id").eq("follower_id", currentUser.id);
-
-    var { data } = await query;
-    var ids = (data || []).map(function (r) { return kind === "followers" ? r.follower_id : r.followee_id; });
-
-    if (!ids.length) {
-      body.innerHTML = '<div class="empty-state">' +
-        (kind === "followers" ? "No one is following you yet." : "You're not following anyone yet.") +
-        "</div>";
-      return;
+  async function flFetchAllIds(kind) {
+    var col = kind === "followers" ? "follower_id" : "followee_id";
+    var other = kind === "followers" ? "followee_id" : "follower_id";
+    var out = [], from = 0, step = 1000;
+    while (true) {
+      var res = await window.sb.from("follows").select(col).eq(other, currentUser.id)
+        .order("created_at", { ascending: false }).range(from, from + step - 1);
+      var rows = res.data || [];
+      rows.forEach(function (r) { out.push(r[col]); });
+      if (rows.length < step) break;
+      from += step;
     }
+    return out;
+  }
 
-    var { data: profilesData } = await window.sb
-      .from("profiles")
-      .select("id, display_name, bio")
-      .in("id", ids);
-
-    var byId = {};
-    (profilesData || []).forEach(function (p) { byId[p.id] = p; });
-
-    // Ken's ask (Oct 2026): show each person's profile photo; fall back to their first initial only when
-    // they have none. One batched lookup for the newest approved profile photo of everyone in the list.
-    var avatarByUser = {};
+  // Loads names, photos and "who follows whom" for one batch of people.
+  async function flLoadDetails(batch) {
+    var need = batch.filter(function (id) { return !fl.prof[id]; });
+    if (!need.length) return;
+    var results = await Promise.all([
+      window.sb.from("profiles").select("id, display_name").in("id", need),
+      window.sb.from("media").select("user_id, storage_path, created_at").in("user_id", need)
+        .eq("kind", "photo").eq("is_profile_photo", true).eq("status", "approved")
+        .order("created_at", { ascending: false }),
+      window.sb.from("follows").select("followee_id").eq("follower_id", currentUser.id).in("followee_id", need),
+      window.sb.from("follows").select("follower_id").eq("followee_id", currentUser.id).in("follower_id", need)
+    ].map(function (q) { return Promise.resolve(q).then(function (r) { return r; }, function () { return { data: null }; }); }));
+    var iFollow = {}, theyFollow = {};
+    ((results[2] && results[2].data) || []).forEach(function (r) { iFollow[r.followee_id] = true; });
+    ((results[3] && results[3].data) || []).forEach(function (r) { theyFollow[r.follower_id] = true; });
+    ((results[0] && results[0].data) || []).forEach(function (r) { fl.prof[r.id] = r; });
+    need.forEach(function (id) {
+      if (!fl.prof[id]) fl.prof[id] = { id: id, display_name: "A member" };
+      fl.rel[id] = { i: !!iFollow[id], they: !!theyFollow[id] };
+    });
     try {
-      var { data: photoRows } = await window.sb
-        .from("media")
-        .select("user_id, storage_path, created_at")
-        .in("user_id", ids)
-        .eq("kind", "photo")
-        .eq("is_profile_photo", true)
-        .eq("status", "approved")
-        .order("created_at", { ascending: false });
-      var pathByUser = {};
-      (photoRows || []).forEach(function (r) { if (!pathByUser[r.user_id]) pathByUser[r.user_id] = r.storage_path; });
-      var uidsWithPhoto = Object.keys(pathByUser);
-      if (uidsWithPhoto.length) {
-        var { data: signedList } = await window.sb.storage.from("media")
-          .createSignedUrls(uidsWithPhoto.map(function (u) { return pathByUser[u]; }), 3600);
-        (signedList || []).forEach(function (sg) {
+      var pathBy = {};
+      ((results[1] && results[1].data) || []).forEach(function (r) { if (!pathBy[r.user_id]) pathBy[r.user_id] = r.storage_path; });
+      var uids = Object.keys(pathBy);
+      if (uids.length) {
+        var signed = await window.sb.storage.from("media").createSignedUrls(uids.map(function (u) { return pathBy[u]; }), 3600);
+        ((signed && signed.data) || []).forEach(function (sg) {
           if (!sg || !sg.signedUrl) return;
-          uidsWithPhoto.forEach(function (u) { if (pathByUser[u] === sg.path) avatarByUser[u] = sg.signedUrl; });
+          uids.forEach(function (u) { if (pathBy[u] === sg.path) fl.av[u] = sg.signedUrl; });
         });
       }
-    } catch (e) { /* photos are a nicety — initials still show */ }
+    } catch (e) { /* photos are a nicety — the first initial still shows */ }
+  }
 
-    body.innerHTML = "";
-    for (var i = 0; i < ids.length; i++) {
-      var p = byId[ids[i]];
-      var name = (p && p.display_name) || "A member";
-      var initialHtml = escapeHtml(name.trim().charAt(0).toUpperCase() || "?");
-      var avatarHtml = avatarByUser[ids[i]]
-        ? '<img src="' + avatarByUser[ids[i]] + '" alt="' + escapeHtml(name) + '" loading="lazy" />'
-        : initialHtml;
-      var row = document.createElement("div");
-      row.className = "member-row member-row-clickable";
-      row.setAttribute("role", "button");
-      row.setAttribute("tabindex", "0");
-      row.innerHTML =
-        '<div class="avatar-circle">' + avatarHtml + "</div>" +
-        '<div class="member-row-meta"><strong>' + escapeHtml(name) + "</strong>" +
-        (p && p.bio ? "<p>" + escapeHtml(p.bio) + "</p>" : "") +
-        "</div>";
-      (function (memberId) {
-        row.addEventListener("click", function () { window.location.href = "member.html?id=" + encodeURIComponent(memberId); });
-        row.addEventListener("keydown", function (e) {
-          if (e.key === "Enter" || e.key === " ") { e.preventDefault(); window.location.href = "member.html?id=" + encodeURIComponent(memberId); }
-        });
-      })(ids[i]);
-      body.appendChild(row);
+  function flRowEl(id) {
+    var p = fl.prof[id] || {};
+    var name = p.display_name || "A member";
+    var row = document.createElement("div");
+    row.className = "fl-row";
+    row.setAttribute("role", "button");
+    row.setAttribute("tabindex", "0");
+    row.dataset.id = id;
+    var ava = fl.av[id]
+      ? '<img src="' + fl.av[id] + '" alt="" loading="lazy" decoding="async" />'
+      : escapeHtml(name.trim().charAt(0).toUpperCase() || "?");
+    row.innerHTML = '<div class="fl-ava">' + ava + '</div><div class="fl-name">' + escapeHtml(name) + '</div>' +
+      '<button type="button" class="fl-btn"></button>';
+    var btn = row.querySelector(".fl-btn");
+    function paint() {
+      var l = flLabel(fl.rel[id]);
+      btn.textContent = l.text;
+      btn.className = "fl-btn" + (l.on ? " on" : "");
     }
+    paint();
+    var go = function () { window.location.href = "member.html?id=" + encodeURIComponent(id); };
+    row.addEventListener("click", go);
+    row.addEventListener("keydown", function (e) {
+      if (e.target === row && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); go(); }
+    });
+    btn.addEventListener("click", async function (e) {
+      e.stopPropagation();
+      if (btn.disabled) return;
+      btn.disabled = true;
+      var r = fl.rel[id];
+      var res = r.i
+        ? await window.sb.from("follows").delete().eq("follower_id", currentUser.id).eq("followee_id", id)
+        : await window.sb.from("follows").insert({ follower_id: currentUser.id, followee_id: id });
+      btn.disabled = false;
+      if (res && res.error) return;
+      r.i = !r.i;
+      paint();
+      var fc = document.getElementById("followingCount");
+      var n = Math.max(0, (parseInt(fc.textContent, 10) || 0) + (r.i ? 1 : -1));
+      fc.textContent = n;
+      document.getElementById("flCountFollowing").textContent = n;
+    });
+    return row;
+  }
+
+  function flMatches(id) {
+    if (!fl.query) return true;
+    var p = fl.prof[id];
+    return !!p && (p.display_name || "").toLowerCase().indexOf(fl.query) !== -1;
+  }
+
+  // Adds the next batch of rows for the open tab. While searching it keeps loading until the whole list
+  // has been checked, so a search finds people who haven't scrolled into view yet.
+  async function flLoadMore() {
+    var kind = fl.kind, mySeq = fl.seq;
+    var ids = fl.ids[kind];
+    var body = document.getElementById("followListBody");
+    if (!ids || fl.busy) return;
+    fl.busy = true;
+    try {
+      while (fl.shown[kind] < ids.length) {
+        var batch = ids.slice(fl.shown[kind], fl.shown[kind] + FL_PAGE);
+        await flLoadDetails(batch);
+        if (mySeq !== fl.seq) return;
+        fl.shown[kind] += batch.length;
+        var empty = body.querySelector(".fl-empty");
+        if (empty) empty.remove();
+        batch.forEach(function (id) { if (flMatches(id)) body.appendChild(flRowEl(id)); });
+        if (!fl.query) break;
+      }
+      if (mySeq === fl.seq && !body.querySelector(".fl-row")) {
+        body.innerHTML = '<div class="fl-empty">' + (fl.query
+          ? "No one matches \u201c" + escapeHtml(fl.query) + "\u201d."
+          : (kind === "followers" ? "No one is following you yet." : "You\u2019re not following anyone yet.")) + "</div>";
+      }
+    } finally { if (mySeq === fl.seq) fl.busy = false; }
+  }
+
+  async function flShowTab(kind) {
+    fl.kind = kind;
+    fl.seq += 1;
+    var mySeq = fl.seq;
+    document.getElementById("flTabFollowing").classList.toggle("active", kind === "following");
+    document.getElementById("flTabFollowers").classList.toggle("active", kind === "followers");
+    var body = document.getElementById("followListBody");
+    body.scrollTop = 0;
+    body.innerHTML = '<div class="fl-empty">Loading\u2026</div>';
+    if (!fl.ids[kind]) {
+      try { fl.ids[kind] = await flFetchAllIds(kind); } catch (e) { fl.ids[kind] = []; }
+      if (mySeq !== fl.seq) return;
+    }
+    fl.shown[kind] = 0;
+    body.innerHTML = "";
+    fl.busy = false;
+    flLoadMore();
+  }
+
+  function renderFollowList(kind) {
+    var overlay = document.getElementById("followListOverlay");
+    fl.ids = {}; fl.shown = {}; fl.query = "";
+    document.getElementById("flSearch").value = "";
+    document.getElementById("flCountFollowers").textContent = document.getElementById("followersCount").textContent;
+    document.getElementById("flCountFollowing").textContent = document.getElementById("followingCount").textContent;
+    overlay.classList.add("show");
+    document.body.style.overflow = "hidden";
+    flShowTab(kind);
   }
 
   document.getElementById("followersStat").addEventListener("click", function () { renderFollowList("followers"); });
   document.getElementById("followingStat").addEventListener("click", function () { renderFollowList("following"); });
+  document.getElementById("flTabFollowing").addEventListener("click", function () { if (fl.kind !== "following") flShowTab("following"); });
+  document.getElementById("flTabFollowers").addEventListener("click", function () { if (fl.kind !== "followers") flShowTab("followers"); });
   document.getElementById("followListClose").addEventListener("click", closeFollowList);
   document.getElementById("followListOverlay").addEventListener("click", function (e) {
     if (e.target.id === "followListOverlay") closeFollowList();
+  });
+  var flSearchTimer = null;
+  document.getElementById("flSearch").addEventListener("input", function (e) {
+    var q = e.target.value.trim().toLowerCase();
+    clearTimeout(flSearchTimer);
+    flSearchTimer = setTimeout(function () {
+      fl.query = q;
+      flShowTab(fl.kind);
+    }, 200);
+  });
+  document.getElementById("followListBody").addEventListener("scroll", function () {
+    var b = this;
+    if (b.scrollTop + b.clientHeight >= b.scrollHeight - 160) flLoadMore();
   });
   function closeFollowList() {
     document.getElementById("followListOverlay").classList.remove("show");
