@@ -3291,9 +3291,7 @@
       // now, which still go in as "pending" for the usual approval step;
       // only a profile photo skips review (nobody's avatar should sit
       // "pending" for a day).
-      // Ken (Oct 2026): like every other app, posts go live right away and the team reviews afterwards
-      // (taking down anything off-brand from the admin page, with a reason). Nothing waits for approval.
-      insertRow.status = "approved";
+      if (kind === "photo" && isProfilePhotoChecked) insertRow.status = "approved";
 
       // Only sent when ticked (and a track is attached) so every other upload is
       // byte-for-byte what it was before sql/keep-original-audio.sql existed. If that
