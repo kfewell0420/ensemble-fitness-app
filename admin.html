@@ -1354,7 +1354,7 @@ var REASON_CHIPS_MEDIA = [
 
     el.querySelectorAll(".delete-video-btn").forEach(function (btn) {
       btn.addEventListener("click", async function () {
-        var reason = await askReason({ title: "Take this video down", sub: "The member gets a friendly email with what you write. Tap a suggestion or use your own words.", chips: REASON_CHIPS_MEDIA, okLabel: "Take down", fallback: "Doesn't fit our community guidelines around fitness & health content" });
+        var reason = await askReason({ title: "Take this video down", sub: "The member gets a friendly email with this message. It starts with our standard wording — change it or tap a suggestion.", chips: REASON_CHIPS_MEDIA, initial: "Doesn't fit our community guidelines around fitness & health content", okLabel: "Take down", fallback: "Doesn't fit our community guidelines around fitness & health content" });
         if (reason === null) return;
         btn.disabled = true;
         await window.sb.from("media").update({
@@ -1428,7 +1428,7 @@ var REASON_CHIPS_MEDIA = [
 
     el.querySelectorAll(".delete-photo-btn").forEach(function (btn) {
       btn.addEventListener("click", async function () {
-        var reason = await askReason({ title: "Take this photo down", sub: "The member gets a friendly email with what you write. Tap a suggestion or use your own words.", chips: REASON_CHIPS_MEDIA, okLabel: "Take down", fallback: "Doesn't fit our community guidelines around fitness & health content" });
+        var reason = await askReason({ title: "Take this photo down", sub: "The member gets a friendly email with this message. It starts with our standard wording — change it or tap a suggestion.", chips: REASON_CHIPS_MEDIA, initial: "Doesn't fit our community guidelines around fitness & health content", okLabel: "Take down", fallback: "Doesn't fit our community guidelines around fitness & health content" });
         if (reason === null) return;
         btn.disabled = true;
         await window.sb.from("media").update({
