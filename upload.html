@@ -58,6 +58,24 @@
     font-family: inherit;
   }
   .upload-back-link:hover { text-decoration: underline; }
+  .upload-flow-back { font-size: 15px; margin-bottom: 10px; padding: 6px 10px 6px 0; min-height: 36px; }
+  .upload-flow-back .ufb-arrow { font-size: 30px; line-height: 0.8; font-weight: 400; margin-top: -3px; }
+  .upload-flow-back:hover { text-decoration: none; }
+
+  /* Artist feedback (Oct 2026): "Post" must be one tap, always in reach. Once something is chosen, the Post button
+     rides at the bottom of the screen instead of sitting at the very end of a long form, so nobody scrolls down to
+     find it (or scrolls back up and down again after a missing field). It steps aside while the keyboard is open. */
+  body.post-fixed #uploadBtn {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    width: min(calc(100vw - 32px), 460px);
+    z-index: 60;
+    margin: 0;
+    box-shadow: 0 0 0 10px rgba(12,12,16,0.72), 0 8px 24px rgba(0,0,0,0.55);
+  }
+  body.post-fixed.kbd-open #uploadBtn { position: static; transform: none; width: 100%; box-shadow: none; }
 
   /* Extra clips list (Ken's ask, Nov 2026 — "copies one through ten"): a
      plain up/down/remove list is all this needs, no drag-and-drop library,
@@ -525,6 +543,10 @@
          live on the Profile page, just isolated to its own page and shown
          one category at a time. -->
     <div id="uploadFlow" style="display:none;">
+
+      <!-- Oct 2026 (artist feedback, TikTok/Instagram style): a back arrow at the top-left of this step takes you
+           back to "what would you like to upload?" with nothing carried over, so a wrong pick is one tap to fix. -->
+      <button type="button" class="upload-back-link upload-flow-back" id="flowBackBtn" aria-label="Back to upload options"><span class="ufb-arrow" aria-hidden="true">&#8249;</span> Back</button>
 
       <div id="songLinkedBadge" role="status"><span class="ag-bigchk" aria-hidden="true"><svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><div><strong>Your bank account is linked!</strong><small>You&rsquo;re all set. Tips from the community go straight to you.</small></div></div>
 
@@ -1046,21 +1068,21 @@
       // itself, instead of as a heading above it (see uploadEyebrow note
       // near the top of this file) — the box tells you what tapping it
       // does without needing a separate line of text above the whole page.
-      placeholder: "Upload a photo",
+      placeholder: "Choose a photo",
       hint: "JPG or PNG"
     },
     video: {
       accept: "video/*",
       heading: "Add videos",
       sub: "Videos are reviewed before they're visible to anyone but you — usually within a day or two. Pick up to 10 clips at once — they play back to back — and add a music track timed to your workout. (Edit the clips themselves on your phone first.)",
-      placeholder: "Upload videos",
+      placeholder: "Choose videos",
       hint: "MP4 or MOV — pick up to 10 clips at once"
     },
     song: {
       accept: "audio/*",
       heading: "Add a song",
       sub: "Give it a title and it publishes straight to the Music Library under your name — no waiting on approval.",
-      placeholder: "Upload an audio file",
+      placeholder: "Choose an audio file",
       hint: "MP3, M4A, or WAV"
     },
     // Used only for the marketing site's deep link (e.g. Healthy Meal Prep's
@@ -1072,11 +1094,12 @@
       accept: "image/*,video/*",
       heading: "Add your post",
       sub: "Photos and videos are reviewed before they're visible to anyone but you — usually within a day or two.",
-      placeholder: "Upload a photo or videos",
+      placeholder: "Choose a photo or videos",
       hint: "JPG, PNG, MP4, or MOV — up to 10 clips"
     }
   };
 
+  var DEFAULT_POST_CATEGORY = "Working Out";
   function selectCategory(category, opts) {
     opts = opts || {};
 
@@ -1260,6 +1283,38 @@
     updateMoreOptionsBoxVisibility();
   }
   if (changeCategoryBtn) changeCategoryBtn.addEventListener("click", resetToCategoryGrid);
+
+  // Label on the main button once something is chosen: one clear word for what it does.
+  function postLabel() { return (selectedFile && fileKind(selectedFile) === "audio") ? "Upload song" : "Post"; }
+
+  // Back arrow at the top of the upload step: stop any preview, drop the chosen clips, return to the type picker.
+  var flowBackBtn = document.getElementById("flowBackBtn");
+  if (flowBackBtn) flowBackBtn.addEventListener("click", function () {
+    try { trimPreviewVideo.pause(); } catch (e) {}
+    try { musicPreviewAudio.pause(); } catch (e) {}
+    try { clips.forEach(function (c) { try { URL.revokeObjectURL(c.url); } catch (e) {} }); clips = []; reelFilmGen++; } catch (e) {}
+    resetToCategoryGrid();
+    try { window.scrollTo(0, 0); } catch (e) {}
+  });
+
+  // The Post button rides at the bottom of the screen while a file is chosen (see body.post-fixed in the styles).
+  function syncPostBar() {
+    document.body.classList.toggle("post-fixed", uploadFlow.style.display !== "none" && !!selectedFile);
+  }
+  try {
+    var pbObs = new MutationObserver(syncPostBar);
+    pbObs.observe(uploadBtn, { attributes: true, childList: true, characterData: true, subtree: true });
+    pbObs.observe(uploadFlow, { attributes: true, attributeFilter: ["style"] });
+  } catch (e) {}
+  document.addEventListener("focusin", function (e) {
+    if (e.target && e.target.matches && e.target.matches("input, textarea, select")) document.body.classList.add("kbd-open");
+  });
+  document.addEventListener("focusout", function () {
+    setTimeout(function () {
+      var a = document.activeElement;
+      if (!(a && a.matches && a.matches("input, textarea, select"))) document.body.classList.remove("kbd-open");
+    }, 120);
+  });
 
   // Supports a link like upload.html?type=song — used by the "Upload Music"
   // button on music-library.html — by skipping straight past the category
@@ -2970,7 +3025,15 @@
     if (selectedFile) {
       dropzoneLabel.textContent = fileTypeLabel(selectedFile);
       uploadBtn.disabled = false;
-      uploadBtn.textContent = "Upload";
+      uploadBtn.textContent = postLabel();
+      // Artist feedback (Oct 2026): tapping Post with no category used to throw you up to the Category box, and you then
+      // had to scroll back down and tap Post a second time. A photo/video now starts on the most common choice, shown
+      // right there to change (profile photos and songs never needed one). Set DEFAULT_POST_CATEGORY to "" to turn off.
+      var dpcKind = fileKind(selectedFile);
+      if (DEFAULT_POST_CATEGORY && (dpcKind === "photo" || dpcKind === "video")) {
+        var dpcField = document.getElementById("workoutType");
+        if (dpcField && !dpcField.value) dpcField.value = DEFAULT_POST_CATEGORY;
+      }
       // "Set as profile photo" only makes sense for an actual photo — a video
       // or voice recording can never become the profile headshot, no matter
       // what someone checks, so hide the option entirely for those.
@@ -3131,7 +3194,7 @@
         }
         showMsg(msg, err.message || "Upload failed. Please try again.", "error");
         uploadBtn.disabled = false;
-        uploadBtn.textContent = "Upload";
+        uploadBtn.textContent = postLabel();
       }
       return;
     }
@@ -3352,7 +3415,7 @@
       }
       showMsg(msg, err.message || "Upload failed. Please try again.", "error");
       uploadBtn.disabled = false;
-      uploadBtn.textContent = "Upload";
+      uploadBtn.textContent = postLabel();
     }
   });
 
