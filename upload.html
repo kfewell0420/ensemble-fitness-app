@@ -2144,6 +2144,49 @@
   // start of its bar, hold it to "start + time into the bar", and cut it at the
   // end of the bar. Runs every frame so the song stays tight against the picture.
   var mixRaf = null;
+  // Picture clock (Oct 2026, iPhone 17 follow-up): the preview's own time (currentTime) can stand still, or jump, while
+  // the picture on screen keeps moving. The "picture stalled" check below used to look at currentTime alone, so it
+  // paused the song every time that happened -- heard as the music playing in short bursts. This counts the frames
+  // the player actually puts on screen (requestVideoFrameCallback), so a moving picture is never mistaken for a frozen one.
+  var frameClock = { at: 0, n: 0, media: -1, on: false };
+  function watchFrames() {
+    if (frameClock.on || !trimPreviewVideo.requestVideoFrameCallback) return;
+    frameClock.on = true;
+    var cb = function (now, md) {
+      frameClock.at = performance.now(); frameClock.n++;
+      if (md && typeof md.mediaTime === "number") frameClock.media = md.mediaTime;
+      try { trimPreviewVideo.requestVideoFrameCallback(cb); } catch (e) { frameClock.on = false; }
+    };
+    try { trimPreviewVideo.requestVideoFrameCallback(cb); } catch (e) { frameClock.on = false; }
+  }
+  // Hidden diagnostics: tap the "Your video" heading 5 times to show a small live panel (handy when a phone
+  // misbehaves: screen-record it and send the recording). Always keeps the last few events; shows them only when on.
+  var DBG = { on: false, lines: [], el: null, taps: 0, tapAt: 0 };
+  function dbg(msg) { DBG.lines.push((performance.now() / 1000).toFixed(1) + "s " + msg); if (DBG.lines.length > 12) DBG.lines.shift(); }
+  function dbgPaint() {
+    if (!DBG.on) return;
+    if (!DBG.el) {
+      DBG.el = document.createElement("pre");
+      DBG.el.style.cssText = "position:fixed;left:4px;right:4px;bottom:4px;z-index:99999;margin:0;padding:6px 8px;background:rgba(0,0,0,.82);color:#8f8;font:10px/1.25 monospace;white-space:pre-wrap;pointer-events:none;border-radius:6px;";
+      document.body.appendChild(DBG.el);
+    }
+    var v = trimPreviewVideo, a = (typeof musicPreviewAudio !== "undefined") ? musicPreviewAudio : null, now = performance.now();
+    DBG.el.textContent =
+      "video t=" + v.currentTime.toFixed(2) + " paused=" + v.paused + " ready=" + v.readyState + " stuckFor=" + Math.round(now - (mixTick.lastVTAt || now)) + "ms\n" +
+      "frames n=" + frameClock.n + " last=" + (frameClock.at ? Math.round(now - frameClock.at) + "ms ago" : "none") + " media=" + frameClock.media.toFixed(2) + "\n" +
+      "song t=" + (a ? a.currentTime.toFixed(2) + " paused=" + a.paused + " ready=" + a.readyState : "-") + " start=" + musicStartPicker.getValue() + "\n" +
+      DBG.lines.join("\n");
+  }
+  setInterval(dbgPaint, 250);
+  (function () {
+    var lab = document.getElementById("yourVideosLabel");
+    if (!lab) return;
+    lab.addEventListener("click", function () {
+      var n = performance.now();
+      DBG.taps = (n - DBG.tapAt < 3000) ? DBG.taps + 1 : 1; DBG.tapAt = n;
+      if (DBG.taps >= 5) { DBG.taps = 0; DBG.on = !DBG.on; if (!DBG.on && DBG.el) { DBG.el.remove(); DBG.el = null; } }
+    });
+  })();
   // iPhone fix (Oct 2026): the tick below runs every frame. On iOS a song that was just started is still
   // buffering and its clock lags the picture, so "off by more than 0.35 s -> jump it back" fired again and
   // again, each jump restarting the buffering: a stutter that never locked on. Android never showed it.
@@ -2178,7 +2221,14 @@
     // and give the video a nudge; the moment the picture moves again the song comes back in step.
     var nowMs = performance.now(), vt = trimPreviewVideo.currentTime;
     if (vt !== mixTick.lastVT) { mixTick.lastVT = vt; mixTick.lastVTAt = nowMs; }
-    var picStalled = !trimPreviewVideo.paused && !(pvSwapper && pvSwapper.busy()) && (nowMs - (mixTick.lastVTAt || nowMs)) > 1500; // (a picture stuck 'seeking' counts as stalled too)
+    var timeStuck = !trimPreviewVideo.paused && !(pvSwapper && pvSwapper.busy()) && (nowMs - (mixTick.lastVTAt || nowMs)) > 1500; // (a picture stuck 'seeking' counts as stalled too)
+    // Time standing still is only a frozen picture if no new frames are being shown either. If frames keep arriving the
+    // picture is fine and it is the player's clock that is unreliable: keep the song playing and leave it alone.
+    var framesMoving = frameClock.on && frameClock.at > 0 && (nowMs - frameClock.at) < 700;
+    var picStalled = timeStuck && !framesMoving;
+    var clockUnreliable = timeStuck && framesMoving;
+    var stateNow = picStalled ? "frozen" : (clockUnreliable ? "clock" : "ok");
+    if (stateNow !== mixTick.state) { dbg(stateNow === "frozen" ? "PICTURE FROZEN (no frames) -> song held" : stateNow === "clock" ? "clock stuck but frames moving -> song kept" : "back to normal"); mixTick.state = stateNow; }
     if (picStalled) {
       if (!musicPreviewAudio.paused) musicPreviewAudio.pause();
       if (nowMs - (mixTick.lastKick || 0) > 2000) { mixTick.lastKick = nowMs; trimPreviewVideo.play().catch(function () {}); }
@@ -2193,10 +2243,11 @@
         if (musicPreviewAudio.paused) {
           startMusicInSync();
         } else if (!musicStarting && !musicPreviewAudio.seeking && musicPreviewAudio.readyState >= 3 &&
-                   Math.abs(musicPreviewAudio.currentTime - want) > (IS_IOS_DEVICE ? 2.5 : 0.5) && performance.now() - musicLastFix > (IS_IOS_DEVICE ? 4000 : 1000)) {
+                   !clockUnreliable && Math.abs(musicPreviewAudio.currentTime - want) > (IS_IOS_DEVICE ? 2.5 : 0.5) && performance.now() - musicLastFix > (IS_IOS_DEVICE ? 4000 : 1000)) {
           // (iPhone: the log from an iPhone 17 showed this seek firing every second while the picture crept along in
           // 2-second jumps -- each song seek seems to starve the video decoder. On iPhones the song now free-runs and
           // is only pulled back when it is more than 2.5 s adrift, and no more than once every 4 s.)
+          dbg("song moved " + musicPreviewAudio.currentTime.toFixed(1) + " -> " + want.toFixed(1));
           try { musicPreviewAudio.currentTime = want; } catch (e) {}
           musicLastFix = performance.now();
         }
@@ -2207,7 +2258,7 @@
     if (Math.floor(reelNow() * 5) !== mixTick.last) { mixTick.last = Math.floor(reelNow() * 5); renderTimeline(); }
     mixRaf = requestAnimationFrame(mixTick);
   }
-  function startMixLoop() { if (!mixRaf) mixRaf = requestAnimationFrame(mixTick); }
+  function startMixLoop() { watchFrames(); if (!mixRaf) mixRaf = requestAnimationFrame(mixTick); }
 
   trimPreviewVideo.addEventListener("playing", function () {
     if (clips.length > 1) {
