@@ -516,6 +516,24 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
   @media (max-width: 899px) {
     .rp-media { aspect-ratio: 3 / 4; }
   }
+  /* Ken's ask (Oct 2026): Instagram-style rhythm on the phone. The first post keeps the size above
+     (it shares the screen with the Meal Prep row and Journeys button). Once the top section has scrolled
+     away, every post after it fills the visible list instead — the photo/video takes the whole screen
+     height and only the like/comment row (about 88px) sits under it. --rp-reel-h is the list's real
+     visible height, measured in the script below the list's markup. Journeys rows (compact) are left alone. */
+  @media (max-width: 899px) {
+    .rp-slide:not(.rp-slide-compact) ~ .rp-slide:not(.rp-slide-compact) .rp-media {
+      aspect-ratio: auto;
+      height: calc(var(--rp-reel-h, calc(100dvh - 130px)) - 88px);
+    }
+    /* Portrait media fills the box edge to edge (cover); wide media is shown whole with bars instead of
+       being cropped to a sliver. The script flips this class once it knows the real shape. */
+    .rp-slide:not(.rp-slide-compact) ~ .rp-slide:not(.rp-slide-compact) .rp-media img.rp-fit-contain,
+    .rp-slide:not(.rp-slide-compact) ~ .rp-slide:not(.rp-slide-compact) .rp-media video.rp-fit-contain {
+      object-fit: contain;
+      object-position: center;
+    }
+  }
   .rp-media img, .rp-media video {
     width: 100%;
     height: 100%;
@@ -2038,8 +2056,26 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
         ids.forEach(function (id) { var el = document.getElementById(id); if (el) shell.insertBefore(el, reel); });
         if (stack.parentNode) stack.parentNode.removeChild(stack);
       }
-      function apply() { if (mq.matches) toPhone(); else toWide(); }
+      function setH() {
+        if (mq.matches && reel.clientHeight > 0) document.documentElement.style.setProperty("--rp-reel-h", reel.clientHeight + "px");
+      }
+      function apply() { if (mq.matches) toPhone(); else toWide(); setH(); }
       apply();
+      window.addEventListener("resize", setH);
+      window.addEventListener("orientationchange", setH);
+      window.addEventListener("load", setH);
+      // Wide shots (landscape/square) show whole inside the tall box; portrait ones fill it.
+      function shape(e) {
+        var m = e.target, w = 0, h = 0;
+        if (!m || !m.tagName) return;
+        if (m.tagName === "VIDEO") { w = m.videoWidth; h = m.videoHeight; }
+        else if (m.tagName === "IMG") { w = m.naturalWidth; h = m.naturalHeight; }
+        else return;
+        if (w > 0 && h > 0) m.classList.toggle("rp-fit-contain", w / h > 0.9);
+      }
+      if (window.ResizeObserver) { try { new ResizeObserver(setH).observe(reel); } catch (e) {} }
+      reel.addEventListener("loadedmetadata", shape, true);
+      reel.addEventListener("load", shape, true);
       if (mq.addEventListener) mq.addEventListener("change", apply);
       else if (mq.addListener) mq.addListener(apply);
     } catch (e) {}
