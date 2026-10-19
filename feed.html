@@ -3819,6 +3819,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
       if (!video || video.dataset.src) return;
       var src = video.getAttribute("src");
       if (!src) return;
+      video._wdTok = (video._wdTok || 0) + 1;
       video.pause();
       video.dataset.src = src;
       video.removeAttribute("src");
@@ -3910,6 +3911,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
           });
         }
       } else {
+        video._wdTok = (video._wdTok || 0) + 1; // cancel the start-up safety net: this video is no longer meant to be playing
         video.pause();
         if (currentlyAudibleVideo === video) currentlyAudibleVideo = null;
       }
