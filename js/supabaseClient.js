@@ -125,7 +125,7 @@ function buildRelationshipIntentOptionsHtml(placeholderLabel) {
    name saying how they're here, so nobody has to message a stranger to find out. NULL /
    empty means "no badge". The same list drives the profile dropdown, the join form's
    dropdown and its legend, and every badge shown next to a name. */
-var CONN_CHECK_SVG = '<svg class="conn-check" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" style="width:1.15em;height:1em;vertical-align:-0.14em;overflow:visible"><path d="M3.5 13.5 C5.5 12.5 7.5 15 9 19 C11.5 11 16 6 21.5 3.5" fill="none" stroke="#0095f6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+var CONN_CHECK_SVG = '<svg class="conn-check" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" style="width:1.15em;height:1em;vertical-align:-0.14em;overflow:visible"><path d="M3.5 13.5 C5.5 12.5 7.5 15 9 19 C11.5 11 16 6 21.5 3.5" fill="none" stroke="#0095f6" stroke-width="4.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 window.CONNECTION_STATUS_OPTIONS = [
   { value: "taken", icon: "\uD83D\uDC8D", label: "Taken", hint: "Married or in a relationship" },
   { value: "open_to_connect", icon: CONN_CHECK_SVG, plainIcon: "\u2714", label: "Open to Connect", hint: "Single and open to meeting someone" },
