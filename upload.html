@@ -155,6 +155,7 @@
     #uploadCard .narration-section input:not([type="checkbox"]):not([type="range"]), #uploadCard .narration-section select, #uploadCard .narration-section textarea { background: #141517; }
     #uploadCard .narration-section.more-option-compact { background: none; }
     #uploadFlow .field input:not([type="checkbox"]), #uploadFlow .field textarea, #uploadFlow .field select { background: #2a2b2f; border-color: rgba(255,255,255,0.16); color: #fff; }
+    #profilePhotoField { display: none !important; } /* Oct 2026: set your profile photo from your profile page */
     #profilePhotoField label { color: #fff !important; font-weight: 700; }
     #uploadFlow .btn-primary { box-shadow: 0 3px 10px rgba(0,0,0,0.4); }
     #uploadFlow .btn-primary:disabled { background: #2a2b2f; color: #7f8798; opacity: 1; box-shadow: none; }
@@ -802,6 +803,7 @@
   var songPayoutsKnown = false;     // true once the status check has finished (either way)
   var songPayoutsPromise = null;    // the check currently in flight, if any
   function songCacheKey() { return currentUser ? "efit_song_linked_" + currentUser.id : null; }
+  var POST_UPLOAD_PAGE = "feed.html";
   var SITE_FUNCTIONS_BASE = "https://ensemblefitness.com/.netlify/functions";
 
   function showMsg(el, text, kind) {
@@ -3377,13 +3379,8 @@
 
       showMsg(msg, (kind === "photo" && isProfilePhotoChecked
         ? "Profile photo updated and live now!"
-        : narrationPath
-        ? "Uploaded with your voiceover attached! It'll show as \"Pending\" until it's reviewed."
-        : musicTrackValue
-        ? (mixFlagNotSaved
-            ? "Uploaded with your chosen track attached, but \"keep my video's own sound\" or \"start the song at\" or the song timing isn't switched on yet — the track will replace the video's sound and start from the beginning for now. It'll show as \"Pending\" until it's reviewed."
-            : "Uploaded with your chosen track attached! It'll show as \"Pending\" until it's reviewed.")
-        : "Uploaded! It'll show as \"Pending\" until it's reviewed.") + extraClipNote +
+        : kind === "photo" ? "Your photo has been uploaded." : "Your video has been uploaded.") + extraClipNote +
+        (mixFlagNotSaved ? " (Your song timing settings weren't saved: that feature isn't switched on yet.)" : "") +
         (labelsNotSaved ? " (Your exercise labels weren't saved: that feature isn't switched on yet.)" : ""), "success");
       fileInput.value = "";
       selectedFile = null;
@@ -3402,6 +3399,11 @@
       updateTrimVisibility();
       updateMoreOptionsBoxVisibility();
       updateCategoryFieldVisibility();
+      // Ken (Oct 2026): after a post, don't show the form (or the category step) again. Just the green
+      // message, then on to the feed. Change POST_UPLOAD_PAGE (or set it to "") to change/turn this off.
+      uploadFlow.style.display = "none";
+      try { window.scrollTo(0, 0); } catch (e) {}
+      if (POST_UPLOAD_PAGE) setTimeout(function () { window.location.href = POST_UPLOAD_PAGE; }, 2200);
     } catch (err) {
       // Ken's ask (Oct 2026): clean up whatever already made it to storage
       // before the failure — the main file, and/or the narration/poster
