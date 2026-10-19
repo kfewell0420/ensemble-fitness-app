@@ -2012,6 +2012,39 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     <button type="button" class="rp-new-pill" id="rpNewPill" hidden>🔴 New posts — tap to see</button>
     <div class="rp-sentinel" id="rpSentinel"></div>
   </div>
+  <script>
+  /* Ken's ask (Oct 2026): Instagram-style home. On the phone layout the welcome block, panels and
+     filter row ride at the top of the post list (#rpReel), so they scroll away with the first post
+     and come back when you return to the top. The app bar stays pinned. The wide/desktop layout is
+     a grid that needs them as siblings of the reel, so they go back there above 900px. */
+  (function () {
+    try {
+      var reel = document.getElementById("rpReel");
+      var shell = reel && reel.parentNode;
+      if (!reel || !shell) return;
+      var ids = ["rpDashHeader", "rpSidePanels", "rpFilters"];
+      var stack = document.createElement("div");
+      stack.id = "rpTopStack";
+      var mq = window.matchMedia("(max-width: 899px)");
+      var obs = null;
+      function keepFirst() { if (reel.firstChild !== stack) reel.insertBefore(stack, reel.firstChild); }
+      function toPhone() {
+        ids.forEach(function (id) { var el = document.getElementById(id); if (el) stack.appendChild(el); });
+        reel.insertBefore(stack, reel.firstChild);
+        if (!obs) { obs = new MutationObserver(keepFirst); obs.observe(reel, { childList: true }); }
+      }
+      function toWide() {
+        if (obs) { obs.disconnect(); obs = null; }
+        ids.forEach(function (id) { var el = document.getElementById(id); if (el) shell.insertBefore(el, reel); });
+        if (stack.parentNode) stack.parentNode.removeChild(stack);
+      }
+      function apply() { if (mq.matches) toPhone(); else toWide(); }
+      apply();
+      if (mq.addEventListener) mq.addEventListener("change", apply);
+      else if (mq.addListener) mq.addListener(apply);
+    } catch (e) {}
+  })();
+  </script>
 
   <!-- Nov 2026: these used to carry title="" for a plain native browser
        tooltip — simple, but the browser itself imposes a slow show delay
@@ -3724,6 +3757,10 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
   // what broke playback. This sets `src` for the very first time, on a
   // video that has made zero requests yet, same as any ordinary lazy-
   // loaded image or video — nothing to discard, nothing already in flight.
+  // On phones the post list is its own scrolling box, and an observer with no root only sees a card
+  // once it is actually inside that box — its rootMargin could never reach past the box's edge, so
+  // videos never started loading ahead of time. Rooting these at the list itself makes the margins work.
+  var reelScrollRoot = isWideLayout ? null : document.getElementById("rpReel");
   var videoSrcObserver = new IntersectionObserver(function (entries) {
     entries.forEach(function (entry) {
       if (!entry.isIntersecting) return;
@@ -3732,8 +3769,29 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
       if (!video || !video.dataset.src) return;
       video.src = video.dataset.src;
       delete video.dataset.src;
+      if (videoReleaseObserver) videoReleaseObserver.observe(entry.target);
     });
-  }, { rootMargin: "400px 0px 400px 0px", threshold: 0 });
+  }, { root: reelScrollRoot, rootMargin: "400px 0px 400px 0px", threshold: 0 });
+
+  // Native apps only: Android's WebView has a small limit on live video decoders, so
+  // give a video's source back once its card is far off screen (poster stays); the
+  // source observer above hands it out again when the card nears the screen.
+  var videoReleaseObserver = (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) ? new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (entry.isIntersecting) return;
+      var video = entry.target.querySelector("video");
+      if (!video || video.dataset.src) return;
+      var src = video.getAttribute("src");
+      if (!src) return;
+      video.pause();
+      video.dataset.src = src;
+      video.removeAttribute("src");
+      try { video.load(); } catch (e) {}
+      videoReleaseObserver.unobserve(entry.target);
+      videoSrcObserver.observe(entry.target);
+    });
+  }, { root: reelScrollRoot, rootMargin: "700px 0px 700px 0px", threshold: 0 }) : null;
+
 
   var reelObserver = new IntersectionObserver(function (entries) {
     entries.forEach(function (entry) {
@@ -3780,6 +3838,25 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
         }
         syncMuteBtn(entry.target, video);
         var p = video.play();
+        (function (v, host) {
+          // Android WebView safety net: if a visible video has not started a moment
+          // after play() was called, nudge it again (and restart the load if nothing arrived).
+          var tok = v._wdTok = (v._wdTok || 0) + 1, tries = 0;
+          (function check() {
+            setTimeout(function () {
+              if (v._wdTok !== tok || !v.isConnected) return;
+              var r = host.getBoundingClientRect();
+              if (r.bottom < 0 || r.top > window.innerHeight) return;
+              if (!v.paused && v.readyState >= 3) return;
+              tries++;
+              if (tries > 5) return;
+              if (v.readyState === 0 && tries >= 2 && (v.currentSrc || v.src)) { try { v.load(); } catch (e) {} }
+              var q = v.play();
+              if (q && q.catch) q.catch(function () {});
+              check();
+            }, 1500);
+          })();
+        })(video, entry.target);
         if (p && p.catch) {
           p.catch(function () {
             // A handful of older WebViews still block unmuted autoplay
