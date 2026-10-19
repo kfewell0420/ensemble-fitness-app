@@ -472,6 +472,73 @@
      have felt slower since that change went in, not the CDN itself. Loading
      directly from the CDN, plainly, is both simpler and faster than the
      broken fallback dance was. -->
+<script>
+/* Ken's ask (Oct 2026): when an admin takes a post down (or rejects it), the reason the member sees must be easy to
+   write in the admin's own words. This replaces the plain browser pop-up (one cramped line, with a stock sentence already
+   sitting in it) with a proper sheet: a roomy box, tap-to-fill suggestions, and Send / Cancel. Returns the text, or null
+   if the admin cancels. Anything typed is used exactly as written; an empty box falls back to the fallback sentence. */
+function askReason(opts) {
+  opts = opts || {};
+  return new Promise(function (resolve) {
+    if (!document.getElementById("rsnStyle")) {
+      var st = document.createElement("style");
+      st.id = "rsnStyle";
+      st.textContent =
+        ".rsn-ov{position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.62);display:flex;align-items:flex-end;justify-content:center;padding:0}" +
+        ".rsn-sheet{width:100%;max-width:520px;background:#1b1722;color:#fff;border:1px solid rgba(255,255,255,.14);border-radius:20px 20px 0 0;padding:18px 16px calc(16px + env(safe-area-inset-bottom,0px));box-shadow:0 -10px 40px rgba(0,0,0,.6);font-family:inherit}" +
+        "@media(min-width:700px){.rsn-ov{align-items:center}.rsn-sheet{border-radius:20px}}" +
+        ".rsn-title{font-size:17px;font-weight:700;margin:0 0 4px}.rsn-sub{font-size:13px;color:#b9b2c6;margin:0 0 12px;line-height:1.4}" +
+        ".rsn-chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}" +
+        ".rsn-chip{border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.06);color:#fff;border-radius:999px;padding:8px 12px;font-size:13px;font-family:inherit;cursor:pointer}" +
+        ".rsn-chip:active{background:rgba(255,122,61,.25)}" +
+        ".rsn-box{width:100%;min-height:96px;resize:vertical;box-sizing:border-box;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.22);border-radius:12px;color:#fff;font-size:16px;line-height:1.4;padding:10px 12px;font-family:inherit}" +
+        ".rsn-box:focus{outline:none;border-color:#ff7a3d}" +
+        ".rsn-row{display:flex;gap:10px;margin-top:12px}.rsn-row button{flex:1;min-height:48px;border-radius:999px;font-size:16px;font-weight:700;font-family:inherit;cursor:pointer}" +
+        ".rsn-cancel{background:none;border:1.5px solid rgba(255,255,255,.3);color:#fff}.rsn-send{background:#ff6a2b;border:1.5px solid #ff6a2b;color:#fff}";
+      document.head.appendChild(st);
+    }
+    var ov = document.createElement("div");
+    ov.className = "rsn-ov";
+    var chips = (opts.chips || []).map(function (c, i) { return '<button type="button" class="rsn-chip" data-i="' + i + '"></button>'; }).join("");
+    ov.innerHTML =
+      '<div class="rsn-sheet" role="dialog" aria-modal="true">' +
+        '<p class="rsn-title"></p><p class="rsn-sub"></p>' +
+        (chips ? '<div class="rsn-chips">' + chips + '</div>' : '') +
+        '<textarea class="rsn-box" rows="3" maxlength="500"></textarea>' +
+        '<div class="rsn-row"><button type="button" class="rsn-cancel">Cancel</button><button type="button" class="rsn-send"></button></div>' +
+      '</div>';
+    ov.querySelector(".rsn-title").textContent = opts.title || "Reason";
+    ov.querySelector(".rsn-sub").textContent = opts.sub || "";
+    ov.querySelector(".rsn-send").textContent = opts.okLabel || "Send";
+    var box = ov.querySelector(".rsn-box");
+    box.placeholder = opts.placeholder || "Write it in your own words…";
+    box.value = opts.initial || "";
+    Array.prototype.forEach.call(ov.querySelectorAll(".rsn-chip"), function (b) {
+      var text = opts.chips[Number(b.getAttribute("data-i"))];
+      b.textContent = text;
+      b.addEventListener("click", function () { box.value = text; box.focus(); });
+    });
+    function done(val) { document.removeEventListener("keydown", onKey); if (ov.parentNode) ov.parentNode.removeChild(ov); resolve(val); }
+    function onKey(e) { if (e.key === "Escape") done(null); }
+    ov.querySelector(".rsn-cancel").addEventListener("click", function () { done(null); });
+    ov.querySelector(".rsn-send").addEventListener("click", function () {
+      var v = box.value.replace(/\s+/g, " ").trim();
+      done(v || opts.fallback || "Doesn't follow the Community Guidelines");
+    });
+    ov.addEventListener("click", function (e) { if (e.target === ov) done(null); });
+    document.addEventListener("keydown", onKey);
+    document.body.appendChild(ov);
+    setTimeout(function () { try { box.focus(); } catch (e) {} }, 60);
+  });
+}
+var REASON_CHIPS_MEDIA = [
+  "Doesn't fit our community guidelines around fitness & health content",
+  "Not fitness/health focused",
+  "Posing-style content",
+  "This was a test post",
+  "The video wasn't clear enough to approve"
+];
+</script>
 <script src="js/vendor/supabase.js"></script>
 <script>window.supabase||document.write('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"><\/script>')</script>
 <script src="js/config.js"></script>
@@ -670,7 +737,7 @@
 
     el.querySelectorAll(".reject-btn").forEach(function (btn) {
       btn.addEventListener("click", async function () {
-        var reason = prompt("Reason for rejecting (the member will see this):", "Doesn't follow the Community Guidelines");
+        var reason = await askReason({ title: "Reject this post", sub: "The member will see what you write here.", chips: REASON_CHIPS_MEDIA, okLabel: "Reject", fallback: "Doesn't follow the Community Guidelines" });
         if (reason === null) return;
         btn.disabled = true;
         await window.sb.from("media").update({
@@ -1287,7 +1354,7 @@
 
     el.querySelectorAll(".delete-video-btn").forEach(function (btn) {
       btn.addEventListener("click", async function () {
-        var reason = prompt("Why is this video coming down? The member will see this in a friendly email (e.g. \"Not fitness/health focused\" or \"Posing-style content\"):", "Doesn't fit our community guidelines around fitness & health content");
+        var reason = await askReason({ title: "Take this video down", sub: "The member gets a friendly email with what you write. Tap a suggestion or use your own words.", chips: REASON_CHIPS_MEDIA, okLabel: "Take down", fallback: "Doesn't fit our community guidelines around fitness & health content" });
         if (reason === null) return;
         btn.disabled = true;
         await window.sb.from("media").update({
@@ -1361,7 +1428,7 @@
 
     el.querySelectorAll(".delete-photo-btn").forEach(function (btn) {
       btn.addEventListener("click", async function () {
-        var reason = prompt("Why is this photo coming down? The member will see this in a friendly email (e.g. \"Not fitness/health focused\" or \"Posing-style content\"):", "Doesn't fit our community guidelines around fitness & health content");
+        var reason = await askReason({ title: "Take this photo down", sub: "The member gets a friendly email with what you write. Tap a suggestion or use your own words.", chips: REASON_CHIPS_MEDIA, okLabel: "Take down", fallback: "Doesn't fit our community guidelines around fitness & health content" });
         if (reason === null) return;
         btn.disabled = true;
         await window.sb.from("media").update({
@@ -2609,7 +2676,7 @@
 
     el.querySelectorAll(".reject-submission-btn").forEach(function (btn) {
       btn.addEventListener("click", async function () {
-        var reason = prompt("Why isn't this a fit? The author will see this note, and their review fee is refunded automatically:", "Doesn't match our focus on fitness, health & motivation");
+        var reason = await askReason({ title: "Not a fit", sub: "The author sees this note, and their review fee is refunded automatically.", chips: ["Doesn't match our focus on fitness, health & motivation"], okLabel: "Send & refund", fallback: "Doesn't match our focus on fitness, health & motivation" });
         if (reason === null) return;
         btn.disabled = true;
         try {
