@@ -3850,7 +3850,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     // or an already-captured image, never a fresh network fetch of the
     // video itself.
     var mediaHtml = item.kind === "video"
-      ? '<video data-src="' + item.url + (item.posterUrl ? '' : '#t=0.1') + '"' + (item.posterUrl ? ' poster="' + item.posterUrl + '"' : '') + (reelMuted ? ' muted' : '') + ' loop playsinline preload="metadata"></video>'
+      ? '<video data-src="' + item.url + (item.posterUrl ? '' : '#t=0.1') + '"' + (item.posterUrl ? ' poster="' + item.posterUrl + '"' : ' poster="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onloadeddata="this.removeAttribute(\'poster\')"') + (reelMuted ? ' muted' : '') + ' loop playsinline preload="metadata"></video>'
       : '<img src="' + (item.imgUrl || item.url) + '" data-orig="' + item.url + '" onerror="if(this.dataset.orig&&this.src!==this.dataset.orig){this.src=this.dataset.orig}" alt="Workout post" loading="' + (loadedItems.length <= 8 ? 'eager' : 'lazy') + '" decoding="async" />';
 
     var badgeParts = [];
