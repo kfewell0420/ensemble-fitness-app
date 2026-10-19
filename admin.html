@@ -7,6 +7,23 @@
 <link rel="stylesheet" href="css/fonts.css" onerror="this.onerror=null;this.href='https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&family=Caveat:wght@600;700&family=Dancing+Script:wght@600;700&display=swap'">
 <link rel="stylesheet" href="css/app.css?v=2" />
 <style>
+  /* Ken's ask (Oct 2026): the review queue on a phone was a thin column of one-word lines with the buttons pushed
+     off the edge. On a phone each queue card is now: the video on top, one tidy block of who/what, the category,
+     and Approve | Reject side by side. Only the "Photos, videos & voice updates" queue uses this (.rq-card). */
+  @media (max-width: 760px) {
+    .review-row.rq-card { display: flex !important; flex-direction: column !important; align-items: stretch !important; gap: 12px !important; padding: 14px !important; }
+    .rq-card .review-thumb { width: 100% !important; max-width: none !important; min-width: 0 !important; flex: none !important; }
+    .rq-card .review-thumb video, .rq-card .review-thumb img { display: block; width: 100% !important; max-width: 100% !important; max-height: 58vh; object-fit: contain; background: #000; border-radius: 12px; }
+    .rq-card .review-meta { width: 100% !important; min-width: 0 !important; flex: none !important; }
+    .rq-card .review-meta strong { display: block; font-size: 16px; }
+    .rq-card .review-meta > span { display: block; font-size: 13px; line-height: 1.45; white-space: normal; word-break: normal; overflow-wrap: break-word; }
+    .rq-card .review-actions { display: flex !important; flex-direction: row !important; flex-wrap: wrap !important; align-items: stretch !important; gap: 10px !important; width: 100% !important; }
+    .rq-card .review-actions > div, .rq-card .review-actions > select { order: 0; flex: 1 1 100%; width: 100%; min-width: 0; }
+    .rq-card .review-actions select { min-height: 46px; max-width: none !important; width: 100% !important; margin-bottom: 0 !important; font-size: 15px !important; padding: 8px 12px !important; }
+    .rq-card .review-actions .approve-btn { order: 1; flex: 1 1 0; min-width: 0; min-height: 50px; font-size: 16px; }
+    .rq-card .review-actions .reject-btn { order: 2; flex: 1 1 0; min-width: 0; min-height: 50px; font-size: 16px; }
+  }
+
   /* Lets admin tag/re-tag a post's category right from the review rows,
      so existing content (posted before categories were required) can be
      fixed without needing the member to do it themselves. */
@@ -581,7 +598,7 @@
       var soundUrl = narrationUrl || musicUrl;
       var soundClass = narrationUrl ? "narration-track" : "music-track";
       var row = document.createElement("div");
-      row.className = "review-row";
+      row.className = "review-row rq-card";
 
       var thumbInner = item.kind === "video"
         ? '<video src="' + url + '" muted controls></video>' + (soundUrl ? '<audio class="' + soundClass + '" src="' + soundUrl + '" preload="auto"></audio>' : '')
