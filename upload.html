@@ -207,6 +207,33 @@
   #songLinkedBadge small { display: block; color: rgba(255,255,255,0.72); font-size: 14px; font-weight: 500; line-height: 1.35; margin-top: 3px; }
   @keyframes sgpop { from { transform: scale(0.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
   @media (prefers-reduced-motion: reduce) { #songLinkedBadge .ag-bigchk, .sg-spin { animation: none; } }
+
+  /* Exercise labels on a video (Ken, Oct 2026): a small "Aa" button sits on the video preview and opens a compact
+     sheet, so the video box never changes size. */
+  .vl-open { position: absolute; z-index: 5; display: none; align-items: center; gap: 4px; min-width: 40px; height: 34px; padding: 0 10px; border-radius: 999px; border: 1.5px solid rgba(255,255,255,0.75); background: rgba(0,0,0,0.62); color: #fff; font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .vl-open.show { display: inline-flex; }
+  .vl-open .vl-count { display: none; min-width: 18px; height: 18px; border-radius: 9px; background: #ff5a1f; color: #fff; font-size: 11px; font-weight: 800; line-height: 18px; text-align: center; padding: 0 5px; }
+  .vl-open.has .vl-count { display: inline-block; }
+  .vl-sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 60; display: none; padding: 0 10px calc(10px + env(safe-area-inset-bottom, 0px)); }
+  .vl-sheet.open { display: block; }
+  .vl-card { max-width: 560px; margin: 0 auto; background: #151822; border: 1px solid rgba(255,255,255,0.18); border-radius: 18px; padding: 12px 14px 14px; box-shadow: 0 -6px 30px rgba(0,0,0,0.6); }
+  .vl-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .vl-head strong { font-size: 16px; color: #fff; }
+  .vl-done { border: 0; background: none; color: #ff8a5c; font: inherit; font-size: 15px; font-weight: 800; padding: 6px 4px; cursor: pointer; }
+  .vl-card input[type="text"] { width: 100%; box-sizing: border-box; margin: 0 0 8px; padding: 11px 12px; border-radius: 10px; border: 1.5px solid rgba(255,255,255,0.22); background: #0b0d14; color: #fff; font: inherit; font-size: 16px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .vl-card input[type="text"]::placeholder { text-transform: none; letter-spacing: 0; color: rgba(255,255,255,0.45); }
+  .vl-time { display: flex; align-items: center; gap: 8px; margin: 2px 0 10px; color: rgba(255,255,255,0.8); font-size: 14px; }
+  .vl-time b { color: #fff; }
+  .vl-time .vl-grow { flex: 1; }
+  .vl-step { border: 1.5px solid rgba(255,255,255,0.35); background: none; color: #fff; font: inherit; font-size: 13.5px; font-weight: 700; padding: 6px 10px; border-radius: 999px; cursor: pointer; }
+  .vl-add { width: 100%; min-height: 46px; border: 0; border-radius: 12px; background: #ff5a1f; color: #fff; font: inherit; font-size: 16px; font-weight: 800; cursor: pointer; }
+  .vl-add:disabled { opacity: 0.4; cursor: default; }
+  .vl-list { margin-top: 8px; max-height: 18svh; overflow: auto; }
+  .vl-item { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-top: 1px solid rgba(255,255,255,0.1); color: #fff; font-size: 14px; }
+  .vl-item .vl-when { flex: 0 0 auto; color: #ff8a5c; font-weight: 800; min-width: 40px; cursor: pointer; }
+  .vl-item .vl-what { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-transform: uppercase; letter-spacing: 0.04em; cursor: pointer; }
+  .vl-item .vl-x { flex: 0 0 auto; border: 0; background: none; color: #ff9a9a; font-size: 18px; padding: 4px 8px; cursor: pointer; }
+  .vl-msg { font-size: 12.5px; color: #ffb199; min-height: 16px; margin: 0 0 6px; }
 </style>
 
 </head>
@@ -439,6 +466,18 @@
       </div>
     </div>
 
+    <div class="vl-sheet" id="vlSheet" role="dialog" aria-label="Exercise label">
+      <div class="vl-card">
+        <div class="vl-head"><strong>Exercise label</strong><button type="button" class="vl-done" id="vlDone">Done</button></div>
+        <input type="text" id="vlText" maxlength="28" placeholder="Exercise, e.g. Tricep Extensions" autocomplete="off" />
+        <input type="text" id="vlDetail" maxlength="18" placeholder="Details (optional), e.g. 3x10-12 reps" autocomplete="off" />
+        <div class="vl-time"><span>Shows at <b id="vlAt">0:00</b></span><span class="vl-grow"></span><button type="button" class="vl-step" id="vlMinus">&minus; 0.5s</button><button type="button" class="vl-step" id="vlPlus">+ 0.5s</button></div>
+        <div class="vl-msg" id="vlMsg"></div>
+        <button type="button" class="vl-add" id="vlAdd">Add label</button>
+        <div class="vl-list" id="vlList"></div>
+      </div>
+    </div>
+
     <div id="songPayoutGate" style="display:none;">
       <button type="button" class="upload-back-link" id="songGateBackBtn">← Back to Upload Options</button>
       <div class="ag-eyebrow">Artist Upload</div>
@@ -524,6 +563,7 @@
           <div class="trim-media" style="position:relative;">
             <div id="dragBubble" class="drag-bubble" aria-live="polite"></div>
             <video id="trimPreviewVideo" muted playsinline controls class="trim-preview-video"></video>
+            <button type="button" class="vl-open" id="vlOpenBtn" aria-label="Add an exercise label to your video" title="Add an exercise label"><span>Aa</span><span class="vl-count" id="vlCount"></span></button>
             <div class="clip-tray" id="clipTray" style="display:none;">
               <div class="clip-tray-row" id="clipTrayRow"></div>
               <div class="clip-tray-ctl" id="clipTrayCtl" style="display:none;"></div>
@@ -1476,6 +1516,7 @@
     clips.forEach(function (c) { try { URL.revokeObjectURL(c.url); } catch (e) {} });
     clips = []; clipSel = 0; reelIdx = 0; reelSwitching = false; reelPending = null; reelLoadTok++;
     trimPreviewObjectUrl = null;
+    if (typeof vlResetAll === "function") vlResetAll();
     trimPreviewVideo.pause();
     trimPreviewVideo.removeAttribute("src");
     trimPreviewVideo.removeAttribute("poster");
@@ -3116,6 +3157,7 @@
       }
 
       var mixFlagNotSaved = false;
+      var labelsNotSaved = false;
       var insertRow = {
         user_id: currentUser.id,
         kind: kind,
@@ -3158,6 +3200,9 @@
       }
       // How long each clip is (only for several clips, and only when every length is known) — lets the
       // feed run ONE song across all of them. Dropped on retry if sql/reel-durations.sql isn't run yet.
+      delete insertRow.text_labels;
+      var labelsToSave = (kind === "video" && typeof vlLabelsForSave === "function") ? vlLabelsForSave() : [];
+      if (labelsToSave.length) insertRow.text_labels = labelsToSave;
       delete insertRow.clip_durations;
       if (kind === "video" && clips.length > 1 && clips.every(function (c) { return c.dur > 0; })) {
         insertRow.clip_durations = clips.map(function (c) { return Math.round(c.dur * 100) / 100; });
@@ -3165,7 +3210,7 @@
       var { data: insertedRow, error: insertError } = await window.sb.from("media").insert(insertRow).select().single();
       // Either optional column may not exist yet (its SQL not run) — drop whichever one the
       // error names and retry so the post still goes through.
-      var optionalCols = ["keep_original_audio", "music_start_seconds", "music_delay_seconds", "music_length_seconds", "clip_durations"];
+      var optionalCols = ["keep_original_audio", "music_start_seconds", "music_delay_seconds", "music_length_seconds", "clip_durations", "text_labels"];
       for (var oi = 0; insertError && oi < optionalCols.length; oi++) {
         var col = optionalCols[oi];
         if (col in insertRow && (insertError.message || "").indexOf(col) !== -1) {
@@ -3173,7 +3218,7 @@
           var retry = await window.sb.from("media").insert(insertRow).select().single();
           insertedRow = retry.data;
           insertError = retry.error;
-          if (!insertError) mixFlagNotSaved = true;
+          if (!insertError) { if (col === "text_labels") labelsNotSaved = true; else mixFlagNotSaved = true; }
           oi = -1; // recheck the other column against any new error
         }
       }
@@ -3224,7 +3269,8 @@
         ? (mixFlagNotSaved
             ? "Uploaded with your chosen track attached, but \"keep my video's own sound\" or \"start the song at\" or the song timing isn't switched on yet — the track will replace the video's sound and start from the beginning for now. It'll show as \"Pending\" until it's reviewed."
             : "Uploaded with your chosen track attached! It'll show as \"Pending\" until it's reviewed.")
-        : "Uploaded! It'll show as \"Pending\" until it's reviewed.") + extraClipNote, "success");
+        : "Uploaded! It'll show as \"Pending\" until it's reviewed.") + extraClipNote +
+        (labelsNotSaved ? " (Your exercise labels weren't saved: that feature isn't switched on yet.)" : ""), "success");
       fileInput.value = "";
       selectedFile = null;
       dropzoneLabel.textContent = CATEGORY_META[pickedCategoryKey()] ? CATEGORY_META[pickedCategoryKey()].placeholder : "Click to choose a file";
@@ -3258,6 +3304,101 @@
       uploadBtn.textContent = "Upload";
     }
   });
+
+  // ---- Exercise labels (Ken, Oct 2026) ---------------------------------------------------------
+  // A member adds up to 6 short labels to a video (an exercise name and an optional line like "3x10-12 reps")
+  // at chosen moments. Each slides in from the left, holds 2.5 seconds, and fades out, drawn over the video in
+  // the feed. The preview here shows them live. Saved as media.text_labels (sql/text-labels.sql).
+  var textLabels = [];
+  var vlAtTime = 0, vlLayerApi = null;
+  var vlOpenBtn = document.getElementById("vlOpenBtn"), vlSheet = document.getElementById("vlSheet");
+  var vlText = document.getElementById("vlText"), vlDetail = document.getElementById("vlDetail");
+  var vlAt = document.getElementById("vlAt"), vlList = document.getElementById("vlList"), vlMsg = document.getElementById("vlMsg");
+  var vlAddBtn = document.getElementById("vlAdd"), vlCountEl = document.getElementById("vlCount");
+  function vlRound(x) { return Math.round(x * 10) / 10; }
+  function vlFmt(t) { var m = Math.floor(t / 60), s = (t - m * 60); return m + ":" + (s < 10 ? "0" : "") + s.toFixed(1); }
+  function vlDraft() {
+    if (!vlSheet.classList.contains("open") || !vlText.value.trim()) return null;
+    return { t: vlText.value, u: vlDetail.value, s: vlAtTime, d: TEXT_LABEL_SECONDS };
+  }
+  function vlPreviewLabels() { var d = vlDraft(); return d ? textLabels.concat([d]) : textLabels; }
+  // keep the button and the picture-layer glued to the preview video's box
+  function vlPlace() {
+    var v = trimPreviewVideo;
+    if (!v.offsetWidth) return;
+    var layer = v.parentNode.querySelector(":scope > .vl-layer");
+    if (layer) { layer.style.inset = "auto"; layer.style.left = v.offsetLeft + "px"; layer.style.top = v.offsetTop + "px"; layer.style.width = v.offsetWidth + "px"; layer.style.height = v.offsetHeight + "px"; }
+    vlOpenBtn.style.left = (v.offsetLeft + 8) + "px"; vlOpenBtn.style.top = (v.offsetTop + 8) + "px";
+  }
+  function vlRefreshUi() {
+    vlOpenBtn.classList.toggle("show", trimSection.classList.contains("show"));
+    vlOpenBtn.classList.toggle("has", textLabels.length > 0);
+    vlCountEl.textContent = textLabels.length ? String(textLabels.length) : "";
+    vlList.innerHTML = "";
+    textLabels.forEach(function (l, i) {
+      var row = document.createElement("div"); row.className = "vl-item";
+      var when = document.createElement("span"); when.className = "vl-when"; when.textContent = vlFmt(l.s);
+      var what = document.createElement("span"); what.className = "vl-what"; what.textContent = l.t + (l.u ? " \u00B7 " + l.u : "");
+      var x = document.createElement("button"); x.type = "button"; x.className = "vl-x"; x.setAttribute("aria-label", "Remove this label"); x.textContent = "\u2715";
+      function go() { trimPreviewVideo.pause(); reelSeek(Math.max(0, l.s + 0.6)); }
+      when.addEventListener("click", go); what.addEventListener("click", go);
+      x.addEventListener("click", function () { textLabels.splice(i, 1); vlRefreshUi(); if (vlLayerApi) vlLayerApi.refresh(); });
+      row.appendChild(when); row.appendChild(what); row.appendChild(x); vlList.appendChild(row);
+    });
+    vlAddBtn.disabled = textLabels.length >= TEXT_LABEL_MAX;
+    vlAddBtn.textContent = textLabels.length >= TEXT_LABEL_MAX ? "Up to " + TEXT_LABEL_MAX + " labels" : "Add label";
+  }
+  function vlSetAt(t) {
+    var max = vidDur() ? Math.max(0, vidDur() - 0.5) : Infinity;
+    vlAtTime = vlRound(Math.max(0, Math.min(t, max)));
+    vlAt.textContent = vlFmt(vlAtTime);
+    if (vlLayerApi) vlLayerApi.refresh();
+  }
+  function vlOpen() {
+    trimPreviewVideo.pause();
+    vlMsg.textContent = "";
+    vlSetAt(reelNow());
+    vlSheet.classList.add("open");
+    try { trimPreviewVideo.scrollIntoView({ block: "start", behavior: "smooth" }); } catch (e) {}
+    setTimeout(function () { try { vlText.focus({ preventScroll: true }); } catch (e) {} }, 250);
+    vlRefreshUi();
+  }
+  function vlClose() { vlSheet.classList.remove("open"); vlText.blur(); vlDetail.blur(); if (vlLayerApi) vlLayerApi.refresh(); }
+  function vlResetAll() { textLabels = []; if (vlSheet) { vlSheet.classList.remove("open"); vlText.value = ""; vlDetail.value = ""; vlRefreshUi(); if (vlLayerApi) vlLayerApi.refresh(); } }
+  function vlLabelsForSave() {
+    var max = vidDur() ? vidDur() - 0.3 : Infinity;
+    return sanitizeTextLabels(textLabels.filter(function (l) { return l.s < max; }));
+  }
+  vlLayerApi = attachTextLabels(trimPreviewVideo, trimPreviewVideo.parentNode, vlPreviewLabels, 0, function () { return reelNow(); });
+  vlOpenBtn.addEventListener("click", vlOpen);
+  document.getElementById("vlDone").addEventListener("click", vlClose);
+  document.getElementById("vlMinus").addEventListener("click", function () { vlSetAt(vlAtTime - 0.5); reelSeek(vlAtTime); });
+  document.getElementById("vlPlus").addEventListener("click", function () { vlSetAt(vlAtTime + 0.5); reelSeek(vlAtTime); });
+  [vlText, vlDetail].forEach(function (inp) { inp.addEventListener("input", function () { vlMsg.textContent = ""; if (vlLayerApi) vlLayerApi.refresh(); }); });
+  // while the sheet is open, scrubbing the video moves "Shows at" with it
+  function vlFollowScrub() { if (vlSheet.classList.contains("open") && trimPreviewVideo.paused) vlSetAt(reelNow()); }
+  trimPreviewVideo.addEventListener("seeked", vlFollowScrub);
+  trimPreviewVideo.addEventListener("pause", vlFollowScrub);
+  vlAddBtn.addEventListener("click", function () {
+    var t = vlText.value.replace(/\s+/g, " ").trim();
+    if (!t) { vlMsg.textContent = "Type the exercise name first."; vlText.focus(); return; }
+    if (textLabels.length >= TEXT_LABEL_MAX) return;
+    var made = sanitizeTextLabels([{ t: t, u: vlDetail.value, s: vlAtTime, d: TEXT_LABEL_SECONDS }]);
+    if (!made.length) return;
+    textLabels.push(made[0]);
+    textLabels.sort(function (a, b) { return a.s - b.s; });
+    vlText.value = ""; vlDetail.value = "";
+    vlRefreshUi();
+    if (vlLayerApi) vlLayerApi.refresh();
+    // replay from just before it so they see it slide in
+    reelSeek(Math.max(0, made[0].s - 0.3)).then(function () { trimPreviewVideo.play().catch(function () {}); });
+    vlMsg.textContent = "Added. Scrub to another moment to add the next one.";
+  });
+  window.addEventListener("resize", vlPlace);
+  trimPreviewVideo.addEventListener("loadedmetadata", function () { vlPlace(); vlRefreshUi(); });
+  if (window.ResizeObserver) { try { new ResizeObserver(vlPlace).observe(trimPreviewVideo); } catch (e) {} }
+  setInterval(function () { vlPlace(); vlRefreshUi(); }, 1500); // cheap: keeps the button correct as the editor opens/closes
+  vlRefreshUi();
 
   init();
 </script>

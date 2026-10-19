@@ -3247,6 +3247,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     // have none), so that is the one thing that still waits.
     var videoIds = rows.filter(function (r) { return r.kind === "video"; }).map(function (r) { return r.id; });
     var clipsPromise = fetchClipsForMediaIds(videoIds);
+    var labelsPromise = fetchTextLabels(videoIds); // exercise labels on videos (best-effort, never breaks the feed)
     var sideDataPromise = Promise.all([
       preloadActionCounts(rows.map(function (r) { return r.id; })),
       loadConnectionStatusesFor(rows.map(function (r) { return r.user_id; })),
@@ -3316,7 +3317,10 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     // already looked up — so they add no extra round trip to a feed load.
     // (These three now started at the top of buildItems; this just waits for them.)
     await sideDataPromise;
+    var textLabelsById = {};
+    try { textLabelsById = await labelsPromise; } catch (e) { textLabelsById = {}; }
     items.forEach(function (it) {
+      it.textLabels = textLabelsById[it.id] || null;
       it.connectionStatus = connStatusCache[it.user_id] || "";
       var snd = postSoundCache[it.id];
       it.soundUrl = snd ? snd.url : "";
@@ -3980,6 +3984,13 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
         postAudio.preload = "none";
         postAudio.src = item.soundUrl;
         wireFeedSound(videoEl, postAudio, !!item.keepOriginalAudio, item.trim_start, item.musicStart, item.musicWin, null, !!item.isMusicSound);
+      }
+      // Exercise labels (slide in from the left, hold, fade out) drawn over the video.
+      if (item.textLabels && item.textLabels.length && videoEl) {
+        var vlReel = (typeof reel !== "undefined" && reel && reel.hasTimes) ? reel : null;
+        if (!(item.extraClips && item.extraClips.length) || vlReel) {
+          attachTextLabels(videoEl, el.querySelector(".rp-media"), item.textLabels, item.trim_start, vlReel ? function () { return vlReel.time(); } : null);
+        }
       }
     }
 

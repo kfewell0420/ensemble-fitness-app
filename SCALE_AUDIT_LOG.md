@@ -12,6 +12,16 @@ briefly as a reminder; only new findings need the full writeup.
 
 ---
 
+## 2026-10-19 — Exercise labels on videos (slide in from the left, hold, fade out)
+
+- New `sql/text-labels.sql` (ONE line: `alter table public.media add column if not exists text_labels jsonb;`). Must be run in Supabase for labels to save; until then uploads work and the upload page says the labels were not saved. Safe to run twice.
+- `upload.html`: on a video, a small "Aa" button sits on the top-left of the preview (no change to the video box size). It opens a compact bottom sheet: exercise name (28 chars), optional second line (18 chars, e.g. "3x10-12 reps"), "Shows at" time (follows scrubbing, ±0.5s buttons), Add label. Up to 6 labels per video, each shown 2.5s. The preview plays them live. Saved as `media.text_labels` (e.g. `[{"t":"Tricep Extensions","u":"3x10-12 reps","s":3.2,"d":2.5}]`); if the column is missing the insert retries without it.
+- `js/supabaseClient.js`: `sanitizeTextLabels`, `fetchTextLabels` (best-effort separate query; any failure returns nothing, so no page can break because of labels), `attachTextLabels` (draws labels over the video from the VIDEO's clock; text is always set with textContent, never HTML). `css/app.css`: label style (plain uppercase block lettering, regular weight).
+- `feed.html`: videos with labels draw them in the feed (single clips, and reels that know their clip lengths). `admin.html`: pending queue and approved-videos list show every label's words and time in plain text so a reviewer reads them before approving.
+- Not yet shown: member profile page / own "My uploads" tiles (labels appear in the feed and in admin). No editing of labels after posting yet.
+
+---
+
 ## 2026-10-18 — Other-member profile (member.html) is now a compact Instagram-style header on phones
 
 - `member.html`: on phone-width screens the member card is compact: small photo with the name right beside it and the follower count under the name, the bio (max 2 lines) below, and Following / Message / Report / Block as small pills on ONE line (checked at 360 and 390 px wide, no horizontal scroll). The emoji key row ("What do these mean?") and the ZIP / wake-time line are hidden on phones (the heart next to the name still opens the key). Desktop layout unchanged. CSS plus a few class names in the card markup only; no data or logic changes.

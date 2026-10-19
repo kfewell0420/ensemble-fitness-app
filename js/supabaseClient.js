@@ -955,3 +955,98 @@ function pickQuoteOfDay(quotes, dayNumber) {
   }
   return quotes[order[pos]];
 }
+
+
+/* ---------------------------------------------------------------------------
+   Exercise labels on videos (Ken, Oct 2026). A post can carry a few short labels:
+   { t: "Tricep Extensions", u: "3x10-12 reps", s: 3.2, d: 2.5 }   (s = seconds into the
+   post's playback, d = how long it stays). They are stored in media.text_labels (sql/text-labels.sql)
+   and drawn over the video here — slide in from the left, hold, fade out. The video file is untouched.
+   --------------------------------------------------------------------------- */
+var TEXT_LABEL_MAX = 6, TEXT_LABEL_SECONDS = 2.5;
+
+/* Cleans whatever came back from the database (or the editor) into a safe, small list. */
+function sanitizeTextLabels(raw) {
+  if (!Array.isArray(raw)) return [];
+  var out = [];
+  raw.forEach(function (x) {
+    if (!x || typeof x !== "object") return;
+    var t = String(x.t == null ? "" : x.t).replace(/\s+/g, " ").trim().slice(0, 28);
+    var u = String(x.u == null ? "" : x.u).replace(/\s+/g, " ").trim().slice(0, 18);
+    var s = Number(x.s), d = Number(x.d);
+    if (!t || !isFinite(s) || s < 0) return;
+    if (!isFinite(d) || d < 1 || d > 6) d = TEXT_LABEL_SECONDS;
+    out.push({ t: t, u: u, s: Math.round(s * 10) / 10, d: d });
+  });
+  out.sort(function (a, b) { return a.s - b.s; });
+  return out.slice(0, TEXT_LABEL_MAX);
+}
+
+/* Best-effort: { mediaId: [labels] } for a list of video ids. Any failure (e.g. the column does not
+   exist yet) simply returns an empty map, so a page can never break because of labels. */
+async function fetchTextLabels(ids) {
+  var map = {};
+  try {
+    if (!window.sb || !ids || !ids.length) return map;
+    var res = await window.sb.from("media").select("id, text_labels").in("id", ids);
+    if (res && !res.error && res.data) {
+      res.data.forEach(function (r) {
+        var l = sanitizeTextLabels(r.text_labels);
+        if (l.length) map[r.id] = l;
+      });
+    }
+  } catch (e) {}
+  return map;
+}
+
+/* Draws the labels over `video` inside `host` (any positioned box that wraps the video).
+   getLabels: array OR function returning the current array (the upload editor changes it live).
+   getTime:   optional function returning the post's playback time in seconds (multi-clip posts pass the
+              whole-reel clock); default is the video's own time minus trimStart.
+   Returns { refresh() } — call after the labels change. Safe to call on a video that never plays. */
+function attachTextLabels(video, host, getLabels, trimStart, getTime) {
+  if (!video || !host) return { refresh: function () {} };
+  var layer = host.querySelector(":scope > .vl-layer");
+  if (!layer) { layer = document.createElement("div"); layer.className = "vl-layer"; host.appendChild(layer); }
+  var start = typeof trimStart === "number" ? trimStart : 0;
+  var shown = null, raf = 0;
+  function labels() { return sanitizeTextLabels(typeof getLabels === "function" ? getLabels() : getLabels); }
+  function now() { return getTime ? getTime() : (video.currentTime - start); }
+  function clear() { shown = null; layer.innerHTML = ""; }
+  function render() {
+    var t = now(), list = labels(), hit = null;
+    for (var i = 0; i < list.length; i++) { if (t >= list[i].s && t < list[i].s + list[i].d) { hit = list[i]; break; } }
+    if (!hit) { if (shown) clear(); return; }
+    var key = hit.t + "|" + hit.u + "|" + hit.s;
+    var el = layer.firstChild;
+    var elapsed = t - hit.s;
+    // paused (editing / scrubbing): hold the label fully visible instead of at the invisible first/last frame
+    if (video.paused) elapsed = Math.max(hit.d * 0.18, Math.min(hit.d * 0.76, elapsed));
+    elapsed = Math.max(0, Math.min(hit.d, elapsed));
+    if (shown !== key || !el) {
+      clear();
+      el = document.createElement("div");
+      el.className = "vl-label";
+      var a = document.createElement("span"); a.className = "vl-l1"; a.textContent = hit.t; el.appendChild(a);
+      if (hit.u) { var b = document.createElement("span"); b.className = "vl-l2"; b.textContent = hit.u; el.appendChild(b); }
+      el.style.animationDuration = hit.d + "s";
+      el.style.animationPlayState = "paused"; // we drive the animation clock from the VIDEO clock below, so they can never drift apart
+      if (!el.getAnimations) el.style.animationDelay = "-" + elapsed.toFixed(2) + "s"; // only the plain-CSS fallback needs this
+      layer.appendChild(el);
+      shown = key;
+    }
+    var anim = (el.getAnimations && el.getAnimations()[0]) || null;
+    if (anim) { try { anim.pause(); anim.currentTime = elapsed * 1000; } catch (e) {} }
+    else { el.style.animationPlayState = video.paused ? "paused" : "running"; } // very old browsers: plain CSS timing
+  }
+  function loop() { render(); raf = (!video.paused && !video.ended) ? requestAnimationFrame(loop) : 0; }
+  function kick() { if (!raf) raf = requestAnimationFrame(loop); }
+  video.addEventListener("play", kick);
+  video.addEventListener("playing", kick);
+  ["pause", "seeked", "timeupdate", "loadedmetadata", "ended"].forEach(function (ev) { video.addEventListener(ev, render); });
+  render();
+  if (getTime) { // a multi-clip reel swaps videos behind the scenes, so the events above may not fire: check on a short timer
+    var poll = setInterval(function () { if (!video.isConnected) { clearInterval(poll); return; } render(); }, 120);
+  }
+  return { refresh: function () { shown = null; render(); } };
+}

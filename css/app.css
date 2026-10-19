@@ -2295,3 +2295,26 @@ select option {
 .music-start-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 13.5px; font-weight: 600; }
 .music-start-play { border: 1px solid rgba(255,255,255,0.28); background: transparent; color: inherit; border-radius: 999px; padding: 5px 12px; font-size: 12.5px; font-weight: 700; cursor: pointer; }
 .music-start .ms-range { width: 100%; margin: 10px 0 0; padding: 0; accent-color: #ff6a1a; }
+
+
+/* =========================================================================
+   Exercise labels on videos (Ken, Oct 2026): short words that slide in from
+   the left, hold about 2.5 seconds, then fade out (like TikTok's text). Drawn
+   OVER the video while it plays: the video file itself is never changed.
+   Plain, clean block lettering (not bold). See attachTextLabels() in
+   js/supabaseClient.js.
+   ========================================================================= */
+.vl-layer { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 2; container-type: inline-size; }
+.vl-label { position: absolute; left: 5%; bottom: 24%; max-width: 90%; display: flex; flex-direction: column; align-items: flex-start; gap: 3px; opacity: 0; animation-name: vlSlide; animation-timing-function: ease-out; animation-fill-mode: both; animation-iteration-count: 1; font-family: "Inter", "Helvetica Neue", Arial, sans-serif; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 500; }
+.vl-label span { display: inline-block; padding: 4px 10px 3px; border-radius: 4px; line-height: 1.15; font-size: 17px; font-size: clamp(14px, 5.4cqw, 26px); }
+.vl-label .vl-l1 { background: rgba(0, 0, 0, 0.62); color: #fff; }
+.vl-label .vl-l2 { background: #fff; color: #111; font-size: 14px; font-size: clamp(12px, 4.2cqw, 21px); }
+@keyframes vlSlide {
+  0%   { transform: translateX(-115%); opacity: 0; }
+  14%  { transform: translateX(0); opacity: 1; }
+  80%  { transform: translateX(0); opacity: 1; }
+  100% { transform: translateX(0); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  @keyframes vlSlide { 0% { opacity: 0; } 12% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
+}

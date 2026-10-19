@@ -1,0 +1,16 @@
+-- =============================================================================
+-- Exercise labels on videos (Ken, Oct 2026)
+-- =============================================================================
+-- A member can add up to 6 short labels to a video ("TRICEP EXTENSIONS" / "3x10-12 reps")
+-- at chosen moments. Each slides in from the left, holds about 2.5 seconds, and fades out,
+-- drawn over the video while it plays. The video file is never changed.
+--
+-- Stored on the post as a small JSON list, for example:
+--   [{"t":"Tricep Extensions","u":"3x10-12 reps","s":3.2,"d":2.5}]
+--   t = exercise name, u = optional second line, s = seconds into the video, d = seconds shown
+--
+-- Run once in the Supabase SQL editor. Safe to run more than once. Until it is run, uploads
+-- still work: the labels simply are not saved (the upload page tells the member), and nothing
+-- else changes. Existing posts have no labels and behave exactly as before.
+-- =============================================================================
+alter table public.media add column if not exists text_labels jsonb;

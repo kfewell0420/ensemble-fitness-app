@@ -516,6 +516,20 @@
     return Math.floor(hrs / 24) + "d ago";
   }
 
+  /* Exercise labels members add to a video (shown over the video in the feed). Listed here in plain text
+     so a reviewer reads every word before approving. */
+  function adminLabelNote(row, labels) {
+    if (!row || !labels || !labels.length) return;
+    var meta = row.querySelector(".review-meta");
+    if (!meta) return;
+    var d = document.createElement("div");
+    d.style.cssText = "font-size:12.5px; color:var(--accent-2); font-weight:700; margin-top:4px; line-height:1.4;";
+    d.textContent = "\uD83C\uDFF7\uFE0F Labels on the video: " + labels.map(function (l) {
+      return formatSeconds(l.s) + " \u2014 " + l.t + (l.u ? " (" + l.u + ")" : "");
+    }).join("  \u00B7  ");
+    meta.appendChild(d);
+  }
+
   function formatSeconds(sec) {
     var total = Math.floor(sec || 0);
     var m = Math.floor(total / 60);
@@ -555,6 +569,8 @@
         }
       }
     } catch (clipErrA) { /* none shown — clip 1 still reviews as before */ }
+    var textLabelsPending = {};
+    try { textLabelsPending = await fetchTextLabels(data.filter(function (r) { return r.kind === "video"; }).map(function (r) { return r.id; })); } catch (lblErrA) {}
 
     el.innerHTML = "";
     for (var i = 0; i < data.length; i++) {
@@ -594,6 +610,7 @@
         '</div>';
 
       el.appendChild(row);
+      adminLabelNote(row, textLabelsPending[item.id]);
 
       var moreClips = extraClipsByMedia[item.id] || [];
       if (moreClips.length) {
@@ -1208,6 +1225,8 @@
       return;
     }
 
+    var textLabelsVideos = {};
+    try { textLabelsVideos = await fetchTextLabels(data.map(function (r) { return r.id; })); } catch (lblErrV) {}
     el.innerHTML = "";
     for (var i = 0; i < data.length; i++) {
       var item = data[i];
@@ -1236,6 +1255,7 @@
           '<button class="btn btn-ghost btn-sm delete-video-btn" data-id="' + item.id + '" data-path="' + item.storage_path + '" data-narration-path="' + (item.narration_path || "") + '">Remove</button>' +
         '</div>';
       el.appendChild(row);
+      adminLabelNote(row, textLabelsVideos[item.id]);
 
       if (soundUrl) {
         wireNarrationSync(row.querySelector("video"), row.querySelector("audio." + soundClass));
