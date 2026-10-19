@@ -1931,7 +1931,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     <a href="feed.html" class="app-brand">
       <span class="app-brand-mark"><img src="assets/logo.png" alt="Ensemble Fitness" /></span>Ensemble Fitness
     </a>
-    <button type="button" class="conn-key-open conn-key-pill" aria-label="What do the badges mean?">💗 💍 🤝 <b>?</b></button>
+    <button type="button" class="conn-key-open conn-key-pill" aria-label="What do the badges mean?"><svg class="conn-check" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" style="width:1.15em;height:1em;vertical-align:-0.14em;overflow:visible"><path d="M3.5 13.5 C5.5 12.5 7.5 15 9 19 C11.5 11 16 6 21.5 3.5" fill="none" stroke="#0095f6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg> 💍 🤝 <b>?</b></button>
     <span class="app-nav-connect" aria-hidden="true">
       <svg viewBox="0 0 34 30" width="28" height="25" focusable="false">
         <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="var(--pink, #db1f52)" transform="translate(0,2)"/>
@@ -1946,7 +1946,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
   <div class="rp-dash-header" id="rpDashHeader">
     <span class="rp-dash-eyebrow"><span class="rp-dash-dot"></span>YOUR COMMUNITY</span>
     <h1 class="rp-dash-title">Welcome back<span id="rpDashName"></span></h1>
-    <div id="rpDashKey" style="margin-top:8px;" class="rp-dash-keywrap"><button type="button" class="conn-key-open conn-key-link">💗 💍 🤝 What do these mean?</button></div>
+    <div id="rpDashKey" style="margin-top:8px;" class="rp-dash-keywrap"><button type="button" class="conn-key-open conn-key-link"><svg class="conn-check" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" style="width:1.15em;height:1em;vertical-align:-0.14em;overflow:visible"><path d="M3.5 13.5 C5.5 12.5 7.5 15 9 19 C11.5 11 16 6 21.5 3.5" fill="none" stroke="#0095f6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg> 💍 🤝 What do these mean?</button></div>
     <span class="app-nav-connect" aria-hidden="true">
       <svg viewBox="0 0 34 30" width="28" height="25" focusable="false">
         <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="var(--pink, #db1f52)" transform="translate(0,2)"/>
@@ -3902,11 +3902,11 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
             '<div class="rp-more-menu" id="rpMore-' + item.id + '">' +
               (isOwnPost ?
                 '<button type="button" data-action="edit-post">✏️ Edit post</button>' +
-                '<button type="button" class="conn-key-open">💗 What do the badges mean?</button>' +
+                '<button type="button" class="conn-key-open"><svg class="conn-check" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" style="width:1.15em;height:1em;vertical-align:-0.14em;overflow:visible"><path d="M3.5 13.5 C5.5 12.5 7.5 15 9 19 C11.5 11 16 6 21.5 3.5" fill="none" stroke="#0095f6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg> What do the badges mean?</button>' +
                 '<button type="button" class="danger" data-action="delete-post">🗑️ Delete post</button>'
                 :
                 '<button type="button" data-action="message">Message ' + escapeHtml(item.name) + '</button>' +
-                '<button type="button" class="conn-key-open">💗 What do the badges mean?</button>' +
+                '<button type="button" class="conn-key-open"><svg class="conn-check" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" style="width:1.15em;height:1em;vertical-align:-0.14em;overflow:visible"><path d="M3.5 13.5 C5.5 12.5 7.5 15 9 19 C11.5 11 16 6 21.5 3.5" fill="none" stroke="#0095f6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg> What do the badges mean?</button>' +
                 '<button type="button" data-action="report">Report post</button>' +
                 '<button type="button" class="danger" data-action="block">' + (isBlocked(item.user_id) ? "Unblock" : "Block") + " " + escapeHtml(item.name) + '</button>'
               ) +
