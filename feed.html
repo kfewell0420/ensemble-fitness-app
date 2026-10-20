@@ -85,7 +85,9 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     /* Ken's ask (Oct 2026): Healthy Meal Preps shrinks to its own pill with an orange bar on BOTH sides, and a red
        "Your Journeys" pill takes the freed-up space beside it. */
     .rp-mp-toprow { display: flex; align-items: stretch; gap: 8px; margin: 0 14px 6px; }
-    .rp-mp-toprow .rp-mealprep-banner { margin: 0; flex: 0 0 auto; padding: 4px 8px 4px 6px; border-right: 3px solid var(--accent-2); gap: 6px; justify-content: center; }
+    /* Ken (Oct 2026, mobile): "Your Journeys" on the LEFT, Healthy Meal Preps on the RIGHT. */
+    .rp-mp-toprow .rp-journeys-pill { order: 1; margin-left: 0; margin-right: auto; }
+    .rp-mp-toprow .rp-mealprep-banner { order: 2; margin: 0 0 0 auto; flex: 0 0 auto; padding: 4px 8px 4px 6px; border-right: 3px solid var(--accent-2); gap: 6px; justify-content: center; }
     .rp-mp-toprow .rp-mealprep-banner-text { font-size: 12.5px; letter-spacing: 0.02em; }
     /* Ken (round 2): the red pill only needs the room its words take, pushed to the right edge (it shrinks from the left),
        with white writing. */
@@ -1509,6 +1511,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     white-space: pre-wrap; /* preserves any line breaks a member typed within one paragraph */
   }
   .rp-mp-caption-para:last-of-type { border-bottom: none; }
+  .rp-mp-title { font-family: 'Poppins','Inter',sans-serif; font-size: 20px; font-weight: 800; color: #fff; line-height: 1.2; margin: 2px 0 4px; }
   .rp-mp-signature {
     margin-top: 4px;
     padding-top: 4px;
@@ -2537,7 +2540,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
   // buildIllustrativeMealPrepReactionsHtml/buildIllustrativeCommentsHtml.
   var ILLUSTRATIVE_MEAL_PREP = [
     {
-      name: "Marcus", age: 44, file: "mealprep-marcus.jpg",
+      title: "Grilled Chicken & Green Bean Rice Bowl", name: "Marcus", age: 44, file: "mealprep-marcus.jpg",
       caption: "Prep time: 25 minutes\n\nGrilled chicken breast, steamed green beans, and a scoop of rice — nothing fancy.\n\nI season the chicken the night before so it actually has flavor by the time I cook it.\n\nSteam the beans for exactly 6 minutes so they still have some bite.\n\nI make four of these every Sunday and just reheat through the week.\n\nCosts me about $9 a plate, which beats takeout by a mile.\n\nFifteen pounds down and I still eat this three or four times a week.",
       signature: "Marcus",
       reactions: { thumbs_up: 24, muscle: 15, heart: 41 },
@@ -2547,7 +2550,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
       ]
     },
     {
-      name: "Denise", age: 52, file: "mealprep-denise.jpg",
+      title: "Salmon Spring Mix Salad", name: "Denise", age: 52, file: "mealprep-denise.jpg",
       caption: "Prep time: 15 minutes\n\nSpring mix, grilled salmon, cherry tomatoes, and a lemon vinaigrette I make in bulk.\n\nI wash and chop all the greens for the week in one sitting on Sunday nights.\n\nThe salmon gets pan-seared just before I eat it — never microwaved, always fresh.\n\nA drizzle of the vinaigrette right before serving keeps everything crisp.\n\nFifteen minutes, start to finish, most days.\n\nMy skin and my energy have both noticed the difference.",
       signature: "Denise",
       reactions: { thumbs_up: 19, muscle: 6, heart: 33 },
@@ -2556,7 +2559,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
       ]
     },
     {
-      name: "Priya", age: 29, file: "mealprep-priya.jpg",
+      title: "Mango Spinach Protein Smoothie", name: "Priya", age: 29, file: "mealprep-priya.jpg",
       caption: "Prep time: 5 minutes\n\nFrozen mango, spinach, a scoop of protein powder, and oat milk.\n\nI pre-portion the fruit and greens into freezer bags on Sunday so mornings are fast.\n\nBlend for about 45 seconds until it's completely smooth, no chunks.\n\nI add a spoonful of peanut butter when I need the extra fuel.\n\nWhole thing takes five minutes, including cleanup.\n\nI've had a version of this every morning for six months straight.",
       signature: "Priya",
       reactions: { thumbs_up: 27, muscle: 20, heart: 38 },
@@ -2566,7 +2569,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
       ]
     },
     {
-      name: "James", age: 38, file: "mealprep-james.jpg",
+      title: "Egg & Avocado Toast", name: "James", age: 38, file: "mealprep-james.jpg",
       caption: "Prep time: 10 minutes\n\nTwo eggs, whole wheat toast, and half an avocado.\n\nI boil a batch of eggs on Sunday so all I have to do is toast and slice in the morning.\n\nMash the avocado right on the toast with a little salt and chili flakes.\n\nSome mornings I add a side of berries if I have them.\n\nTakes about ten minutes even on my slowest days.\n\nSwapping my old cereal-and-coffee breakfast for this changed my whole morning.",
       signature: "James",
       reactions: { thumbs_up: 14, muscle: 5, heart: 22 },
@@ -2575,7 +2578,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
       ]
     },
     {
-      name: "Tyler", age: 26, file: "mealprep-tyler.jpg",
+      title: "Sunday Turkey Meatball Boxes", name: "Tyler", age: 26, file: "mealprep-tyler.jpg",
       caption: "Prep time: 45 minutes (Sunday batch)\n\nTurkey meatballs, roasted broccoli, and sweet potato, split into five containers.\n\nI roast everything on one sheet pan to keep cleanup simple.\n\nMeatballs bake for 20 minutes at 400° while the vegetables roast alongside them.\n\nI portion it all out Sunday night so the whole week is already decided.\n\nForty-five minutes once a week beats scrambling every single night.\n\nNo excuses, no drive-thru — it's already in the fridge.",
       signature: "Tyler",
       reactions: { thumbs_up: 21, muscle: 24, heart: 29 },
@@ -2585,7 +2588,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
       ]
     },
     {
-      name: "Angela", age: 47, file: "mealprep-angela.jpg",
+      title: "Strawberry Banana Smoothie Packs", name: "Angela", age: 47, file: "mealprep-angela.jpg",
       caption: "Prep time: 5 minutes\n\nFrozen strawberries, banana, spinach, and a scoop of collagen powder.\n\nI keep pre-bagged smoothie packs in the freezer so there's zero morning decision-making.\n\nBlend with almond milk until smooth — about a minute, tops.\n\nSome days I add a spoonful of oats to keep me full longer.\n\nFive minutes and I'm out the door.\n\nThree months of this every morning, and I genuinely feel like a different person.",
       signature: "Angela",
       reactions: { thumbs_up: 17, muscle: 8, heart: 35 },
@@ -2611,6 +2614,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
       kind: "photo",
       url: "assets/mealprep/" + it.file,
       posterUrl: "",
+      title: it.title || "",
       name: it.name,
       created_at: new Date().toISOString(),
       workout_type: "Meal Prep",
@@ -3413,6 +3417,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
         imgUrl: raw.kind !== "video" ? (resizedMap[raw.storage_path] || "") : "",
         posterUrl: wantsPoster ? (urlMap[raw.poster_path] || "") : "",
         name: (raw.profiles && raw.profiles.display_name) || "A member",
+        title: raw.title || "",
         created_at: raw.created_at,
         workout_type: raw.workout_type || "",
         location: raw.location || "",
@@ -3697,6 +3702,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
 
     body.innerHTML =
       '<div class="rp-mp-eyebrow"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="26" height="26" style="vertical-align:-8px;margin-right:6px;overflow:visible" aria-hidden="true" focusable="false"><defs><linearGradient id="cbmpb2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4b66a"/><stop offset="1" stop-color="#cf7a30"/></linearGradient><linearGradient id="bwmpb2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2fb5a4"/><stop offset="1" stop-color="#17776e"/></linearGradient></defs><path class="mpb-steam" style="animation-delay:0s" d="M38 21 q-5 -5 0 -9 t0 -9" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round"/><path class="mpb-steam" style="animation-delay:0.7s" d="M52 21 q-5 -5 0 -9 t0 -9" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round"/><path class="mpb-steam" style="animation-delay:1.4s" d="M66 21 q-5 -5 0 -9 t0 -9" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round"/><g class="mpb-bob"><path d="M7 52 Q50 112 93 52 Z" fill="url(#bwmpb2)"/><path d="M14 58 Q50 102 86 58" stroke="#7fe0d2" stroke-width="2" fill="none" opacity=".6"/><ellipse cx="17.8" cy="44.4" rx="9" ry="6" fill="#4ea63f" transform="rotate(34 17.8 44.4)"/><ellipse cx="23.3" cy="37.3" rx="9" ry="6" fill="#6cc24f" transform="rotate(7 23.3 37.3)"/><ellipse cx="27.5" cy="32.3" rx="9" ry="6" fill="#3c9136" transform="rotate(10 27.5 32.3)"/><ellipse cx="35.4" cy="27.6" rx="9" ry="6" fill="#82d05a" transform="rotate(-16 35.4 27.6)"/><ellipse cx="38.0" cy="33.1" rx="9" ry="6" fill="#4ea63f" transform="rotate(15 38.0 33.1)"/><ellipse cx="43.2" cy="38.5" rx="9" ry="6" fill="#6cc24f" transform="rotate(37 43.2 38.5)"/><ellipse cx="51.0" cy="42.7" rx="9" ry="6" fill="#3c9136" transform="rotate(-27 51.0 42.7)"/><ellipse cx="53.9" cy="39.3" rx="9" ry="6" fill="#82d05a" transform="rotate(-35 53.9 39.3)"/><ellipse cx="60.0" cy="31.9" rx="9" ry="6" fill="#4ea63f" transform="rotate(-38 60.0 31.9)"/><ellipse cx="66.5" cy="30.0" rx="9" ry="6" fill="#6cc24f" transform="rotate(27 66.5 30.0)"/><ellipse cx="72.1" cy="31.4" rx="9" ry="6" fill="#3c9136" transform="rotate(-0 72.1 31.4)"/><ellipse cx="78.0" cy="33.9" rx="9" ry="6" fill="#82d05a" transform="rotate(-18 78.0 33.9)"/><ellipse cx="84.8" cy="43.1" rx="9" ry="6" fill="#4ea63f" transform="rotate(27 84.8 43.1)"/><ellipse cx="89.0" cy="39.9" rx="9" ry="6" fill="#6cc24f" transform="rotate(-22 89.0 39.9)"/><circle cx="38.2" cy="40.8" r="2.6" fill="#ffd23f" stroke="#e0a516" stroke-width=".5"/><circle cx="64.9" cy="44.8" r="2.6" fill="#ffd23f" stroke="#e0a516" stroke-width=".5"/><circle cx="69.4" cy="44.6" r="2.6" fill="#ffd23f" stroke="#e0a516" stroke-width=".5"/><circle cx="75.7" cy="50.2" r="2.6" fill="#ffd23f" stroke="#e0a516" stroke-width=".5"/><circle cx="22.0" cy="42.5" r="2.6" fill="#ffd23f" stroke="#e0a516" stroke-width=".5"/><circle cx="73.0" cy="45.6" r="2.6" fill="#ffd23f" stroke="#e0a516" stroke-width=".5"/><circle cx="76.9" cy="44.8" r="2.6" fill="#ffd23f" stroke="#e0a516" stroke-width=".5"/><circle cx="26.1" cy="47.6" r="2.6" fill="#ffd23f" stroke="#e0a516" stroke-width=".5"/><circle cx="65.6" cy="43.2" r="2.6" fill="#ffd23f" stroke="#e0a516" stroke-width=".5"/><circle cx="26.9" cy="44.0" r="2.6" fill="#ffd23f" stroke="#e0a516" stroke-width=".5"/><circle cx="76.0" cy="49.1" r="2.6" fill="#ffd23f" stroke="#e0a516" stroke-width=".5"/><circle cx="28.6" cy="43.0" r="2.6" fill="#ffd23f" stroke="#e0a516" stroke-width=".5"/><circle cx="27.7" cy="40.7" r="2.6" fill="#ffd23f" stroke="#e0a516" stroke-width=".5"/><circle cx="66.6" cy="42.1" r="2.6" fill="#ffd23f" stroke="#e0a516" stroke-width=".5"/><circle cx="53.3" cy="45.4" r="2.6" fill="#ffd23f" stroke="#e0a516" stroke-width=".5"/><circle cx="32.7" cy="48.8" r="2.6" fill="#ffd23f" stroke="#e0a516" stroke-width=".5"/><circle cx="29.3" cy="47.7" r="2.6" fill="#ffd23f" stroke="#e0a516" stroke-width=".5"/><circle cx="28.5" cy="45.0" r="2.6" fill="#ffd23f" stroke="#e0a516" stroke-width=".5"/><g transform="translate(22,32) rotate(-30)"><path d="M0 0 q12 -3 14 6 q-2 8 -13 7 q-6 -6 -1 -13z" fill="#7da32e"/><path d="M1.4 1.6 q9 -2 10.4 4.6 q-1.4 6 -9.4 5.6 q-4 -4.4 -1 -10.2z" fill="#e3ec8e"/></g><g transform="translate(72,33) rotate(28)"><path d="M0 0 q12 -3 14 6 q-2 8 -13 7 q-6 -6 -1 -13z" fill="#7da32e"/><path d="M1.4 1.6 q9 -2 10.4 4.6 q-1.4 6 -9.4 5.6 q-4 -4.4 -1 -10.2z" fill="#e3ec8e"/></g><g class="mpb-chk" style="animation-delay:0.0s" transform="translate(40,26) rotate(-28)"><rect x="-13" y="-6" width="26" height="12" rx="6" fill="url(#cbmpb2)" stroke="#a4561b" stroke-width=".8"/><path d="M-8 -4l4 8M-1 -4.4l4 8.6M6 -4l3.6 8" stroke="#7a3d12" stroke-width="1.5" stroke-linecap="round" opacity=".75"/></g><g class="mpb-chk" style="animation-delay:0.2s" transform="translate(52,22) rotate(-4)"><rect x="-13" y="-6" width="26" height="12" rx="6" fill="url(#cbmpb2)" stroke="#a4561b" stroke-width=".8"/><path d="M-8 -4l4 8M-1 -4.4l4 8.6M6 -4l3.6 8" stroke="#7a3d12" stroke-width="1.5" stroke-linecap="round" opacity=".75"/></g><g class="mpb-chk" style="animation-delay:0.4s" transform="translate(64,27) rotate(24)"><rect x="-13" y="-6" width="26" height="12" rx="6" fill="url(#cbmpb2)" stroke="#a4561b" stroke-width=".8"/><path d="M-8 -4l4 8M-1 -4.4l4 8.6M6 -4l3.6 8" stroke="#7a3d12" stroke-width="1.5" stroke-linecap="round" opacity=".75"/></g><g><circle cx="30" cy="42" r="5.6" fill="#e5392b"/><circle cx="28.2" cy="40.2" r="1.4" fill="#ff9d92"/><path d="M28 36.8 l2 1.4 2 -1.4" stroke="#2f8f3a" stroke-width="1.2" fill="none" stroke-linecap="round"/></g><g><circle cx="70" cy="41" r="5.6" fill="#e5392b"/><circle cx="68.2" cy="39.2" r="1.4" fill="#ff9d92"/><path d="M68 35.8 l2 1.4 2 -1.4" stroke="#2f8f3a" stroke-width="1.2" fill="none" stroke-linecap="round"/></g><g><circle cx="44" cy="50" r="5.6" fill="#e5392b"/><circle cx="42.2" cy="48.2" r="1.4" fill="#ff9d92"/><path d="M42 44.8 l2 1.4 2 -1.4" stroke="#2f8f3a" stroke-width="1.2" fill="none" stroke-linecap="round"/></g><ellipse cx="50" cy="53" rx="43" ry="7.5" fill="none" stroke="#39c6b4" stroke-width="3.2"/></g></svg> Healthy Meal Prep</div>' +
+      (item.title ? '<div class="rp-mp-title">' + escapeHtml(item.title) + '</div>' : "") +
       '<div class="rp-mp-name">' + escapeHtml(item.name) + (item.age ? ", " + escapeHtml(String(item.age)) : "") + '</div>' +
       (subLine ? '<div class="rp-mp-sub">' + escapeHtml(subLine) + '</div>' : "") +
       paragraphs.map(function (p) { return '<div class="rp-mp-caption-para">' + escapeHtml(p) + '</div>'; }).join("") +
@@ -3720,6 +3726,21 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     if (nextBtn) nextBtn.style.display = mealPrepItems.length > 1 ? "flex" : "none";
     if (scroll) scroll.scrollTop = 0;
     modal.hidden = false;
+  }
+
+  async function openMealPrepFromLink(id) {
+    var m = /^illustrative-(\d+)$/.exec(id);
+    if (m) {
+      var idx = Number(m[1]);
+      if (ILLUSTRATIVE_MEAL_PREP[idx]) openMealPrepModal(buildIllustrativeMealPrepItem(idx), idx);
+      return;
+    }
+    var res = await window.sb.from("media")
+      .select("*, profiles!media_user_id_fkey(display_name)")
+      .eq("id", id).eq("status", "approved").maybeSingle();
+    if (res.error || !res.data) return;
+    var built = await buildItems([res.data]);
+    if (built && built[0]) openMealPrepModal(built[0], -1);
   }
 
   function closeMealPrepModal() {
@@ -5247,6 +5268,12 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     // error message shows — don't paper over a real problem with examples.
     mealPrepItems = lastFetchError ? [] : composeMealPrepStrip(mealPrepRealItems);
     renderMealPrepStrip();
+    // The Explore > Healthy Meal Prep page sends people here with ?mp=<post id> (or illustrative-N for the
+    // example cards) so the exact same full popup opens for the card they tapped.
+    try {
+      var mpLink = location.search.match(/[?&]mp=([^&]+)/);
+      if (mpLink) openMealPrepFromLink(decodeURIComponent(mpLink[1]));
+    } catch (e) { /* link is a convenience only */ }
 
     await reelPromise;
 

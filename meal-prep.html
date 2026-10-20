@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Healthy Meal Prep — Ensemble Fitness</title>
+<link rel="stylesheet" href="css/fonts.css" onerror="this.onerror=null;this.href='https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&family=Caveat:wght@600;700&family=Dancing+Script:wght@600;700&display=swap'">
+<link rel="stylesheet" href="css/app.css?v=2" />
+<style>
+  /* Ken's ask (Oct 2026): this page replaces the old "Members" tab on
+     mobile with a single hub of everything the app offers — Meal Prep and
+     the category filter chips got tightened up on the Home feed (see
+     feed.html), and this is where those categories (plus every other
+     section: Journey, Music, Books, Gear, Fitness+, Members, ...) live
+     now instead — one tap each, "instantly where they want to be," in
+     Ken's words, rather than hunting through a filter row or a sidebar.
+     Plain static links, no Supabase calls needed — this page is just a
+     directory pointing at pages/filters that already do the real work.
+
+     Ken's follow-up ask: since Find now lives in the main tab bar (not a
+     one-off secondary page like Gear or Journey), it should keep that
+     same tab bar visible here too instead of leaving people to find their
+     way back via the header logo — same reasoning as Instagram/TikTok
+     never dropping their tab bar no matter which tab you're on. These
+     rules (.rp-shell/.rp-tabbar/.rp-tab*) are copied from feed.html,
+     which is the only other page that currently uses them — they live in
+     each page's own <style> rather than the shared css/app.css since
+     nothing else in the app needs them yet. */
+  .rp-shell {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 480px;
+    display: flex;
+    flex-direction: column;
+    background: #000;
+    font-family: 'Inter', sans-serif;
+  }
+  /* Nov 2026 fix: this was missing -webkit-overflow-scrolling, which
+     feed.html's own scroll areas all have (see its .rp-reel and sidebar
+     rules) — without it, a scrollable div nested inside a position:fixed
+     ancestor (.rp-shell) can fail to respond to touch-drag at all on iOS's
+     native WKWebView, even though overflow-y:auto alone looks correct and
+     scrolls fine in a normal desktop/mobile browser. This is why the
+     Explore section (Music Library, Motivational Books, etc.) further down
+     this page could look "missing" on the real device even though it was
+     always in the HTML. */
+  .find-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .rp-tabbar {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: stretch;
+    background: #000;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .rp-tab {
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    height: 56px;
+    background: none;
+    border: none;
+    /* Ken's ask (Oct 2026): Finder / Post / Profile / Products looked dim next to
+       the house. Same creative emoji icons as before, just brighter: full-white
+       text (they used to be 55%-white, which also dimmed the emoji), plus a
+       brightness boost and a faint glow on the four darker emoji. The house is
+       left exactly as it was. */
+    color: #fff;
+    text-decoration: none;
+    font-family: 'Inter', sans-serif;
+  }
+  .rp-tab-icon { font-size: 20px; line-height: 1; }
+
+  .rp-tab:not([href="feed.html"]) .rp-tab-icon { filter: brightness(1.85) contrast(1.05) drop-shadow(0 0 3px rgba(255,255,255,0.5)); }
+  .rp-tab-label { font-size: 10px; font-weight: 600; letter-spacing: 0.01em; }
+  .rp-tab.active { color: #fff; }
+
+  /* Nov 2026: same fast-tooltip swap as feed.html — see its CSS comment
+     for why (native title="" tooltips show with a noticeable delay). Kept
+     identical between the two files since this whole block is already a
+     verbatim copy (see the top-of-file comment). */
+  .rp-tab[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 50%;
+    bottom: 100%;
+    margin-bottom: 8px;
+    transform: translateX(-50%);
+    background: rgba(20, 20, 24, 0.95);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: #fff;
+    font-family: 'Inter', sans-serif;
+    font-size: 11.5px;
+    font-weight: 600;
+    padding: 5px 10px;
+    border-radius: 7px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.08s ease;
+    z-index: 40;
+  }
+  .rp-tab[data-tooltip]:hover::after,
+  .rp-tab[data-tooltip]:focus-visible::after {
+    opacity: 1;
+  }
+  .rp-tab-post .rp-tab-icon {
+    width: 30px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 7px;
+    border: 2px solid currentColor;
+    font-size: 20px;
+    font-weight: 700;
+  }
+  /* Ken's ask (Oct 2026): "Explore" was sitting noticeably below the
+     header's dividing line — bring it up tight against it. The 18px here
+     was the same top padding every other page's content shell uses below
+     a FULL header (logo + desktop nav links); this page's header is just
+     the logo/hearts row with nothing else in it, so that much breathing
+     room read as a gap instead of a deliberate margin. */
+  .find-shell { max-width: 640px; margin: 0 auto; padding: 6px 14px 24px; }
+  .find-intro { margin: 4px 2px 22px; }
+  .find-intro h1 {
+    font-family: 'Poppins', 'Inter', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    margin: 0 0 4px;
+    color: #fff;
+  }
+  .find-intro p { margin: 0; font-size: 13.5px; color: var(--muted-invert); }
+  .find-section { margin-bottom: 26px; }
+  .find-section-title {
+    font-family: 'Poppins', 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent-2);
+    margin: 0 2px 10px;
+  }
+  .find-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    background: var(--navy-900);
+  }
+  .find-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 14px;
+    text-decoration: none;
+    color: #fff;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    transition: background 0.12s ease;
+  }
+  .find-list li:last-child .find-row { border-bottom: none; }
+  .find-row:active { background: rgba(255,255,255,0.05); }
+  .find-icon {
+    flex: 0 0 auto;
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+    background: var(--navy-800);
+    border: 1px solid rgba(255,255,255,0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+  }
+  .find-text { flex: 1 1 auto; min-width: 0; }
+  .find-title { font-size: 14.5px; font-weight: 700; margin-bottom: 1px; }
+  .find-sub { font-size: 12px; color: var(--faint-invert); }
+  .find-chevron { flex: 0 0 auto; color: var(--faint-invert); font-size: 18px; }
+  /* Healthy Meal Prep page (Ken, Oct 2026): members lined up as named cards — tap one to open its full popup on the home page. */
+  .mp-lede { margin: 0 0 14px; font-size: 13px; line-height: 1.4; color: var(--faint-invert); }
+  .mp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 12px; }
+  .mp-card { display: block; text-decoration: none; color: #fff; }
+  .mp-card:active { opacity: .85; }
+  .mp-thumb { position: relative; width: 100%; aspect-ratio: 1 / 1; border-radius: 16px; overflow: hidden; background: #1a2030; border: 2px solid rgba(255,255,255,0.10); }
+  .mp-thumb img, .mp-thumb video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+  .mp-thumb .mp-fallback { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font: 800 34px 'Poppins','Inter',sans-serif; color: #0b0f1a; }
+  .mp-title { margin-top: 8px; font: 700 13.5px/1.25 'Inter', sans-serif; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .mp-by { margin-top: 2px; font-size: 12px; color: var(--faint-invert); }
+  .mp-by b { color: var(--accent-2, #ff6b3d); font-weight: 700; }
+  .mp-empty { grid-column: 1 / -1; padding: 18px 4px; font-size: 13px; color: var(--faint-invert); }
+  /* Ken (Oct 2026): no hearts in the phone top bar. */
+  @media (max-width: 899px) { .app-nav-connect { display: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="rp-shell">
+<header class="app-nav" id="rpAppNav">
+  <a href="feed.html" class="app-brand">
+    <span class="app-brand-mark"><img src="assets/logo.png" alt="Ensemble Fitness" /></span>Ensemble Fitness
+  </a>
+  <span class="app-nav-connect" aria-hidden="true">
+    <svg viewBox="0 0 34 30" width="28" height="25" focusable="false">
+      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="var(--pink, #db1f52)" transform="translate(0,2)"/>
+      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="var(--pink-2, #ff3d68)" stroke="var(--navy-900, #0b0f1a)" stroke-width="2.2" paint-order="stroke" transform="translate(13,9) scale(0.62)"/>
+    </svg>
+  </span>
+</header>
+
+<div class="find-scroll">
+<div class="find-shell">
+  <div class="find-section">
+    <div class="find-section-title">Healthy Meal Prep</div>
+    <p class="mp-lede">Tap a meal prep to see how it's made, what's in it, and what members are saying.</p>
+    <div class="mp-grid" id="mpGrid"><div class="mp-empty" id="mpLoading">Loading meal preps…</div></div>
+  </div>
+</div>
+</div>
+
+<nav class="rp-tabbar" aria-label="Main">
+  <a href="feed.html" class="rp-tab" aria-label="Home" data-tooltip="Home">
+    <span class="rp-tab-icon">🏠</span><span class="rp-tab-label">Home</span>
+  </a>
+  <a href="find.html" class="rp-tab active" aria-label="Explore" data-tooltip="Explore">
+    <span class="rp-tab-icon">🔍</span><span class="rp-tab-label">Explore</span>
+  </a>
+  <a href="upload.html" class="rp-tab rp-tab-post" aria-label="Upload a photo, video, or song" data-tooltip="Post">
+    <span class="rp-tab-icon">+</span><span class="rp-tab-label">Post</span>
+  </a>
+  <a href="profile.html" class="rp-tab" aria-label="My Profile" data-tooltip="Profile">
+    <span class="rp-tab-icon">👤</span><span class="rp-tab-label">Profile</span>
+  </a>
+  <a href="gear.html" class="rp-tab" aria-label="Ensemble Approved Products" data-tooltip="Products">
+    <span class="rp-tab-icon">🛒</span><span class="rp-tab-label">Products</span>
+  </a>
+</nav>
+</div>
+
+<!-- Ken's ask (Oct 2026): the "self-hosted copy, fall back to CDN" setup
+     never actually had a self-hosted copy on disk (js/vendor/supabase.js
+     was never created), so EVERY page load was silently failing that first
+     request, then falling back to this exact CDN script via a blocking
+     document.write (which stalls the page while it reruns) -- on every
+     page, every load, website and app alike. That's the real reason things
+     have felt slower since that change went in, not the CDN itself. Loading
+     directly from the CDN, plainly, is both simpler and faster than the
+     broken fallback dance was. -->
+<script src="js/vendor/supabase.js"></script>
+<script>window.supabase||document.write('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"><\/script>')</script>
+<script src="js/config.js"></script>
+<script src="js/shared-session.js"></script>
+<script src="js/supabaseClient.js"></script>
+<script src="js/moderation.js"></script>
+<script>
+  var MP_EXAMPLES = [
+    { name: "Marcus", title: "Grilled Chicken & Green Bean Rice Bowl", file: "mealprep-marcus.jpg" },
+    { name: "Denise", title: "Salmon Spring Mix Salad", file: "mealprep-denise.jpg" },
+    { name: "Priya", title: "Mango Spinach Protein Smoothie", file: "mealprep-priya.jpg" },
+    { name: "James", title: "Egg & Avocado Toast", file: "mealprep-james.jpg" },
+    { name: "Tyler", title: "Sunday Turkey Meatball Boxes", file: "mealprep-tyler.jpg" },
+    { name: "Angela", title: "Strawberry Banana Smoothie Packs", file: "mealprep-angela.jpg" }
+  ];
+  var MP_COLORS = ["#ff3d68", "#ff9a3d", "#3dd6ff", "#7a3dff", "#3dff9e", "#ffd23d"];
+  function mpEsc(t) { return String(t == null ? "" : t).replace(/[&<>"']/g, function (c) { return ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]; }); }
+  function mpColor(id) { var h = 0; for (var i = 0; i < (id || "").length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0; return MP_COLORS[h % MP_COLORS.length]; }
+  // First line of the write-up, minus a leading "Prep time:" line, as a fallback name for older posts that have no name yet.
+  function mpFallbackTitle(caption) {
+    var parts = String(caption || "").split(/\n\s*\n/).map(function (p) { return p.trim(); }).filter(Boolean);
+    if (parts.length && /^prep time:/i.test(parts[0])) parts.shift();
+    var first = (parts[0] || "").split("\n")[0];
+    if (first.length > 60) first = first.slice(0, 57).replace(/\s+\S*$/, "") + "…";
+    return first || "Healthy meal prep";
+  }
+  function mpCard(c) {
+    var initial = (c.name || "?").trim().charAt(0).toUpperCase();
+    var media = "";
+    if (c.imgUrl) media = '<img src="' + mpEsc(c.imgUrl) + '" alt="" loading="lazy" />';
+    else if (c.videoUrl) media = '<video src="' + mpEsc(c.videoUrl) + '"' + (c.posterUrl ? ' poster="' + mpEsc(c.posterUrl) + '"' : '') + ' muted playsinline preload="metadata"></video>';
+    return '<a class="mp-card" href="feed.html?mp=' + encodeURIComponent(c.id) + '">' +
+      '<div class="mp-thumb"><span class="mp-fallback" style="background:' + mpColor(c.userId || c.id) + '">' + mpEsc(initial) + '</span>' + media + '</div>' +
+      '<div class="mp-title">' + mpEsc(c.title) + '</div>' +
+      '<div class="mp-by">by <b>' + mpEsc(c.name) + '</b></div></a>';
+  }
+  async function mpLoad() {
+    var grid = document.getElementById("mpGrid");
+    var cards = [];
+    try {
+      if (typeof loadBlockedIds === "function") { try { await loadBlockedIds(); } catch (e) {} }
+      var res = await window.sb.from("media")
+        .select("*, profiles!media_user_id_fkey(display_name)")
+        .eq("status", "approved").eq("workout_type", "Meal Prep")
+        .in("kind", ["photo", "video"])
+        .order("created_at", { ascending: false }).limit(60);
+      var rows = res.data || [];
+      if (typeof filterOutBlocked === "function") { try { rows = filterOutBlocked(rows); } catch (e) {} }
+      var paths = [];
+      rows.forEach(function (r) {
+        if (r.kind === "photo" && r.storage_path) paths.push(r.storage_path);
+        if (r.kind === "video" && r.poster_path) paths.push(r.poster_path);
+        if (r.kind === "video" && r.storage_path && !r.poster_path) paths.push(r.storage_path);
+      });
+      var urlMap = {};
+      if (paths.length) {
+        var signed = await window.sb.storage.from("media").createSignedUrls(paths, 3600);
+        (signed.data || []).forEach(function (x) { if (x && x.path && x.signedUrl) urlMap[x.path] = x.signedUrl; });
+      }
+      rows.forEach(function (r) {
+        cards.push({
+          id: r.id, userId: r.user_id,
+          name: (r.profiles && r.profiles.display_name) || "A member",
+          title: (r.title && r.title.trim()) || mpFallbackTitle(r.caption),
+          imgUrl: r.kind === "photo" ? (urlMap[r.storage_path] || "") : (r.poster_path ? (urlMap[r.poster_path] || "") : ""),
+          videoUrl: (r.kind === "video" && !r.poster_path) ? (urlMap[r.storage_path] || "") : "",
+          posterUrl: ""
+        });
+      });
+    } catch (e) { /* fall through to the examples below */ }
+    // Real posts first; the six examples fill any remaining slots so the page is never blank.
+    for (var i = 0; cards.length < 6 && i < MP_EXAMPLES.length; i++) {
+      var ex = MP_EXAMPLES[i];
+      cards.push({ id: "illustrative-" + i, userId: ex.name, name: ex.name, title: ex.title, imgUrl: "assets/mealprep/" + ex.file });
+    }
+    grid.innerHTML = cards.map(mpCard).join("");
+  }
+  (async function init() {
+    var user = await requireAuth();
+    if (!user) return;
+    mpLoad();
+  })();
+</script>
+</body>
+</html>

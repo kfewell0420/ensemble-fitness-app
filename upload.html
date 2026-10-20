@@ -718,6 +718,11 @@
         <textarea id="caption" name="caption" placeholder="Say something about this one" maxlength="120" rows="1" class="caption-compact"></textarea>
         <span class="field-hint" id="captionHint" style="display:none;">Healthy Meal Prep posts get their own full-page profile — prep time, ingredients, your tips, whatever makes it yours. Write the whole thing here; there's room for it.</span>
       </div>
+      <div class="field" id="mealTitleField" style="display:none;">
+        <label for="mealTitle">Name your meal prep</label>
+        <input type="text" id="mealTitle" name="mealTitle" placeholder="e.g. Turkey Meatball Bowls" maxlength="60" />
+        <span class="field-hint">Shown on the Healthy Meal Prep page so members know what they're tapping on.</span>
+      </div>
       <div class="field" id="signatureField" style="display:none;">
         <label for="signature">Sign your name (optional)</label>
         <input type="text" id="signature" name="signature" placeholder="e.g. Marcus" maxlength="40" />
@@ -3021,6 +3026,7 @@
   function updateCategoryFieldVisibility() {
     var isMealPrep = workoutTypeSelect.value === "Meal Prep";
     signatureField.style.display = isMealPrep ? "block" : "none";
+    document.getElementById("mealTitleField").style.display = isMealPrep ? "block" : "none";
     captionHint.style.display = isMealPrep ? "block" : "none";
     captionLabel.textContent = isMealPrep ? "Your Healthy Meal Prep write-up" : "Caption (optional)";
     captionField.maxLength = isMealPrep ? 600 : 120;
@@ -3164,6 +3170,12 @@
     if ((precheckKind === "photo" || precheckKind === "video") && !precheckIsProfilePhoto && !workoutTypeField2.value.trim()) {
       showMsg(msg, "Please choose a category (Working Out, Walking, Hiking, Biking, Running, Swimming, Strike a Pose, Just Doing You, Healthy Meal Prep, or Other) so your post shows up in the right place.", "error");
       workoutTypeField2.focus();
+      return;
+    }
+    var mealTitleInput = document.getElementById("mealTitle");
+    if ((precheckKind === "photo" || precheckKind === "video") && !precheckIsProfilePhoto && workoutTypeField2.value.trim() === "Meal Prep" && !mealTitleInput.value.trim()) {
+      showMsg(msg, "Please name your meal prep (for example, Turkey Meatball Bowls) so members know what they're tapping on.", "error");
+      mealTitleInput.focus();
       return;
     }
     var songTitleField = document.getElementById("songTitle");
@@ -3342,6 +3354,9 @@
         product_tag: kind === "photo" ? (document.getElementById("productTag").value.trim() || null) : null,
         is_profile_photo: isProfilePhotoChecked
       };
+      // Meal prep name (needs sql/media-title.sql). Only sent when filled in so every other post type is untouched.
+      var mealTitleValue = document.getElementById("mealTitle").value.trim();
+      if (mealTitleValue && document.getElementById("workoutType").value.trim() === "Meal Prep") insertRow.title = mealTitleValue;
       // Audio never reaches this generic path any more — it returns early
       // above, straight into the Music Library. This is only photo/video
       // now, which still go in as "pending" for the usual approval step;
@@ -3380,7 +3395,7 @@
       var { data: insertedRow, error: insertError } = await window.sb.from("media").insert(insertRow).select().single();
       // Either optional column may not exist yet (its SQL not run) — drop whichever one the
       // error names and retry so the post still goes through.
-      var optionalCols = ["keep_original_audio", "music_start_seconds", "music_delay_seconds", "music_length_seconds", "clip_durations", "text_labels"];
+      var optionalCols = ["keep_original_audio", "music_start_seconds", "music_delay_seconds", "music_length_seconds", "clip_durations", "text_labels", "title"];
       for (var oi = 0; insertError && oi < optionalCols.length; oi++) {
         var col = optionalCols[oi];
         if (col in insertRow && (insertError.message || "").indexOf(col) !== -1) {
@@ -3442,6 +3457,7 @@
       document.getElementById("caption").value = "";
       document.getElementById("workoutType").value = "";
       document.getElementById("signature").value = "";
+      document.getElementById("mealTitle").value = "";
       document.getElementById("location").value = "";
       document.getElementById("productTag").value = "";
       document.getElementById("isProfilePhoto").checked = false;
