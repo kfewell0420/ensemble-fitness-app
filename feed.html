@@ -439,6 +439,11 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     animation: rpPopIn 0.2s ease;
   }
   .rp-new-pill[hidden] { display: none; }
+  /* Wide website layout: the reel is a grid, and the pill used to become a grid cell that stretched into a tall
+     orange bar down the left column. Give it its own full-width row, left-aligned, and let it float over the posts. */
+  @media (min-width: 900px) {
+    .rp-new-pill { grid-column: 1 / -1; justify-self: start; align-self: start; height: fit-content; margin-bottom: -28px; }
+  }
   .rp-reel::-webkit-scrollbar { display: none; }
 
   /* List mode — was a Journeys-only distinction back when photos/videos
@@ -5016,6 +5021,10 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
       var freshItems = newMediaItems.concat(newJournalItems).sort(function (a, b) {
         return new Date(a.created_at) - new Date(b.created_at); // oldest first, so inserting one-by-one at the top lands newest on top
       });
+      // Oct 2026: a post that is already on screen (e.g. your own, loaded a moment ago) is never "new".
+      var haveKeys = {};
+      loadedItems.forEach(function (it) { if (it) haveKeys[(it.kind === "journal" ? "j" : "m") + it.id] = 1; });
+      freshItems = freshItems.filter(function (it) { return !haveKeys[(it.kind === "journal" ? "j" : "m") + it.id]; });
       if (!freshItems.length) return;
 
       var reel = document.getElementById("rpReel");
@@ -5037,8 +5046,9 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
         insertBeforeEl = slideEl; // next one inserts above this one, keeping newest-first order
       });
       trackNewest(freshItems);
-      pendingNewCount += freshItems.length;
-      showNewPill();
+      // Your own post never counts as "new" for you.
+      pendingNewCount += freshItems.filter(function (it) { return it.user_id !== currentUserId; }).length;
+      if (pendingNewCount > 0) showNewPill();
     } finally {
       liveUpdateInFlight = false;
     }
