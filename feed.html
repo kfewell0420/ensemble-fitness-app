@@ -439,6 +439,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     animation: rpPopIn 0.2s ease;
   }
   .rp-new-pill[hidden] { display: none; }
+  .rp-panel-books { display: none !important; }
   /* Wide website layout: the reel is a grid, and the pill used to become a grid cell that stretched into a tall
      orange bar down the left column. Give it its own full-width row, left-aligned, and let it float over the posts. */
   @media (min-width: 900px) {
@@ -2026,6 +2027,8 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     <div class="rp-panel rp-panel-quote" id="rpQuotePanel"></div>
     <div class="rp-panel rp-panel-gear" id="rpGearPanel"></div>
     <div class="rp-panel rp-panel-music" id="rpMusicPanel"></div>
+    <!-- Oct 2026 (Ken): Motivational Books hidden from the home page. Nothing deleted: set SHOW_BOOKS_PANEL = true
+         in the script below and delete the display:none rule on .rp-panel-books to bring it back. -->
     <div class="rp-panel rp-panel-books" id="rpBooksPanel"></div>
   </div>
 
@@ -2420,6 +2423,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
   var offset = 0;
   var reachedEnd = false;
   var loadingMore = false;
+  var SHOW_BOOKS_PANEL = false; // Ken, Oct 2026: books hidden
   var loadedItems = [];
   var followingIds = new Set();
 
@@ -5231,7 +5235,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
       loadQuotePanel();
       loadGearPanel();
       loadMusicPanel();
-      loadBooksPanel();
+      if (SHOW_BOOKS_PANEL) loadBooksPanel();
     }
   })();
 
