@@ -188,6 +188,10 @@
     filter: brightness(1.7) contrast(1.05) drop-shadow(0 0 3px rgba(255,255,255,0.45));
   }
   .pf-pill svg { display: block; }
+  /* Ken (Oct 2026): the Block symbol is RED (it read pink once the brightening filter above washed it out). */
+  .pf-pill[data-pf="blocked"] { filter: drop-shadow(0 0 3px rgba(229,50,45,0.55)); }
+  /* Ken (Oct 2026): no hearts in the phone top bar. */
+  @media (max-width: 899px) { .app-nav-connect { display: none !important; } }
   .pf-pill.active { border-bottom-color: #963512; /* darker on purpose: the brightening filter above lifts it to the brand orange */ background: none; color: #fff; }
   .pf-pill-details { display: none !important; }
 
@@ -394,7 +398,7 @@
     <button type="button" class="pf-pill active" data-pf="uploads" role="tab" aria-label="Uploads" title="Uploads"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><g fill="currentColor"><rect x="3" y="3" width="5" height="5" rx="1"/><rect x="9.5" y="3" width="5" height="5" rx="1"/><rect x="16" y="3" width="5" height="5" rx="1"/><rect x="3" y="9.5" width="5" height="5" rx="1"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/><rect x="16" y="9.5" width="5" height="5" rx="1"/><rect x="3" y="16" width="5" height="5" rx="1"/><rect x="9.5" y="16" width="5" height="5" rx="1"/><rect x="16" y="16" width="5" height="5" rx="1"/></g></svg></button>
     <button type="button" class="pf-pill" data-pf="music" id="pfPillMusic" role="tab" aria-label="My music" title="My music" style="display:none;">🎵</button>
     <button type="button" class="pf-pill" data-pf="messages" role="tab" aria-label="Messages" title="Messages"><svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" stroke-linecap="round"><rect x="2.5" y="5" width="19" height="14" rx="2.6"/><path d="M3.3 6.6 12 13.2l8.7-6.6"/></svg></button>
-    <button type="button" class="pf-pill" data-pf="blocked" role="tab" aria-label="Blocked members" title="Blocked members">🚫</button>
+    <button type="button" class="pf-pill" data-pf="blocked" role="tab" aria-label="Blocked members" title="Blocked members"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" fill="none" stroke="#e5322d" stroke-width="2.6" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg></button>
     <button type="button" class="pf-pill" data-pf="payouts" id="pfPillPayouts" role="tab" aria-label="Payouts" title="Payouts" style="display:none;">💰</button>
     <button type="button" class="pf-pill" data-pf="security" role="tab" aria-label="Security" title="Security">🔒</button>
     <button type="button" class="pf-pill pf-pill-details" data-pf="details" role="tab" aria-label="Edit details" title="Edit details" tabindex="-1">✏️</button>
@@ -513,7 +517,7 @@
 <!-- Phone-only bottom tab bar (same five places as the feed's bar). Hidden on wider screens. -->
 <nav class="pf-tabbar" aria-label="Main">
   <a href="feed.html" class="pf-tab" aria-label="Home"><span class="pf-tab-icon">🏠</span><span class="pf-tab-label">Home</span></a>
-  <a href="find.html" class="pf-tab" aria-label="Finder"><span class="pf-tab-icon">🔎</span><span class="pf-tab-label">Finder</span></a>
+  <a href="find.html" class="pf-tab" aria-label="Explore"><span class="pf-tab-icon">🔍</span><span class="pf-tab-label">Explore</span></a>
   <a href="upload.html" class="pf-tab pf-tab-post" aria-label="Upload a photo, video, or song"><span class="pf-tab-icon">+</span><span class="pf-tab-label">Post</span></a>
   <a href="profile.html" class="pf-tab active" aria-label="My Profile" aria-current="page"><span class="pf-tab-icon">👤</span><span class="pf-tab-label">Profile</span></a>
   <a href="gear.html" class="pf-tab" aria-label="Ensemble Approved Products"><span class="pf-tab-icon">🛒</span><span class="pf-tab-label">Products</span></a>
