@@ -96,6 +96,10 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     .rp-cn-eyebrow { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent-2, #ff6b3d); margin: 0; }
     .rp-cn-hearts { flex: 0 0 auto; display: flex; align-items: center; }
     .rp-cn-hearts svg { display: block; width: 27px; height: 24px; }
+    /* The Your Journeys pill sits in the same row, after the hearts, one gap (12px) away, and stays small. */
+    .rp-cn-top .rp-journeys-pill { margin-left: 0; flex: 0 0 auto; padding: 3px 8px; border-radius: 12px; }
+    .rp-cn-top .rp-journeys-pill .rp-jp-text { font-size: 11px; }
+    .rp-cn-top .rp-journeys-pill .rp-jp-num { top: -10px; right: 2px; font-size: 15px; }
     /* The title stays on ONE line: it sizes itself to the phone's width (about 17px on a 412px phone, smaller on narrow ones). */
     .rp-cn-title { font-family: 'Poppins','Inter',sans-serif; font-size: min(17px, calc((100vw - 48px) / 21.2)); font-weight: 800; line-height: 1.2; color: #fff; margin-bottom: 6px; white-space: nowrap; }
     /* Ken (Oct 2026, mobile): "Your Journeys" on the LEFT, Healthy Meal Preps on the RIGHT. */
@@ -2060,9 +2064,6 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
       </div>
       <!-- Ken's ask (Oct 2026): phone-only "Your Journeys" pill beside the (now shorter) Healthy Meal Preps pill.
            Red with black writing; the small count is how many new journeys were shared since the member last tapped it. -->
-      <a class="rp-journeys-pill" id="rpJourneysPill" href="fitness-journeys.html" aria-label="Your Journeys">
-        <span class="rp-jp-text">Your Journeys</span><span class="rp-jp-num" id="rpJourneysPillNum">1</span>
-      </a>
       </div>
       <div class="rp-community-note">
         <div class="rp-cn-top">
@@ -2071,6 +2072,11 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
             <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="var(--pink, #db1f52)" transform="translate(0,2)"/>
             <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="var(--pink-2, #ff3d68)" stroke="var(--navy-900, #0b0f1a)" stroke-width="2.2" paint-order="stroke" transform="translate(13,9) scale(0.62)"/>
           </svg></span>
+          <!-- Ken (Oct 2026): the small red "Your Journeys" pill is back, to the right of the hearts. The yellow number is the live
+               count of new journeys (same element id as before, so the existing count code keeps driving it). -->
+          <a class="rp-journeys-pill" id="rpJourneysPill" href="fitness-journeys.html" aria-label="Your Journeys">
+            <span class="rp-jp-text">Your Journeys</span><span class="rp-jp-num" id="rpJourneysPillNum">1</span>
+          </a>
         </div>
         <div class="rp-cn-title">Find your people. Keep moving together.</div>
       </div>
