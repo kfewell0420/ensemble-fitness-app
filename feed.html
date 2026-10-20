@@ -1742,6 +1742,16 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
        the row wrap means the sub-label is what drops to its own line here
        when space is tight, never the title. */
     .rp-mealprep-banner { flex-wrap: wrap; }
+    /* Ken (Oct 2026): on the computer layout the banner now (1) starts at the
+       same left edge as the first column of photos (Marcus / James) instead of
+       being inset 14px, (2) carries the same orange bar on BOTH sides, like the
+       phone version, and (3) is shorter, since there was spare room below it. */
+    .rp-mealprep-banner {
+      margin: 0 14px 8px 2px;
+      padding: 6px 14px 6px 12px;
+      border-right: 3px solid var(--accent-2);
+    }
+    .rp-mealprep-banner-icon svg { width: 30px; height: 30px; }
     .rp-mealprep-banner-text { white-space: nowrap; flex-shrink: 0; }
     .rp-mealprep-banner-sub { margin-left: 0; margin-top: 2px; }
     .rp-mealprep-track { padding: 2px 2px 4px; flex-wrap: wrap; gap: 14px; }
@@ -1782,6 +1792,24 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
       box-shadow: 0 10px 26px rgba(219,31,82,0.16);
     }
     .rp-panel-fitplus .rp-panel-link { color: var(--pink-2); }
+    /* Ken (Oct 2026): the cards in the right column must all be the same size. Fitness+ and the Community Challenge
+       card share one fixed height (their text is clamped to fit), and every other card is at least that tall. */
+    .rp-side-panels .rp-panel { box-sizing: border-box; min-height: 176px; }
+    .rp-side-panels .rp-panel-fitplus,
+    .rp-side-panels .rp-panel-challenge { height: 176px; display: flex; flex-direction: column; overflow: hidden; }
+    .rp-side-panels .rp-panel-fitplus .rp-panel-link,
+    .rp-side-panels .rp-panel-challenge .rp-panel-link { margin-top: auto; padding-top: 8px; }
+    .rp-side-panels .rp-panel-fitplus .rp-quote-text,
+    .rp-side-panels .rp-panel-challenge .rp-quote-text { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .rp-side-panels .rp-panel-fitplus .rp-quote-author,
+    .rp-side-panels .rp-panel-challenge .rp-quote-author { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .rp-panel-challenge { background: linear-gradient(165deg, #1d1508, #120d08); border: 1px solid rgba(255,181,43,0.30); box-shadow: 0 10px 24px rgba(0,0,0,0.35); }
+    .rp-panel-challenge .rp-panel-title { font-size: 12px; letter-spacing: 0.02em; }
+    .rp-panel-challenge .rp-panel-link { color: var(--accent-2); }
+    .rp-chal-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: auto; padding-top: 8px; }
+    .rp-chal-foot .rp-panel-link { margin-top: 0; padding-top: 0; }
+    .rp-chal-badge { margin-left: auto; padding: 2px 9px; border-radius: 999px; font-size: 10.5px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: #fff; background: var(--accent-2); }
+    .rp-chal-badge.today { background: #e5322d; }
     .rp-panel-head {
       display: flex;
       align-items: center;
@@ -2028,11 +2056,10 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
          workout log is retired (journey.html now redirects to
          fitness-journeys.html) and this panel now promotes the one
          remaining journey feature, public and live the moment you post. -->
-    <div class="rp-panel rp-panel-journey" id="rpJourneyPanel">
-      <div class="rp-panel-head"><span class="rp-panel-icon">🌱</span><span class="rp-panel-title">Share Your Journey</span></div>
-      <div class="rp-panel-empty">Post a win, a struggle, or a question — visible to the whole community. Your journey may be exactly what someone else needs today.</div>
-      <a class="rp-panel-link" href="fitness-journeys.html">Share Your Journey →</a>
-    </div>
+    <!-- Oct 2026 (Ken, with the marketing team): "Share Your Journey" appeared twice on this page (the filter chip row
+         and this card), so this card is now "This Week's Community Challenge" — it shows the next event members
+         posted on challenges.html (loadChallengePanel below). Share Your Journey itself is unchanged everywhere else. -->
+    <div class="rp-panel rp-panel-challenge" id="rpChallengePanel"></div>
     <div class="rp-panel rp-panel-quote" id="rpQuotePanel"></div>
     <div class="rp-panel rp-panel-gear" id="rpGearPanel"></div>
     <div class="rp-panel rp-panel-music" id="rpMusicPanel"></div>
@@ -5241,6 +5268,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
       var nameEl = document.getElementById("rpDashName");
       if (nameEl && profile && profile.display_name) nameEl.textContent = ", " + profile.display_name;
       loadFitPlusPanel();
+      loadChallengePanel();
       loadQuotePanel();
       loadGearPanel();
       loadMusicPanel();
@@ -5318,6 +5346,40 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
       '<div class="rp-quote-text">' + escapeHtml(headline) + '</div>' +
       '<div class="rp-quote-author">' + escapeHtml(sub) + '</div>' +
       '<a class="rp-panel-link" href="fitness-plus.html">Find Your Person →</a>';
+  }
+
+  // "This Week's Community Challenge" card (Oct 2026): shows the next event any member posted on challenges.html.
+  // On the day before / day of the event the card gets a TOMORROW / TODAY tag — that's the in-app reminder.
+  async function loadChallengePanel() {
+    var panel = document.getElementById("rpChallengePanel");
+    if (!panel) return;
+    var since = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString();
+    var res = await window.sb.from("community_events")
+      .select("id, title, sponsor, location, starts_at")
+      .gte("starts_at", since).order("starts_at", { ascending: true }).limit(1);
+    var ev = (!res.error && res.data && res.data[0]) ? res.data[0] : null;
+    var head = '<span class="rp-panel-icon">🏆</span><span class="rp-panel-title">This Week\'s Community Challenge</span>';
+    if (!ev) {
+      panel.innerHTML =
+        '<div class="rp-panel-head">' + head + '</div>' +
+        '<div class="rp-quote-text">Be the first to post a challenge</div>' +
+        '<div class="rp-quote-author">Plan a run, walk, or ride. Members get a reminder the day before.</div>' +
+        '<a class="rp-panel-link" href="challenges.html">Post an event →</a>';
+      return;
+    }
+    var start = new Date(ev.starts_at);
+    var a = new Date(); a.setHours(0, 0, 0, 0);
+    var b = new Date(start); b.setHours(0, 0, 0, 0);
+    var diff = Math.round((b - a) / 86400000);
+    var badge = diff === 0 ? '<span class="rp-chal-badge today">Today</span>' : (diff === 1 ? '<span class="rp-chal-badge">Tomorrow</span>' : "");
+    var when = start.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" }) + " · " +
+               start.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    var sub = when + " · " + ev.location + (ev.sponsor ? " · " + ev.sponsor : "");
+    panel.innerHTML =
+      '<div class="rp-panel-head">' + head + '</div>' +
+      '<div class="rp-quote-text">' + escapeHtml(ev.title) + '</div>' +
+      '<div class="rp-quote-author">' + escapeHtml(sub) + '</div>' +
+      '<div class="rp-chal-foot"><a class="rp-panel-link" href="challenges.html">See events &amp; post yours →</a>' + badge + '</div>';
   }
 
   // Ken's ask (Oct 2026): quotes are now entirely his own curated queue

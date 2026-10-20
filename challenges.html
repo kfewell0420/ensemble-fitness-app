@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Community Challenges — Ensemble Fitness</title>
+<link rel="stylesheet" href="css/fonts.css" onerror="this.onerror=null;this.href='https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&family=Caveat:wght@600;700&family=Dancing+Script:wght@600;700&display=swap'">
+<link rel="stylesheet" href="css/app.css?v=2" />
+<style>
+  /* Ken's ask (Oct 2026): this page replaces the old "Members" tab on
+     mobile with a single hub of everything the app offers — Meal Prep and
+     the category filter chips got tightened up on the Home feed (see
+     feed.html), and this is where those categories (plus every other
+     section: Journey, Music, Books, Gear, Fitness+, Members, ...) live
+     now instead — one tap each, "instantly where they want to be," in
+     Ken's words, rather than hunting through a filter row or a sidebar.
+     Plain static links, no Supabase calls needed — this page is just a
+     directory pointing at pages/filters that already do the real work.
+
+     Ken's follow-up ask: since Find now lives in the main tab bar (not a
+     one-off secondary page like Gear or Journey), it should keep that
+     same tab bar visible here too instead of leaving people to find their
+     way back via the header logo — same reasoning as Instagram/TikTok
+     never dropping their tab bar no matter which tab you're on. These
+     rules (.rp-shell/.rp-tabbar/.rp-tab*) are copied from feed.html,
+     which is the only other page that currently uses them — they live in
+     each page's own <style> rather than the shared css/app.css since
+     nothing else in the app needs them yet. */
+  .rp-shell {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 480px;
+    display: flex;
+    flex-direction: column;
+    background: #000;
+    font-family: 'Inter', sans-serif;
+  }
+  /* Nov 2026 fix: this was missing -webkit-overflow-scrolling, which
+     feed.html's own scroll areas all have (see its .rp-reel and sidebar
+     rules) — without it, a scrollable div nested inside a position:fixed
+     ancestor (.rp-shell) can fail to respond to touch-drag at all on iOS's
+     native WKWebView, even though overflow-y:auto alone looks correct and
+     scrolls fine in a normal desktop/mobile browser. This is why the
+     Explore section (Music Library, Motivational Books, etc.) further down
+     this page could look "missing" on the real device even though it was
+     always in the HTML. */
+  .find-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .rp-tabbar {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: stretch;
+    background: #000;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .rp-tab {
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    height: 56px;
+    background: none;
+    border: none;
+    /* Ken's ask (Oct 2026): Finder / Post / Profile / Products looked dim next to
+       the house. Same creative emoji icons as before, just brighter: full-white
+       text (they used to be 55%-white, which also dimmed the emoji), plus a
+       brightness boost and a faint glow on the four darker emoji. The house is
+       left exactly as it was. */
+    color: #fff;
+    text-decoration: none;
+    font-family: 'Inter', sans-serif;
+  }
+  .rp-tab-icon { font-size: 20px; line-height: 1; }
+  .rp-tab:not([href="feed.html"]) .rp-tab-icon { filter: brightness(1.85) contrast(1.05) drop-shadow(0 0 3px rgba(255,255,255,0.5)); }
+  .rp-tab-label { font-size: 10px; font-weight: 600; letter-spacing: 0.01em; }
+  .rp-tab.active { color: #fff; }
+
+  /* Nov 2026: same fast-tooltip swap as feed.html — see its CSS comment
+     for why (native title="" tooltips show with a noticeable delay). Kept
+     identical between the two files since this whole block is already a
+     verbatim copy (see the top-of-file comment). */
+  .rp-tab[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 50%;
+    bottom: 100%;
+    margin-bottom: 8px;
+    transform: translateX(-50%);
+    background: rgba(20, 20, 24, 0.95);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: #fff;
+    font-family: 'Inter', sans-serif;
+    font-size: 11.5px;
+    font-weight: 600;
+    padding: 5px 10px;
+    border-radius: 7px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.08s ease;
+    z-index: 40;
+  }
+  .rp-tab[data-tooltip]:hover::after,
+  .rp-tab[data-tooltip]:focus-visible::after {
+    opacity: 1;
+  }
+  .rp-tab-post .rp-tab-icon {
+    width: 30px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 7px;
+    border: 2px solid currentColor;
+    font-size: 20px;
+    font-weight: 700;
+  }
+  /* Ken's ask (Oct 2026): "Explore" was sitting noticeably below the
+     header's dividing line — bring it up tight against it. The 18px here
+     was the same top padding every other page's content shell uses below
+     a FULL header (logo + desktop nav links); this page's header is just
+     the logo/hearts row with nothing else in it, so that much breathing
+     room read as a gap instead of a deliberate margin. */
+  .find-shell { max-width: 640px; margin: 0 auto; padding: 6px 14px 24px; }
+  .find-intro { margin: 4px 2px 22px; }
+  .find-intro h1 {
+    font-family: 'Poppins', 'Inter', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    margin: 0 0 4px;
+    color: #fff;
+  }
+  .find-intro p { margin: 0; font-size: 13.5px; color: var(--muted-invert); }
+  .find-section { margin-bottom: 26px; }
+  .find-section-title {
+    font-family: 'Poppins', 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent-2);
+    margin: 0 2px 10px;
+  }
+  .find-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    background: var(--navy-900);
+  }
+  .find-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 14px;
+    text-decoration: none;
+    color: #fff;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    transition: background 0.12s ease;
+  }
+  .find-list li:last-child .find-row { border-bottom: none; }
+  .find-row:active { background: rgba(255,255,255,0.05); }
+  .find-icon {
+    flex: 0 0 auto;
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+    background: var(--navy-800);
+    border: 1px solid rgba(255,255,255,0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+  }
+  .find-text { flex: 1 1 auto; min-width: 0; }
+  .find-title { font-size: 14.5px; font-weight: 700; margin-bottom: 1px; }
+  .find-sub { font-size: 12px; color: var(--faint-invert); }
+  .find-chevron { flex: 0 0 auto; color: var(--faint-invert); font-size: 18px; }
+
+  /* Community Challenges page (Oct 2026) */
+  .ch-form { background: var(--navy-900); border: 1px solid rgba(255,255,255,0.08); border-radius: var(--radius-md); padding: 16px; }
+  .ch-label { display: block; margin: 12px 0 6px; font-size: 13px; font-weight: 700; color: #fff; }
+  .ch-label:first-child { margin-top: 0; }
+  .ch-opt { font-weight: 500; color: var(--muted-invert); }
+  .ch-input { width: 100%; box-sizing: border-box; padding: 12px 12px; font-size: 16px; font-family: 'Inter', sans-serif; color: #fff;
+    background: #0b0d12; border: 1px solid rgba(255,255,255,0.18); border-radius: 12px; color-scheme: dark; }
+  .ch-input::placeholder { color: #8a93a8; }
+  .ch-input:focus { outline: none; border-color: var(--accent-2); }
+  .ch-row { display: flex; gap: 10px; }
+  .ch-col { flex: 1 1 0; min-width: 0; }
+  .ch-submit { width: 100%; margin-top: 16px; padding: 14px; border: none; border-radius: 999px; background: var(--accent-2); color: #fff;
+    font-size: 15px; font-weight: 800; font-family: 'Inter', sans-serif; cursor: pointer; }
+  .ch-submit:disabled { opacity: 0.6; }
+  .ch-msg { min-height: 18px; margin-top: 10px; font-size: 13.5px; font-weight: 600; text-align: center; color: #3ddc84; }
+  .ch-msg.err { color: #ff8a80; }
+  .ch-empty { padding: 18px; text-align: center; font-size: 14px; color: var(--muted-invert); background: var(--navy-900);
+    border: 1px solid rgba(255,255,255,0.08); border-radius: var(--radius-md); }
+  .ch-card { background: var(--navy-900); border: 1px solid rgba(255,255,255,0.08); border-radius: var(--radius-md); padding: 14px 14px 12px; margin-bottom: 12px; }
+  .ch-card-top { display: flex; align-items: flex-start; gap: 12px; }
+  .ch-emoji { flex: 0 0 auto; width: 42px; height: 42px; border-radius: 12px; background: var(--navy-800); border: 1px solid rgba(255,255,255,0.08);
+    display: flex; align-items: center; justify-content: center; font-size: 21px; }
+  .ch-card-main { flex: 1 1 auto; min-width: 0; }
+  .ch-title { font-size: 16px; font-weight: 800; color: #fff; line-height: 1.25; overflow-wrap: anywhere; }
+  .ch-meta { margin-top: 4px; font-size: 13.5px; color: #d3d8e4; line-height: 1.45; overflow-wrap: anywhere; }
+  .ch-badge { display: inline-block; margin-bottom: 6px; padding: 2px 9px; border-radius: 999px; font-size: 11px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: #fff; background: var(--accent-2); }
+  .ch-badge.today { background: #e5322d; }
+  .ch-actions { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+  .ch-btn { padding: 9px 14px; border-radius: 999px; font-size: 13.5px; font-weight: 700; font-family: 'Inter', sans-serif; cursor: pointer;
+    color: #fff; background: transparent; border: 1.5px solid rgba(255,255,255,0.3); }
+  .ch-btn.primary { background: var(--accent-2); border-color: var(--accent-2); }
+  .ch-by { margin-top: 8px; font-size: 12px; color: var(--faint-invert); }
+</style>
+</head>
+<body>
+
+<div class="rp-shell">
+<header class="app-nav" id="rpAppNav">
+  <a href="feed.html" class="app-brand">
+    <span class="app-brand-mark"><img src="assets/logo.png" alt="Ensemble Fitness" /></span>Ensemble Fitness
+  </a>
+  <span class="app-nav-connect" aria-hidden="true">
+    <svg viewBox="0 0 34 30" width="28" height="25" focusable="false">
+      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="var(--pink, #db1f52)" transform="translate(0,2)"/>
+      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="var(--pink-2, #ff3d68)" stroke="var(--navy-900, #0b0f1a)" stroke-width="2.2" paint-order="stroke" transform="translate(13,9) scale(0.62)"/>
+    </svg>
+  </span>
+</header>
+
+<div class="find-scroll">
+<div class="find-shell">
+  <div class="find-intro">
+    <h1>Community Challenges</h1>
+    <p>Post a run, walk, ride, or workout. Members can add it to their calendar and get a reminder the day before.</p>
+  </div>
+
+  <div class="find-section">
+    <div class="find-section-title">Post an event</div>
+    <form class="ch-form" id="chForm" novalidate>
+      <label class="ch-label" for="chTitle">What's it called?</label>
+      <input class="ch-input" id="chTitle" maxlength="80" placeholder="Saturday 5K Fun Run" autocomplete="off" />
+
+      <label class="ch-label" for="chType">What kind?</label>
+      <select class="ch-input" id="chType">
+        <option>Run</option><option>Walk</option><option>Bike</option><option>Workout</option><option>Other</option>
+      </select>
+
+      <label class="ch-label" for="chSponsor">Who's sponsoring it? <span class="ch-opt">(optional)</span></label>
+      <input class="ch-input" id="chSponsor" maxlength="80" placeholder="Your gym, a local shop, or yourself" autocomplete="off" />
+
+      <label class="ch-label" for="chLocation">Where?</label>
+      <input class="ch-input" id="chLocation" maxlength="120" placeholder="Riverside Park, main entrance" autocomplete="off" />
+
+      <div class="ch-row">
+        <div class="ch-col"><label class="ch-label" for="chDate">Date</label><input class="ch-input" id="chDate" type="date" /></div>
+        <div class="ch-col"><label class="ch-label" for="chTime">Time</label><input class="ch-input" id="chTime" type="time" /></div>
+      </div>
+
+      <button class="ch-submit" id="chSubmit" type="submit">Post event</button>
+      <div class="ch-msg" id="chMsg" role="status" aria-live="polite"></div>
+    </form>
+  </div>
+
+  <div class="find-section">
+    <div class="find-section-title">Upcoming events</div>
+    <div id="chList"><div class="ch-empty">Loading…</div></div>
+  </div>
+</div>
+</div>
+
+<nav class="rp-tabbar" aria-label="Main">
+  <a href="feed.html" class="rp-tab" aria-label="Home" data-tooltip="Home">
+    <span class="rp-tab-icon">🏠</span><span class="rp-tab-label">Home</span>
+  </a>
+  <a href="find.html" class="rp-tab active" aria-label="Explore" data-tooltip="Explore">
+    <span class="rp-tab-icon">🧭</span><span class="rp-tab-label">Explore</span>
+  </a>
+  <a href="upload.html" class="rp-tab rp-tab-post" aria-label="Upload a photo, video, or song" data-tooltip="Post">
+    <span class="rp-tab-icon">+</span><span class="rp-tab-label">Post</span>
+  </a>
+  <a href="profile.html" class="rp-tab" aria-label="My Profile" data-tooltip="Profile">
+    <span class="rp-tab-icon">👤</span><span class="rp-tab-label">Profile</span>
+  </a>
+  <a href="gear.html" class="rp-tab" aria-label="Ensemble Approved Products" data-tooltip="Products">
+    <span class="rp-tab-icon">🛒</span><span class="rp-tab-label">Products</span>
+  </a>
+</nav>
+</div>
+
+<!-- Ken's ask (Oct 2026): the "self-hosted copy, fall back to CDN" setup
+     never actually had a self-hosted copy on disk (js/vendor/supabase.js
+     was never created), so EVERY page load was silently failing that first
+     request, then falling back to this exact CDN script via a blocking
+     document.write (which stalls the page while it reruns) -- on every
+     page, every load, website and app alike. That's the real reason things
+     have felt slower since that change went in, not the CDN itself. Loading
+     directly from the CDN, plainly, is both simpler and faster than the
+     broken fallback dance was. -->
+<script src="js/vendor/supabase.js"></script>
+<script>window.supabase||document.write('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"><\/script>')</script>
+<script src="js/config.js"></script>
+<script src="js/shared-session.js"></script>
+<script src="js/supabaseClient.js"></script>
+<script>
+  (async function init() {
+    var user = await requireAuth();
+    if (!user) return;
+    var sb = window.sb;
+
+    var EMOJI = { Run: "🏃", Walk: "🚶", Bike: "🚴", Workout: "💪", Other: "✨" };
+    var $ = function (id) { return document.getElementById(id); };
+    var listEl = $("chList"), msgEl = $("chMsg"), form = $("chForm"), submitBtn = $("chSubmit");
+    var loadedEvents = [];
+
+    function pad(n) { return (n < 10 ? "0" : "") + n; }
+    function setMsg(text, isErr) { msgEl.textContent = text || ""; msgEl.className = "ch-msg" + (isErr ? " err" : ""); }
+
+    // Pre-fill today's date as the earliest choice
+    var now = new Date();
+    $("chDate").min = now.getFullYear() + "-" + pad(now.getMonth() + 1) + "-" + pad(now.getDate());
+
+    function dayDiff(d) {
+      var a = new Date(); a.setHours(0, 0, 0, 0);
+      var b = new Date(d); b.setHours(0, 0, 0, 0);
+      return Math.round((b - a) / 86400000);
+    }
+    function whenText(d) {
+      return d.toLocaleDateString([], { weekday: "long", month: "short", day: "numeric" }) + " · " +
+             d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    }
+
+    // Calendar file with a reminder one day before the event.
+    function icsStamp(d) {
+      return d.getUTCFullYear() + pad(d.getUTCMonth() + 1) + pad(d.getUTCDate()) + "T" +
+             pad(d.getUTCHours()) + pad(d.getUTCMinutes()) + pad(d.getUTCSeconds()) + "Z";
+    }
+    function icsEscape(t) { return String(t || "").replace(/\\/g, "\\\\").replace(/;/g, "\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n"); }
+    function downloadIcs(ev) {
+      var start = new Date(ev.starts_at), end = new Date(start.getTime() + 60 * 60 * 1000);
+      var desc = "Community challenge on Ensemble Fitness." + (ev.sponsor ? " Sponsored by " + ev.sponsor + "." : "");
+      var lines = [
+        "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Ensemble Fitness//Community Challenges//EN", "CALSCALE:GREGORIAN", "METHOD:PUBLISH",
+        "BEGIN:VEVENT",
+        "UID:" + ev.id + "@ensemblefitness.com",
+        "DTSTAMP:" + icsStamp(new Date()),
+        "DTSTART:" + icsStamp(start),
+        "DTEND:" + icsStamp(end),
+        "SUMMARY:" + icsEscape(ev.title),
+        "LOCATION:" + icsEscape(ev.location),
+        "DESCRIPTION:" + icsEscape(desc),
+        "BEGIN:VALARM", "TRIGGER:-P1D", "ACTION:DISPLAY", "DESCRIPTION:" + icsEscape("Tomorrow: " + ev.title), "END:VALARM",
+        "END:VEVENT", "END:VCALENDAR"
+      ];
+      var blob = new Blob([lines.join("\r\n")], { type: "text/calendar;charset=utf-8" });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url; a.download = "ensemble-event.ics";
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+    }
+
+    function render(names) {
+      listEl.textContent = "";
+      if (!loadedEvents.length) {
+        var empty = document.createElement("div");
+        empty.className = "ch-empty";
+        empty.textContent = "No events yet. Be the first to post one above.";
+        listEl.appendChild(empty);
+        return;
+      }
+      loadedEvents.forEach(function (ev) {
+        var start = new Date(ev.starts_at);
+        var card = document.createElement("div"); card.className = "ch-card";
+        var top = document.createElement("div"); top.className = "ch-card-top";
+        var em = document.createElement("div"); em.className = "ch-emoji"; em.textContent = EMOJI[ev.event_type] || "✨";
+        var main = document.createElement("div"); main.className = "ch-card-main";
+
+        var diff = dayDiff(start);
+        if (diff === 0 || diff === 1) {
+          var badge = document.createElement("span");
+          badge.className = "ch-badge" + (diff === 0 ? " today" : "");
+          badge.textContent = diff === 0 ? "Today" : "Tomorrow";
+          main.appendChild(badge);
+        }
+        var t = document.createElement("div"); t.className = "ch-title"; t.textContent = ev.title;
+        var meta = document.createElement("div"); meta.className = "ch-meta";
+        var l1 = document.createElement("div"); l1.textContent = "🗓 " + whenText(start);
+        var l2 = document.createElement("div"); l2.textContent = "📍 " + ev.location;
+        meta.appendChild(l1); meta.appendChild(l2);
+        if (ev.sponsor) { var l3 = document.createElement("div"); l3.textContent = "🤝 Sponsored by " + ev.sponsor; meta.appendChild(l3); }
+        main.appendChild(t); main.appendChild(meta);
+        top.appendChild(em); top.appendChild(main); card.appendChild(top);
+
+        var actions = document.createElement("div"); actions.className = "ch-actions";
+        var cal = document.createElement("button"); cal.type = "button"; cal.className = "ch-btn primary"; cal.textContent = "Add to my calendar";
+        cal.addEventListener("click", function () { downloadIcs(ev); });
+        actions.appendChild(cal);
+        if (ev.created_by === user.id) {
+          var del = document.createElement("button"); del.type = "button"; del.className = "ch-btn"; del.textContent = "Delete";
+          del.addEventListener("click", async function () {
+            if (!window.confirm("Delete this event?")) return;
+            var r = await sb.from("community_events").delete().eq("id", ev.id);
+            if (r.error) { setMsg("Couldn't delete that. Please try again.", true); return; }
+            load();
+          });
+          actions.appendChild(del);
+        }
+        card.appendChild(actions);
+        var by = names[ev.created_by];
+        if (by) { var byEl = document.createElement("div"); byEl.className = "ch-by"; byEl.textContent = "Posted by " + by; card.appendChild(byEl); }
+        listEl.appendChild(card);
+      });
+    }
+
+    async function load() {
+      var since = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString();
+      var res = await sb.from("community_events")
+        .select("id, created_by, title, sponsor, location, event_type, starts_at")
+        .gte("starts_at", since).order("starts_at", { ascending: true }).limit(50);
+      if (res.error) {
+        listEl.textContent = "";
+        var err = document.createElement("div"); err.className = "ch-empty";
+        err.textContent = "Events couldn't load right now. Please try again in a moment.";
+        listEl.appendChild(err);
+        return;
+      }
+      loadedEvents = res.data || [];
+      var ids = Array.from(new Set(loadedEvents.map(function (e) { return e.created_by; })));
+      var names = {};
+      if (ids.length) {
+        var pr = await sb.from("profiles").select("id, display_name").in("id", ids);
+        (pr.data || []).forEach(function (p) { if (p.display_name) names[p.id] = p.display_name; });
+      }
+      render(names);
+    }
+
+    form.addEventListener("submit", async function (e) {
+      e.preventDefault();
+      setMsg("");
+      var title = $("chTitle").value.trim(), location = $("chLocation").value.trim();
+      var sponsor = $("chSponsor").value.trim(), date = $("chDate").value, time = $("chTime").value;
+      if (title.length < 3) { setMsg("Please give your event a name.", true); return; }
+      if (location.length < 2) { setMsg("Please tell us where it is.", true); return; }
+      if (!date || !time) { setMsg("Please choose a date and a time.", true); return; }
+      var when = new Date(date + "T" + time);
+      if (isNaN(when.getTime()) || when.getTime() < Date.now()) { setMsg("That date and time has already passed.", true); return; }
+      submitBtn.disabled = true;
+      var ins = await sb.from("community_events").insert({
+        title: title, sponsor: sponsor || null, location: location,
+        event_type: $("chType").value, starts_at: when.toISOString()
+      });
+      submitBtn.disabled = false;
+      if (ins.error) { setMsg("Couldn't post that. Please try again.", true); return; }
+      form.reset();
+      setMsg("Your event is posted. Members can now add it to their calendar.");
+      load();
+    });
+
+    load();
+  })();
+</script>
+</body>
+</html>
