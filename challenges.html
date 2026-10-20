@@ -219,6 +219,8 @@
     color: #fff; background: transparent; border: 1.5px solid rgba(255,255,255,0.3); }
   .ch-btn.primary { background: var(--accent-2); border-color: var(--accent-2); }
   .ch-by { margin-top: 8px; font-size: 12px; color: var(--faint-invert); }
+  /* Ken (Oct 2026): no hearts in the phone top bar. */
+  @media (max-width: 899px) { .app-nav-connect { display: none !important; } }
 </style>
 </head>
 <body>

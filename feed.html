@@ -75,9 +75,10 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
   @media (max-width: 899px) {
     /* Ken (Oct 2026, mobile phase): the badge pill leaves the top bar — it now lives as the first row under
        Explore (find.html), which opens this same key. The two hearts come back to the right of the bar. */
+    /* Ken (Oct 2026): the two hearts leave the phone top bar too. */
+    #rpAppNav > .app-nav-connect { display: none; }
     #rpAppNav { padding-bottom: 8px; }
     .conn-key-pill { display: none !important; }
-    .conn-key-pill + .app-nav-connect { margin-left: auto; }
     .rp-mealprep { padding: 6px 0 4px; }
     .rp-mealprep-banner { padding: 4px 12px 4px 10px; margin: 0 14px 6px; }
     .rp-mealprep-banner-icon svg { width: 28px; height: 28px; }
