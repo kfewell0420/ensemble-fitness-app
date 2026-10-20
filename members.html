@@ -21,7 +21,11 @@
      comment on this same change for the full reasoning.
      Nov 2026, round 2: tightened header/shell padding to match
      books.html's established "icons only" pattern — see quote-library.html's
-     comment on this same follow-up for the full reasoning. -->
+     comment on this same follow-up for the full reasoning.
+     Oct 2026 (Ken, mobile phase): the "Community / Find Members Near You /
+     Meet other members..." heading block was removed — the ZIP box right
+     below already says it, so the page now starts at the Connection Status
+     key. A back arrow (js/back-button.js) is added for iPhone members. -->
 <header class="app-nav">
   <span class="app-nav-connect" aria-hidden="true">
     <svg viewBox="0 0 34 30" width="28" height="25" focusable="false">
@@ -67,11 +71,7 @@
 
 <div class="app-shell">
 
-  <div class="eyebrow">Community</div>
-  <h2 style="margin-bottom:6px;">Find Members Near You</h2>
-  <p class="card-sub" style="margin-bottom:10px;">Meet other Ensemble Fitness members. Enter a ZIP code to find people near you.</p>
-
-  <div data-conn-key style="margin-bottom:10px;"></div>
+  <div data-conn-key style="margin-bottom:10px; margin-top:6px;"></div>
 
   <div class="card">
     <div class="form-msg" id="searchMsg"></div>
@@ -109,6 +109,7 @@
 <script src="js/supabaseClient.js"></script>
 <script src="js/notifications.js"></script>
 <script src="js/moderation.js"></script>
+<script src="js/back-button.js"></script>
 <script>
   var currentUser = null;
   var currentUserWakeTime = "";
