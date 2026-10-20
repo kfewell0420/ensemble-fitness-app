@@ -11,12 +11,15 @@
      straight in one long, everything-at-once form. Scoped to this page only. */
   .upload-category-grid {
     display: grid;
-    grid-template-columns: 1fr;
-    gap: 12px;
+    grid-template-columns: repeat(4, 1fr); /* Oct 2026: Photo, Videos, Song, Message in one row */
+    gap: 8px;
     margin-bottom: 4px;
   }
-  @media (min-width: 480px) {
-    .upload-category-grid { grid-template-columns: repeat(3, 1fr); }
+  @media (max-width: 559px) {
+    .upload-category-tile { padding: 14px 4px !important; gap: 4px !important; }
+    .upload-category-icon { font-size: 24px !important; }
+    .upload-category-tile strong { font-size: 12.5px !important; }
+    .upload-category-tile span:not(.upload-category-icon) { display: none; } /* phones: icon + name only */
   }
   .upload-category-tile {
     display: flex;
@@ -42,6 +45,13 @@
   .upload-category-icon { font-size: 28px; line-height: 1; margin-bottom: 4px; }
   .upload-category-tile strong { color: #fff; font-size: 14.5px; }
   .upload-category-tile span { font-size: 12px; color: var(--muted-invert); line-height: 1.4; }
+  .msg-rec-card { background: #0b0f1a; border: 1.5px solid rgba(255,255,255,0.14); border-radius: 18px; padding: 16px; margin-bottom: 14px; text-align: center; color: #fff; }
+  .msg-rec-title { font-size: 17px; font-weight: 800; margin-bottom: 4px; }
+  .msg-rec-sub { font-size: 13px; color: rgba(255,255,255,0.75); line-height: 1.4; margin-bottom: 12px; }
+  .msg-rec-btn { width: 100%; min-height: 54px; border-radius: 999px; border: none; background: #ff6a2b; color: #fff; font-size: 17px; font-weight: 800; font-family: inherit; cursor: pointer; }
+  .msg-rec-btn.recording { background: #d62d2d; }
+  .msg-rec-time { font-size: 22px; font-weight: 800; margin-top: 10px; font-variant-numeric: tabular-nums; }
+  .msg-rec-again { margin-top: 10px; background: none; border: 1.5px solid rgba(255,255,255,0.35); color: #fff; border-radius: 999px; padding: 9px 18px; font-size: 14px; font-family: inherit; cursor: pointer; }
 
   .upload-back-link {
     display: inline-flex;
@@ -457,6 +467,11 @@
         <strong>Song</strong>
         <span>Artist upload</span>
       </button>
+      <button type="button" class="upload-category-tile" data-category="message">
+        <span class="upload-category-icon">🎙️</span>
+        <strong>Message</strong>
+        <span>Record your motivational quote</span>
+      </button>
     </div>
 
     <!-- Ken's ask (Nov 2026): "once they get the green light on the bank
@@ -563,6 +578,17 @@
            second one, so the sheet never visibly opens. Dropping the
            redundant for= leaves the nested-input association as the only
            trigger, so the tap fires once. -->
+      <div id="msgRecorder" style="display:none;">
+        <div class="msg-rec-card">
+          <div class="msg-rec-title">Record your message</div>
+          <div class="msg-rec-sub">Say it in your own voice, up to 60 seconds. Or choose an audio file below.</div>
+          <button type="button" class="msg-rec-btn" id="msgRecBtn">&#127897; Tap to record</button>
+          <div class="msg-rec-time" id="msgRecTime" style="display:none;">0:00</div>
+          <audio id="msgRecPlayback" controls style="display:none;width:100%;margin-top:10px;"></audio>
+          <button type="button" class="msg-rec-again" id="msgRecAgain" style="display:none;">Record again</button>
+        </div>
+      </div>
+
       <label class="dropzone" id="dropzone">
         <div class="dropzone-icon">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
@@ -669,12 +695,13 @@
              dropdown is self-explanatory. -->
       </div>
       <div class="field" id="songTitleField" style="display:none;">
-        <label for="songTitle">Song title</label>
+        <label for="songTitle" id="songTitleLabel">Song title</label>
         <input type="text" id="songTitle" name="songTitle" placeholder="e.g. Morning Light" maxlength="120" />
-        <label for="songGenre" style="margin-top:12px; display:block;">Category</label>
-        <select id="songGenre"><option value="">Choose a category…</option><option>Motivational</option><option>Gospel / Inspirational</option><option>Hip-Hop</option><option>R&amp;B</option><option>Pop</option><option>Rock</option><option>High-Energy Cardio</option><option>Chill / Stretch</option><option>Other</option></select>
-        <span class="field-hint">Members filter the music list by category, so pick the closest fit.</span>
-        <span class="field-hint">Your song publishes to the Music Library right away under your display name — no waiting on approval. Our team reviews new songs regularly to make sure they fit the community's motivational vibe.</span>
+        <label for="songGenre" class="song-only" style="margin-top:12px; display:block;">Category</label>
+        <select id="songGenre" class="song-only"><option value="">Choose a category…</option><option>Motivational</option><option>Gospel / Inspirational</option><option>Hip-Hop</option><option>R&amp;B</option><option>Pop</option><option>Rock</option><option>High-Energy Cardio</option><option>Chill / Stretch</option><option>Other</option></select>
+        <span class="field-hint song-only">Members filter the music list by category, so pick the closest fit.</span>
+        <span class="field-hint msg-only" style="display:none;">Your message goes into the Positive Message library right away, so anyone can pick it to play behind their video. Keep it short and uplifting.</span>
+        <span class="field-hint song-only">Your song publishes to the Music Library right away under your display name — no waiting on approval. Our team reviews new songs regularly to make sure they fit the community's motivational vibe.</span>
       </div>
       <div class="field" id="captionField">
         <label for="caption" id="captionLabel">Caption (optional)</label>
@@ -1087,6 +1114,13 @@
       placeholder: "Choose an audio file",
       hint: "MP3, M4A, or WAV"
     },
+    message: {
+      accept: "audio/*",
+      heading: "Add a positive message",
+      sub: "Record a short motivational message. It goes into the Positive Message library and members can play it behind their videos.",
+      placeholder: "Or choose an audio file",
+      hint: "MP3, M4A, or WAV"
+    },
     // Used only for the marketing site's deep link (e.g. Healthy Meal Prep's
     // "Post Your Meal Prep" button) — that link only ever means a photo or
     // video post, never a song, but doesn't say which of the two, so this
@@ -1102,6 +1136,7 @@
   };
 
   var DEFAULT_POST_CATEGORY = "Working Out";
+  var messageMode = false; // true while the Message tile's flow is open (a Positive Message, not a song)
   function selectCategory(category, opts) {
     opts = opts || {};
 
@@ -1162,8 +1197,17 @@
     uploadFlow.style.display = "block";
     // The workout Category and Location fields only ever apply to a photo
     // or video post — a song publishes with just a title, no feed category.
-    var isSong = category === "song";
-    document.getElementById("songLinkedBadge").style.display = isSong ? "flex" : "none";
+    var isMessage = category === "message";
+    messageMode = isMessage;
+    var isSong = category === "song" || isMessage;
+    document.getElementById("songLinkedBadge").style.display = (isSong && !isMessage) ? "flex" : "none";
+    document.getElementById("msgRecorder").style.display = isMessage ? "block" : "none";
+    document.getElementById("songTitleLabel").textContent = isMessage ? "Message title" : "Song title";
+    document.getElementById("songTitle").placeholder = isMessage ? "e.g. You are stronger than you think" : "e.g. Morning Light";
+    Array.prototype.forEach.call(document.querySelectorAll("#songTitleField .song-only"), function (el) {
+      el.style.display = isMessage ? "none" : (el.tagName === "LABEL" ? "block" : "");
+    });
+    Array.prototype.forEach.call(document.querySelectorAll("#songTitleField .msg-only"), function (el) { el.style.display = isMessage ? "" : "none"; });
     var isPhoto = category === "photo";
     workoutTypeField.style.display = isSong ? "none" : "block";
     locationField.style.display = isSong ? "none" : "block";
@@ -1179,7 +1223,7 @@
     productTagField.style.display = "none";
     document.getElementById("songTitleField").style.display = isSong ? "block" : "none";
     document.getElementById("captionField").style.display = isSong ? "none" : "block";
-    if (!opts.skipAutoOpen) {
+    if (!opts.skipAutoOpen && !isMessage) {
       // Opening the native file picker immediately is the whole point of
       // picking a type first — tapping "Song" feels like it already started
       // the upload, instead of landing on one more empty box to tap again.
@@ -1265,6 +1309,9 @@
   // existing (it no longer does), in case a future build wants a way back
   // in without carrying a stale file/field selection into a new category.
   function resetToCategoryGrid() {
+    messageMode = false;
+    try { msgRecReset(); } catch (e) {}
+    var mr = document.getElementById("msgRecorder"); if (mr) mr.style.display = "none";
     categoryGrid.style.display = "grid";
     uploadFlow.style.display = "none";
     uploadEyebrow.style.display = "";
@@ -1287,7 +1334,7 @@
   if (changeCategoryBtn) changeCategoryBtn.addEventListener("click", resetToCategoryGrid);
 
   // Label on the main button once something is chosen: one clear word for what it does.
-  function postLabel() { return (selectedFile && fileKind(selectedFile) === "audio") ? "Upload song" : "Post"; }
+  function postLabel() { return (selectedFile && fileKind(selectedFile) === "audio") ? (messageMode ? "Post message" : "Upload song") : "Post"; }
 
   // Back arrow at the top of the upload step: stop any preview, drop the chosen clips, return to the type picker.
   var flowBackBtn = document.getElementById("flowBackBtn");
@@ -2661,7 +2708,7 @@
       trackPickerRow.querySelector(".mt-meta").textContent = metaBits.join(" · ");
     } else {
       document.getElementById("musicSection").classList.remove("has-song");
-      trackPickerRow.innerHTML = '<button type="button" class="mt-choose">🎵 Choose a song <span class="mt-count">' + allTracks.length + ' tracks ›</span></button>';
+      trackPickerRow.innerHTML = '<button type="button" class="mt-choose">🎵 Choose a song or message <span class="mt-count">' + allTracks.length + ' tracks ›</span></button>';
     }
   }
 
@@ -3121,11 +3168,11 @@
     }
     var songTitleField = document.getElementById("songTitle");
     if (precheckKind === "audio" && !songTitleField.value.trim()) {
-      showMsg(msg, "Please give your song a title.", "error");
+      showMsg(msg, messageMode ? "Please give your message a title." : "Please give your song a title.", "error");
       songTitleField.focus();
       return;
     }
-    if (precheckKind === "audio" && !document.getElementById("songGenre").value) {
+    if (precheckKind === "audio" && !messageMode && !document.getElementById("songGenre").value) {
       showMsg(msg, "Please choose a category for your song so members can find it.", "error");
       document.getElementById("songGenre").focus();
       return;
@@ -3154,7 +3201,7 @@
         });
         if (trackUploadError) throw trackUploadError;
 
-        var durationSeconds = await getAudioDurationSeconds(selectedFile);
+        var durationSeconds = selectedFile._recSeconds || await getAudioDurationSeconds(selectedFile);
         var artistName = memberDisplayName || "Ensemble Fitness Artist";
 
         var trackRow = {
@@ -3164,9 +3211,9 @@
           duration_seconds: durationSeconds,
           storage_path: trackPath,
           is_active: true,
-          is_independent_artist: true,
+          is_independent_artist: !messageMode, // a Positive Message is not an artist song: no tips, no payouts
           submitted_by: currentUser.id,
-          genre: document.getElementById("songGenre").value || null
+          genre: messageMode ? "Positive Message" : (document.getElementById("songGenre").value || null)
         };
         var { error: trackInsertError } = await window.sb.from("tracks").insert(trackRow);
         if (trackInsertError && /genre/i.test(trackInsertError.message || "")) {
@@ -3175,7 +3222,7 @@
         }
         if (trackInsertError) throw trackInsertError;
 
-        showMsg(msg, "🎉 \"" + songTitle + "\" is live in the Music Library now! Our team reviews new songs regularly to make sure they fit the community's motivational vibe — you're all set for now.", "success");
+        showMsg(msg, messageMode ? "Your message has been uploaded." : "🎉 \"" + songTitle + "\" is live in the Music Library now! Our team reviews new songs regularly to make sure they fit the community's motivational vibe — you're all set for now.", "success");
         fileInput.value = "";
         selectedFile = null;
         dropzoneLabel.textContent = CATEGORY_META.song.placeholder;
@@ -3184,6 +3231,13 @@
         document.getElementById("songTitleField").style.display = "none";
         document.getElementById("captionField").style.display = "block";
         uploadBtn.textContent = "↑ Select a file above";
+        if (messageMode) {
+          // Same as a post: just the green message, then on to the feed.
+          try { msgRecReset(); } catch (e) {}
+          uploadFlow.style.display = "none";
+          try { window.scrollTo(0, 0); } catch (e) {}
+          if (POST_UPLOAD_PAGE) setTimeout(function () { window.location.href = POST_UPLOAD_PAGE; }, 2200);
+        }
       } catch (err) {
         // Ken's ask (Oct 2026): if the audio file made it to the "tracks"
         // bucket but the tracks row failed to insert (RLS hiccup, dropped
@@ -3419,6 +3473,100 @@
       uploadBtn.disabled = false;
       uploadBtn.textContent = postLabel();
     }
+  });
+
+  // ---- Positive messages: record in the page (Ken, Oct 2026) ---------------------------------------------
+  // Tap to record (up to 60 seconds), tap again to stop, listen back, record again if you like. The
+  // recording is handed to the normal file input as if it had been chosen from the phone, so the rest of the
+  // page (title, Post button, upload) treats it exactly like any other audio file.
+  var msgRecBtn = document.getElementById("msgRecBtn"), msgRecTime = document.getElementById("msgRecTime");
+  var msgRecPlayback = document.getElementById("msgRecPlayback"), msgRecAgain = document.getElementById("msgRecAgain");
+  var msgRecorderObj = null, msgRecStream = null, msgRecChunks = [], msgRecStart = 0, msgRecTimer = null, msgRecUrl = null;
+  var MSG_REC_MAX = 60;
+  function msgFmt(sec) { sec = Math.max(0, Math.floor(sec)); return Math.floor(sec / 60) + ":" + ("0" + (sec % 60)).slice(-2); }
+  function msgRecReset() {
+    clearInterval(msgRecTimer);
+    try { if (msgRecorderObj && msgRecorderObj.state === "recording") { msgRecorderObj.onstop = null; msgRecorderObj.stop(); } } catch (e) {}
+    try { if (msgRecStream) msgRecStream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {}
+    msgRecorderObj = null; msgRecStream = null; msgRecChunks = [];
+    try { if (msgRecUrl) URL.revokeObjectURL(msgRecUrl); } catch (e) {}
+    msgRecUrl = null;
+    if (!msgRecBtn) return;
+    msgRecBtn.classList.remove("recording");
+    msgRecBtn.style.display = "";
+    msgRecBtn.textContent = "\uD83C\uDF99 Tap to record";
+    msgRecTime.style.display = "none";
+    msgRecPlayback.pause(); msgRecPlayback.removeAttribute("src"); msgRecPlayback.style.display = "none";
+    msgRecAgain.style.display = "none";
+  }
+  function msgRecStop() {
+    clearInterval(msgRecTimer);
+    if (msgRecorderObj && msgRecorderObj.state === "recording") msgRecorderObj.stop();
+  }
+  async function msgRecBegin() {
+    var uploadMsgEl = document.getElementById("uploadMsg");
+    hideMsg(uploadMsgEl);
+    if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder)) {
+      showMsg(uploadMsgEl, "Recording isn't available here. Choose an audio file instead.", "error");
+      return;
+    }
+    try {
+      msgRecStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (err) {
+      showMsg(uploadMsgEl, "Couldn't reach your microphone. Check the permission and try again, or choose an audio file.", "error");
+      return;
+    }
+    var mime = "";
+    ["audio/mp4", "audio/webm;codecs=opus", "audio/webm"].some(function (m) {
+      try { if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(m)) { mime = m; return true; } } catch (e) {}
+      return false;
+    });
+    msgRecChunks = [];
+    msgRecorderObj = mime ? new MediaRecorder(msgRecStream, { mimeType: mime }) : new MediaRecorder(msgRecStream);
+    msgRecorderObj.ondataavailable = function (e) { if (e.data && e.data.size > 0) msgRecChunks.push(e.data); };
+    msgRecorderObj.onstop = function () {
+      var secs = (Date.now() - msgRecStart) / 1000;
+      try { msgRecStream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {}
+      var type = (msgRecorderObj && msgRecorderObj.mimeType) || mime || "audio/webm";
+      var baseType = type.split(";")[0];
+      var ext = baseType.indexOf("mp4") !== -1 ? "m4a" : baseType.indexOf("ogg") !== -1 ? "ogg" : "webm";
+      var blob = new Blob(msgRecChunks, { type: baseType });
+      if (!blob.size || secs < 1) { msgRecReset(); showMsg(document.getElementById("uploadMsg"), "That was too short. Tap record and try again.", "error"); return; }
+      var file = new File([blob], "message-" + Date.now() + "." + ext, { type: baseType });
+      file._recSeconds = Math.round(Math.min(secs, MSG_REC_MAX));
+      try { var dt = new DataTransfer(); dt.items.add(file); fileInput.files = dt.files; } catch (e) {}
+      fileInput.dispatchEvent(new Event("change"));
+      if (!selectedFile) { selectedFile = file; } // browsers that cannot fill the file input from code
+      selectedFile._recSeconds = file._recSeconds;
+      msgRecUrl = URL.createObjectURL(blob);
+      msgRecPlayback.src = msgRecUrl;
+      msgRecPlayback.style.display = "block";
+      msgRecBtn.style.display = "none";
+      msgRecTime.style.display = "none";
+      msgRecAgain.style.display = "inline-block";
+      msgRecorderObj = null;
+    };
+    msgRecorderObj.start();
+    msgRecStart = Date.now();
+    msgRecBtn.classList.add("recording");
+    msgRecBtn.textContent = "\u23F9 Tap to stop";
+    msgRecTime.style.display = "block";
+    msgRecTime.textContent = "0:00";
+    msgRecTimer = setInterval(function () {
+      var el = (Date.now() - msgRecStart) / 1000;
+      msgRecTime.textContent = msgFmt(el);
+      if (el >= MSG_REC_MAX) msgRecStop();
+    }, 250);
+  }
+  if (msgRecBtn) msgRecBtn.addEventListener("click", function () {
+    if (msgRecorderObj && msgRecorderObj.state === "recording") msgRecStop(); else msgRecBegin();
+  });
+  if (msgRecAgain) msgRecAgain.addEventListener("click", function () {
+    msgRecReset();
+    fileInput.value = "";
+    selectedFile = null;
+    uploadBtn.disabled = true;
+    uploadBtn.textContent = "↑ Select a file above";
   });
 
   // ---- Exercise labels (Ken, Oct 2026) ---------------------------------------------------------
