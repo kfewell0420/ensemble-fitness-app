@@ -79,9 +79,9 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
        Explore (find.html), which opens this same key. The two hearts come back to the right of the bar. */
     /* Ken (Oct 2026): the badge pill is gone from the phone top bar; the two hearts stay in the right corner on the
        same line as "Ensemble Fitness". */
+    #rpAppNav > .app-nav-connect { display: none; }
     #rpAppNav { padding-bottom: 8px; }
     .conn-key-pill { display: none !important; }
-    .conn-key-pill + .app-nav-connect { margin-left: auto; }
     .rp-mealprep { padding: 6px 0 4px; }
     .rp-mealprep-banner { padding: 4px 12px 4px 10px; margin: 0 14px 6px; }
     .rp-mealprep-banner-icon svg { width: 28px; height: 28px; }
@@ -91,7 +91,11 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
        still live in Explore). The member circles stay; a short welcome note sits where the pills were. */
     .rp-mp-toprow { display: none; }
     .rp-community-note { display: block; margin: -6px 10px 8px; padding: 10px 14px 11px; border-radius: 10px; background: #131a28; border: 1px solid rgba(255,255,255,0.06); font-family: 'Inter', sans-serif; }
-    .rp-cn-eyebrow { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent-2, #ff6b3d); margin-bottom: 6px; }
+    /* Ken (Oct 2026): the two hearts moved here from the top bar — right after the "Your Community" label, with a small gap. */
+    .rp-cn-top { display: flex; align-items: center; justify-content: flex-start; gap: 12px; margin-bottom: 4px; }
+    .rp-cn-eyebrow { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent-2, #ff6b3d); margin: 0; }
+    .rp-cn-hearts { flex: 0 0 auto; display: flex; align-items: center; }
+    .rp-cn-hearts svg { display: block; width: 27px; height: 24px; }
     /* The title stays on ONE line: it sizes itself to the phone's width (about 17px on a 412px phone, smaller on narrow ones). */
     .rp-cn-title { font-family: 'Poppins','Inter',sans-serif; font-size: min(17px, calc((100vw - 48px) / 21.2)); font-weight: 800; line-height: 1.2; color: #fff; margin-bottom: 6px; white-space: nowrap; }
     /* Ken (Oct 2026, mobile): "Your Journeys" on the LEFT, Healthy Meal Preps on the RIGHT. */
@@ -2061,7 +2065,13 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
       </a>
       </div>
       <div class="rp-community-note">
-        <div class="rp-cn-eyebrow">Your Community</div>
+        <div class="rp-cn-top">
+          <div class="rp-cn-eyebrow">Your Community</div>
+          <span class="rp-cn-hearts" aria-hidden="true"><svg viewBox="0 0 34 30" width="28" height="25" focusable="false">
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="var(--pink, #db1f52)" transform="translate(0,2)"/>
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="var(--pink-2, #ff3d68)" stroke="var(--navy-900, #0b0f1a)" stroke-width="2.2" paint-order="stroke" transform="translate(13,9) scale(0.62)"/>
+          </svg></span>
+        </div>
         <div class="rp-cn-title">Find your people. Keep moving together.</div>
       </div>
       <div class="rp-mealprep-track" id="rpMealPrepTrack"></div>
