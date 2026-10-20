@@ -2306,6 +2306,29 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
   // for a page nobody resizes live.
   var isWideLayout = window.matchMedia("(min-width: 900px)").matches;
 
+  // Ken (Oct 2026): arriving from Explore > Healthy Meal Prep (?mp=...), the home feed's first video started
+  // playing (with its song) BEHIND the meal prep popup. While that popup is open, nothing outside it may start
+  // playing; when it closes, the on-screen video resumes. Only active for that link flow.
+  var holdFeedPlayback = /[?&]mp=/.test(location.search);
+  (function () {
+    var origPlay = HTMLMediaElement.prototype.play;
+    HTMLMediaElement.prototype.play = function () {
+      if (holdFeedPlayback && !(this.closest && this.closest("#rpMpModal"))) return Promise.resolve();
+      return origPlay.apply(this, arguments);
+    };
+  })();
+  function releaseFeedHold() {
+    if (!holdFeedPlayback) return;
+    holdFeedPlayback = false;
+    try {
+      document.querySelectorAll(".rp-slide video").forEach(function (v) {
+        var r = v.getBoundingClientRect();
+        var vis = Math.min(r.bottom, window.innerHeight) - Math.max(r.top, 0);
+        if (r.height > 0 && vis / r.height > 0.6) { var pr = v.play(); if (pr && pr.catch) pr.catch(function () {}); }
+      });
+    } catch (e) {}
+  }
+
   // ---- Loading skeleton (round 12, Oct 2026) -------------------------
   // Moved up above the <script src> tags in round 16 — see the big comment
   // and the early <script> block right after the comments modal, just
@@ -3733,20 +3756,22 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     if (m) {
       var idx = Number(m[1]);
       if (ILLUSTRATIVE_MEAL_PREP[idx]) openMealPrepModal(buildIllustrativeMealPrepItem(idx), idx);
+      else releaseFeedHold();
       return;
     }
     var res = await window.sb.from("media")
       .select("*, profiles!media_user_id_fkey(display_name)")
       .eq("id", id).eq("status", "approved").maybeSingle();
-    if (res.error || !res.data) return;
+    if (res.error || !res.data) { releaseFeedHold(); return; }
     var built = await buildItems([res.data]);
-    if (built && built[0]) openMealPrepModal(built[0], -1);
+    if (built && built[0]) openMealPrepModal(built[0], -1); else releaseFeedHold();
   }
 
   function closeMealPrepModal() {
     var modal = document.getElementById("rpMpModal");
     modal.querySelectorAll("video").forEach(function (v) { v.pause(); });
     modal.hidden = true;
+    releaseFeedHold();
   }
   document.getElementById("rpMpModalClose").addEventListener("click", closeMealPrepModal);
   // The modal is now a centered card over a dimmed backdrop rather than a
@@ -5272,7 +5297,11 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     // example cards) so the exact same full popup opens for the card they tapped.
     try {
       var mpLink = location.search.match(/[?&]mp=([^&]+)/);
-      if (mpLink) openMealPrepFromLink(decodeURIComponent(mpLink[1]));
+      if (mpLink) {
+        openMealPrepFromLink(decodeURIComponent(mpLink[1])).catch(releaseFeedHold);
+        // Failsafe: if the popup never opens for any reason, the feed must not stay silent.
+        setTimeout(function () { var m = document.getElementById("rpMpModal"); if (m && m.hidden) releaseFeedHold(); }, 12000);
+      }
     } catch (e) { /* link is a convenience only */ }
 
     await reelPromise;
