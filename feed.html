@@ -73,9 +73,11 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
      the website too), not only inside the phone app, so the badge pill sits on the same line as "Ensemble
      Fitness" and the Healthy Meal Preps pill is the same size everywhere. Was "html.ef-native ..." rules. */
   @media (max-width: 899px) {
-    #rpAppNav > .app-nav-connect { display: none; }
+    /* Ken (Oct 2026, mobile phase): the badge pill leaves the top bar — it now lives as the first row under
+       Explore (find.html), which opens this same key. The two hearts come back to the right of the bar. */
     #rpAppNav { padding-bottom: 8px; }
-    .conn-key-pill { top: 0; left: 0; margin: 0 0 0 auto; }
+    .conn-key-pill { display: none !important; }
+    .conn-key-pill + .app-nav-connect { margin-left: auto; }
     .rp-mealprep { padding: 6px 0 4px; }
     .rp-mealprep-banner { padding: 4px 12px 4px 10px; margin: 0 14px 6px; }
     .rp-mealprep-banner-icon svg { width: 28px; height: 28px; }
@@ -5493,6 +5495,27 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
       '<div class="rp-book-row">' + (cards || '<div class="rp-panel-empty">New titles coming soon.</div>') + '</div>' +
       '<a class="rp-panel-link" href="books.html">Browse all books →</a>';
   }
+</script>
+<script>
+/* Explore page -> "What do these mean?" row sends people here with ?key=1; open the same badge key the pill used to. */
+(function () {
+  try {
+    if (!/[?&]key=1(&|$)/.test(location.search)) return;
+    var tries = 0;
+    function open() {
+      var btn = document.querySelector('.conn-key-pill') || document.querySelector('.conn-key-open');
+      if (btn) btn.click();
+      tries++;
+      setTimeout(function () {
+        var shown = document.querySelector('.conn-key-overlay, .conn-key-modal');
+        var vis = shown && (shown.offsetParent !== null || getComputedStyle(shown).position === 'fixed') && getComputedStyle(shown).display !== 'none';
+        if (!vis && tries < 6) open();
+      }, 350);
+    }
+    window.addEventListener('load', function () { setTimeout(open, 400); });
+    if (history.replaceState) history.replaceState(null, '', location.pathname);
+  } catch (e) {}
+})();
 </script>
 </body>
 </html>
