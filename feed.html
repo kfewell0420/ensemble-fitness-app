@@ -1357,6 +1357,9 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     font-family: 'Inter', sans-serif;
   }
   .rp-tab-icon { font-size: 20px; line-height: 1; }
+  /* Approved Marketplace header basket: same symbol, tinted orange — Ken, Oct 2026 */
+  .rp-panel-icon.ef-cart-ico2 { filter: grayscale(1) brightness(.95) sepia(1) saturate(14) hue-rotate(-34deg) drop-shadow(0 0 3px rgba(255,90,31,0.35)); }
+
   .rp-tab:not([href="feed.html"]) .rp-tab-icon { filter: brightness(1.85) contrast(1.05) drop-shadow(0 0 3px rgba(255,255,255,0.5)); }
   .rp-tab-label { font-size: 10px; font-weight: 600; letter-spacing: 0.01em; }
   .rp-tab.active { color: #fff; }
@@ -5435,7 +5438,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
         escapeHtml(g.name) + '</div>' + (g.price ? '<div class="rp-mini-sub">' + escapeHtml(g.price) + '</div>' : '') + '</div></div>';
     }).join("");
     panel.innerHTML =
-      '<div class="rp-panel-head"><span class="rp-panel-icon">🛒</span><span class="rp-panel-title">Approved Marketplace</span></div>' +
+      '<div class="rp-panel-head"><span class="rp-panel-icon ef-cart-ico2">🛒</span><span class="rp-panel-title">Approved Marketplace</span></div>' +
       (rows || '<div class="rp-panel-empty">Real Amazon picks Ken actually buys — new ones added often.</div>') +
       '<a class="rp-panel-link" href="gear.html">Browse the picks →</a>';
   }
