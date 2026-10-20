@@ -188,18 +188,19 @@
   .find-chevron { flex: 0 0 auto; color: var(--faint-invert); font-size: 18px; }
   /* Healthy Meal Prep page (Ken, Oct 2026): members lined up as named cards — tap one to open its full popup on the home page. */
   .mp-lede { margin: 0 0 14px; font-size: 13px; line-height: 1.4; color: var(--faint-invert); }
-  .mp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 12px; }
-  .mp-card { display: block; text-decoration: none; color: #fff; }
+  .mp-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 12px; }
+  .mp-card { display: block; min-width: 0; text-decoration: none; color: #fff; }
   .mp-card:active { opacity: .85; }
   .mp-thumb { position: relative; width: 100%; aspect-ratio: 1 / 1; border-radius: 16px; overflow: hidden; background: #1a2030; border: 2px solid rgba(255,255,255,0.10); }
   .mp-thumb img, .mp-thumb video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
   .mp-thumb .mp-fallback { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font: 800 34px 'Poppins','Inter',sans-serif; color: #0b0f1a; }
-  .mp-title { margin-top: 8px; font: 700 13.5px/1.25 'Inter', sans-serif; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  .mp-by { margin-top: 2px; font-size: 12px; color: var(--faint-invert); }
+  /* Every card is the same size: square photo, a name box that always holds two lines, and a one-line "by" row. */
+  .mp-title { margin-top: 8px; font: 700 13.5px/1.25 'Inter', sans-serif; height: 2.5em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; }
+  .mp-by { margin-top: 2px; font-size: 12px; color: var(--faint-invert); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mp-more { grid-column: 1 / -1; margin: 6px 0 18px; padding: 13px 16px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.14); background: #131a28; color: #fff; font: 700 14px 'Inter', sans-serif; cursor: pointer; }
+  .mp-more:active { opacity: .7; }
   .mp-by b { color: var(--accent-2, #ff6b3d); font-weight: 700; }
   .mp-empty { grid-column: 1 / -1; padding: 18px 4px; font-size: 13px; color: var(--faint-invert); }
-  /* Ken (Oct 2026): no hearts in the phone top bar. */
-  @media (max-width: 899px) { .app-nav-connect { display: none !important; } }
 </style>
 </head>
 <body>
@@ -291,46 +292,71 @@
       '<div class="mp-title">' + mpEsc(c.title) + '</div>' +
       '<div class="mp-by">by <b>' + mpEsc(c.name) + '</b></div></a>';
   }
+  // Room for hundreds of meal preps: everything is fetched once (newest first) but shown 24 at a time, signing
+  // photo links only for the cards on screen, with a "Show more" button for the rest.
+  var MP_BATCH = 24;
+  var mpRows = [], mpShown = 0;
+  async function mpCardsFor(rows) {
+    var paths = [];
+    rows.forEach(function (r) {
+      if (r.kind === "photo" && r.storage_path) paths.push(r.storage_path);
+      if (r.kind === "video" && r.poster_path) paths.push(r.poster_path);
+      if (r.kind === "video" && r.storage_path && !r.poster_path) paths.push(r.storage_path);
+    });
+    var urlMap = {};
+    if (paths.length) {
+      try {
+        var signed = await window.sb.storage.from("media").createSignedUrls(paths, 3600);
+        (signed.data || []).forEach(function (x) { if (x && x.path && x.signedUrl) urlMap[x.path] = x.signedUrl; });
+      } catch (e) { /* cards still show with their colored initial */ }
+    }
+    return rows.map(function (r) {
+      return {
+        id: r.id, userId: r.user_id,
+        name: (r.profiles && r.profiles.display_name) || "A member",
+        title: (r.title && r.title.trim()) || mpFallbackTitle(r.caption),
+        imgUrl: r.kind === "photo" ? (urlMap[r.storage_path] || "") : (r.poster_path ? (urlMap[r.poster_path] || "") : ""),
+        videoUrl: (r.kind === "video" && !r.poster_path) ? (urlMap[r.storage_path] || "") : "",
+        posterUrl: ""
+      };
+    });
+  }
+  async function mpShowMore() {
+    var grid = document.getElementById("mpGrid");
+    var more = document.getElementById("mpMore");
+    if (more) more.remove();
+    var batch = mpRows.slice(mpShown, mpShown + MP_BATCH);
+    mpShown += batch.length;
+    var cards = await mpCardsFor(batch);
+    grid.insertAdjacentHTML("beforeend", cards.map(mpCard).join(""));
+    if (mpShown < mpRows.length) {
+      grid.insertAdjacentHTML("beforeend", '<button type="button" class="mp-more" id="mpMore">Show more meal preps (' + (mpRows.length - mpShown) + ' more)</button>');
+      document.getElementById("mpMore").addEventListener("click", mpShowMore);
+    }
+  }
   async function mpLoad() {
     var grid = document.getElementById("mpGrid");
-    var cards = [];
     try {
       if (typeof loadBlockedIds === "function") { try { await loadBlockedIds(); } catch (e) {} }
       var res = await window.sb.from("media")
         .select("*, profiles!media_user_id_fkey(display_name)")
         .eq("status", "approved").eq("workout_type", "Meal Prep")
         .in("kind", ["photo", "video"])
-        .order("created_at", { ascending: false }).limit(60);
-      var rows = res.data || [];
-      if (typeof filterOutBlocked === "function") { try { rows = filterOutBlocked(rows); } catch (e) {} }
-      var paths = [];
-      rows.forEach(function (r) {
-        if (r.kind === "photo" && r.storage_path) paths.push(r.storage_path);
-        if (r.kind === "video" && r.poster_path) paths.push(r.poster_path);
-        if (r.kind === "video" && r.storage_path && !r.poster_path) paths.push(r.storage_path);
-      });
-      var urlMap = {};
-      if (paths.length) {
-        var signed = await window.sb.storage.from("media").createSignedUrls(paths, 3600);
-        (signed.data || []).forEach(function (x) { if (x && x.path && x.signedUrl) urlMap[x.path] = x.signedUrl; });
+        .order("created_at", { ascending: false }).limit(300);
+      mpRows = res.data || [];
+      if (typeof filterOutBlocked === "function") { try { mpRows = filterOutBlocked(mpRows); } catch (e) {} }
+    } catch (e) { mpRows = []; }
+    grid.innerHTML = "";
+    await mpShowMore();
+    // While there are only a few real posts, the six examples fill the page so it is never blank.
+    if (mpRows.length < 6) {
+      var ex = [];
+      for (var i = 0; mpRows.length + ex.length < 6 && i < MP_EXAMPLES.length; i++) {
+        var e = MP_EXAMPLES[i];
+        ex.push({ id: "illustrative-" + i, userId: e.name, name: e.name, title: e.title, imgUrl: "assets/mealprep/" + e.file });
       }
-      rows.forEach(function (r) {
-        cards.push({
-          id: r.id, userId: r.user_id,
-          name: (r.profiles && r.profiles.display_name) || "A member",
-          title: (r.title && r.title.trim()) || mpFallbackTitle(r.caption),
-          imgUrl: r.kind === "photo" ? (urlMap[r.storage_path] || "") : (r.poster_path ? (urlMap[r.poster_path] || "") : ""),
-          videoUrl: (r.kind === "video" && !r.poster_path) ? (urlMap[r.storage_path] || "") : "",
-          posterUrl: ""
-        });
-      });
-    } catch (e) { /* fall through to the examples below */ }
-    // Real posts first; the six examples fill any remaining slots so the page is never blank.
-    for (var i = 0; cards.length < 6 && i < MP_EXAMPLES.length; i++) {
-      var ex = MP_EXAMPLES[i];
-      cards.push({ id: "illustrative-" + i, userId: ex.name, name: ex.name, title: ex.title, imgUrl: "assets/mealprep/" + ex.file });
+      grid.insertAdjacentHTML("beforeend", ex.map(mpCard).join(""));
     }
-    grid.innerHTML = cards.map(mpCard).join("");
   }
   (async function init() {
     var user = await requireAuth();
@@ -338,5 +364,6 @@
     mpLoad();
   })();
 </script>
+<script src="js/back-button.js"></script>
 </body>
 </html>

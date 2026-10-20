@@ -77,10 +77,11 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
   @media (max-width: 899px) {
     /* Ken (Oct 2026, mobile phase): the badge pill leaves the top bar — it now lives as the first row under
        Explore (find.html), which opens this same key. The two hearts come back to the right of the bar. */
-    /* Ken (Oct 2026): the two hearts leave the phone top bar too. */
-    #rpAppNav > .app-nav-connect { display: none; }
+    /* Ken (Oct 2026): the badge pill is gone from the phone top bar; the two hearts stay in the right corner on the
+       same line as "Ensemble Fitness". */
     #rpAppNav { padding-bottom: 8px; }
     .conn-key-pill { display: none !important; }
+    .conn-key-pill + .app-nav-connect { margin-left: auto; }
     .rp-mealprep { padding: 6px 0 4px; }
     .rp-mealprep-banner { padding: 4px 12px 4px 10px; margin: 0 14px 6px; }
     .rp-mealprep-banner-icon svg { width: 28px; height: 28px; }
@@ -89,12 +90,10 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     /* Ken (Oct 2026, marketing's call): "Your Journeys" and "Healthy Meal Preps" leave the phone home page (both
        still live in Explore). The member circles stay; a short welcome note sits where the pills were. */
     .rp-mp-toprow { display: none; }
-    .rp-community-note { display: block; margin: 8px 10px 10px; padding: 12px 14px 13px; border-radius: 10px; background: #131a28; border: 1px solid rgba(255,255,255,0.06); font-family: 'Inter', sans-serif; }
+    .rp-community-note { display: block; margin: -6px 10px 8px; padding: 10px 14px 11px; border-radius: 10px; background: #131a28; border: 1px solid rgba(255,255,255,0.06); font-family: 'Inter', sans-serif; }
     .rp-cn-eyebrow { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent-2, #ff6b3d); margin-bottom: 6px; }
     /* The title stays on ONE line: it sizes itself to the phone's width (about 17px on a 412px phone, smaller on narrow ones). */
     .rp-cn-title { font-family: 'Poppins','Inter',sans-serif; font-size: min(17px, calc((100vw - 48px) / 21.2)); font-weight: 800; line-height: 1.2; color: #fff; margin-bottom: 6px; white-space: nowrap; }
-    /* The sentence is too long for one line at a readable size, so it wraps into two evenly balanced lines. */
-    .rp-cn-sub { font-size: 13px; line-height: 1.4; color: #8e97ab; text-wrap: balance; }
     /* Ken (Oct 2026, mobile): "Your Journeys" on the LEFT, Healthy Meal Preps on the RIGHT. */
     .rp-mp-toprow .rp-journeys-pill { order: 1; margin-left: 0; margin-right: auto; }
     .rp-mp-toprow .rp-mealprep-banner { order: 2; margin: 0 0 0 auto; flex: 0 0 auto; padding: 4px 8px 4px 6px; border-right: 3px solid var(--accent-2); gap: 6px; justify-content: center; }
@@ -2064,7 +2063,6 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
       <div class="rp-community-note">
         <div class="rp-cn-eyebrow">Your Community</div>
         <div class="rp-cn-title">Find your people. Keep moving together.</div>
-        <div class="rp-cn-sub">Explore workouts, share your progress, and connect with people who enjoy what you do.</div>
       </div>
       <div class="rp-mealprep-track" id="rpMealPrepTrack"></div>
     </div>
