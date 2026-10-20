@@ -59,6 +59,8 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
   /* Desktop-only dashboard elements — invisible on the phone-frame layout
      by default; the desktop media query further down turns them on. */
   .rp-dash-header { display: none; }
+  /* Phone-only welcome note under the top bar (see the max-width:899px block). */
+  .rp-community-note { display: none; }
   /* Phone top bar: tiny tappable "💗 💍 🤝 ?" that opens the "what do the badges mean" key (the desktop header has its own link). */
   #rpAppNav { position: relative; flex-wrap: nowrap; }
   /* margin auto on both sides centres it exactly in the free space between "Ensemble Fitness" and the hearts;
@@ -84,7 +86,15 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     .rp-mealprep-banner-icon svg { width: 28px; height: 28px; }
     /* Ken's ask (Oct 2026): Healthy Meal Preps shrinks to its own pill with an orange bar on BOTH sides, and a red
        "Your Journeys" pill takes the freed-up space beside it. */
-    .rp-mp-toprow { display: flex; align-items: stretch; gap: 8px; margin: 0 14px 6px; }
+    /* Ken (Oct 2026, marketing's call): "Your Journeys" and "Healthy Meal Preps" leave the phone home page (both
+       still live in Explore). The member circles stay; a short welcome note sits where the pills were. */
+    .rp-mp-toprow { display: none; }
+    .rp-community-note { display: block; margin: 8px 10px 10px; padding: 12px 14px 13px; border-radius: 10px; background: #131a28; border: 1px solid rgba(255,255,255,0.06); font-family: 'Inter', sans-serif; }
+    .rp-cn-eyebrow { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent-2, #ff6b3d); margin-bottom: 6px; }
+    /* The title stays on ONE line: it sizes itself to the phone's width (about 17px on a 412px phone, smaller on narrow ones). */
+    .rp-cn-title { font-family: 'Poppins','Inter',sans-serif; font-size: min(17px, calc((100vw - 48px) / 21.2)); font-weight: 800; line-height: 1.2; color: #fff; margin-bottom: 6px; white-space: nowrap; }
+    /* The sentence is too long for one line at a readable size, so it wraps into two evenly balanced lines. */
+    .rp-cn-sub { font-size: 13px; line-height: 1.4; color: #8e97ab; text-wrap: balance; }
     /* Ken (Oct 2026, mobile): "Your Journeys" on the LEFT, Healthy Meal Preps on the RIGHT. */
     .rp-mp-toprow .rp-journeys-pill { order: 1; margin-left: 0; margin-right: auto; }
     .rp-mp-toprow .rp-mealprep-banner { order: 2; margin: 0 0 0 auto; flex: 0 0 auto; padding: 4px 8px 4px 6px; border-right: 3px solid var(--accent-2); gap: 6px; justify-content: center; }
@@ -2051,6 +2061,11 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
         <span class="rp-jp-text">Your Journeys</span><span class="rp-jp-num" id="rpJourneysPillNum">1</span>
       </a>
       </div>
+      <div class="rp-community-note">
+        <div class="rp-cn-eyebrow">Your Community</div>
+        <div class="rp-cn-title">Find your people. Keep moving together.</div>
+        <div class="rp-cn-sub">Explore workouts, share your progress, and connect with people who enjoy what you do.</div>
+      </div>
       <div class="rp-mealprep-track" id="rpMealPrepTrack"></div>
     </div>
     <div class="rp-panel rp-panel-fitplus" id="rpFitPlusPanel"></div>
@@ -3772,6 +3787,8 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     modal.querySelectorAll("video").forEach(function (v) { v.pause(); });
     modal.hidden = true;
     releaseFeedHold();
+    // Arrived from the Healthy Meal Prep page? Closing the popup takes you back to that list.
+    if (/[?&]mp=/.test(location.search) && history.length > 1) history.back();
   }
   document.getElementById("rpMpModalClose").addEventListener("click", closeMealPrepModal);
   // The modal is now a centered card over a dimmed backdrop rather than a
