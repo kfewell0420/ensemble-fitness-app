@@ -556,7 +556,8 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     }
     /* Portrait media fills the box edge to edge (cover); wide media is shown whole with bars instead of
        being cropped to a sliver. The script flips this class once it knows the real shape. */
-    .rp-slide:not(.rp-slide-compact) ~ .rp-slide:not(.rp-slide-compact) .rp-media img.rp-fit-contain,
+    /* Ken (Oct 2026): photos fill the whole post area again (his flowers photo used to cover the screen). Only wide VIDEOS
+       are still shown whole with bars, so a sideways workout clip is not cut in half. */
     .rp-slide:not(.rp-slide-compact) ~ .rp-slide:not(.rp-slide-compact) .rp-media video.rp-fit-contain {
       object-fit: contain;
       object-position: center;
@@ -3924,6 +3925,21 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
   // On phones the post list is its own scrolling box, and an observer with no root only sees a card
   // once it is actually inside that box — its rootMargin could never reach past the box's edge, so
   // videos never started loading ahead of time. Rooting these at the list itself makes the margins work.
+  // Ken (Oct 2026, iPhone screen recordings): scrolling to the next video showed a black box (name on top, nothing
+  // behind it) for about half a second before the picture popped in. Two causes, both fixed here:
+  //  1) iPhone paints no picture for a video that only loaded its "metadata" until play starts. Adding #t=0.001 to the
+  //     address makes it decode and hold the very first frame, so something is on screen as soon as the card appears.
+  //  2) Videos with no saved thumbnail wear a 1x1 black poster that would hide that first frame. Once the first frame has
+  //     really loaded, the black poster is taken off; if the video's source is handed back later, it is put back.
+  var BLANK_POSTER_PREFIX = "data:image/gif;base64,R0lGODdhAQABAIEAAAAAAAAAAAAAAAAAACwAAAAAAQABAAAIBAABBAQAOw";
+  var BLANK_POSTER = BLANK_POSTER_PREFIX + "==";
+  function ffSrc(u) { return (u && u.indexOf("#") < 0) ? u + "#t=0.001" : u; }
+  document.addEventListener("loadeddata", function (e) {
+    var v = e.target;
+    if (!v || v.tagName !== "VIDEO") return;
+    var p = v.getAttribute("poster");
+    if (p && p.indexOf(BLANK_POSTER_PREFIX) === 0 && v.readyState >= 2 && v.videoWidth > 0) v.removeAttribute("poster");
+  }, true);
   var reelScrollRoot = isWideLayout ? null : document.getElementById("rpReel");
   var videoSrcObserver = new IntersectionObserver(function (entries) {
     entries.forEach(function (entry) {
@@ -3931,7 +3947,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
       var video = entry.target.querySelector("video");
       videoSrcObserver.unobserve(entry.target);
       if (!video || !video.dataset.src) return;
-      video.src = video.dataset.src;
+      video.src = ffSrc(video.dataset.src);
       delete video.dataset.src;
       if (videoReleaseObserver) videoReleaseObserver.observe(entry.target);
     });
@@ -3951,6 +3967,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
       video.pause();
       video.dataset.src = src;
       video.removeAttribute("src");
+      if (!video.getAttribute("poster")) video.setAttribute("poster", BLANK_POSTER);
       try { video.load(); } catch (e) {}
       videoReleaseObserver.unobserve(entry.target);
       videoSrcObserver.observe(entry.target);
@@ -3986,7 +4003,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
         // observer happened to run first — removes the race entirely
         // instead of just making it less likely.
         if (video.dataset.src) {
-          video.src = video.dataset.src;
+          video.src = ffSrc(video.dataset.src);
           delete video.dataset.src;
           videoSrcObserver.unobserve(entry.target);
         }

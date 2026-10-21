@@ -81,6 +81,15 @@
     .pf-uploads .media-tile-delete { display: none; }
     .pf-uploads .media-tile video, .pf-uploads .media-tile audio { pointer-events: none; }
     .pf-uploads .media-tile video::-webkit-media-controls { display: none !important; }
+    /* Ken (Oct 2026, iPhone): closed video thumbnails showed the iPhone's own big grey play button. They now get a small
+       round play badge instead; the real controls only appear once the tile is opened. */
+    .pf-uploads .media-tile-wrap:not(.pf-open) .media-tile video::-webkit-media-controls-start-playback-button,
+    .pf-uploads .media-tile-wrap:not(.pf-open) .media-tile video::-webkit-media-controls-overlay-play-button,
+    .pf-uploads .media-tile-wrap:not(.pf-open) .media-tile video::-webkit-media-controls-panel { display: none !important; -webkit-appearance: none; }
+    .pf-uploads .media-tile-wrap:not(.pf-open) .media-tile.pf-has-video::after {
+      content: "\25B6"; position: absolute; left: 50%; top: 50%; width: 30px; height: 30px; margin: -15px 0 0 -15px;
+      border-radius: 50%; background: rgba(0,0,0,0.55); color: #fff; font-size: 12px; line-height: 30px; text-align: center;
+      padding-left: 2px; box-sizing: border-box; pointer-events: none; z-index: 2; }
     .pf-uploads .media-tile audio { display: none; }
     .pf-uploads .media-tile .audio-card audio { display: none; }
     .pf-uploads .media-tile-reason { display: none; }
@@ -1691,7 +1700,7 @@
       // (wireNarrationSync below) — a plain video plays with its own real
       // sound the moment someone presses play, no separate unmute needed.
       var mediaEl = item.kind === "video"
-        ? '<video src="' + url + '"' + (posterUrl ? ' poster="' + posterUrl + '"' : '') + ' preload="metadata"' + (soundUrl && !keepOriginal ? " muted" : "") + ' controls playsinline></video>' + (soundUrl ? '<audio class="' + soundClass + '" src="' + soundUrl + '" preload="auto"></audio>' : '')
+        ? '<video src="' + url + (url && url.indexOf("#") < 0 ? "#t=0.001" : "") + '"' + (posterUrl ? ' poster="' + posterUrl + '"' : '') + ' preload="metadata"' + (soundUrl && !keepOriginal ? " muted" : "") + ' controls playsinline></video>' + (soundUrl ? '<audio class="' + soundClass + '" src="' + soundUrl + '" preload="auto"></audio>' : '')
         : item.kind === "audio"
         ? '<div class="audio-card"><span class="audio-ico">🎙️</span><audio src="' + url + '" controls></audio></div>'
         : '<img src="' + url + '" alt="Upload" loading="lazy" decoding="async" />';
@@ -1817,12 +1826,30 @@
       window.scrollTo(0, 0);
     });
 
+    // Phones: closed video tiles carry no "controls" at all (that is what makes iPhone paint its big play button);
+    // opening a tile adds them back, closing takes them off again.
+    function setCtl(wrap, on) {
+      Array.prototype.forEach.call(wrap.querySelectorAll("video"), function (v) {
+        if (on) v.setAttribute("controls", ""); else v.removeAttribute("controls");
+      });
+    }
+    function tidyClosedTiles() {
+      if (!isPhone()) return;
+      Array.prototype.forEach.call(grid.querySelectorAll(".media-tile-wrap:not(.pf-open)"), function (w) {
+        var t = w.querySelector(".media-tile");
+        if (t && t.querySelector("video")) { t.classList.add("pf-has-video"); setCtl(w, false); }
+      });
+    }
+    if (window.MutationObserver) { try { new MutationObserver(tidyClosedTiles).observe(grid, { childList: true }); } catch (e) {} }
+    tidyClosedTiles();
     function closeWrap(wrap) {
       wrap.classList.remove("pf-open");
       Array.prototype.forEach.call(wrap.querySelectorAll("video, audio"), function (m) { try { m.pause(); } catch (e) {} });
+      if (isPhone()) setCtl(wrap, false);
     }
     function openWrap(wrap) {
       wrap.classList.add("pf-open");
+      setCtl(wrap, true);
       var tile = wrap.querySelector(".media-tile");
       if (tile && !tile.querySelector(".pf-close")) {
         var x = document.createElement("button");
