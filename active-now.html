@@ -516,6 +516,15 @@
     }
 
     var plans = [];
+    var calAdded = {};
+    function googleCalUrl(p) {
+      var start = new Date(p.plan_at), end = new Date(start.getTime() + 60 * 60 * 1000);
+      var q = "action=TEMPLATE&text=" + encodeURIComponent("Workout with " + (p.other_name || "a member")) +
+        "&dates=" + icsStamp(start) + "/" + icsStamp(end) +
+        "&details=" + encodeURIComponent("Planned on Ensemble Fitness." + (p.note ? " " + p.note : "")) +
+        "&location=" + encodeURIComponent(p.place || "");
+      return "https://calendar.google.com/calendar/render?" + q;
+    }
     function planAvatar(p) {
       var av = p.avatar ? '<img src="' + esc(p.avatar) + '" alt="">' : esc((p.other_name || "?").charAt(0).toUpperCase());
       return '<div class="an-av" style="background:' + colorFor(p.other_id) + '">' + av + '</div>';
@@ -551,7 +560,8 @@
         h += '<div class="an-sec">Coming up</div>';
         upcoming.forEach(function (p) {
           h += planLine(p, planMeta(p)).replace("__ACT__",
-            '<div class="an-actions"><button class="an-btn sm" type="button" data-pa="ics" data-id="' + esc(p.id) + '">Add to my calendar</button>' +
+            '<div class="an-actions"><button class="an-btn sm" type="button" data-pa="ics" data-id="' + esc(p.id) + '">' + (calAdded[p.id] ? "Added ✓" : "Add to my calendar") + '</button>' +
+            '<a class="an-btn ghost sm" style="text-decoration:none;display:inline-block;" target="_blank" rel="noopener" href="' + esc(googleCalUrl(p)) + '">Google Calendar</a>' +
             '<button class="an-btn ghost sm" type="button" data-pa="cancel" data-id="' + esc(p.id) + '">Cancel</button></div>');
         });
       }
@@ -580,7 +590,10 @@
       var b = e.target.closest("[data-pa]"); if (!b || b.disabled) return;
       var id = b.getAttribute("data-id"), act = b.getAttribute("data-pa");
       var p = plans.filter(function (x) { return x.id === id; })[0];
-      if (act === "ics") { if (p) downloadIcs(p); return; }
+      if (act === "ics") {
+        if (!p || calAdded[id]) return;   // one download per plan: a second tap does nothing
+        downloadIcs(p); calAdded[id] = true; b.textContent = "Added ✓"; return;
+      }
       if (act === "cancel" && !window.confirm("Cancel this workout plan?")) return;
       b.disabled = true;
       var r = act === "cancel" ? await sb.rpc("cancel_workout", { p_id: id }) : await sb.rpc("respond_workout", { p_id: id, p_accept: act === "accept" });
