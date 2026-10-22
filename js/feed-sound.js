@@ -1,0 +1,110 @@
+/* feed-sound.js -- Oct 2026 (launch fix for "my song skips sometimes").
+   Replaces wireFeedSound() from supabaseClient.js, for the feed only. Same behaviour as before (song starts with the
+   clip, follows its trim / delay / window / multi-clip reel, muted switch, "keep my sound too"), with three fixes:
+   1) Video stalls: when the video stops to buffer, the song now PAUSES with it and picks up when the picture does.
+      Before, the song kept playing while the picture was frozen, then was yanked BACK to the picture's clock the moment
+      it resumed -- that backwards jump is the "skip" (it only happened when the video happened to buffer, so it came
+      and went).
+   2) No seek storm: the song is only re-aimed when it is really off (over 0.6 s), never while it is still loading or
+      already seeking, and at most once every 2.5 s (a huge miss, like the clip looping round, is fixed at once).
+      Every seek restarts the song's download, so correcting a song that is still loading kept it from ever starting.
+   3) The song's download is told to load ahead as soon as its clip starts.
+   Loaded after supabaseClient.js, so it simply takes over the name. Nothing else changes. */
+(function () {
+  window.wireFeedSound = function wireFeedSound(video, audio, keepOriginal, trimStart, musicStart, musicWin, reel, fade) {
+    if (!video || !audio) return;
+    var start = typeof trimStart === "number" ? trimStart : 0;
+    var offset = typeof musicStart === "number" && musicStart > 0 ? musicStart : 0;
+    var protoMuted = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "muted");
+    var intentMuted = !!video.muted;
+
+    if (keepOriginal) {
+      audio.volume = 0.35;
+      audio.muted = intentMuted;
+      video.addEventListener("volumechange", function () { audio.muted = video.muted; });
+    } else {
+      protoMuted.set.call(video, true);
+      audio.muted = intentMuted;
+      Object.defineProperty(video, "muted", {
+        configurable: true,
+        get: function () { return intentMuted; },
+        set: function (v) {
+          intentMuted = !!v;
+          audio.muted = intentMuted;
+          protoMuted.set.call(video, true); // original sound never plays in replace mode
+        }
+      });
+    }
+
+    var delay = musicWin && musicWin.delay > 0 ? Number(musicWin.delay) : 0;
+    var wlen = musicWin && musicWin.length > 0 ? Number(musicWin.length) : null;
+    function rel() { return reel ? reel.time() : video.currentTime - start; }
+    function inWin() {
+      var r = rel();
+      return r >= delay - 0.02 && (wlen === null || r < delay + wlen);
+    }
+    function expected() { return offset + Math.max(0, rel() - delay); }
+
+    var lastFix = 0;      // when the song was last re-aimed
+    var stalled = false;  // the song is paused only because the picture is buffering
+    function seekAudio() { lastFix = Date.now(); try { audio.currentTime = expected(); } catch (e) {} }
+    function sync() {
+      if (stalled) return;
+      var drift = Math.abs(audio.currentTime - expected());
+      if (drift > 3) { seekAudio(); return; }                       // way off (clip looped round, jumped): fix at once
+      if (audio.seeking || audio.readyState < 3) return;            // still loading: leave it alone
+      if (Date.now() - lastFix < 2500) return;                      // just corrected: give it time to settle
+      if (drift > 0.6) seekAudio();
+    }
+
+    video.addEventListener("play", function () {
+      stalled = false;
+      if (!inWin()) { audio.pause(); return; }
+      try { audio.preload = "auto"; } catch (e) {}
+      seekAudio();
+      audio.play().catch(function () {});
+    });
+    video.addEventListener("pause", function () {
+      stalled = false;
+      if (reel && video.ended) return; // reel: a clip finishing is not the song stopping
+      audio.pause();
+    });
+    // The picture stopped to buffer: stop the song too, so the two stay together.
+    // Only a real stop counts ("waiting", with no data ready to play). Safari also says "stalled" while a video plays
+    // happily from a full buffer, so that one is ignored; and if the song is ever left paused for a stall that has
+    // already cleared, the timeupdate below brings it back (self-healing -- it can never stay silent).
+    function onStall() {
+      if (video.paused || video.ended || audio.paused || stalled) return;
+      if (video.readyState >= 3) return;
+      stalled = true;
+      audio.pause();
+    }
+    video.addEventListener("waiting", onStall);
+    // The picture is moving again: bring the song back in beside it.
+    video.addEventListener("playing", function () {
+      if (!stalled) return;
+      stalled = false;
+      if (!inWin()) return;
+      if (Math.abs(audio.currentTime - expected()) > 0.6) seekAudio();
+      audio.play().catch(function () {});
+    });
+    video.addEventListener("seeked", function () { if (inWin()) seekAudio(); });
+    video.addEventListener("timeupdate", function () {
+      if (video.paused || video.ended) return;
+      if (!inWin()) { if (!audio.paused) audio.pause(); return; } // before the song comes in / after its end
+      if (stalled) {
+        if (video.readyState < 3) return;          // really still buffering
+        stalled = false;                           // picture is moving again: song rejoins it
+        if (Math.abs(audio.currentTime - expected()) > 0.6) seekAudio();
+        audio.play().catch(function () {});
+        return;
+      }
+      sync();
+      if (audio.paused) audio.play().catch(function () {}); // song entered its window, or ended before the clip looped
+    });
+    video.addEventListener("ended", function () {
+      if (reel) return;
+      audio.pause();
+    });
+  };
+})();
