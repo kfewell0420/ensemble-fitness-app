@@ -1934,7 +1934,79 @@
   // the actual video streams in. Purely best-effort — if anything about it
   // fails, the upload still goes through with no poster, exactly like
   // before this existed.
+  // Ken (Oct 2026): the newest iPhone uploads came back with NO cover picture (the feed then shows a black box until the
+  // video downloads). The grab below can come back black on newer iPhones, so there is now a second, sturdier try: a
+  // fresh hidden video that is played muted for an instant so the phone really paints a frame, grabbed the moment that
+  // frame is shown. Still best-effort: if both fail, the upload carries on without a cover, exactly as before.
   function captureVideoPosterBlob(videoEl, seekTime) {
+    return captureVideoPosterDirect(videoEl, seekTime).then(function (blob) {
+      if (blob) return blob;
+      var src = videoEl.currentSrc || videoEl.src;
+      if (!src) return null;
+      return captureVideoPosterFresh(src, seekTime);
+    }).catch(function () { return null; });
+  }
+
+  function captureVideoPosterFresh(src, seekTime) {
+    return new Promise(function (resolve) {
+      var v = document.createElement("video");
+      var settled = false;
+      v.muted = true; v.defaultMuted = true; v.playsInline = true;
+      v.setAttribute("muted", ""); v.setAttribute("playsinline", ""); v.setAttribute("webkit-playsinline", "");
+      v.preload = "auto";
+      v.style.cssText = "position:fixed;left:0;top:0;width:4px;height:4px;opacity:0.02;pointer-events:none;z-index:-1;";
+      function done(result) {
+        if (settled) return;
+        settled = true;
+        try { v.pause(); } catch (e) {}
+        try { v.removeAttribute("src"); v.load(); } catch (e) {}
+        try { if (v.parentNode) v.parentNode.removeChild(v); } catch (e) {}
+        resolve(result);
+      }
+      function grab(attempt) {
+        if (settled) return;
+        try {
+          var w = v.videoWidth, h = v.videoHeight;
+          if (!w || !h) { if (attempt < 4) { setTimeout(function () { grab(attempt + 1); }, 200); return; } done(null); return; }
+          var scale = Math.min(1, 1280 / Math.max(w, h));
+          var cw = Math.max(1, Math.round(w * scale)), ch = Math.max(1, Math.round(h * scale));
+          var canvas = document.createElement("canvas");
+          canvas.width = cw; canvas.height = ch;
+          var cx = canvas.getContext("2d");
+          cx.drawImage(v, 0, 0, cw, ch);
+          var px = cx.getImageData(0, 0, cw, ch).data, sum = 0, n = 0;
+          for (var i = 0; i < px.length; i += 4 * 97) { sum += px[i] + px[i + 1] + px[i + 2]; n += 3; }
+          if (n && (sum / n) < 4) {
+            if (attempt < 4) { setTimeout(function () { grab(attempt + 1); }, 200); return; }
+            done(null); return;
+          }
+          canvas.toBlob(function (blob) { done(blob); }, "image/jpeg", 0.82);
+        } catch (e) { done(null); }
+      }
+      setTimeout(function () { done(null); }, 7000);
+      v.addEventListener("error", function () { done(null); });
+      v.addEventListener("loadedmetadata", function () {
+        try {
+          var dur = v.duration;
+          if (!dur || isNaN(dur) || dur === Infinity) { done(null); return; }
+          var target = Math.min(Math.max(seekTime || 0, 0.05), Math.max(dur - 0.05, 0));
+          v.currentTime = target;
+          var pr = v.play();
+          if (pr && pr.catch) pr.catch(function () {});
+          if (v.requestVideoFrameCallback) {
+            v.requestVideoFrameCallback(function () { grab(0); });
+          } else {
+            setTimeout(function () { grab(0); }, 300);
+          }
+        } catch (e) { done(null); }
+      });
+      document.body.appendChild(v);
+      v.src = src;
+      try { v.load(); } catch (e) {}
+    });
+  }
+
+  function captureVideoPosterDirect(videoEl, seekTime) {
     return new Promise(function (resolve) {
       var settled = false;
       function done(result) {
@@ -1975,7 +2047,7 @@
       videoEl.addEventListener("seeked", onSeeked);
       // Never let an unusual file hang the upload waiting for a "seeked"
       // event that might not come.
-      setTimeout(function () { done(null); }, 6000);
+      setTimeout(function () { done(null); }, 4000);
       videoEl.currentTime = target;
     });
   }
