@@ -373,6 +373,25 @@
         if (r && r.data === true) {
           var li = document.getElementById('findActiveNowRow');
           if (li) li.hidden = false;
+          // Let's Work Out reminder: an accepted plan in the next 24 hours shows right on the Explore row.
+          try {
+            var pr = await cl.rpc('my_workout_plans');
+            var soon = ((pr && pr.data) || []).filter(function (p) {
+              var ms = new Date(p.plan_at) - Date.now();
+              return p.status === 'accepted' && ms < 24 * 3600 * 1000 && ms > -3 * 3600 * 1000;
+            }).sort(function (a, b) { return new Date(a.plan_at) - new Date(b.plan_at); })[0];
+            var invites = ((pr && pr.data) || []).filter(function (p) { return p.status === 'proposed' && !p.i_sent; }).length;
+            var subEl = li && li.querySelector('.find-sub');
+            if (subEl && soon) {
+              var d = new Date(soon.plan_at), t = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+              var today = d.toDateString() === new Date().toDateString();
+              subEl.textContent = '⏰ Workout with ' + (soon.other_name || 'a member') + ' · ' + (today ? 'Today' : 'Tomorrow') + ' ' + t;
+              subEl.style.color = '#ff9a6b'; subEl.style.fontWeight = '700';
+            } else if (subEl && invites) {
+              subEl.textContent = '📆 ' + invites + (invites === 1 ? ' workout invitation' : ' workout invitations') + ' waiting for you';
+              subEl.style.color = '#ff9a6b'; subEl.style.fontWeight = '700';
+            }
+          } catch (e2) { /* reminder is a bonus, never break Explore */ }
         }
       }
     } catch (e) { /* stay hidden */ }

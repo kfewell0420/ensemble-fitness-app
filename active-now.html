@@ -204,6 +204,30 @@
   .an-btn { padding:10px 16px; border-radius:999px; border:none; background:var(--accent-2, #ff6b3d); color:#fff; font:800 13.5px 'Inter',sans-serif; cursor:pointer; }
   .an-btn.ghost { background:transparent; border:1.5px solid rgba(255,255,255,0.3); }
   .an-btn:disabled { opacity:.6; }
+
+  /* Let's Work Out (Oct 2026) — matches Ken's mockup: outlined Wave Back + orange Let's Work Out */
+  .an-lwo { display:inline-flex; align-items:center; gap:8px; padding:8px 14px; border-radius:999px; border:none; background:var(--accent-2, #ff6b3d); color:#fff; font:800 13.5px/1.15 'Inter',sans-serif; cursor:pointer; text-align:left; }
+  .an-lwo .ic { font-size:20px; line-height:1; }
+  .an-lwo:disabled { opacity:.6; }
+  .an-lwo, .an-side.pair .an-btn { white-space:nowrap; }
+  .an-lwo.sm { padding:6px 12px; font-size:12.5px; gap:6px; } .an-lwo.sm .ic { font-size:15px; }
+  .an-wave.big { padding:11px 16px; font-size:13.5px; }
+  .an-row.wrapme { flex-wrap:wrap; }
+  .an-side.pair { flex-direction:row; align-items:center; gap:8px; }
+  @media (max-width: 520px) { .an-row.wrapme .an-side.pair { flex:1 1 100%; justify-content:flex-start; padding-left:58px; } }
+  .an-plans-title { font-weight:800; color:#fff; margin-bottom:2px; }
+  .an-plans-lock { font-size:12px; color:var(--faint-invert, #9aa3b5); margin-bottom:6px; }
+  .an-remind { display:flex; gap:10px; align-items:flex-start; padding:11px 13px; margin-bottom:10px; border-radius:12px; background:#2a1a14; border:1px solid var(--accent-2, #ff6b3d); color:#ffd9c7; font-size:13.5px; line-height:1.4; }
+  .an-remind b { color:#fff; }
+  .an-sec { font-size:12px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; color:#ff9a6b; margin:10px 0 2px; }
+  .an-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+  .an-btn.sm { padding:7px 13px; font-size:12.5px; }
+  .an-sheet { position:fixed; inset:0; z-index:90; display:flex; align-items:flex-end; justify-content:center; background:rgba(0,0,0,.65); }
+  .an-sheet[hidden] { display:none; }
+  .an-sheet-box { width:100%; max-width:480px; max-height:92vh; overflow:auto; background:#0b1220; border-top-left-radius:20px; border-top-right-radius:20px; padding:18px 18px calc(18px + env(safe-area-inset-bottom, 0px)); box-shadow:0 -20px 40px rgba(0,0,0,.5); }
+  .an-sheet-box h2 { margin:0 0 4px; font:800 19px 'Poppins','Inter',sans-serif; color:#fff; }
+  .an-sheet-box .lock { font-size:12.5px; color:#9aa3b5; margin-bottom:6px; }
+  .an-two { display:flex; gap:10px; } .an-two > div { flex:1; min-width:0; }
   .an-row { display:flex; align-items:center; gap:12px; padding:12px 4px; border-bottom:1px solid rgba(255,255,255,0.06); }
   .an-row:last-child { border-bottom:none; }
   .an-av { flex:0 0 auto; width:46px; height:46px; border-radius:50%; display:flex; align-items:center; justify-content:center; font:800 17px 'Poppins','Inter',sans-serif; color:#fff; overflow:hidden; }
@@ -214,6 +238,21 @@
   .an-side { flex:0 0 auto; display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
   .an-wave { padding:6px 14px; font-size:12.5px; }
   .an-empty { padding:18px; text-align:center; font-size:14px; color:var(--muted-invert, #b8c0d0); }
+  .an-label { display:block; margin:16px 0 8px; font-size:13px; font-weight:700; color:#fff; }
+  .an-label:first-child { margin-top:0; }
+  .an-input { width:100%; box-sizing:border-box; padding:12px; font-size:16px; font-family:'Inter',sans-serif; color:#fff; background:#0b0d12; border:1px solid rgba(255,255,255,0.18); border-radius:12px; color-scheme:dark; }
+  .an-input::placeholder { color:#8a93a8; }
+  .an-input:focus { outline:none; border-color:var(--accent-2, #ff6b3d); }
+  .an-seg { display:flex; gap:8px; }
+  .an-seg .an-chip { flex:1; text-align:center; padding:11px 6px; border-radius:12px; }
+  .an-tog { display:flex; align-items:center; gap:10px; padding:12px 14px; margin-top:8px; background:var(--navy-900, #0b1220); border:1px solid rgba(255,255,255,0.08); border-radius:14px; font-size:13.5px; color:#fff; }
+  .an-tog span.t { flex:1; }
+  .an-sw { flex:0 0 auto; width:44px; height:26px; border-radius:13px; background:#3a4358; position:relative; border:none; cursor:pointer; }
+  .an-sw:after { content:""; position:absolute; left:3px; top:3px; width:20px; height:20px; border-radius:50%; background:#fff; transition:left .12s; }
+  .an-sw.on { background:var(--accent-2, #ff6b3d); } .an-sw.on:after { left:21px; }
+  .an-sw[disabled] { opacity:.7; cursor:default; }
+  .an-go { width:100%; margin-top:18px; padding:15px; border:none; border-radius:14px; background:linear-gradient(90deg,#ff5a1f,#e5322d); color:#fff; font:800 16px 'Poppins','Inter',sans-serif; cursor:pointer; }
+  .an-go:disabled { opacity:.6; }
 </style>
 </head>
 <body>
@@ -239,6 +278,7 @@
   </div>
 
   <div id="anMine"></div>
+  <div id="anPlans"></div>
   <div id="anWaves"></div>
 
   <div class="an-card" id="anLocCard">
@@ -260,6 +300,24 @@
     <div class="an-note">Distances are rounded, never exact. Check-ins switch off on their own.</div>
   </div>
 </div>
+</div>
+
+<div class="an-sheet" id="anSheet" hidden>
+  <div class="an-sheet-box" role="dialog" aria-modal="true" aria-labelledby="anSheetTitle">
+    <h2 id="anSheetTitle">Let's Work Out</h2>
+    <div class="lock" id="anSheetLock">Only you two can see this plan.</div>
+    <label class="an-label" for="anDate">Day</label>
+    <input class="an-input" id="anDate" type="date">
+    <label class="an-label" for="anTime">Time</label>
+    <input class="an-input" id="anTime" type="time">
+    <label class="an-label" for="anPlace">Where <span style="font-weight:500;color:#8a93a8;">(optional)</span></label>
+    <input class="an-input" id="anPlace" type="text" maxlength="80" placeholder="Gym, park, trail...">
+    <label class="an-label" for="anNote">Message <span style="font-weight:500;color:#8a93a8;">(optional)</span></label>
+    <input class="an-input" id="anNote" type="text" maxlength="200" placeholder="Leg day? Easy run? Be gym partners?">
+    <div class="an-msg" id="anSheetMsg" role="status" aria-live="polite"></div>
+    <button class="an-go" id="anSheetSend" type="button" style="margin-top:12px;">Send invitation</button>
+    <div style="text-align:center;margin-top:10px;"><button class="an-btn ghost" id="anSheetCancel" type="button">Cancel</button></div>
+  </div>
 </div>
 </div>
 
@@ -343,7 +401,8 @@
         var av = x.avatar ? '<img src="' + esc(x.avatar) + '" alt="">' : esc((x.display_name || "?").charAt(0).toUpperCase());
         return '<div class="an-row"><div class="an-av" style="background:' + colorFor(x.member_id) + '">' + av + '</div>' +
           '<div class="an-who"><div class="an-name">' + name + '</div><div class="an-sub">' + esc(x.activity) + where + ' · about ' + x.distance_miles + ' mi</div></div>' +
-          '<div class="an-side"><span class="an-pill">● LIVE</span><button class="an-btn an-wave" type="button" data-id="' + esc(x.member_id) + '">Wave</button></div></div>';
+          '<div class="an-side"><span class="an-pill">● LIVE</span><button class="an-btn an-wave" type="button" data-id="' + esc(x.member_id) + '">👋 Wave</button>' +
+          '<button class="an-lwo sm" type="button" data-id="' + esc(x.member_id) + '" data-name="' + esc(x.display_name || "Member") + '"><span class="ic">📆</span>Let\'s Work Out</button></div></div>';
       }).join("");
     }
 
@@ -394,11 +453,12 @@
           list.map(function (x) {
             var name = esc(x.display_name || "Member") + (x.age ? ", " + x.age : "");
             var av = x.avatar ? '<img src="' + esc(x.avatar) + '" alt="">' : esc((x.display_name || "?").charAt(0).toUpperCase());
-            return '<div class="an-row"><div class="an-av" style="background:' + colorFor(x.from_id) + '">' + av + '</div>' +
+            return '<div class="an-row wrapme"><div class="an-av" style="background:' + colorFor(x.from_id) + '">' + av + '</div>' +
               '<div class="an-who"><div class="an-name">' + name + '</div><div class="an-sub">waved at you · ' + agoText(x.created_at) + '</div></div>' +
-              '<div class="an-side">' + (x.waved_back
-                ? '<button class="an-btn ghost an-wave" type="button" disabled>Waved back ✓</button>'
-                : '<button class="an-btn an-wave" type="button" data-id="' + esc(x.from_id) + '">Wave back</button>') + '</div></div>';
+              '<div class="an-side pair">' + (x.waved_back
+                ? '<button class="an-btn ghost an-wave big" type="button" disabled>👋 Waved ✓</button>'
+                : '<button class="an-btn ghost an-wave big" type="button" data-id="' + esc(x.from_id) + '">👋 Wave Back</button>') +
+              '<button class="an-lwo" type="button" data-id="' + esc(x.from_id) + '" data-name="' + esc(x.display_name || "Member") + '"><span class="ic">📆</span><span>Let\'s<br>Work Out</span></button></div></div>';
           }).join("") + '</div>';
       } catch (e) { box.innerHTML = ""; }
     }
@@ -425,7 +485,150 @@
       b.textContent = r.error ? "Try again" : "Waved ✓";
       if (r.error) b.disabled = false;
     });
+
+    // ---- Let's Work Out: private plans between exactly two members ----
+    function pad2(n) { return (n < 10 ? "0" : "") + n; }
+    function whenText(iso) {
+      var d = new Date(iso), now = new Date();
+      var t0 = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+      var d0 = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+      var days = Math.round((d0 - t0) / 86400000);
+      var day = days === 0 ? "Today" : days === 1 ? "Tomorrow" : d.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" });
+      return day + " · " + d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    }
+    function icsStamp(d) { return d.getUTCFullYear() + pad2(d.getUTCMonth() + 1) + pad2(d.getUTCDate()) + "T" + pad2(d.getUTCHours()) + pad2(d.getUTCMinutes()) + pad2(d.getUTCSeconds()) + "Z"; }
+    function icsEscape(t) { return String(t || "").replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n"); }
+    function downloadIcs(p) {
+      var start = new Date(p.plan_at), end = new Date(start.getTime() + 60 * 60 * 1000);
+      var title = "Workout with " + (p.other_name || "a member");
+      var lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Ensemble Fitness//Lets Work Out//EN", "CALSCALE:GREGORIAN", "METHOD:PUBLISH",
+        "BEGIN:VEVENT", "UID:" + p.id + "@ensemblefitness.com", "DTSTAMP:" + icsStamp(new Date()), "DTSTART:" + icsStamp(start), "DTEND:" + icsStamp(end),
+        "SUMMARY:" + icsEscape(title), "LOCATION:" + icsEscape(p.place || ""), "DESCRIPTION:" + icsEscape("Planned on Ensemble Fitness." + (p.note ? " " + p.note : "")),
+        "BEGIN:VALARM", "TRIGGER:-P1D", "ACTION:DISPLAY", "DESCRIPTION:" + icsEscape("Tomorrow: " + title), "END:VALARM",
+        "BEGIN:VALARM", "TRIGGER:-PT1H", "ACTION:DISPLAY", "DESCRIPTION:" + icsEscape("In 1 hour: " + title), "END:VALARM",
+        "END:VEVENT", "END:VCALENDAR"];
+      var blob = new Blob([lines.join("\r\n")], { type: "text/calendar;charset=utf-8" });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url; a.download = "ensemble-workout.ics";
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+    }
+
+    var plans = [];
+    function planAvatar(p) {
+      var av = p.avatar ? '<img src="' + esc(p.avatar) + '" alt="">' : esc((p.other_name || "?").charAt(0).toUpperCase());
+      return '<div class="an-av" style="background:' + colorFor(p.other_id) + '">' + av + '</div>';
+    }
+    function planLine(p, sub) {
+      return '<div class="an-row wrapme" style="align-items:flex-start;">' + planAvatar(p) +
+        '<div class="an-who"><div class="an-name">' + esc(p.other_name || "Member") + '</div><div class="an-sub">' + sub + '</div>' + '__ACT__' + '</div></div>';
+    }
+    function planMeta(p) { return esc(whenText(p.plan_at)) + (p.place ? " · " + esc(p.place) : "") + (p.note ? '<br>“' + esc(p.note) + '”' : ""); }
+    function renderPlans() {
+      var box = $("anPlans");
+      if (!plans.length) { box.innerHTML = ""; return; }
+      var soon = plans.filter(function (p) { var ms = new Date(p.plan_at) - Date.now(); return p.status === "accepted" && ms < 24 * 3600 * 1000 && ms > -3 * 3600 * 1000; });
+      var inbox = plans.filter(function (p) { return p.status === "proposed" && !p.i_sent; });
+      var upcoming = plans.filter(function (p) { return p.status === "accepted"; });
+      var waiting = plans.filter(function (p) { return p.status === "proposed" && p.i_sent; });
+      var closed = plans.filter(function (p) { return p.status === "declined" || p.status === "cancelled"; });
+      var h = '<div class="an-card" style="padding:12px 14px;border-color:rgba(255,154,107,.45);">' +
+        '<div class="an-plans-title">📆 Your workouts</div><div class="an-plans-lock">🔒 Only you and the other person can see these.</div>';
+      soon.forEach(function (p) {
+        var ms = new Date(p.plan_at) - Date.now();
+        h += '<div class="an-remind"><span style="font-size:20px;">⏰</span><div><b>' + (ms <= 0 ? "Happening now" : "Reminder") + ':</b> workout with <b>' + esc(p.other_name || "a member") + '</b><br>' + esc(whenText(p.plan_at)) + (p.place ? " · " + esc(p.place) : "") + '</div></div>';
+      });
+      if (inbox.length) {
+        h += '<div class="an-sec">Invitations for you</div>';
+        inbox.forEach(function (p) {
+          h += planLine(p, "wants to work out with you<br>" + planMeta(p)).replace("__ACT__",
+            '<div class="an-actions"><button class="an-btn sm" type="button" data-pa="accept" data-id="' + esc(p.id) + '">Accept</button>' +
+            '<button class="an-btn ghost sm" type="button" data-pa="decline" data-id="' + esc(p.id) + '">Decline</button></div>');
+        });
+      }
+      if (upcoming.length) {
+        h += '<div class="an-sec">Coming up</div>';
+        upcoming.forEach(function (p) {
+          h += planLine(p, planMeta(p)).replace("__ACT__",
+            '<div class="an-actions"><button class="an-btn sm" type="button" data-pa="ics" data-id="' + esc(p.id) + '">Add to my calendar</button>' +
+            '<button class="an-btn ghost sm" type="button" data-pa="cancel" data-id="' + esc(p.id) + '">Cancel</button></div>');
+        });
+      }
+      if (waiting.length) {
+        h += '<div class="an-sec">Waiting for an answer</div>';
+        waiting.forEach(function (p) {
+          h += planLine(p, "hasn't answered yet<br>" + planMeta(p)).replace("__ACT__",
+            '<div class="an-actions"><button class="an-btn ghost sm" type="button" data-pa="cancel" data-id="' + esc(p.id) + '">Cancel invitation</button></div>');
+        });
+      }
+      closed.forEach(function (p) {
+        h += planLine(p, (p.status === "declined" ? "can't make it" : "plan cancelled") + " · " + esc(whenText(p.plan_at))).replace("__ACT__", "");
+      });
+      box.innerHTML = h + '</div>';
+    }
+    async function loadPlans() {
+      try {
+        var r = await sb.rpc("my_workout_plans");
+        plans = (r && r.data) || [];
+        plans.forEach(function (p) { p.member_id = p.other_id; });
+        await attachAvatars(plans);
+      } catch (e) { plans = []; }
+      renderPlans();
+    }
+    $("anPlans").addEventListener("click", async function (e) {
+      var b = e.target.closest("[data-pa]"); if (!b || b.disabled) return;
+      var id = b.getAttribute("data-id"), act = b.getAttribute("data-pa");
+      var p = plans.filter(function (x) { return x.id === id; })[0];
+      if (act === "ics") { if (p) downloadIcs(p); return; }
+      if (act === "cancel" && !window.confirm("Cancel this workout plan?")) return;
+      b.disabled = true;
+      var r = act === "cancel" ? await sb.rpc("cancel_workout", { p_id: id }) : await sb.rpc("respond_workout", { p_id: id, p_accept: act === "accept" });
+      if (r.error) { b.disabled = false; b.textContent = "Try again"; return; }
+      loadPlans();
+    });
+
+    // the "pick a day and time" sheet
+    var inviteTo = null;
+    function localDate(d) { return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()); }
+    function openSheet(id, name) {
+      inviteTo = id;
+      $("anSheetTitle").textContent = "Work out with " + name;
+      $("anSheetLock").textContent = "🔒 Only you and " + name + " can see this plan.";
+      var d = new Date(Date.now() + 60 * 60 * 1000); d.setMinutes(d.getMinutes() < 30 ? 30 : 60, 0, 0);
+      $("anDate").value = localDate(d); $("anDate").min = localDate(new Date()); $("anDate").max = localDate(new Date(Date.now() + 59 * 86400000));
+      $("anTime").value = pad2(d.getHours()) + ":" + pad2(d.getMinutes());
+      $("anPlace").value = ""; $("anNote").value = "";
+      $("anSheetMsg").textContent = ""; $("anSheetMsg").className = "an-msg";
+      $("anSheetSend").disabled = false; $("anSheetSend").textContent = "Send invitation";
+      $("anSheet").hidden = false;
+    }
+    function closeSheet() { $("anSheet").hidden = true; inviteTo = null; }
+    $("anSheetCancel").addEventListener("click", closeSheet);
+    $("anSheet").addEventListener("click", function (e) { if (e.target === $("anSheet")) closeSheet(); });
+    $("anSheetSend").addEventListener("click", async function () {
+      var dv = $("anDate").value, tv = $("anTime").value, m = $("anSheetMsg");
+      if (!dv || !tv) { m.textContent = "Pick a day and a time."; m.className = "an-msg err"; return; }
+      var when = new Date(dv + "T" + tv);
+      if (isNaN(when.getTime()) || when.getTime() < Date.now() + 5 * 60000) { m.textContent = "Pick a time in the future."; m.className = "an-msg err"; return; }
+      var tz = null; try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || null; } catch (e) {}
+      $("anSheetSend").disabled = true; $("anSheetSend").textContent = "Sending…";
+      var r = await sb.rpc("propose_workout", { p_to: inviteTo, p_at: when.toISOString(), p_place: $("anPlace").value, p_note: $("anNote").value, p_tz: tz });
+      if (r.error) {
+        var why = /too many/i.test(r.error.message || "") ? "You have 5 invitations waiting. Wait for answers first." : /future|60 days/i.test(r.error.message || "") ? "Pick a time between 5 minutes and 60 days from now." : "Couldn't send. Try again in a moment.";
+        m.textContent = why; m.className = "an-msg err"; $("anSheetSend").disabled = false; $("anSheetSend").textContent = "Send invitation"; return;
+      }
+      m.textContent = "Invitation sent ✓"; m.className = "an-msg";
+      setTimeout(function () { closeSheet(); loadPlans(); }, 800);
+    });
+    document.addEventListener("click", function (e) {
+      var b = e.target.closest(".an-lwo"); if (!b || b.disabled) return;
+      openSheet(b.getAttribute("data-id"), b.getAttribute("data-name") || "this member");
+    });
+    setInterval(function () { if (!document.hidden) loadPlans(); }, 60000);
+    document.addEventListener("visibilitychange", function () { if (!document.hidden) loadPlans(); });
     loadMine();
+    loadPlans();
     loadWaves();
   })();
 </script>
