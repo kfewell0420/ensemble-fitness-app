@@ -844,6 +844,87 @@
   }
   function hideMsg(el) { el.className = "form-msg"; }
 
+  // ----- Streamable files (Oct 2026) -----------------------------------------------------------------------
+  // iPhone/Voice-Memo .m4a songs and many phone videos are saved with their "index" (the moov box) at the END of
+  // the file. A phone can't start playing, or jump around in, such a file until that tail has downloaded, which made
+  // songs stall/skip when the feed kept re-syncing them to a video. Instagram/TikTok re-process every upload on their
+  // servers; this does the same one thing, losslessly, right here before the upload: if the index is at the end it is
+  // moved to the front (and the chunk offsets inside it are shifted to match). Nothing is re-encoded, the audio/video
+  // data is not copied into memory (the new file is stitched from slices of the original), and on ANY doubt or error
+  // the original file is returned untouched, so this can never make an upload fail.
+  async function makeStreamable(file) {
+    try {
+      if (!file || !file.size || file.size > 2000000000 || typeof file.slice !== "function") return file;
+      var boxes = [], pos = 0;
+      while (pos + 8 <= file.size) {
+        var dv = new DataView(await file.slice(pos, pos + 16).arrayBuffer());
+        var size = dv.getUint32(0), hlen = 8;
+        var type = String.fromCharCode(dv.getUint8(4), dv.getUint8(5), dv.getUint8(6), dv.getUint8(7));
+        if (size === 1) { if (dv.byteLength < 16) return file; size = dv.getUint32(8) * 4294967296 + dv.getUint32(12); hlen = 16; }
+        else if (size === 0) size = file.size - pos;
+        if (size < hlen || pos + size > file.size) return file;
+        boxes.push({ type: type, pos: pos, size: size });
+        pos += size;
+      }
+      if (pos !== file.size || !boxes.length || boxes[0].type !== "ftyp") return file;
+      var moovIdx = -1, mdatIdx = -1, i;
+      for (i = 0; i < boxes.length; i++) {
+        if (boxes[i].type === "moof" || boxes[i].type === "sidx") return file;            // fragmented: leave alone
+        if (boxes[i].type === "moov") { if (moovIdx !== -1) return file; moovIdx = i; }
+        if (boxes[i].type === "mdat" && mdatIdx === -1) mdatIdx = i;
+      }
+      if (moovIdx === -1 || mdatIdx === -1 || moovIdx < mdatIdx) return file;           // no index, or already at the front
+      var moov = boxes[moovIdx];
+      if (moov.size > 64 * 1024 * 1024) return file;
+      var buf = new Uint8Array(await file.slice(moov.pos, moov.pos + moov.size).arrayBuffer());
+      var view = new DataView(buf.buffer);
+      var delta = moov.size, patched = 0;
+      var CONTAINERS = { moov: 1, trak: 1, mdia: 1, minf: 1, stbl: 1 };
+      function tag(o) { return String.fromCharCode(buf[o], buf[o + 1], buf[o + 2], buf[o + 3]); }
+      function walk(start, end) {
+        var o = start;
+        while (o + 8 <= end) {
+          var sz = view.getUint32(o), t = tag(o + 4), h = 8;
+          if (sz === 1) { sz = view.getUint32(o + 8) * 4294967296 + view.getUint32(o + 12); h = 16; }
+          else if (sz === 0) sz = end - o;
+          if (sz < h || o + sz > end) throw new Error("bad box");
+          if (t === "cmov") throw new Error("compressed index");
+          if (t === "stco") {
+            var n = view.getUint32(o + h + 4);
+            for (var k = 0; k < n; k++) {
+              var p = o + h + 8 + k * 4, v = view.getUint32(p) + delta;
+              if (v > 4294967295) throw new Error("offset overflow");
+              view.setUint32(p, v); patched++;
+            }
+          } else if (t === "co64") {
+            var n64 = view.getUint32(o + h + 4);
+            for (var k2 = 0; k2 < n64; k2++) {
+              var p2 = o + h + 8 + k2 * 8, hi = view.getUint32(p2), lo = view.getUint32(p2 + 4);
+              var tot = hi * 4294967296 + lo + delta;
+              view.setUint32(p2, Math.floor(tot / 4294967296)); view.setUint32(p2 + 4, tot % 4294967296); patched++;
+            }
+          } else if (CONTAINERS[t]) {
+            walk(o + h, o + sz);
+          }
+          o += sz;
+        }
+      }
+      walk(8, buf.length);                                                                // (moov's own header is 8 bytes)
+      if (!patched) return file;                                                          // nothing to point at: don't touch
+      var parts = [];
+      for (i = 0; i < boxes.length; i++) {
+        if (i === moovIdx) continue;
+        parts.push(file.slice(boxes[i].pos, boxes[i].pos + boxes[i].size));
+        if (i === 0) parts.push(buf);                                                     // the index goes right after "ftyp"
+      }
+      var blob = new Blob(parts, { type: file.type });
+      if (blob.size !== file.size) return file;
+      try { return new File([blob], file.name, { type: file.type, lastModified: file.lastModified }); } catch (e) { return blob; }
+    } catch (e) {
+      return file;
+    }
+  }
+
   function getExt(filename) {
     var parts = filename.split(".");
     return parts.length > 1 ? parts.pop().toLowerCase() : "dat";
@@ -3278,7 +3359,8 @@
         var ext = getExt(selectedFile.name);
         var trackPath = currentUser.id + "/" + crypto.randomUUID() + "." + ext;
 
-        var { error: trackUploadError } = await window.sb.storage.from("tracks").upload(trackPath, selectedFile, {
+        var songToUpload = await makeStreamable(selectedFile); // index to the front so the song streams/seeks cleanly on phones
+        var { error: trackUploadError } = await window.sb.storage.from("tracks").upload(trackPath, songToUpload, {
           cacheControl: "3600",
           upsert: false,
           contentType: audioContentType(selectedFile, ext)
@@ -3349,6 +3431,8 @@
       var fileToUpload = selectedFile;
       if (kind === "photo") {
         fileToUpload = await resizeImageFile(selectedFile, 1920, 0.85);
+      } else if (kind === "video") {
+        fileToUpload = await makeStreamable(selectedFile); // index to the front so the video starts fast and seeks cleanly
       }
 
       var ext = kind === "photo" ? "jpg" : getExt(selectedFile.name);
@@ -3492,7 +3576,7 @@
           try {
             var clipFile = clips[clipIndex].file;
             var clipPath = currentUser.id + "/" + crypto.randomUUID() + "." + getExt(clipFile.name);
-            var { error: clipUploadError } = await window.sb.storage.from("media").upload(clipPath, clipFile, { cacheControl: "3600", upsert: false });
+            var { error: clipUploadError } = await window.sb.storage.from("media").upload(clipPath, await makeStreamable(clipFile), { cacheControl: "3600", upsert: false });
             if (clipUploadError) throw clipUploadError;
             var { error: clipInsertError } = await window.sb.from("media_clips").insert({
               media_id: insertedRow.id,
