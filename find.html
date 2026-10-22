@@ -234,6 +234,11 @@
         <span class="find-text"><div class="find-title">Members</div><div class="find-sub">Browse other members' profiles</div></span>
         <span class="find-chevron">›</span>
       </a></li>
+      <li id="findActiveNowRow" hidden><a class="find-row" href="active-now.html">
+        <span class="find-icon">🟢</span>
+        <span class="find-text"><div class="find-title">Active Now</div><div class="find-sub">See who's working out near you</div></span>
+        <span class="find-chevron">›</span>
+      </a></li>
       <li><a class="find-row" href="fitness-plus.html">
         <span class="find-icon">❤️</span>
         <span class="find-text"><div class="find-title">Fitness+</div><div class="find-sub">Find your person</div></span>
@@ -359,6 +364,18 @@
   (async function init() {
     var user = await requireAuth();
     if (!user) return;
+    // Active Now stays hidden until it is switched on for this member
+    // (server-side flag). Any failure leaves the row hidden.
+    try {
+      var cl = window.sb || window.supabaseClient || (typeof getSupabase === 'function' ? getSupabase() : null);
+      if (cl) {
+        var r = await cl.rpc('active_now_enabled');
+        if (r && r.data === true) {
+          var li = document.getElementById('findActiveNowRow');
+          if (li) li.hidden = false;
+        }
+      }
+    } catch (e) { /* stay hidden */ }
   })();
 </script>
 </body>

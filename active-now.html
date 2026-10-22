@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Active Now — Ensemble Fitness</title>
+<link rel="stylesheet" href="css/fonts.css" onerror="this.onerror=null;this.href='https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&family=Caveat:wght@600;700&family=Dancing+Script:wght@600;700&display=swap'">
+<link rel="stylesheet" href="css/app.css?v=2" />
+<style>
+  /* Ken's ask (Oct 2026): this page replaces the old "Members" tab on
+     mobile with a single hub of everything the app offers — Meal Prep and
+     the category filter chips got tightened up on the Home feed (see
+     feed.html), and this is where those categories (plus every other
+     section: Journey, Music, Books, Gear, Fitness+, Members, ...) live
+     now instead — one tap each, "instantly where they want to be," in
+     Ken's words, rather than hunting through a filter row or a sidebar.
+     Plain static links, no Supabase calls needed — this page is just a
+     directory pointing at pages/filters that already do the real work.
+
+     Ken's follow-up ask: since Find now lives in the main tab bar (not a
+     one-off secondary page like Gear or Journey), it should keep that
+     same tab bar visible here too instead of leaving people to find their
+     way back via the header logo — same reasoning as Instagram/TikTok
+     never dropping their tab bar no matter which tab you're on. These
+     rules (.rp-shell/.rp-tabbar/.rp-tab*) are copied from feed.html,
+     which is the only other page that currently uses them — they live in
+     each page's own <style> rather than the shared css/app.css since
+     nothing else in the app needs them yet. */
+  .rp-shell {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 480px;
+    display: flex;
+    flex-direction: column;
+    background: #000;
+    font-family: 'Inter', sans-serif;
+  }
+  /* Nov 2026 fix: this was missing -webkit-overflow-scrolling, which
+     feed.html's own scroll areas all have (see its .rp-reel and sidebar
+     rules) — without it, a scrollable div nested inside a position:fixed
+     ancestor (.rp-shell) can fail to respond to touch-drag at all on iOS's
+     native WKWebView, even though overflow-y:auto alone looks correct and
+     scrolls fine in a normal desktop/mobile browser. This is why the
+     Explore section (Music Library, Motivational Books, etc.) further down
+     this page could look "missing" on the real device even though it was
+     always in the HTML. */
+  .find-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .rp-tabbar {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: stretch;
+    background: #000;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .rp-tab {
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    height: 56px;
+    background: none;
+    border: none;
+    /* Ken's ask (Oct 2026): Finder / Post / Profile / Products looked dim next to
+       the house. Same creative emoji icons as before, just brighter: full-white
+       text (they used to be 55%-white, which also dimmed the emoji), plus a
+       brightness boost and a faint glow on the four darker emoji. The house is
+       left exactly as it was. */
+    color: #fff;
+    text-decoration: none;
+    font-family: 'Inter', sans-serif;
+  }
+  .rp-tab-icon { font-size: 20px; line-height: 1; }
+
+  .rp-tab:not([href="feed.html"]) .rp-tab-icon { filter: brightness(1.85) contrast(1.05) drop-shadow(0 0 3px rgba(255,255,255,0.5)); }
+  .rp-tab-label { font-size: 10px; font-weight: 600; letter-spacing: 0.01em; }
+  .rp-tab.active { color: #fff; }
+
+  /* Nov 2026: same fast-tooltip swap as feed.html — see its CSS comment
+     for why (native title="" tooltips show with a noticeable delay). Kept
+     identical between the two files since this whole block is already a
+     verbatim copy (see the top-of-file comment). */
+  .rp-tab[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 50%;
+    bottom: 100%;
+    margin-bottom: 8px;
+    transform: translateX(-50%);
+    background: rgba(20, 20, 24, 0.95);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: #fff;
+    font-family: 'Inter', sans-serif;
+    font-size: 11.5px;
+    font-weight: 600;
+    padding: 5px 10px;
+    border-radius: 7px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.08s ease;
+    z-index: 40;
+  }
+  .rp-tab[data-tooltip]:hover::after,
+  .rp-tab[data-tooltip]:focus-visible::after {
+    opacity: 1;
+  }
+  .rp-tab-post .rp-tab-icon {
+    width: 30px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 7px;
+    border: 2px solid currentColor;
+    font-size: 20px;
+    font-weight: 700;
+  }
+  /* Ken's ask (Oct 2026): "Explore" was sitting noticeably below the
+     header's dividing line — bring it up tight against it. The 18px here
+     was the same top padding every other page's content shell uses below
+     a FULL header (logo + desktop nav links); this page's header is just
+     the logo/hearts row with nothing else in it, so that much breathing
+     room read as a gap instead of a deliberate margin. */
+  .find-shell { max-width: 640px; margin: 0 auto; padding: 6px 14px 24px; }
+  .find-intro { margin: 4px 2px 22px; }
+  .find-intro h1 {
+    font-family: 'Poppins', 'Inter', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    margin: 0 0 4px;
+    color: #fff;
+  }
+  .find-intro p { margin: 0; font-size: 13.5px; color: var(--muted-invert); }
+  .find-section { margin-bottom: 26px; }
+  .find-section-title {
+    font-family: 'Poppins', 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent-2);
+    margin: 0 2px 10px;
+  }
+  .find-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    background: var(--navy-900);
+  }
+  .find-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 14px;
+    text-decoration: none;
+    color: #fff;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    transition: background 0.12s ease;
+  }
+  .find-list li:last-child .find-row { border-bottom: none; }
+  .find-row:active { background: rgba(255,255,255,0.05); }
+  .find-icon {
+    flex: 0 0 auto;
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+    background: var(--navy-800);
+    border: 1px solid rgba(255,255,255,0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+  }
+  .find-text { flex: 1 1 auto; min-width: 0; }
+  .find-title { font-size: 14.5px; font-weight: 700; margin-bottom: 1px; }
+  .find-sub { font-size: 12px; color: var(--faint-invert); }
+  .find-chevron { flex: 0 0 auto; color: var(--faint-invert); font-size: 18px; }
+
+  /* Active Now (Oct 2026) — hidden feature, built in the app's own dark style. */
+  .an-live-dot { display:inline-block; width:8px; height:8px; border-radius:50%; background:#3ddc84; margin-right:6px; box-shadow:0 0 8px #3ddc84; }
+  .an-pill { display:inline-block; padding:3px 9px; border-radius:999px; background:#12301f; color:#3ddc84; font-size:11px; font-weight:800; letter-spacing:.03em; }
+  .an-card { background: var(--navy-900, #0b1220); border:1px solid rgba(255,255,255,0.08); border-radius: var(--radius-md, 14px); padding:14px; margin-bottom:12px; }
+  .an-chips { display:flex; gap:8px; flex-wrap:wrap; }
+  .an-chip { padding:9px 14px; border-radius:999px; border:1px solid rgba(255,255,255,0.18); background:#131a28; color:#e4e8f1; font:600 13.5px 'Inter',sans-serif; cursor:pointer; white-space:nowrap; }
+  .an-chip.on { background:#fff; color:#111; border-color:#fff; }
+  .an-chip.warm.on { background:#2a1a14; color:#ff9a6b; border-color:var(--accent-2, #ff6b3d); }
+  .an-msg { min-height:18px; margin-top:10px; font-size:13.5px; font-weight:600; text-align:center; color:#3ddc84; }
+  .an-msg.err { color:#ff8a80; }
+  .an-note { font-size:12.5px; line-height:1.5; color:var(--faint-invert, #9aa3b5); margin-top:12px; }
+  .an-btn { padding:10px 16px; border-radius:999px; border:none; background:var(--accent-2, #ff6b3d); color:#fff; font:800 13.5px 'Inter',sans-serif; cursor:pointer; }
+  .an-btn.ghost { background:transparent; border:1.5px solid rgba(255,255,255,0.3); }
+  .an-btn:disabled { opacity:.6; }
+  .an-row { display:flex; align-items:center; gap:12px; padding:12px 4px; border-bottom:1px solid rgba(255,255,255,0.06); }
+  .an-row:last-child { border-bottom:none; }
+  .an-av { flex:0 0 auto; width:46px; height:46px; border-radius:50%; display:flex; align-items:center; justify-content:center; font:800 17px 'Poppins','Inter',sans-serif; color:#fff; overflow:hidden; }
+  .an-av img { width:100%; height:100%; object-fit:cover; }
+  .an-who { flex:1 1 auto; min-width:0; }
+  .an-name { font-size:15px; font-weight:700; color:#fff; }
+  .an-sub { font-size:12.5px; color:var(--faint-invert, #9aa3b5); margin-top:2px; overflow-wrap:anywhere; }
+  .an-side { flex:0 0 auto; display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
+  .an-wave { padding:6px 14px; font-size:12.5px; }
+  .an-empty { padding:18px; text-align:center; font-size:14px; color:var(--muted-invert, #b8c0d0); }
+</style>
+</head>
+<body>
+
+<div class="rp-shell">
+<header class="app-nav" id="rpAppNav">
+  <a href="feed.html" class="app-brand">
+    <span class="app-brand-mark"><img src="assets/logo.png" alt="Ensemble Fitness" /></span>Ensemble Fitness
+  </a>
+  <span class="app-nav-connect" aria-hidden="true">
+    <svg viewBox="0 0 34 30" width="28" height="25" focusable="false">
+      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="var(--pink, #db1f52)" transform="translate(0,2)"/>
+      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="var(--pink-2, #ff3d68)" stroke="var(--navy-900, #0b0f1a)" stroke-width="2.2" paint-order="stroke" transform="translate(13,9) scale(0.62)"/>
+    </svg>
+  </span>
+</header>
+
+<div class="find-scroll">
+<div class="find-shell" id="anPage" hidden>
+  <div class="find-intro">
+    <h1>Active Now</h1>
+    <p>Members working out near you, right now.</p>
+  </div>
+
+  <div id="anMine"></div>
+
+  <div class="an-card" id="anLocCard">
+    <div style="font-size:14px;color:#e4e8f1;margin-bottom:10px;">See who's live near you. Your location is used only to work out a rounded distance. It is never shown to other members.</div>
+    <button class="an-btn" id="anLocBtn" type="button">Find people near me</button>
+    <div class="an-msg" id="anMsg" role="status" aria-live="polite"></div>
+  </div>
+
+  <div id="anResults" hidden>
+    <div style="font-size:13px;color:#cbd3e3;margin:2px 2px 10px;"><span class="an-live-dot"></span><span id="anCount"></span></div>
+    <div class="an-chips" id="anFilters" style="margin-bottom:12px;">
+      <button class="an-chip on" type="button" data-g="All">All</button>
+      <button class="an-chip" type="button" data-g="Gym">Gym</button>
+      <button class="an-chip" type="button" data-g="Outdoor">Outdoor</button>
+      <button class="an-chip" type="button" data-g="Sports">Sports</button>
+    </div>
+    <div class="an-card" id="anList" style="padding:4px 14px;"></div>
+    <div style="text-align:center;margin-top:4px;"><button class="an-btn ghost" id="anWider" type="button">Look wider (15 miles)</button></div>
+    <div class="an-note">Distances are rounded, never exact. Check-ins switch off on their own.</div>
+  </div>
+</div>
+</div>
+</div>
+</div>
+
+<nav class="rp-tabbar" aria-label="Main">
+  <a href="feed.html" class="rp-tab" aria-label="Home" data-tooltip="Home">
+    <span class="rp-tab-icon">🏠</span><span class="rp-tab-label">Home</span>
+  </a>
+  <a href="find.html" class="rp-tab active" aria-label="Explore" data-tooltip="Explore">
+    <span class="rp-tab-icon">🔍</span><span class="rp-tab-label">Explore</span>
+  </a>
+  <a href="upload.html" class="rp-tab rp-tab-post" aria-label="Upload a photo, video, or song" data-tooltip="Post">
+    <span class="rp-tab-icon">+</span><span class="rp-tab-label">Post</span>
+  </a>
+  <a href="profile.html" class="rp-tab" aria-label="My Profile" data-tooltip="Profile">
+    <span class="rp-tab-icon">👤</span><span class="rp-tab-label">Profile</span>
+  </a>
+  <a href="gear.html" class="rp-tab" aria-label="Ensemble Approved Products" data-tooltip="Products">
+    <span class="rp-tab-icon">🛒</span><span class="rp-tab-label">Products</span>
+  </a>
+</nav>
+</div>
+
+<!-- Ken's ask (Oct 2026): the "self-hosted copy, fall back to CDN" setup
+     never actually had a self-hosted copy on disk (js/vendor/supabase.js
+     was never created), so EVERY page load was silently failing that first
+     request, then falling back to this exact CDN script via a blocking
+     document.write (which stalls the page while it reruns) -- on every
+     page, every load, website and app alike. That's the real reason things
+     have felt slower since that change went in, not the CDN itself. Loading
+     directly from the CDN, plainly, is both simpler and faster than the
+     broken fallback dance was. -->
+<script src="js/vendor/supabase.js"></script>
+<script>window.supabase||document.write('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"><\/script>')</script>
+<script src="js/config.js"></script>
+<script src="js/shared-session.js"></script>
+<script src="js/supabaseClient.js"></script>
+<script>
+  (async function init() {
+    var user = await requireAuth();
+    if (!user) return;
+    var sb = window.sb;
+    var on = false;
+    try { var fr = await sb.rpc("active_now_enabled"); on = !!(fr && fr.data === true); } catch (e) {}
+    if (!on) { location.replace("find.html"); return; }
+    document.getElementById("anPage").hidden = false;
+
+    var $ = function (id) { return document.getElementById(id); };
+    var COLORS = ["#c2410c", "#1d4ed8", "#7e22ce", "#0f766e", "#be185d", "#a16207"];
+    var GROUPS = { "Working Out": "Gym", "Yoga": "Gym", "Running": "Outdoor", "Walking": "Outdoor", "Hiking": "Outdoor", "Swimming": "Outdoor", "Pickleball": "Sports", "Basketball": "Sports", "Tennis": "Sports", "Other": "Sports" };
+    var coords = null, radius = 5, rows = [], group = "All", timer = null;
+
+    function setMsg(t, err) { $("anMsg").textContent = t || ""; $("anMsg").className = "an-msg" + (err ? " err" : ""); }
+    function colorFor(id) { var h = 0; for (var i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0; return COLORS[h % COLORS.length]; }
+    function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+    function leftText(mins) { return mins >= 60 ? Math.floor(mins / 60) + "h " + (mins % 60) + "m" : mins + " min"; }
+
+    // Your own check-in (if you have one)
+    async function loadMine() {
+      var box = $("anMine");
+      var r = await sb.from("active_checkins").select("place_label, activity, expires_at").eq("user_id", user.id).gt("expires_at", new Date().toISOString()).maybeSingle();
+      if (r && r.data) {
+        var mins = Math.max(1, Math.ceil((new Date(r.data.expires_at) - Date.now()) / 60000));
+        box.innerHTML = '<div class="an-card" style="border-color:rgba(61,220,132,.4)"><div style="font-weight:800;margin-bottom:4px;"><span class="an-live-dot"></span>You are live</div>' +
+          '<div style="font-size:13.5px;color:#d3d8e4;">' + esc(r.data.activity) + " · " + esc(r.data.place_label) + " · " + leftText(mins) + ' left</div>' +
+          '<div style="margin-top:10px;display:flex;gap:10px;"><a class="an-btn" href="check-in.html" style="text-decoration:none;">Update</a><button class="an-btn ghost" id="anEnd" type="button">End check-in</button></div></div>';
+        $("anEnd").addEventListener("click", async function () {
+          $("anEnd").disabled = true;
+          await sb.from("active_checkins").delete().eq("user_id", user.id);
+          loadMine();
+        });
+      } else {
+        box.innerHTML = '<a class="an-btn" href="check-in.html" style="display:block;text-align:center;text-decoration:none;padding:14px;margin-bottom:12px;">Check in — let others know you are working out</a>';
+      }
+    }
+
+    async function attachAvatars(list) {
+      var ids = list.map(function (x) { return x.member_id; });
+      if (!ids.length) return;
+      try {
+        var res = await sb.from("media").select("user_id, storage_path, created_at").in("user_id", ids).eq("kind", "photo").eq("is_profile_photo", true).eq("status", "approved").order("created_at", { ascending: false });
+        var pathBy = {};
+        (res.data || []).forEach(function (r) { if (!pathBy[r.user_id]) pathBy[r.user_id] = r.storage_path; });
+        var paths = Object.keys(pathBy).map(function (k) { return pathBy[k]; });
+        if (!paths.length) return;
+        var signed = await sb.storage.from("media").createSignedUrls(paths, 3600);
+        var urlBy = {};
+        (signed.data || []).forEach(function (u) { if (u && u.path && u.signedUrl) urlBy[u.path] = u.signedUrl; });
+        list.forEach(function (x) { var p = pathBy[x.member_id]; x.avatar = p ? (urlBy[p] || "") : ""; });
+      } catch (e) {}
+    }
+
+    function render() {
+      var shown = rows.filter(function (x) { return group === "All" || (GROUPS[x.activity] || "Sports") === group; });
+      $("anCount").textContent = rows.length + (rows.length === 1 ? " member" : " members") + " active within " + radius + " miles";
+      var list = $("anList");
+      if (!shown.length) { list.innerHTML = '<div class="an-empty">Nobody is live here right now. Check back soon, or check in yourself.</div>'; return; }
+      list.innerHTML = shown.map(function (x) {
+        var name = esc(x.display_name || "Member") + (x.age ? ", " + x.age : "");
+        var where = x.place_label ? " · " + esc(x.place_label) : "";
+        var av = x.avatar ? '<img src="' + esc(x.avatar) + '" alt="">' : esc((x.display_name || "?").charAt(0).toUpperCase());
+        return '<div class="an-row"><div class="an-av" style="background:' + colorFor(x.member_id) + '">' + av + '</div>' +
+          '<div class="an-who"><div class="an-name">' + name + '</div><div class="an-sub">' + esc(x.activity) + where + ' · about ' + x.distance_miles + ' mi</div></div>' +
+          '<div class="an-side"><span class="an-pill">● LIVE</span><button class="an-btn an-wave" type="button" data-id="' + esc(x.member_id) + '">Wave</button></div></div>';
+      }).join("");
+    }
+
+    async function refresh() {
+      if (!coords) return;
+      var r = await sb.rpc("active_now_nearby", { p_lat: coords.lat, p_lng: coords.lng, p_radius_miles: radius });
+      if (r.error) { setMsg("Couldn't load right now. Try again in a moment.", true); return; }
+      rows = r.data || [];
+      await attachAvatars(rows);
+      $("anResults").hidden = false;
+      $("anWider").hidden = radius >= 15;
+      render();
+    }
+
+    function locate() {
+      setMsg("Finding you…");
+      if (!navigator.geolocation) { setMsg("This device can't share its location.", true); return; }
+      navigator.geolocation.getCurrentPosition(function (pos) {
+        coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setMsg("");
+        $("anLocCard").hidden = true;
+        refresh();
+        clearInterval(timer);
+        timer = setInterval(function () { if (!document.hidden) refresh(); }, 60000);
+      }, function (err) {
+        setMsg(err && err.code === 1 ? "Location is turned off for Ensemble Fitness. Turn it on in your phone's Settings to see who's near you." : "Couldn't get your location. Try again.", true);
+      }, { enableHighAccuracy: false, timeout: 12000, maximumAge: 60000 });
+    }
+
+    $("anLocBtn").addEventListener("click", locate);
+    $("anWider").addEventListener("click", function () { radius = 15; refresh(); });
+    $("anFilters").addEventListener("click", function (e) {
+      var b = e.target.closest(".an-chip"); if (!b) return;
+      group = b.getAttribute("data-g");
+      Array.prototype.forEach.call($("anFilters").children, function (c) { c.classList.toggle("on", c === b); });
+      render();
+    });
+    $("anList").addEventListener("click", async function (e) {
+      var b = e.target.closest(".an-wave"); if (!b || b.disabled) return;
+      b.disabled = true; b.textContent = "…";
+      var r = await sb.from("active_waves").upsert({ to_user: b.getAttribute("data-id"), created_at: new Date().toISOString() }, { onConflict: "from_user,to_user" });
+      b.textContent = r.error ? "Try again" : "Waved ✓";
+      if (r.error) b.disabled = false;
+    });
+    loadMine();
+  })();
+</script>
+<script src="js/back-button.js"></script>
+</body>
+</html>
