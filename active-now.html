@@ -236,6 +236,7 @@
   </div>
 
   <div id="anMine"></div>
+  <div id="anWaves"></div>
 
   <div class="an-card" id="anLocCard">
     <div style="font-size:14px;color:#e4e8f1;margin-bottom:10px;">See who's live near you. Your location is used only to work out a rounded distance. It is never shown to other members.</div>
@@ -390,6 +391,43 @@
     }
 
     $("anLocBtn").addEventListener("click", locate);
+    // ---- Waves people sent ME (newest first, last 7 days) ----
+    function agoText(iso) {
+      var m = Math.max(1, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+      if (m < 60) return m + " min ago";
+      var h = Math.round(m / 60); if (h < 24) return h + (h === 1 ? " hour ago" : " hours ago");
+      var d = Math.round(h / 24); return d + (d === 1 ? " day ago" : " days ago");
+    }
+    async function loadWaves() {
+      var box = $("anWaves");
+      try {
+        var r = await sb.rpc("active_waves_inbox");
+        var list = (r && r.data) || [];
+        if (!list.length) { box.innerHTML = ""; return; }
+        list.forEach(function (x) { x.member_id = x.from_id; });
+        await attachAvatars(list);
+        box.innerHTML = '<div class="an-card" style="padding:12px 14px;border-color:rgba(255,154,107,.45);margin-bottom:12px;">' +
+          '<div style="font-weight:800;margin-bottom:6px;color:#fff;">👋 Waves for you</div>' +
+          list.map(function (x) {
+            var name = esc(x.display_name || "Member") + (x.age ? ", " + x.age : "");
+            var av = x.avatar ? '<img src="' + esc(x.avatar) + '" alt="">' : esc((x.display_name || "?").charAt(0).toUpperCase());
+            return '<div class="an-row"><div class="an-av" style="background:' + colorFor(x.from_id) + '">' + av + '</div>' +
+              '<div class="an-who"><div class="an-name">' + name + '</div><div class="an-sub">waved at you · ' + agoText(x.created_at) + '</div></div>' +
+              '<div class="an-side">' + (x.waved_back
+                ? '<button class="an-btn ghost an-wave" type="button" disabled>Waved back ✓</button>'
+                : '<button class="an-btn an-wave" type="button" data-id="' + esc(x.from_id) + '">Wave back</button>') + '</div></div>';
+          }).join("") + '</div>';
+      } catch (e) { box.innerHTML = ""; }
+    }
+    $("anWaves").addEventListener("click", async function (e) {
+      var b = e.target.closest(".an-wave"); if (!b || b.disabled) return;
+      b.disabled = true; b.textContent = "…";
+      var r = await sb.from("active_waves").upsert({ to_user: b.getAttribute("data-id"), created_at: new Date().toISOString() }, { onConflict: "from_user,to_user" });
+      b.textContent = r.error ? "Try again" : "Waved back ✓";
+      if (r.error) b.disabled = false;
+    });
+    setInterval(function () { if (!document.hidden) loadWaves(); }, 60000);
+    document.addEventListener("visibilitychange", function () { if (!document.hidden) loadWaves(); });
     $("anWider").addEventListener("click", function () { radius = 15; refresh(); });
     $("anFilters").addEventListener("click", function (e) {
       var b = e.target.closest(".an-chip"); if (!b) return;
@@ -405,6 +443,7 @@
       if (r.error) b.disabled = false;
     });
     loadMine();
+    loadWaves();
   })();
 </script>
 <script src="js/back-button.js"></script>
