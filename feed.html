@@ -4303,6 +4303,23 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
   }
 
   function wireSlideHeader(item, el) {
+    // Oct 2026 (artist's feedback): tapping the photo circle or the name opens that member's profile
+    // (your own photo opens your own Profile tab).
+    if (item.user_id) {
+      var goProfile = function (e) {
+        e.stopPropagation();
+        e.preventDefault();
+        window.location.href = (currentUserId && item.user_id === currentUserId)
+          ? "profile.html"
+          : "member.html?id=" + encodeURIComponent(item.user_id);
+      };
+      ["rp-slide-avatar", "rp-slide-headertext"].forEach(function (cls) {
+        var t = el.querySelector("." + cls);
+        if (!t) return;
+        t.style.cursor = "pointer";
+        t.addEventListener("click", goProfile);
+      });
+    }
     var followBtn = el.querySelector('[data-action="follow"]');
     if (followBtn) {
       followBtn.addEventListener("click", function () { toggleFollow(item.user_id, followBtn); });
@@ -4704,7 +4721,11 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     var slideEl = null;
     var actionsEl = document.getElementById("rpActions-" + item.id);
     if (actionsEl && actionsEl.closest) slideEl = actionsEl.closest(".rp-slide");
-    composeOnly = !!(slideEl && window.matchMedia("(max-width: 899px)").matches && currentUserId);
+    // Oct 2026 (artist's feedback): the slim "Add a comment" bar is only for posts with NO comments yet.
+    // If anyone has commented, show the comments sheet (list + the same box) so they can be read.
+    var cntEl = actionsEl && actionsEl.querySelector ? actionsEl.querySelector(".rp-comment-btn .rp-action-count") : null;
+    var hasComments = !!(cntEl && (parseInt(cntEl.textContent || "0", 10) || 0) > 0);
+    composeOnly = !!(slideEl && !hasComments && window.matchMedia("(max-width: 899px)").matches && currentUserId);
     modal.classList.toggle("rp-compose-only", composeOnly);
     if (composeOnly) {
       composeReturnY = window.pageYOffset || document.documentElement.scrollTop || 0;

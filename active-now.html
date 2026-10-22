@@ -187,6 +187,9 @@
   .find-sub { font-size: 12px; color: var(--faint-invert); }
   .find-chevron { flex: 0 0 auto; color: var(--faint-invert); font-size: 18px; }
 
+  /* logo + name on the left (after the back arrow), hearts pinned to the far right */
+  #rpAppNav .app-nav-connect { margin-left: auto !important; }
+  #rpAppNav .app-brand { margin-right: 0; }
   /* Active Now (Oct 2026) — hidden feature, built in the app's own dark style. */
   .an-live-dot { display:inline-block; width:8px; height:8px; border-radius:50%; background:#3ddc84; margin-right:6px; box-shadow:0 0 8px #3ddc84; }
   .an-pill { display:inline-block; padding:3px 9px; border-radius:999px; background:#12301f; color:#3ddc84; font-size:11px; font-weight:800; letter-spacing:.03em; }
@@ -258,26 +261,6 @@
   </div>
 </div>
 </div>
-</div>
-</div>
-
-<nav class="rp-tabbar" aria-label="Main">
-  <a href="feed.html" class="rp-tab" aria-label="Home" data-tooltip="Home">
-    <span class="rp-tab-icon">🏠</span><span class="rp-tab-label">Home</span>
-  </a>
-  <a href="find.html" class="rp-tab active" aria-label="Explore" data-tooltip="Explore">
-    <span class="rp-tab-icon">🔍</span><span class="rp-tab-label">Explore</span>
-  </a>
-  <a href="upload.html" class="rp-tab rp-tab-post" aria-label="Upload a photo, video, or song" data-tooltip="Post">
-    <span class="rp-tab-icon">+</span><span class="rp-tab-label">Post</span>
-  </a>
-  <a href="profile.html" class="rp-tab" aria-label="My Profile" data-tooltip="Profile">
-    <span class="rp-tab-icon">👤</span><span class="rp-tab-label">Profile</span>
-  </a>
-  <a href="gear.html" class="rp-tab" aria-label="Ensemble Approved Products" data-tooltip="Products">
-    <span class="rp-tab-icon">🛒</span><span class="rp-tab-label">Products</span>
-  </a>
-</nav>
 </div>
 
 <!-- Ken's ask (Oct 2026): the "self-hosted copy, fall back to CDN" setup
