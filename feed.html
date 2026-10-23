@@ -1254,6 +1254,12 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     flex: 1;
   }
   .rp-comment-item { padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
+  .rp-comments-modal .rp-comment-item { display: flex; gap: 10px; align-items: flex-start; }
+  .rp-comment-avatar { flex: 0 0 auto; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; overflow: hidden; color: #fff; font-weight: 800; font-size: 14px; cursor: pointer; }
+  .rp-comment-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .rp-comment-main { flex: 1; min-width: 0; }
+  .rp-comment-name { cursor: pointer; }
+  .rp-comments-list { overscroll-behavior: contain; }
   .rp-comment-name { color: #fff; font-weight: 700; font-size: 12.5px; }
   .rp-comment-time { color: var(--faint-invert); font-size: 11px; margin-left: 6px; }
   .rp-comment-body { color: rgba(255,255,255,0.9); font-size: 13px; margin-top: 2px; }
@@ -1321,6 +1327,60 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     }
     .rp-comments-modal.rp-compose-only .rp-comment-input { font-size: 16px; padding: 10px 14px; }
     .rp-comments-modal.rp-compose-only .rp-comment-send { padding: 10px 18px; }
+  }
+
+  /* Oct 2026 (Ken: "brighten up that comment area ... add a little texture color"): the comments sheet is now a
+     light, TikTok-style sheet -- warm white with a faint colour wash and dot texture, a coloured top edge,
+     round photo + name per comment, a gradient Post button and a row of quick emoji above the box. */
+  .rp-comments-modal-box {
+    background-color: #fffaf4;
+    background-image:
+      radial-gradient(rgba(124,92,255,0.07) 1.2px, transparent 1.4px),
+      linear-gradient(180deg, #fff8ef 0%, #f6f1ff 100%);
+    background-size: 14px 14px, 100% 100%;
+    box-shadow: 0 -18px 44px rgba(20,12,60,0.35);
+  }
+  .rp-comments-modal-box::before {
+    content: ""; position: absolute; left: 0; right: 0; top: 0; height: 5px; z-index: 2;
+    background: linear-gradient(90deg, #ff7a59, #ffb84d, #7c5cff, #2bb6a8);
+  }
+  .rp-comments-modal-box::after { content: none; }
+  .rp-comments-modal .rp-comments-header {
+    position: relative; justify-content: center; padding: 18px 44px 12px;
+    color: #1d1b2f; font-size: 14.5px; border-bottom: 1px solid rgba(29,27,47,0.09);
+    background: rgba(255,255,255,0.55);
+  }
+  .rp-comments-modal .rp-comments-close {
+    position: absolute; right: 8px; top: 50%; margin-top: -4px; transform: translateY(-50%);
+    color: #5c5a73; font-size: 17px; padding: 8px 10px;
+  }
+  .rp-comments-modal .rp-comments-list { padding: 4px 16px 6px; }
+  .rp-comments-modal .rp-comment-item { border-bottom: 1px solid rgba(29,27,47,0.07); padding: 12px 0; }
+  .rp-comments-modal .rp-comment-avatar { width: 38px; height: 38px; box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px rgba(124,92,255,0.35); }
+  .rp-comments-modal .rp-comment-name { color: #6b6884; font-size: 12.5px; font-weight: 700; }
+  .rp-comments-modal .rp-comment-time { color: #9a98ad; }
+  .rp-comments-modal .rp-comment-body { color: #1d1b2f; font-size: 14.5px; line-height: 1.35; margin-top: 3px; overflow-wrap: anywhere; }
+  .rp-creator-tag {
+    display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px; vertical-align: 1px;
+    background: linear-gradient(90deg, #ff7a59, #7c5cff); color: #fff; font-size: 10px; font-weight: 800; letter-spacing: .02em;
+  }
+  .rp-comments-modal .rp-comment-empty { text-align: center; color: #6b6884; font-size: 14px; padding: 34px 10px 30px; line-height: 1.5; }
+  .rp-comments-modal .rp-comment-empty b { display: block; color: #1d1b2f; font-size: 16px; margin-bottom: 4px; }
+  .rp-comments-modal .rp-comment-input-row {
+    flex-wrap: wrap; background: rgba(255,255,255,0.92); border-top: 1px solid rgba(29,27,47,0.09);
+  }
+  .rp-emoji-strip { flex: 0 0 100%; display: flex; justify-content: space-between; gap: 4px; padding: 0 0 2px; }
+  .rp-emoji-strip button { flex: 1; background: none; border: none; font-size: 22px; line-height: 1; padding: 4px 0; cursor: pointer; border-radius: 10px; }
+  .rp-emoji-strip button:active { background: rgba(124,92,255,0.14); }
+  .rp-comments-modal .rp-comment-input { background: #efecf8; color: #1d1b2f; box-shadow: inset 0 0 0 1px rgba(124,92,255,0.12); }
+  .rp-comments-modal .rp-comment-input::placeholder { color: #8c8aa3; }
+  .rp-comments-modal .rp-comment-input:focus { outline: none; box-shadow: inset 0 0 0 2px #7c5cff; }
+  .rp-comments-modal .rp-comment-send { background: linear-gradient(90deg, #ff7a59, #7c5cff); padding: 10px 20px; box-shadow: 0 4px 12px rgba(124,92,255,0.3); }
+  @media (max-width: 899px) {
+    .rp-comments-modal.rp-compose-only .rp-comment-input-row { background: rgba(255,255,255,0.97); border-top: 1px solid rgba(29,27,47,0.12); box-shadow: 0 -6px 20px rgba(20,12,60,0.18); }
+    .rp-comments-modal.rp-compose-only .rp-comment-cancel { color: #5c5a73; }
+    .rp-comments-modal.rp-compose-only .rp-emoji-strip { display: none; }
+    .rp-comments-modal.rp-compose-only .rp-comments-modal-box::before { display: none; }
   }
   .rp-comment-toast {
     position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%);
@@ -3837,9 +3897,15 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
   // member keeps scrolling (and stays muted next time they open the app)
   // instead of resetting to "on" for each new video — same behavior as
   // Instagram/TikTok's own mute toggle.
+  // Oct 2026 (artist + Ken: "all videos start non-muted"): reelMuted now starts OFF for everyone and is only ever
+  // saved when a member taps the speaker themselves (new key efit_reel_muted_choice). The old key is ignored on
+  // purpose: before, ONE blocked autoplay (or one stray tap on a video) saved "muted" for good, and from then on
+  // every video in the app started silent. A phone that blocks sound until the first tap now just plays THAT video
+  // silently (needsSoundTap) and turns the sound on at the first tap, without remembering anything.
   var reelMuted = false;
+  var needsSoundTap = false;
   try {
-    var storedReelMute = localStorage.getItem("efit_reel_muted");
+    var storedReelMute = localStorage.getItem("efit_reel_muted_choice");
     if (storedReelMute !== null) reelMuted = storedReelMute === "true";
   } catch (e) {}
   // Ken's ask (Oct 2026): on the website's desktop grid several videos play
@@ -3857,7 +3923,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
   function setReelMuted(value) {
     reelMuted = value;
     if (isWideLayout) return;
-    try { localStorage.setItem("efit_reel_muted", value ? "true" : "false"); } catch (e) {}
+    try { localStorage.setItem("efit_reel_muted_choice", value ? "true" : "false"); } catch (e) {}
   }
 
   function syncMuteBtn(slideEl, video) {
@@ -3880,6 +3946,17 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
   // playing, just silently, same as every other visible-but-not-the-
   // current-sound card already does.
   var currentlyAudibleVideo = null;
+  document.addEventListener("pointerup", function (e) {
+    if (!needsSoundTap || reelMuted || isWideLayout) return;
+    if (e.target && e.target.closest && e.target.closest("video, .rp-mute-btn, .rp-comments-modal")) return; // those taps already do their own thing
+    var v = currentlyAudibleVideo;
+    if (!v || !v.muted || !v.isConnected) return;
+    needsSoundTap = false;
+    v.muted = false;
+    var slide = v.closest ? v.closest(".rp-slide") : null;
+    if (slide) syncMuteBtn(slide, v);
+    var pp = v.play(); if (pp && pp.catch) pp.catch(function () {});
+  }, true);
 
   // Ken's ask (Oct 2026): tried making videos preload="auto" (either on
   // scroll-in, or ahead of time for the next couple of cards) to shrink
@@ -4049,7 +4126,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
             // it's obvious sound is off and can be tapped back on.
             if (!video.muted) {
               video.muted = true;
-              setReelMuted(true);
+              needsSoundTap = true; // only THIS video is silent; not saved as the member's choice (see reelMuted above)
               syncMuteBtn(entry.target, video);
               var retry = video.play();
               if (retry && retry.catch) retry.catch(function () {});
@@ -4207,6 +4284,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
           }
           return;
         }
+        needsSoundTap = false;
         setReelMuted(!videoEl.muted);
         videoEl.muted = reelMuted;
         if (muteBtn) {
@@ -4701,6 +4779,56 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
   // Instagram's own comments modal, where the underlying feed never
   // moves. This one modal is reused for whichever post was tapped; only
   // its content changes.
+  // Oct 2026 (Ken): like TikTok / Instagram / Facebook, a comment shows who wrote it (photo + name) and tapping either
+  // opens that member's page (your own comments open your own Profile tab).
+  function commentRowHtml(c, bodyText, ownerId) {
+    var name = (c.profiles && c.profiles.display_name) || "A member";
+    var initial = (name.trim().charAt(0) || "?").toUpperCase();
+    var uid = c.user_id || "";
+    return '<div class="rp-comment-item">' +
+      '<div class="rp-comment-avatar rp-avatar-pending" data-go-profile="' + escapeHtml(uid) + '" data-avatar-user="' + escapeHtml(uid) + '" style="background:' + avatarColor(uid) + '">' + escapeHtml(initial) + '</div>' +
+      '<div class="rp-comment-main">' +
+        '<div class="rp-comment-head"><span class="rp-comment-name" data-go-profile="' + escapeHtml(uid) + '">' + escapeHtml(name) + '</span>' +
+        ((ownerId && uid === ownerId) ? '<span class="rp-creator-tag">Creator</span>' : '') +
+        '<span class="rp-comment-time">' + timeAgo(c.created_at) + '</span></div>' +
+        '<div class="rp-comment-body">' + escapeHtml(bodyText) + '</div>' +
+      '</div></div>';
+  }
+  function hydrateCommentAvatars(rows) {
+    try { hydrateAvatars((rows || []).map(function (c) { return { user_id: c.user_id }; })); } catch (e) { /* initials stay */ }
+  }
+  document.getElementById("rpCommentsList").addEventListener("click", function (e) {
+    var t = e.target.closest ? e.target.closest("[data-go-profile]") : null;
+    if (!t) return;
+    var uid = t.getAttribute("data-go-profile");
+    if (!uid) return;
+    window.location.href = (currentUserId && uid === currentUserId) ? "profile.html" : "member.html?id=" + encodeURIComponent(uid);
+  });
+
+  function setCommentsHeader(label, n) {
+    var h = document.getElementById("rpCommentsHeaderText");
+    if (h) h.textContent = label + (n ? " " + n : "");
+  }
+  var QUICK_EMOJI = ["💪", "🔥", "👏", "❤️", "😍", "🙌", "😂"];
+  function addEmojiStrip(inputRow, inputEl) {
+    var strip = document.createElement("div");
+    strip.className = "rp-emoji-strip";
+    QUICK_EMOJI.forEach(function (em) {
+      var b = document.createElement("button");
+      b.type = "button"; b.textContent = em; b.setAttribute("aria-label", "Add " + em);
+      b.addEventListener("mousedown", function (e) { e.preventDefault(); }); // keep the keyboard up
+      b.addEventListener("click", function () {
+        var v = inputEl.value, a = inputEl.selectionStart, z = inputEl.selectionEnd;
+        if (typeof a !== "number") { a = z = v.length; }
+        if ((v.length + em.length) > (inputEl.maxLength > 0 ? inputEl.maxLength : 1e9)) return;
+        inputEl.value = v.slice(0, a) + em + v.slice(z);
+        try { inputEl.focus({ preventScroll: true }); inputEl.setSelectionRange(a + em.length, a + em.length); } catch (e) { /* fine */ }
+      });
+      strip.appendChild(b);
+    });
+    inputRow.insertBefore(strip, inputRow.firstChild);
+  }
+
   function openCommentsModal(item) {
     var modal = document.getElementById("rpCommentsModal");
     var headerText = document.getElementById("rpCommentsHeaderText");
@@ -4709,7 +4837,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     var panel = modal.querySelector(".rp-comments-modal-panel");
 
     box.classList.remove("rp-no-media"); // in case the last thing shown here was a journey reply
-    headerText.textContent = (item.name || "A member") + "'s post";
+    headerText.textContent = "Comments";
     // The media pane is desktop-only (see CSS) — built either way since
     // it's cheap and the signed URL is already sitting on `item`.
     mediaEl.innerHTML = item.kind === "video"
@@ -4736,6 +4864,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     }
 
     modal.hidden = false;
+    lockFeedScroll(true);
     syncCommentsViewport();
     // Ken's ask (Oct 2026): tapping Comment should put the cursor straight in the box so the member can type
     // right away. The row is built and focused HERE, inside the tap itself (phones only open the keyboard for a
@@ -4770,6 +4899,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     panel.appendChild(inputRow);
     panel.dataset.inputFor = String(item.id);
     inputRow.querySelector(".rp-comment-cancel").addEventListener("click", closeCommentsModal);
+    addEmojiStrip(inputRow, inputRow.querySelector(".rp-comment-input"));
     var sendBtn = inputRow.querySelector(".rp-comment-send");
     sendBtn.addEventListener("click", function () { postComment(item, panel); });
     // keep the cursor (and the phone keyboard) in the box while tapping Post, so they can keep typing
@@ -4807,7 +4937,27 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     window.visualViewport.addEventListener("scroll", syncCommentsViewport);
   }
 
+  // Oct 2026 (Ken: "that video should be locked, like every other social app, while you make the comment"):
+  // while the comment box (or the comments sheet) is open the feed behind it cannot be scrolled or swiped.
+  var feedScrollLocked = false;
+  function lockFeedScroll(on) {
+    feedScrollLocked = !!on;
+    document.documentElement.classList.toggle("rp-feed-locked", feedScrollLocked);
+    document.body.classList.toggle("rp-feed-locked", feedScrollLocked);
+  }
+  function blockFeedScroll(e) {
+    if (!feedScrollLocked) return;
+    var t = e.target;
+    // the comments list itself may scroll; everything else (the video, the page behind) may not
+    var lst = t && t.closest ? t.closest(".rp-comments-list") : null;
+    if (lst && lst.scrollHeight > lst.clientHeight + 1) return; // only a list that really overflows may scroll
+    if (e.cancelable) e.preventDefault();
+  }
+  document.addEventListener("touchmove", blockFeedScroll, { passive: false });
+  document.addEventListener("wheel", blockFeedScroll, { passive: false });
+
   function closeCommentsModal() {
+    lockFeedScroll(false);
     var m = document.getElementById("rpCommentsModal");
     var wasCompose = composeOnly && !m.hidden;
     composeOnly = false;
@@ -4845,16 +4995,13 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     var visible = filterOutBlocked(comments || []);
 
     var listHtml = visible.length
-      ? visible.map(function (c) {
-          var name = (c.profiles && c.profiles.display_name) || "A member";
-          return '<div class="rp-comment-item"><span class="rp-comment-name">' + escapeHtml(name) + '</span>' +
-            '<span class="rp-comment-time">' + timeAgo(c.created_at) + '</span>' +
-            '<div class="rp-comment-body">' + escapeHtml(c.body) + '</div></div>';
-        }).join("")
-      : '<div class="rp-comment-empty">Be the first to comment.</div>';
+      ? visible.map(function (c) { return commentRowHtml(c, c.body, item.user_id); }).join("")
+      : '<div class="rp-comment-empty"><b>No comments yet</b>Be the first to say something nice.</div>';
 
     var listEl = panel.querySelector(".rp-comments-list");
     listEl.innerHTML = listHtml;
+    setCommentsHeader("Comments", visible.length);
+    hydrateCommentAvatars(visible);
 
     if (currentUserId && !oldInputRow) buildCommentInputRow(item, panel, false);
   }
@@ -4897,9 +5044,10 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     composeOnly = false;
     modal.classList.remove("rp-compose-only");
     mediaEl.innerHTML = "";
-    headerText.textContent = (item.name || "A member") + "'s journey";
+    headerText.textContent = "Replies";
 
     modal.hidden = false;
+    lockFeedScroll(true);
     syncCommentsViewport();
     // same as video comments: the cursor lands in the reply box inside the tap itself
     var staleRow = panel.querySelector(".rp-comment-input-row");
@@ -4917,6 +5065,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
       '<button type="button" class="rp-comment-send">Post</button>';
     panel.appendChild(inputRow);
     panel.dataset.inputFor = "j" + String(item.id);
+    addEmojiStrip(inputRow, inputRow.querySelector(".rp-comment-input"));
     var sendBtn = inputRow.querySelector(".rp-comment-send");
     sendBtn.addEventListener("click", function () { postJourneyReply(item, panel); });
     sendBtn.addEventListener("mousedown", function (e) { e.preventDefault(); });
@@ -4942,16 +5091,13 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     var visible = filterOutBlocked(replies || []);
 
     var listHtml = visible.length
-      ? visible.map(function (c) {
-          var name = (c.profiles && c.profiles.display_name) || "A member";
-          return '<div class="rp-comment-item"><span class="rp-comment-name">' + escapeHtml(name) + '</span>' +
-            '<span class="rp-comment-time">' + timeAgo(c.created_at) + '</span>' +
-            '<div class="rp-comment-body">' + escapeHtml(c.reply_text) + '</div></div>';
-        }).join("")
-      : '<div class="rp-comment-empty">Be the first to reply.</div>';
+      ? visible.map(function (c) { return commentRowHtml(c, c.reply_text, item.user_id); }).join("")
+      : '<div class="rp-comment-empty"><b>No replies yet</b>Be the first to reply.</div>';
 
     listEl = panel.querySelector(".rp-comments-list");
     listEl.innerHTML = listHtml;
+    setCommentsHeader("Replies", visible.length);
+    hydrateCommentAvatars(visible);
 
     if (currentUserId && !oldInputRow) buildJourneyReplyRow(item, panel, false);
   }
