@@ -1766,6 +1766,7 @@
     if (!keepWindow) { mDelay = 0; mLenWanted = Infinity; }
     reelIdx = 0; clipSel = 0; reelSwitching = false; reelPending = null; reelLoadTok++;
     trimPreviewVideo.preload = "auto";
+    pvDirty = false; pvResetting = false;
     trimPreviewVideo.src = clips[0].url;
     trimPreviewVideo.onloadedmetadata = function () {
       trimPreviewVideo.onloadedmetadata = null; // one-shot: later clip swaps must not regenerate the covers
@@ -2495,6 +2496,42 @@
   // Now (1) a song is started the iPhone-safe way -- press play first, then place it once it has loaded
   // (iOS ignores a seek made before the file is loaded, and won't load it until play), and (2) drift is
   // only corrected once the song has buffered, is not mid-jump, and at most about once a second.
+  // iPhone 17 replay fix (Oct 2026): recorded on the artist's phone -- the preview plays fine ONCE, but after it has run to
+  // its end, every replay "plays" (pause button shows, song bursts in) while the picture stays frozen on one frame. Moving
+  // the song position, the play button and the 10-second buttons all end up there. Safari's video decoder is stuck after the
+  // "ended" state; re-opening the same file clears it. So on iPhones: when the preview has ended (or has sat frozen for
+  // 4 s), the next play first re-loads the player at the same spot, then plays. Single clips only (several clips already
+  // reload their player on every jump). Nothing changes on Android or computers.
+  var pvDirty = false, pvResetting = false, pvLastReset = 0;
+  function hardResetPreview(at) {
+    return new Promise(function (resolve) {
+      var v = trimPreviewVideo, finished = false, tm = null;
+      function finish() {
+        if (finished) return; finished = true; clearTimeout(tm);
+        v.removeEventListener("loadedmetadata", onMeta); v.removeEventListener("seeked", onSeeked);
+        resolve();
+      }
+      function onSeeked() { finish(); }
+      function onMeta() {
+        v.removeEventListener("loadedmetadata", onMeta);
+        v.addEventListener("seeked", onSeeked);
+        try { v.currentTime = at > 0 ? at : 0.001; } catch (e) { finish(); }
+      }
+      tm = setTimeout(finish, 2500);
+      v.addEventListener("loadedmetadata", onMeta);
+      try { v.pause(); } catch (e) {}
+      try { v.load(); } catch (e) { finish(); }
+    });
+  }
+  function resetPreviewThenPlay(at, why) {
+    pvDirty = false; pvResetting = true; pvLastReset = performance.now();
+    dbg("iPhone: re-loading the preview player (" + why + ")");
+    hardResetPreview(at).then(function () {
+      pvResetting = false;
+      mixTick.lastVTAt = performance.now();
+      trimPreviewVideo.play().catch(function () {});
+    });
+  }
   var musicStarting = false, musicLastFix = 0;
   function musicWantNow() { return musicStartPicker.getValue() + Math.max(0, reelNow() - mDelay); }
   function startMusicInSync() {
@@ -2533,6 +2570,12 @@
     if (stateNow !== mixTick.state) { dbg(stateNow === "frozen" ? "PICTURE FROZEN (no frames) -> song held" : stateNow === "clock" ? "clock stuck but frames moving -> song kept" : "back to normal"); mixTick.state = stateNow; }
     if (picStalled) {
       if (!musicPreviewAudio.paused) musicPreviewAudio.pause();
+      if (IS_IOS_DEVICE && clips.length <= 1 && !pvResetting && (nowMs - (mixTick.lastVTAt || nowMs)) > 4000 && nowMs - pvLastReset > 8000) {
+        resetPreviewThenPlay(vt, "picture frozen for 4 s");
+        renderTimeline();
+        mixRaf = requestAnimationFrame(mixTick);
+        return;
+      }
       if (nowMs - (mixTick.lastKick || 0) > 2000) { mixTick.lastKick = nowMs; trimPreviewVideo.play().catch(function () {}); }
       renderTimeline();
       mixRaf = requestAnimationFrame(mixTick);
@@ -2580,6 +2623,12 @@
   }
   function songRunsToVideoEnd() { return hasMusicSelected() && mDelay + mLen >= vidDur() - 0.25; }
   trimPreviewVideo.addEventListener("play", async function () {
+    if (pvResetting) return; // our own re-load is in progress; it plays again when done
+    if (IS_IOS_DEVICE && pvDirty && clips.length <= 1) {
+      var dur0 = trimPreviewVideo.duration || 0;
+      resetPreviewThenPlay((dur0 && trimPreviewVideo.currentTime >= dur0 - 0.05) ? 0 : trimPreviewVideo.currentTime, "replay after the end");
+      return;
+    }
     mixTick.lastVTAt = performance.now(); mixTick.lastVT = trimPreviewVideo.currentTime; // fresh start: not "stalled"
     previewTail.cancel();
     updatePlayTogetherBtn();
@@ -2595,6 +2644,7 @@
     updatePlayTogetherBtn(); musicPreviewAudio.pause(); updatePlayhead(); renderTimeline();
   });
   trimPreviewVideo.addEventListener("ended", function () {
+    pvDirty = true; // (iPhone replay fix above: the next play re-loads the player first)
     if (hasNextClip()) { autoAdvancing = true; loadClipAt(reelIdx + 1, 0, true); return; } // next clip, song keeps going
     updatePlayTogetherBtn(); updatePlayhead(); renderTimeline();
     if (songRunsToVideoEnd() && previewTail.start()) return; // song keeps going and fades out over 3 more seconds
