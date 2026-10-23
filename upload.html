@@ -2465,7 +2465,7 @@
   // Hidden diagnostics: tap the "Your video" heading 5 times to show a small live panel (handy when a phone
   // misbehaves: screen-record it and send the recording). Always keeps the last few events; shows them only when on.
   var DBG = { on: false, lines: [], el: null, taps: 0, tapAt: 0 };
-  function dbg(msg) { DBG.lines.push((performance.now() / 1000).toFixed(1) + "s " + msg); if (DBG.lines.length > 12) DBG.lines.shift(); }
+  function dbg(msg) { DBG.lines.push((performance.now() / 1000).toFixed(1) + "s " + msg); if (DBG.lines.length > 14) DBG.lines.shift(); }
   function dbgPaint() {
     if (!DBG.on) return;
     if (!DBG.el) {
@@ -2478,6 +2478,8 @@
       "video t=" + v.currentTime.toFixed(2) + " paused=" + v.paused + " ready=" + v.readyState + " stuckFor=" + Math.round(now - (mixTick.lastVTAt || now)) + "ms\n" +
       "frames n=" + frameClock.n + " last=" + (frameClock.at ? Math.round(now - frameClock.at) + "ms ago" : "none") + " media=" + frameClock.media.toFixed(2) + "\n" +
       "song t=" + (a ? a.currentTime.toFixed(2) + " paused=" + a.paused + " ready=" + a.readyState : "-") + " start=" + musicStartPicker.getValue() + "\n" +
+      "video muted=" + v.muted + " vol=" + v.volume.toFixed(2) + " | song muted=" + (a ? a.muted : "-") + " vol=" + (a ? a.volume.toFixed(2) : "-") + " net=" + (a ? a.networkState : "-") + " err=" + (a && a.error ? a.error.code : 0) + "\n" +
+      (hasMusicSelected() && a ? "want=" + musicWantNow().toFixed(2) + " drift=" + (a.currentTime - musicWantNow()).toFixed(2) + " delay=" + mDelay.toFixed(1) + " ios=" + IS_IOS_DEVICE + "\n" : "") +
       DBG.lines.join("\n");
   }
   setInterval(dbgPaint, 250);
@@ -2538,11 +2540,11 @@
     var a = musicPreviewAudio;
     if (musicStarting) return;
     function place() { musicStarting = false; try { a.currentTime = musicWantNow(); } catch (e) {} musicLastFix = performance.now(); }
-    if (a.readyState >= 1) { place(); a.play().catch(function () {}); return; }
+    if (a.readyState >= 1) { place(); a.play().catch(function (e) { dbg("song play() BLOCKED: " + (e && e.name)); }); return; }
     musicStarting = true;
     function onMeta() { a.removeEventListener("loadedmetadata", onMeta); place(); }
     a.addEventListener("loadedmetadata", onMeta);
-    a.play().catch(function () { a.removeEventListener("loadedmetadata", onMeta); musicStarting = false; });
+    a.play().catch(function (e) { dbg("song play() BLOCKED: " + (e && e.name)); a.removeEventListener("loadedmetadata", onMeta); musicStarting = false; });
   }
   function mixTick() {
     mixRaf = null;
@@ -2881,6 +2883,14 @@
   var musicSection = document.getElementById("musicSection");
   var musicTrackSelect = document.getElementById("musicTrackSelect");
   var musicPreviewAudio = document.getElementById("musicPreviewAudio");
+  // Diagnostics only (shown in the hidden panel: tap "Your videos" 5 times): what the song and the picture report.
+  ["play", "playing", "pause", "waiting", "stalled", "error", "seeking", "seeked", "ended"].forEach(function (ev) {
+    musicPreviewAudio.addEventListener(ev, function () {
+      if (!DBG.on) return;
+      dbg("song " + ev + " t=" + musicPreviewAudio.currentTime.toFixed(1) + (ev === "error" && musicPreviewAudio.error ? " code=" + musicPreviewAudio.error.code : ""));
+    });
+  });
+  trimPreviewVideo.addEventListener("volumechange", function () { if (DBG.on) dbg("video volumechange muted=" + trimPreviewVideo.muted + " vol=" + trimPreviewVideo.volume.toFixed(2)); });
   var trackPickerRow = document.getElementById("trackPickerRow");
   var tracksLoaded = false;
   var tracksById = {};
