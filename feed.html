@@ -2385,7 +2385,8 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
 <script src="js/config.js"></script>
 <script src="js/shared-session.js"></script>
 <script src="js/supabaseClient.js"></script>
-<script src="js/feed-sound.js?v=1"></script>
+<script src="js/text-labels-v2.js?v=1"></script>
+<script src="js/feed-sound.js?v=2"></script>
 <script src="js/moderation.js"></script>
 <script src="js/social.js"></script>
 <script>
@@ -4427,7 +4428,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
       var wasBlocked = isBlocked(item.user_id);
       var result = wasBlocked ? await unblockUser(item.user_id) : await blockUser(item.user_id);
       if (result.error) { alert(result.error); return; }
-      if (!wasBlocked) el.remove(); // blocked — their post disappears from the reel immediately
+      if (!wasBlocked) { stopSlideMedia(el); el.remove(); } // blocked — their post disappears from the reel immediately
     });
 
     var editBtn = el.querySelector('[data-action="edit-post"]');
@@ -4442,6 +4443,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
       if (pathsToRemove.length) await window.sb.storage.from("media").remove(pathsToRemove);
       await window.sb.from("media").delete().eq("id", item.id);
       loadedItems = loadedItems.filter(function (it) { return it.id !== item.id; });
+      stopSlideMedia(el); // Oct 2026: a deleted post's picture and song stop at once
       el.remove();
     });
   }
@@ -4781,6 +4783,9 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
   // its content changes.
   // Oct 2026 (Ken): like TikTok / Instagram / Facebook, a comment shows who wrote it (photo + name) and tapping either
   // opens that member's page (your own comments open your own Profile tab).
+  function stopSlideMedia(slideEl) {
+    try { slideEl.querySelectorAll("video").forEach(function (v) { v.pause(); }); } catch (e) { /* the song guard in feed-sound.js is the backup */ }
+  }
   function commentRowHtml(c, bodyText, ownerId) {
     var name = (c.profiles && c.profiles.display_name) || "A member";
     var initial = (name.trim().charAt(0) || "?").toUpperCase();

@@ -270,8 +270,8 @@
   .vl-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
   .vl-head strong { font-size: 16px; color: #fff; }
   .vl-done { border: 0; background: none; color: #ff8a5c; font: inherit; font-size: 15px; font-weight: 800; padding: 6px 4px; cursor: pointer; }
-  .vl-card input[type="text"] { width: 100%; box-sizing: border-box; margin: 0 0 8px; padding: 11px 12px; border-radius: 10px; border: 1.5px solid rgba(255,255,255,0.22); background: #0b0d14; color: #fff; font: inherit; font-size: 16px; text-transform: uppercase; letter-spacing: 0.04em; }
-  .vl-card input[type="text"]::placeholder { text-transform: none; letter-spacing: 0; color: rgba(255,255,255,0.45); }
+  .vl-card input[type="text"] { width: 100%; box-sizing: border-box; margin: 0 0 8px; padding: 11px 12px; border-radius: 10px; border: 1.5px solid rgba(255,255,255,0.22); background: #0b0d14; color: #fff; font: inherit; font-size: 16px; }
+  .vl-card input[type="text"]::placeholder { color: rgba(255,255,255,0.45); }
   .vl-time { display: flex; align-items: center; gap: 8px; margin: 2px 0 10px; color: rgba(255,255,255,0.8); font-size: 14px; }
   .vl-time b { color: #fff; }
   .vl-time .vl-grow { flex: 1; }
@@ -281,7 +281,7 @@
   .vl-list { margin-top: 8px; max-height: 18svh; overflow: auto; }
   .vl-item { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-top: 1px solid rgba(255,255,255,0.1); color: #fff; font-size: 14px; }
   .vl-item .vl-when { flex: 0 0 auto; color: #ff8a5c; font-weight: 800; min-width: 40px; cursor: pointer; }
-  .vl-item .vl-what { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-transform: uppercase; letter-spacing: 0.04em; cursor: pointer; }
+  .vl-item .vl-what { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
   .vl-item .vl-x { flex: 0 0 auto; border: 0; background: none; color: #ff9a9a; font-size: 18px; padding: 4px 8px; cursor: pointer; }
   .vl-msg { font-size: 12.5px; color: #ffb199; min-height: 16px; margin: 0 0 6px; }
 </style>
@@ -533,8 +533,8 @@
     <div class="vl-sheet" id="vlSheet" role="dialog" aria-label="Exercise label">
       <div class="vl-card">
         <div class="vl-head"><strong>Exercise label</strong><button type="button" class="vl-done" id="vlDone">Done</button></div>
-        <input type="text" id="vlText" maxlength="28" placeholder="Exercise, e.g. Tricep Extensions" autocomplete="off" />
-        <input type="text" id="vlDetail" maxlength="18" placeholder="Details (optional), e.g. 3x10-12 reps" autocomplete="off" />
+        <input type="text" id="vlText" maxlength="28" placeholder="Exercise, e.g. Tricep Extensions" autocomplete="off" autocapitalize="sentences" />
+        <input type="text" id="vlDetail" maxlength="18" placeholder="Details (optional), e.g. 3x10-12 reps" autocomplete="off" autocapitalize="sentences" />
         <div class="vl-time"><span>Shows at <b id="vlAt">0:00</b></span><span class="vl-grow"></span><button type="button" class="vl-step" id="vlMinus">&minus; 0.5s</button><button type="button" class="vl-step" id="vlPlus">+ 0.5s</button></div>
         <div class="vl-msg" id="vlMsg"></div>
         <button type="button" class="vl-add" id="vlAdd">Add label</button>
@@ -848,6 +848,7 @@
 <script src="js/config.js"></script>
 <script src="js/shared-session.js"></script>
 <script src="js/supabaseClient.js"></script>
+<script src="js/text-labels-v2.js?v=1"></script>
 <script src="js/notifications.js"></script>
 <script>
   var currentUser = null;
@@ -3992,10 +3993,11 @@
     if (!v.offsetWidth) return;
     var layer = v.parentNode.querySelector(":scope > .vl-layer");
     if (layer) { layer.style.inset = "auto"; layer.style.left = v.offsetLeft + "px"; layer.style.top = v.offsetTop + "px"; layer.style.width = v.offsetWidth + "px"; layer.style.height = v.offsetHeight + "px"; }
-    // Oct 2026 (Ken): sits on the left, below the middle, just above the time / play bar -- not up in the corner.
+    // Oct 2026 (Ken): sits on the left, around the middle of the video, clear of where the label slides in.
     var btnH = vlOpenBtn.offsetHeight || 36;
     vlOpenBtn.style.left = (v.offsetLeft + 10) + "px";
-    vlOpenBtn.style.top = (v.offsetTop + Math.max(8, v.offsetHeight - btnH - 76)) + "px";
+    // the exercise label itself slides in down near the bottom-left, so the button stays up out of its way
+    vlOpenBtn.style.top = (v.offsetTop + Math.max(8, Math.min(Math.round(v.offsetHeight * 0.44), v.offsetHeight - btnH - 170))) + "px";
   }
   function vlRefreshUi() {
     vlOpenBtn.classList.toggle("show", trimSection.classList.contains("show"));
@@ -4054,7 +4056,11 @@
   document.getElementById("vlDone").addEventListener("click", vlClose);
   document.getElementById("vlMinus").addEventListener("click", function () { vlSetAt(vlAtTime - 0.5); reelSeek(vlAtTime); });
   document.getElementById("vlPlus").addEventListener("click", function () { vlSetAt(vlAtTime + 0.5); reelSeek(vlAtTime); });
-  [vlText, vlDetail].forEach(function (inp) { inp.addEventListener("input", function () { vlMsg.textContent = ""; if (vlLayerApi) vlLayerApi.refresh(); }); });
+  // Oct 2026 (Ken): the first letter is capitalized for you; everything after it is yours (you can still type capitals).
+  [vlText, vlDetail].forEach(function (inp) { inp.addEventListener("input", function () {
+    if (inp.value.length === 1 && inp.value !== inp.value.toUpperCase()) inp.value = inp.value.toUpperCase();
+    vlMsg.textContent = ""; if (vlLayerApi) vlLayerApi.refresh();
+  }); });
   // while the sheet is open, scrubbing the video moves "Shows at" with it
   function vlFollowScrub() { if (vlSheet.classList.contains("open") && trimPreviewVideo.paused) vlSetAt(reelNow()); }
   trimPreviewVideo.addEventListener("seeked", vlFollowScrub);

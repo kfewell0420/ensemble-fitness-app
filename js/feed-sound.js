@@ -106,5 +106,15 @@
       if (reel) return;
       audio.pause();
     });
+    // Oct 2026 (Ken: "I deleted the video and could still hear its music over the next video"): if this video's slide
+    // is taken out of the page (deleted, blocked, removed), its song must stop for good. Once the video has been in
+    // the page and then is not, silence and drop the song.
+    var seenInPage = false;
+    var guard = setInterval(function () {
+      if (video.isConnected) { seenInPage = true; return; }
+      if (!seenInPage) return;
+      clearInterval(guard);
+      try { audio.pause(); audio.removeAttribute("src"); audio.load(); } catch (e) {}
+    }, 700);
   };
 })();
