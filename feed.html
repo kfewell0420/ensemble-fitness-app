@@ -3947,6 +3947,21 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
   // playing, just silently, same as every other visible-but-not-the-
   // current-sound card already does.
   var currentlyAudibleVideo = null;
+  // Some phones block a video from starting WITH sound until the member has touched the screen once. When (and only when)
+  // that is what happened, this video plays silently instead of not at all, and the first tap turns the sound on.
+  // Oct 2026 (Ken's Android in the field: "sometimes muted, sometimes not"): this used to run for ANY failure of play(),
+  // including the harmless "play() was interrupted by a load/pause" error that a slow connection or a quick scroll
+  // causes -- so a perfectly allowed video got silenced for no reason. Now only the real "blocked by the phone"
+  // error (NotAllowedError) mutes it; an interruption is ignored and the start-up retry simply plays it again.
+  function soundFallbackAfterBlockedPlay(video, slideEl, err) {
+    if (err && err.name && err.name !== "NotAllowedError") return;
+    if (video.muted || !video.isConnected) return;
+    video.muted = true;
+    needsSoundTap = true; // only THIS video is silent; not saved as the member's choice (see reelMuted above)
+    syncMuteBtn(slideEl, video);
+    var retry = video.play();
+    if (retry && retry.catch) retry.catch(function () {});
+  }
   document.addEventListener("pointerup", function (e) {
     if (!needsSoundTap || reelMuted || isWideLayout) return;
     if (e.target && e.target.closest && e.target.closest("video, .rp-mute-btn, .rp-comments-modal")) return; // those taps already do their own thing
@@ -4113,26 +4128,13 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
               if (tries > 5) return;
               if (v.readyState === 0 && tries >= 2 && (v.currentSrc || v.src)) { try { v.load(); } catch (e) {} }
               var q = v.play();
-              if (q && q.catch) q.catch(function () {});
+              if (q && q.catch) q.catch(function (err) { soundFallbackAfterBlockedPlay(v, host, err); });
               check();
             }, 1500);
           })();
         })(video, entry.target);
         if (p && p.catch) {
-          p.catch(function () {
-            // A handful of older WebViews still block unmuted autoplay
-            // despite Capacitor's default settings — rather than the video
-            // silently failing to play at all, fall back to muted (which
-            // is always allowed) and reflect that in the mute button so
-            // it's obvious sound is off and can be tapped back on.
-            if (!video.muted) {
-              video.muted = true;
-              needsSoundTap = true; // only THIS video is silent; not saved as the member's choice (see reelMuted above)
-              syncMuteBtn(entry.target, video);
-              var retry = video.play();
-              if (retry && retry.catch) retry.catch(function () {});
-            }
-          });
+          p.catch(function (err) { soundFallbackAfterBlockedPlay(video, entry.target, err); });
         }
       } else {
         video._wdTok = (video._wdTok || 0) + 1; // cancel the start-up safety net: this video is no longer meant to be playing
