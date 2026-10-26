@@ -21,7 +21,7 @@
     if (keepOriginal) {
       audio.volume = 0.35;
       audio.muted = intentMuted;
-      video.addEventListener("volumechange", function () { audio.muted = video.muted; });
+      video.addEventListener("volumechange", function () { audio.muted = video.muted; if (!video.muted && !video.paused && inWin()) { if (audio.paused) seekAudio(); tryPlay(); } });
     } else {
       protoMuted.set.call(video, true);
       audio.muted = intentMuted;
@@ -32,6 +32,7 @@
           intentMuted = !!v;
           audio.muted = intentMuted;
           protoMuted.set.call(video, true); // original sound never plays in replace mode
+          if (!intentMuted && !video.paused && inWin()) { if (audio.paused) seekAudio(); tryPlay(); } // unmuting happens inside a tap: the phone allows the song to start now, lined up with the picture
         }
       });
     }
@@ -48,6 +49,23 @@
     var lastFix = 0;      // when the song was last re-aimed
     var stalled = false;  // the song is paused only because the picture is buffering
     function seekAudio() { lastFix = Date.now(); try { audio.currentTime = expected(); } catch (e) {} }
+    // Oct 2026 (Ken: "the speaker shows sound on, but the first video is silent"): the song plays through its own sound
+    // player, and a phone will not let that player start WITH sound until the member has touched the screen once. That
+    // refusal used to be swallowed, so the speaker said "on" while nothing played. Now, when (and only when) the phone
+    // says "not allowed", the page is told (efSoundBlocked) so it can show the speaker as OFF; the song keeps running
+    // silently alongside the picture, and the first tap (which unmutes inside the tap itself) brings it in, in time.
+    function tryPlay() {
+      var pr; try { pr = audio.play(); } catch (e) { return; }
+      if (!pr || !pr.catch) return;
+      pr.catch(function (err) {
+        if (!err || err.name !== "NotAllowedError" || audio.muted) return;
+        if (typeof window.efSoundBlocked === "function") { try { window.efSoundBlocked(video); } catch (e2) {} }
+        if (!video.muted) return;                       // page chose not to mute (not the audible video): nothing more to do
+        audio.muted = true;
+        var again; try { again = audio.play(); } catch (e3) { return; }
+        if (again && again.catch) again.catch(function () {});   // muted playback is always allowed: keeps the song in step
+      });
+    }
     function sync() {
       if (stalled) return;
       var drift = Math.abs(audio.currentTime - expected());
@@ -62,7 +80,7 @@
       if (!inWin()) { audio.pause(); return; }
       try { audio.preload = "auto"; } catch (e) {}
       seekAudio();
-      audio.play().catch(function () {});
+      tryPlay();
     });
     video.addEventListener("pause", function () {
       stalled = false;
@@ -86,7 +104,7 @@
       stalled = false;
       if (!inWin()) return;
       if (Math.abs(audio.currentTime - expected()) > 0.6) seekAudio();
-      audio.play().catch(function () {});
+      tryPlay();
     });
     video.addEventListener("seeked", function () { if (inWin()) seekAudio(); });
     video.addEventListener("timeupdate", function () {
@@ -96,11 +114,11 @@
         if (video.readyState < 3) return;          // really still buffering
         stalled = false;                           // picture is moving again: song rejoins it
         if (Math.abs(audio.currentTime - expected()) > 0.6) seekAudio();
-        audio.play().catch(function () {});
+        tryPlay();
         return;
       }
       sync();
-      if (audio.paused) audio.play().catch(function () {}); // song entered its window, or ended before the clip looped
+      if (audio.paused) tryPlay(); // song entered its window, or ended before the clip looped
     });
     video.addEventListener("ended", function () {
       if (reel) return;

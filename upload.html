@@ -453,6 +453,64 @@
     .mt-overlay.open { align-items: flex-end; }
     .mt-panel { width: 100%; height: 82vh; border-radius: 18px 18px 0 0; box-shadow: 0 -8px 30px rgba(0,0,0,0.5); }
   }
+
+  /* ===== Ken's ask (Oct 2026): Option B -- four white tiles, 2 x 2, right under the video =====
+     (Compact pass, same day: icon sits LEFT of the title, value tucked under it, tiles ~40% shorter, all four the same size.) */
+  #efTiles.ef-grid { display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: minmax(54px, auto); gap: 8px; margin: 8px 0 0; }
+  #efTiles > .ef-tile { position: relative; box-sizing: border-box; margin: 0 !important; padding: 11px 3px 0 34px !important; min-height: 54px; border-radius: 14px !important; background: #fff !important; color: #14151a !important; border: 0 !important; box-shadow: 0 2px 6px rgba(0,0,0,0.35); overflow: hidden; text-align: left; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  #efTiles > .ef-tile.wide { grid-column: 1 / -1; }
+  #efTiles > .ef-tile:active { background: #f1f1f3 !important; }
+  #efTiles .et-ic { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); display: block; font-size: 20px; line-height: 1; margin: 0; }
+  #efTiles .et-t, #uploadFlow #efTiles label.et-t { display: block; margin: 0 !important; padding: 0 !important; font-size: 12.5px; font-weight: 800; line-height: 1.2; color: #14151a !important; letter-spacing: -0.01em; text-transform: none; white-space: nowrap; overflow: visible; }
+  #efTiles .et-v { display: block; margin-top: 2px; font-size: 12px; font-weight: 800; line-height: 1.25; color: #c4501a !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #efTiles .et-v.mute { color: #8a8c97 !important; font-weight: 600; }
+  /* the tile's own button / row fills the whole tile so the entire tile is tappable */
+  #efTiles .mt-choose, #efTiles .mt-selected, #efTiles .ef-hit, #efTiles .ef-done { position: relative; display: flex; flex-direction: column; justify-content: center; align-items: stretch; width: 100%; height: 100%; min-height: 54px; box-sizing: border-box; margin: 0; padding: 4px 3px 4px 34px; border: 0; border-radius: 0; background: transparent; box-shadow: none; color: #14151a; font: inherit; text-align: left; cursor: pointer; }
+  #efTiles > .ef-music, #efTiles > .ef-narr { padding: 0 !important; }
+  #efTiles .mt-selected { gap: 0; align-items: stretch; }
+  #efTiles .mt-selected .mt-art, #efTiles .mt-selected .mt-meta { display: none; }
+  #efTiles .mt-selected .mt-sel-text { display: block; flex: 0 0 auto; min-width: 0; margin-top: 1px; }
+  #efTiles .mt-count { flex: 0 0 auto; }
+  #efTiles .mt-selected .mt-sel-text b { display: block; font-size: 12px; font-weight: 800; color: #c4501a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.25; }
+  #efTiles .mt-selected .mt-acts { position: absolute; right: 6px; top: 6px; }
+  #efTiles .mt-selected .mt-remove { width: 24px; height: 24px; border-radius: 50%; background: #eceef2; color: #14151a; border: 0; font-size: 12px; line-height: 24px; padding: 0; }
+  #efTiles > .ef-music .cover-picker-status { display: block; padding: 18px 12px; font-size: 12.5px; color: #8a8c97; }
+  #efTiles > .ef-music.disabled { opacity: 0.45; pointer-events: none; }
+  /* category: the real drop-down, invisible, laid over the whole tile -- tapping the tile opens the phone's own picker */
+  #efTiles > .ef-cat select { position: absolute !important; inset: 0; width: 100% !important; height: 100% !important; margin: 0 !important; padding: 0 !important; opacity: 0; border: 0 !important; background: transparent !important; font-size: 16px; cursor: pointer; -webkit-appearance: none; appearance: none; }
+  #efTiles > .ef-cat .et-v::after { content: " \25BE"; }
+  #efTiles > .ef-cat .et-v.mute::after { content: " \203A"; }
+  /* location: the real text box sitting where the value goes. It is typed at 16px (so iPhones do not zoom in when you tap it) and
+     drawn at 78% so it LOOKS like the other 12.5px values. */
+  #efTiles > .ef-loc input#location { display: block; width: 128% !important; box-sizing: border-box; margin: 1px 0 0 !important; padding: 0 !important; height: 18px; border: 0 !important; border-radius: 0 !important; background: transparent !important; box-shadow: none !important; outline: none; color: #c4501a !important; font: inherit; font-size: 16px; font-weight: 800; line-height: 18px; transform: scale(0.78125); transform-origin: left center; }
+  #efTiles > .ef-loc input#location::placeholder { color: #8a8c97; font-weight: 600; opacity: 1; }
+  /* narration */
+  #efTiles .ef-narr .ef-hit:disabled { opacity: 0.4; cursor: not-allowed; }
+  #efTiles .ef-narr .ef-hit.recording .et-t, #efTiles .ef-narr .ef-hit.recording .et-v { color: #d11a2a !important; }
+  #efTiles .ef-narr .ef-done { display: none; cursor: default; }
+  #efTiles > .ef-narr.rec-done .ef-hit { display: none !important; }
+  #efTiles > .ef-narr.rec-done .ef-done { display: flex; }
+  #efTiles .ef-done .et-v { display: flex; gap: 6px; flex-wrap: wrap; overflow: visible; margin-top: 3px; }
+  #efTiles .ef-done .et-v button { padding: 1px 10px; border-radius: 999px; border: 1.5px solid #c9c9cf; background: #fff; color: #14151a; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+  #efTiles .ef-done .et-v button:disabled { opacity: 0.4; }
+  #efTiles .narration-timer { position: absolute; right: 10px; top: 8px; font-size: 12.5px; font-weight: 800; color: #d11a2a; font-variant-numeric: tabular-nums; }
+  .ef-narr-preview { margin-top: 8px; }
+  .ef-narr-preview audio { width: 100%; }
+  /* ===== Ken's ask (Oct 2026): pull the whole page UP so the share box and Post button show without scrolling ===== */
+  #uploadShell { padding-top: 2px !important; }
+  #uploadCard { padding-top: 0 !important; margin-top: 0 !important; }
+  #uploadFlow .upload-flow-back, .upload-flow-back { margin: -4px 0 2px !important; padding: 2px 10px 2px 0 !important; min-height: 30px !important; }
+  #uploadCard #trimSection { padding: 10px 12px !important; margin-top: 0 !important; }
+  #trimSection .field-label-row { margin-bottom: 6px !important; }
+  #trimSection #changeVideoBtn { padding: 3px 12px !important; min-height: 0 !important; }
+  .clip-thumb, .clip-add { width: 48px; height: 62px; }
+  #coverPicker { margin-top: 6px !important; }
+  #socialShareRow { padding: 8px 12px !important; margin: 8px 0 6px !important; gap: 14px !important; }
+  #socialShareRow .ss-sub { margin-top: 1px; }
+  @media (max-width: 560px) { #trimPreviewVideo, #trimPreviewVideo.portrait { max-height: 29svh; } }
+  /* the plain caption box is retired; only the Healthy Meal Prep write-up still uses it */
+  #captionField { display: none !important; }
+  body.ef-meal #captionField { display: block !important; }
 </style>
 
 <div class="app-shell narrow" id="uploadShell">
@@ -663,12 +721,6 @@
                  half-second buttons replays the clip from the top against the new
                  start point, so the beat can be matched by ear. -->
             <div class="narration-section more-option-compact" id="musicSection" style="margin-top:8px;">
-              <div class="field-label-row" id="musicLabelRow">
-                <label>🎵 Music tracks</label>
-              </div>
-              <div class="track-picker-row" id="trackPickerRow" style="display:block; overflow:visible; padding:0;">
-                <span class="cover-picker-status">Loading tracks…</span>
-              </div>
               <select id="musicTrackSelect" style="display:none;" aria-hidden="true" tabindex="-1">
                 <option value="">Select music track</option>
               </select>
@@ -710,25 +762,48 @@
             </details>
       </div>
 
-      <div class="field" id="workoutTypeField" style="margin-top:18px;">
-        <label for="workoutType">Category</label>
-        <select id="workoutType" name="workoutType">
-          <option value="">Choose a category…</option>
-          <option value="Working Out">Working Out</option>
-          <option value="Walking">Walking</option>
-          <option value="Hiking">Hiking</option>
-          <option value="Biking">Biking</option>
-          <option value="Running">Running</option>
-          <option value="Swimming">Swimming</option>
-          <option value="Strike a Pose">Strike a Pose</option>
-          <option value="Just Doing You">Just Doing You</option>
-          <option value="Meal Prep">Healthy Meal Prep</option>
-          <option value="Other">Other</option>
-        </select>
-        <!-- Ken's ask (Oct 2026): "delete it, that way Caption will pull up"
-             — this explanatory paragraph was pushing Caption further down
-             the page for no benefit most members needed; the category
-             dropdown is self-explanatory. -->
+      <!-- Ken's ask (Oct 2026): "Option B" -- four white tiles in a 2x2 grid right under the video:
+           Music tracks / Workout category / Location / Record narration. Each tile is the REAL control
+           (nothing is faked): Music opens the song list, Category is the real drop-down laid invisibly over
+           the tile, Location is the real text box, Narration is the real recorder. Tile order and the
+           show/hide rules live in the little script at the bottom of this page (efLayout). -->
+      <div id="efTiles" class="ef-grid">
+        <div class="ef-tile ef-music" id="trackPickerRow" style="display:none;"><span class="cover-picker-status">Loading tracks…</span></div>
+        <div class="field ef-tile ef-cat" id="workoutTypeField">
+          <span class="et-ic" aria-hidden="true">🏋️</span>
+          <label for="workoutType" class="et-t">Workout category</label>
+          <span class="et-v mute" id="wtShow">Choose ›</span>
+          <select id="workoutType" name="workoutType" aria-label="Workout category">
+            <option value="">Choose a category…</option>
+            <option value="Working Out">Working Out</option>
+            <option value="Walking">Walking</option>
+            <option value="Hiking">Hiking</option>
+            <option value="Biking">Biking</option>
+            <option value="Running">Running</option>
+            <option value="Swimming">Swimming</option>
+            <option value="Strike a Pose">Strike a Pose</option>
+            <option value="Just Doing You">Just Doing You</option>
+            <option value="Meal Prep">Healthy Meal Prep</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="field ef-tile ef-loc" id="locationField">
+          <span class="et-ic" aria-hidden="true">📍</span>
+          <label for="location" class="et-t">Location</label>
+          <input type="text" id="location" name="location" placeholder="Add ›" maxlength="80" autocomplete="off" aria-label="Location (optional)" />
+        </div>
+        <div class="ef-tile ef-narr" id="tileNarr" style="display:none;">
+          <button type="button" class="ef-hit" id="recordNarrationBtn"><span class="et-ic">🎙️</span><span class="et-t">Record narration</span><span class="et-v mute">Tap to record</span></button>
+          <div class="ef-done" id="narrDone">
+            <span class="et-ic">🎙️</span><span class="et-t">Narration added</span>
+            <span class="et-v"><button type="button" id="reRecordBtn">Re-record</button><button type="button" id="removeNarrationBtn">Remove</button></span>
+          </div>
+          <span class="narration-timer" id="narrationTimer" style="display:none;">0:00</span>
+        </div>
+        <div id="narrationSection" style="display:none;" aria-hidden="true"></div>
+      </div>
+      <div id="narrationPreview" class="ef-narr-preview" style="display:none;">
+        <audio id="narrationAudioPreview" controls></audio>
       </div>
       <div class="field" id="songTitleField" style="display:none;">
         <label for="songTitle" id="songTitleLabel">Song title</label>
@@ -738,6 +813,11 @@
         <span class="field-hint song-only">Members filter the music list by category, so pick the closest fit.</span>
         <span class="field-hint msg-only" style="display:none;">Your message goes into the Positive Message library right away, so anyone can pick it to play behind their video. Keep it short and uplifting.</span>
         <span class="field-hint song-only">Your song publishes to the Music Library right away under your display name — no waiting on approval. Our team reviews new songs regularly to make sure they fit the community's motivational vibe.</span>
+      </div>
+      <div class="field" id="mealTitleField" style="display:none;">
+        <label for="mealTitle">Name your meal prep</label>
+        <input type="text" id="mealTitle" name="mealTitle" placeholder="e.g. Turkey Meatball Bowls" maxlength="60" />
+        <span class="field-hint">Shown on the Healthy Meal Prep page so members know what they're tapping on.</span>
       </div>
       <div class="field" id="captionField">
         <label for="caption" id="captionLabel">Caption (optional)</label>
@@ -754,19 +834,10 @@
         <textarea id="caption" name="caption" placeholder="Say something about this one" maxlength="120" rows="1" class="caption-compact"></textarea>
         <span class="field-hint" id="captionHint" style="display:none;">Healthy Meal Prep posts get their own full-page profile — prep time, ingredients, your tips, whatever makes it yours. Write the whole thing here; there's room for it.</span>
       </div>
-      <div class="field" id="mealTitleField" style="display:none;">
-        <label for="mealTitle">Name your meal prep</label>
-        <input type="text" id="mealTitle" name="mealTitle" placeholder="e.g. Turkey Meatball Bowls" maxlength="60" />
-        <span class="field-hint">Shown on the Healthy Meal Prep page so members know what they're tapping on.</span>
-      </div>
       <div class="field" id="signatureField" style="display:none;">
         <label for="signature">Sign your name (optional)</label>
         <input type="text" id="signature" name="signature" placeholder="e.g. Marcus" maxlength="40" />
         <span class="field-hint">Shown in script under your write-up, like a signed recipe card — a little personal touch, totally optional.</span>
-      </div>
-      <div class="field" id="locationField">
-        <label for="location">Location (optional)</label>
-        <input type="text" id="location" name="location" placeholder="e.g. Gold's Gym, Dallas" maxlength="80" />
       </div>
       <div class="field" id="productTagField" style="display:none;">
         <label for="productTag">Tag a product you're using in this photo (optional)</label>
@@ -795,40 +866,8 @@
 
       <button type="button" class="btn btn-primary btn-block" id="uploadBtn" disabled>↑ Select a file above</button>
 
-      <!-- Ken's ask (Oct 2026): "Voice narration" and "Add music" were each
-           their own full card with a paragraph explaining what they do — a
-           lot of space and reading for something most uploads never touch.
-           Folded into one compact "More options" box, each down to just its
-           control with a short label, no explanatory copy — the picker
-           itself is the explanation. ("Add another clip" and "Music" use
-           this same compact styling but now live up in #trimSection instead,
-           next to the video they apply to.) Placed after Upload on purpose:
-           the common path (pick a file, caption, location, upload) stays
-           short and is all most people ever need; these stay reachable for
-           the rare person who wants them, without adding to what everyone
-           else scrolls past. Kept its own id (narrationSection) and
-           show/hide logic exactly as before — see updateNarrationVisibility
-           — and the shared "moreOptionsBox" wrapper (see
-           updateMoreOptionsBoxVisibility) still shows/hides itself the same
-           way, so there's never an empty bordered box left over for a
-           photo/song upload where none of this applies. -->
-      <div class="narration-section" id="moreOptionsBox">
-        <div class="field-label-row">
-          <label>More options</label>
-        </div>
-
-        <div class="narration-section more-option-compact" id="narrationSection">
-          <div class="more-option-row">
-            <button type="button" class="btn btn-ghost btn-sm record-btn" id="recordNarrationBtn">🎙️ Record narration</button>
-            <button type="button" class="btn btn-ghost btn-sm" id="reRecordBtn" style="display:none;">Re-record</button>
-            <button type="button" class="btn btn-ghost btn-sm" id="removeNarrationBtn" style="display:none;">Remove</button>
-            <span class="narration-timer" id="narrationTimer">0:00</span>
-          </div>
-          <div class="narration-preview" id="narrationPreview" style="display:none;">
-            <audio id="narrationAudioPreview" controls></audio>
-          </div>
-        </div>
-      </div>
+      <!-- (the old "More options" box is gone: narration is now a tile above; this empty holder just keeps the page script happy) -->
+      <div id="moreOptionsBox" style="display:none;" aria-hidden="true"></div>
     </div>
   </div>
 
@@ -1580,15 +1619,23 @@
     return m + ":" + (s < 10 ? "0" : "") + s;
   }
 
+  // The narration tile's button shows three lines: icon, title, small value (Oct 2026 tile layout).
+  function setNarrBtn(ic, title, val) {
+    recordNarrationBtn.innerHTML = '<span class="et-ic"></span><span class="et-t"></span><span class="et-v mute"></span>';
+    recordNarrationBtn.children[0].textContent = ic;
+    recordNarrationBtn.children[1].textContent = title;
+    recordNarrationBtn.children[2].textContent = val;
+  }
   function resetNarrationUI() {
     narrationBlob = null;
     narrationPreview.style.display = "none";
     narrationAudioPreview.src = "";
     reRecordBtn.style.display = "none";
     removeNarrationBtn.style.display = "none";
-    recordNarrationBtn.style.display = "inline-flex";
-    recordNarrationBtn.textContent = "🎙️ Record narration";
+    recordNarrationBtn.style.display = "block";
+    setNarrBtn("🎙️", "Record narration", "Tap to record");
     recordNarrationBtn.classList.remove("recording");
+    var tn0 = document.getElementById("tileNarr"); if (tn0) tn0.classList.remove("rec-done");
     narrationTimer.style.display = "none";
     if (typeof syncMusicNarrationExclusivity === "function") syncMusicNarrationExclusivity();
   }
@@ -2937,6 +2984,7 @@
         reRecordBtn.style.display = "inline-flex";
         removeNarrationBtn.style.display = "inline-flex";
         recordNarrationBtn.style.display = "none";
+        var tn1 = document.getElementById("tileNarr"); if (tn1) tn1.classList.add("rec-done");
         stream.getTracks().forEach(function (t) { t.stop(); });
         syncMusicNarrationExclusivity();
       };
@@ -2947,7 +2995,7 @@
       recordingTimerInterval = setInterval(function () {
         narrationTimer.textContent = formatTimer(Date.now() - recordingStartedAt);
       }, 250);
-      recordNarrationBtn.textContent = "⏹ Stop recording";
+      setNarrBtn("⏹", "Stop recording", "Tap when you're done");
       recordNarrationBtn.classList.add("recording");
       syncMusicNarrationExclusivity();
     } catch (err) {
@@ -3073,9 +3121,9 @@
     var t = tracksById[musicTrackSelect.value];
     if (t) {
       trackPickerRow.innerHTML =
-        '<div class="mt-selected"><span class="mt-art"></span><span class="mt-sel-text"><b></b></span>' +
+        '<div class="mt-selected" role="button" tabindex="0"><span class="mt-art"></span><span class="et-ic">🎵</span><span class="et-t">Music tracks</span>' +
+        '<span class="et-v mt-sel-text"><b></b></span>' +
         '<span class="mt-acts"><span class="mt-meta"></span>' +
-        '<button type="button" class="mt-change">Change</button>' +
         '<button type="button" class="mt-remove" aria-label="Remove music" title="Remove music">✕</button></span></div>';
       document.getElementById("musicSection").classList.add("has-song");
       trackPickerRow.querySelector(".mt-art").textContent = trackInitial(t);
@@ -3086,7 +3134,7 @@
       trackPickerRow.querySelector(".mt-meta").textContent = metaBits.join(" · ");
     } else {
       document.getElementById("musicSection").classList.remove("has-song");
-      trackPickerRow.innerHTML = '<button type="button" class="mt-choose">🎵 Choose a song or message <span class="mt-count">' + allTracks.length + ' tracks ›</span></button>';
+      trackPickerRow.innerHTML = '<button type="button" class="mt-choose"><span class="et-ic">🎵</span><span class="et-t">Music tracks</span><span class="et-v mt-count">' + allTracks.length + ' tracks ›</span></button>';
     }
   }
 
@@ -3263,7 +3311,7 @@
   }
   trackPickerRow.addEventListener("click", function (e) {
     if (e.target.closest(".mt-remove")) { chooseTrack(""); return; }
-    if (e.target.closest(".mt-choose") || e.target.closest(".mt-change")) openTrackSheet();
+    if (e.target.closest(".mt-choose") || e.target.closest(".mt-change") || e.target.closest(".mt-selected")) openTrackSheet();
   });
 
   async function loadTracksForPicker() {
@@ -4089,5 +4137,53 @@
   init();
 </script>
 
+
+<script>
+/* Option B tiles (Oct 2026): layout + keeping the category tile's text in step with the real drop-down.
+   Website and mobile app share this exact file. */
+(function () {
+  function $(id) { return document.getElementById(id); }
+  var grid = $("efTiles"), music = $("trackPickerRow"), cat = $("workoutTypeField"), loc = $("locationField"), narr = $("tileNarr");
+  var musicSec = $("musicSection"), narrSec = $("narrationSection"), sel = $("workoutType"), show = $("wtShow"), cap = $("caption");
+  if (!grid || !sel) return;
+  function setDisp(el, on) { var want = on ? "" : "none"; if (el.style.display !== want) el.style.display = want; }
+  function layout() {
+    setDisp(music, musicSec.classList.contains("show"));
+    setDisp(narr, narrSec.classList.contains("show"));
+    var list = [music, cat, loc, narr].filter(function (el) { return el.style.display !== "none"; });
+    [music, cat, loc, narr].forEach(function (el) {
+      var wide = list.length % 2 === 1 && el === list[list.length - 1];
+      if (el.classList.contains("wide") !== wide) el.classList.toggle("wide", wide);
+    });
+    // a song / spoken message has its own title + category below, so the workout tiles step aside
+    var songy = $("songTitleField") && $("songTitleField").style.display !== "none" && $("songTitleField").style.display !== "";
+    setDisp(grid, list.length > 0 && !songy);
+  }
+  var lastVal = null;
+  function syncCat(ev) {
+    var v = sel.value;
+    if (v !== lastVal) {
+      var prev = lastVal; lastVal = v;
+      var txt = v ? sel.options[sel.selectedIndex].text : "Choose";
+      if (show.textContent !== txt) show.textContent = txt;
+      show.classList.toggle("mute", !v);
+      var meal = v === "Meal Prep";
+      document.body.classList.toggle("ef-meal", meal);
+      if (!meal && cap && cap.value) cap.value = "";          // leaving Meal Prep: its write-up goes with it
+      if (prev !== null && !(ev && ev.type === "change")) { try { sel.dispatchEvent(new Event("change")); } catch (e) {} }   // category set by the page itself (default / deep link): let the page react too
+    }
+  }
+  var mo = new MutationObserver(layout);
+  mo.observe(musicSec, { attributes: true, attributeFilter: ["class"] });
+  mo.observe(narrSec, { attributes: true, attributeFilter: ["class"] });
+  mo.observe(cat, { attributes: true, attributeFilter: ["style"] });
+  mo.observe(loc, { attributes: true, attributeFilter: ["style"] });
+  if ($("songTitleField")) mo.observe($("songTitleField"), { attributes: true, attributeFilter: ["style"] });
+  sel.addEventListener("change", syncCat);
+  setInterval(syncCat, 300);
+  loc.addEventListener("click", function (e) { if (e.target !== $("location")) $("location").focus(); });
+  layout(); syncCat();
+})();
+</script>
 </body>
 </html>

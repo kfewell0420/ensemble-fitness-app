@@ -2386,7 +2386,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
 <script src="js/shared-session.js"></script>
 <script src="js/supabaseClient.js"></script>
 <script src="js/text-labels-v2.js?v=1"></script>
-<script src="js/feed-sound.js?v=2"></script>
+<script src="js/feed-sound.js?v=3"></script>
 <script src="js/moderation.js"></script>
 <script src="js/social.js"></script>
 <script>
@@ -3962,6 +3962,15 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     var retry = video.play();
     if (retry && retry.catch) retry.catch(function () {});
   }
+  // Called by js/feed-sound.js when a video's attached SONG is refused by the phone (needs a first touch). The speaker must
+  // tell the truth: show it OFF, and let the next tap turn the sound on (that tap is also what lets the phone start the song).
+  window.efSoundBlocked = function (video) {
+    if (!video || !video.isConnected || video.muted) return;
+    var slide = video.closest ? video.closest(".rp-slide") : null;
+    video.muted = true;
+    needsSoundTap = true; // not saved as the member's choice
+    if (slide) syncMuteBtn(slide, video);
+  };
   document.addEventListener("pointerup", function (e) {
     if (!needsSoundTap || reelMuted || isWideLayout) return;
     if (e.target && e.target.closest && e.target.closest("video, .rp-mute-btn, .rp-comments-modal")) return; // those taps already do their own thing
