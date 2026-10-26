@@ -415,6 +415,10 @@
   .mix-seg { display: flex; min-width: 0; height: 100%; border-left: 2px solid rgba(255,255,255,0.75); }
   .mix-seg:first-child { border-left: 0; }
   /* iPhone: our own play / position bar (the phone's built-in bar can freeze at 0:00 while the picture plays) */
+  /* While a chosen video is still opening, the box stays a plain dark rectangle with no player buttons (Ken, Oct 2026: the
+     little media player flashed for half a second before the picture appeared). The buttons come in with the first picture. */
+  #trimPreviewVideo.pv-wait { background: #1a1a1a; }
+  .pv-wait-on .pv-ctl { visibility: hidden; }
   .pv-ctl { display: none; align-items: center; gap: 10px; padding: 10px 2px 4px; }
   .pv-ctl.on { display: flex; }
   .pv-ctl button { flex: 0 0 auto; width: 42px; height: 42px; border-radius: 50%; border: 0; background: #ff6b3d; color: #fff; font-size: 15px; line-height: 1; cursor: pointer; padding: 0; }
@@ -1881,11 +1885,36 @@
   }
 
   // Loads clip 1 into the preview player and makes the cover choices from it.
+  // Hide the player buttons until the first picture of the chosen video is on screen (see the CSS note at #trimPreviewVideo.pv-wait).
+  var pvWaitTimer = null, pvWaitHadControls = false;
+  function pvWaitStart() {
+    try {
+      if (pvWaitTimer) { clearTimeout(pvWaitTimer); pvWaitTimer = null; }
+      pvWaitHadControls = trimPreviewVideo.hasAttribute("controls") || pvWaitHadControls;
+      trimPreviewVideo.removeAttribute("controls");
+      trimPreviewVideo.classList.add("pv-wait");
+      if (trimPreviewVideo.parentNode) trimPreviewVideo.parentNode.classList.add("pv-wait-on");
+      var done = function () { pvWaitEnd(); };
+      trimPreviewVideo.addEventListener("loadeddata", done, { once: true });
+      trimPreviewVideo.addEventListener("seeked", done, { once: true });
+      trimPreviewVideo.addEventListener("error", done, { once: true });
+      pvWaitTimer = setTimeout(done, 3500);   // never leave the buttons hidden if the picture is slow to arrive
+    } catch (e) {}
+  }
+  function pvWaitEnd() {
+    try {
+      if (pvWaitTimer) { clearTimeout(pvWaitTimer); pvWaitTimer = null; }
+      trimPreviewVideo.classList.remove("pv-wait");
+      if (trimPreviewVideo.parentNode) trimPreviewVideo.parentNode.classList.remove("pv-wait-on");
+      if (pvWaitHadControls && !pvCtlOn) trimPreviewVideo.setAttribute("controls", "");
+    } catch (e) {}
+  }
   function loadTrimPreview(keepWindow) {
     if (!keepWindow) { mDelay = 0; mLenWanted = Infinity; }
     reelIdx = 0; clipSel = 0; reelSwitching = false; reelPending = null; reelLoadTok++;
     trimPreviewVideo.preload = "auto";
     pvDirty = false; pvResetting = false;
+    pvWaitStart();
     trimPreviewVideo.src = clips[0].url;
     trimPreviewVideo.onloadedmetadata = function () {
       trimPreviewVideo.onloadedmetadata = null; // one-shot: later clip swaps must not regenerate the covers
