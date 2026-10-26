@@ -2364,6 +2364,7 @@
       if (!w || !h) return { blob: file, shrunk: false };
       // the part of the photo to keep: all of it, or the framed part the member chose
       var sx = 0, sy = 0, sw = w, sh = h;
+      if (crop && crop.ar && Math.abs(crop.ar / (w / h) - 1) > 0.05) crop = null;   // the screen and the saver disagree on which way is up: post the whole photo, never a wrong crop
       if (crop && crop.w > 0 && crop.h > 0) {
         sx = Math.max(0, Math.min(w - 1, Math.round(crop.x * w)));
         sy = Math.max(0, Math.min(h - 1, Math.round(crop.y * h)));
@@ -2425,8 +2426,8 @@
     if (PS.mode === "orig") { h.textContent = "The whole photo is posted. Nothing is cut off."; return; }
     var w = PS.nw * PS.s, hh = PS.nh * PS.s, slackX = w - psFW() > 1, slackY = hh - psFH() > 1;
     h.textContent = slackX && slackY ? "Drag to move · pinch or slide to zoom"
-      : slackX ? "Drag left and right · zoom in to move up and down"
-      : slackY ? "Drag up and down · zoom in to move left and right"
+      : slackX ? "Drag left and right. Slide the zoom bar to move up and down too."
+      : slackY ? "Drag up and down. Slide the zoom bar to move left and right too."
       : "Zoom in to move the photo";
   }
   function psLayout(reset) {
@@ -2497,47 +2498,33 @@
     if (PS.url) { try { URL.revokeObjectURL(PS.url); } catch (e) {} PS.url = null; }
     var im = psEl("psImg"); if (im) { im.removeAttribute("src"); }
   }
+  // Fast path (Oct 2026): the photo is shown straight from the file, so the phone does its normal quick decode and nothing
+  // is re-drawn or re-encoded first (the earlier way made a smaller copy by hand, which was slow on big camera photos).
+  // The card appears at once with "Opening your photo..." and the frame replaces it as soon as the picture is ready.
   async function psLoad(f) {
-    var my = ++PS.token, box = psEl("photoSizer"), bmp = null, objectUrl = null;
+    var my = ++PS.token, t0 = Date.now();
     PS.file = f; PS.ok = false; psWire();
+    psShow(false, "Opening your photo\u2026");
     if (PS.url) { try { URL.revokeObjectURL(PS.url); } catch (e) {} PS.url = null; }
+    function fail(why) {
+      if (my !== PS.token) return;
+      PS.ok = false;
+      psShow(false, "This photo could not be opened for sizing, so it will post as it is. (Tap Change photo to pick another.)" + (why ? " [" + why + "]" : ""));
+    }
     try {
-      var src = null, w = 0, h = 0;
-      if (window.createImageBitmap) { try { bmp = await createImageBitmap(f, { imageOrientation: "from-image" }); } catch (e1) { bmp = null; } }
-      if (bmp) { src = bmp; w = bmp.width; h = bmp.height; }
-      else {
-        objectUrl = URL.createObjectURL(f);
-        var img = new Image();
-        await new Promise(function (ok, no) { img.onload = ok; img.onerror = no; img.src = objectUrl; });
-        src = img; w = img.naturalWidth; h = img.naturalHeight;
-      }
-      if (my !== PS.token) return;
-      if (!w || !h) throw new Error("no size");
-      var k = Math.min(1, 1400 / Math.max(w, h)), pw = Math.max(1, Math.round(w * k)), ph = Math.max(1, Math.round(h * k));
-      // a lighter copy for the screen (a 12-megapixel photo is heavy to drag around); if that cannot be made, show the file itself
-      var blob = null;
-      try {
-        var c = document.createElement("canvas"); c.width = pw; c.height = ph;
-        var g = c.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, pw, ph); g.imageSmoothingQuality = "high"; g.drawImage(src, 0, 0, pw, ph);
-        blob = await new Promise(function (done) { c.toBlob(function (b) { done(b); }, "image/jpeg", 0.85); });
-      } catch (e4) { blob = null; }
-      if (my !== PS.token) return;
-      if (blob) { PS.url = URL.createObjectURL(blob); PS.nw = pw; PS.nh = ph; }
-      else { PS.url = URL.createObjectURL(f); PS.nw = w; PS.nh = h; }
       var im = psEl("psImg");
-      im.style.width = PS.nw + "px"; im.style.height = PS.nh + "px";
+      PS.url = URL.createObjectURL(f);
       im.onload = function () {
         if (my !== PS.token) return;
+        var w = im.naturalWidth, h = im.naturalHeight;
+        if (!w || !h) { fail("no size"); return; }
+        PS.nw = w; PS.nh = h; im.style.width = w + "px"; im.style.height = h + "px";
         PS.ok = true; psShow(true); psSetMode("portrait");
+        try { console.log("[photo sizer] ready in " + (Date.now() - t0) + " ms (" + w + "x" + h + ")"); } catch (e5) {}
       };
-      im.onerror = function () { if (my === PS.token) { PS.ok = false; psShow(false, "This photo could not be opened for sizing, so it will post as it is. (Tap Change photo to pick another.)"); } };
+      im.onerror = function () { fail("decode"); };
       im.src = PS.url;
-    } catch (e) {
-      if (my === PS.token) { PS.ok = false; psShow(false, "This photo could not be opened for sizing, so it will post as it is. (Tap Change photo to pick another.) [" + ((e && e.name) || "error") + "]"); }
-    } finally {
-      try { if (bmp && bmp.close) bmp.close(); } catch (e2) {}
-      try { if (objectUrl) URL.revokeObjectURL(objectUrl); } catch (e3) {}
-    }
+    } catch (e) { fail((e && e.name) || "error"); }
   }
   function updatePhotoSizer() {
     try {
@@ -2557,7 +2544,7 @@
       x = Math.max(0, Math.min(1, x)); y = Math.max(0, Math.min(1, y));
       w = Math.min(1 - x, w); h = Math.min(1 - y, h);
       if (w >= 0.995 && h >= 0.995) return null;
-      return { x: x, y: y, w: w, h: h };
+      return { x: x, y: y, w: w, h: h, ar: PS.nw / PS.nh };
     } catch (e) { return null; }
   }
 
