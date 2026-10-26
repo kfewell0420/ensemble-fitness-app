@@ -11,14 +11,18 @@
      straight in one long, everything-at-once form. Scoped to this page only. */
   .upload-category-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr); /* Oct 2026: Photo, Videos, Song, Message in one row */
+    grid-template-columns: repeat(4, 1fr); /* Oct 2026: Photo, Videos, Song, Recording in one row */
     gap: 8px;
     margin-bottom: 4px;
   }
+  /* Ken's ask (Oct 2026): thumb reach. Phones are tall, so four tiles up by the title meant using the other hand. On phones the
+     four tiles are now big (2 x 2) and ride low on the screen where one thumb reaches them. While this "pick a type" screen is
+     showing, the grid is pinned to the bottom; the moment a type is picked the grid is hidden and the normal form takes over. */
   @media (max-width: 559px) {
-    .upload-category-tile { padding: 14px 4px !important; gap: 4px !important; }
-    .upload-category-icon { font-size: 24px !important; }
-    .upload-category-tile strong { font-size: 12.5px !important; }
+    #categoryGrid { grid-template-columns: 1fr 1fr; gap: 12px; position: fixed; left: 16px; right: 16px; bottom: calc(22px + env(safe-area-inset-bottom, 0px)); margin: 0 auto; z-index: 20; max-width: 520px; }
+    .upload-category-tile { padding: 12px 6px !important; gap: 8px !important; min-height: 128px; justify-content: center; border-radius: 20px !important; }
+    .upload-category-icon { font-size: 36px !important; margin-bottom: 0 !important; }
+    .upload-category-tile strong { font-size: 17px !important; }
     .upload-category-tile span:not(.upload-category-icon) { display: none; } /* phones: icon + name only */
   }
   .upload-category-tile {
@@ -42,7 +46,8 @@
     outline: none;
   }
   .upload-category-tile:active { transform: scale(0.98); }
-  .upload-category-icon { font-size: 28px; line-height: 1; margin-bottom: 4px; }
+  /* Oct 2026 (Ken, website): the icons were drawing tiny because the generic ".upload-category-tile span" size below beat this one. */
+  .upload-category-tile .upload-category-icon { font-size: 46px; line-height: 1; margin-bottom: 6px; }
   .upload-category-tile strong { color: #fff; font-size: 14.5px; }
   .upload-category-tile span { font-size: 12px; color: var(--muted-invert); line-height: 1.4; }
   .msg-rec-card { background: #0b0f1a; border: 1.5px solid rgba(255,255,255,0.14); border-radius: 18px; padding: 16px; margin-bottom: 14px; text-align: center; color: #fff; }
@@ -557,7 +562,7 @@
       </button>
       <button type="button" class="upload-category-tile" data-category="message">
         <span class="upload-category-icon">🎙️</span>
-        <strong>Message</strong>
+        <strong>Recording</strong>
         <span>Record your motivational quote</span>
       </button>
     </div>
@@ -1308,7 +1313,7 @@
     },
     message: {
       accept: "audio/*",
-      heading: "Add a positive message",
+      heading: "Add a recording",
       sub: "Record a short motivational message. It goes into the Positive Message library and members can play it behind their videos.",
       placeholder: "Or choose an audio file",
       hint: "MP3, M4A, or WAV"
@@ -1394,7 +1399,7 @@
     var isSong = category === "song" || isMessage;
     document.getElementById("songLinkedBadge").style.display = (isSong && !isMessage) ? "flex" : "none";
     document.getElementById("msgRecorder").style.display = isMessage ? "block" : "none";
-    document.getElementById("songTitleLabel").textContent = isMessage ? "Message title" : "Song title";
+    document.getElementById("songTitleLabel").textContent = isMessage ? "Recording title" : "Song title";
     document.getElementById("songTitle").placeholder = isMessage ? "e.g. You are stronger than you think" : "e.g. Morning Light";
     Array.prototype.forEach.call(document.querySelectorAll("#songTitleField .song-only"), function (el) {
       el.style.display = isMessage ? "none" : (el.tagName === "LABEL" ? "block" : "");
@@ -1526,7 +1531,7 @@
   if (changeCategoryBtn) changeCategoryBtn.addEventListener("click", resetToCategoryGrid);
 
   // Label on the main button once something is chosen: one clear word for what it does.
-  function postLabel() { return (selectedFile && fileKind(selectedFile) === "audio") ? (messageMode ? "Post message" : "Upload song") : "Post"; }
+  function postLabel() { return (selectedFile && fileKind(selectedFile) === "audio") ? (messageMode ? "Post recording" : "Upload song") : "Post"; }
 
   // Back arrow at the top of the upload step: stop any preview, drop the chosen clips, return to the type picker.
   var flowBackBtn = document.getElementById("flowBackBtn");
@@ -3602,7 +3607,7 @@
     }
     var songTitleField = document.getElementById("songTitle");
     if (precheckKind === "audio" && !songTitleField.value.trim()) {
-      showMsg(msg, messageMode ? "Please give your message a title." : "Please give your song a title.", "error");
+      showMsg(msg, messageMode ? "Please give your recording a title." : "Please give your song a title.", "error");
       songTitleField.focus();
       return;
     }
@@ -3657,7 +3662,7 @@
         }
         if (trackInsertError) throw trackInsertError;
 
-        showMsg(msg, messageMode ? "Your message has been uploaded." : "🎉 \"" + songTitle + "\" is live in the Music Library now! Our team reviews new songs regularly to make sure they fit the community's motivational vibe — you're all set for now.", "success");
+        showMsg(msg, messageMode ? "Your recording has been uploaded." : "🎉 \"" + songTitle + "\" is live in the Music Library now! Our team reviews new songs regularly to make sure they fit the community's motivational vibe — you're all set for now.", "success");
         fileInput.value = "";
         selectedFile = null;
         dropzoneLabel.textContent = CATEGORY_META.song.placeholder;
