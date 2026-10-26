@@ -297,7 +297,7 @@
   #photoSizer .ps-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
   #photoSizer .ps-title { font-size: 15px; font-weight: 700; color: #fff; }
   #photoSizer .ps-reset { border: 0; background: none; color: #ffb35c; font-size: 13px; font-weight: 700; padding: 6px 4px; cursor: pointer; }
-  #photoSizer .ps-frame { position: relative; width: min(100%, calc(46svh * 0.8)); aspect-ratio: 4 / 5; margin: 0 auto; background: #000;
+  #photoSizer .ps-frame { position: relative; width: min(100%, calc(41svh * 0.8)); aspect-ratio: 4 / 5; margin: 0 auto; background: #000;
     border-radius: 12px; overflow: hidden; touch-action: none; cursor: grab; -webkit-user-select: none; user-select: none; }
   #photoSizer .ps-frame.ps-orig { touch-action: auto; cursor: default; }
   #photoSizer .ps-frame img { position: absolute; left: 0; top: 0; transform-origin: 0 0; max-width: none; -webkit-user-drag: none; pointer-events: none; }
@@ -312,6 +312,13 @@
   #photoSizer .ps-zoom span { font-size: 18px; color: rgba(255,255,255,0.7); line-height: 1; }
   #photoSizer .ps-zoom input { flex: 1; accent-color: #fff; min-width: 0; }
   #photoSizer .ps-zoom.ps-off { opacity: .35; pointer-events: none; }
+  #photoSizer .ps-btns { display: flex; align-items: center; gap: 4px; }
+  #photoSizer .ps-change { border: 0; background: rgba(255,255,255,0.14); color: #fff; font-size: 13px; font-weight: 700; padding: 7px 12px; border-radius: 999px; cursor: pointer; }
+  #photoSizer .ps-failmsg { display: none; font-size: 13px; line-height: 1.4; color: rgba(255,255,255,0.8); padding: 4px 2px 2px; }
+  #photoSizer.ps-failed .ps-failmsg { display: block; }
+  #photoSizer.ps-failed .ps-frame, #photoSizer.ps-failed .ps-hint, #photoSizer.ps-failed .ps-seg, #photoSizer.ps-failed .ps-zoom, #photoSizer.ps-failed .ps-reset { display: none; }
+  /* With a photo chosen, the photo itself takes the top of the page; the "JPG selected" box is replaced by it (Change photo is in its header). */
+  body.ps-on #dropzone { display: none !important; }
 </style>
 
 </head>
@@ -716,7 +723,8 @@
 
       <!-- Size your photo: shown only for a photo (see updatePhotoSizer in the script). -->
       <div id="photoSizer">
-        <div class="ps-top"><span class="ps-title">Size your photo</span><button type="button" class="ps-reset" id="psReset">Reset</button></div>
+        <div class="ps-top"><span class="ps-title">Size your photo</span><span class="ps-btns"><button type="button" class="ps-change" id="psChange">Change photo</button><button type="button" class="ps-reset" id="psReset">Reset</button></span></div>
+        <div class="ps-failmsg" id="psFail"></div>
         <div class="ps-frame" id="psFrame"><img id="psImg" alt="Your photo" draggable="false" /><div class="ps-grid"></div></div>
         <div class="ps-hint" id="psHint"></div>
         <div class="ps-seg" role="group" aria-label="Photo size"><button type="button" id="psBtnPortrait" class="on">Portrait (fills feed)</button><button type="button" id="psBtnOrig">Original (whole photo)</button></div>
@@ -2396,6 +2404,14 @@
   // show and the photo posts the way it always did.
   var PS = { file: null, token: 0, ok: false, mode: "portrait", nw: 0, nh: 0, s: 1, minS: 1, tx: 0, ty: 0, z: 1, url: null, wired: false, pts: {}, d0: 0, z0: 1 };
   function psEl(id) { return document.getElementById(id); }
+  // on: the screen is showing (the "JPG selected" box steps aside); failed: could not open the photo, say so plainly
+  function psShow(on, failMsg) {
+    var box = psEl("photoSizer"); if (!box) return;
+    box.classList.toggle("show", !!on || !!failMsg);
+    box.classList.toggle("ps-failed", !!failMsg);
+    if (failMsg) psEl("psFail").textContent = failMsg;
+    document.body.classList.toggle("ps-on", !!on && !failMsg);
+  }
   function psFW() { return psEl("psFrame").clientWidth; }
   function psFH() { return psEl("psFrame").clientHeight; }
   function psClamp() {
@@ -2446,6 +2462,7 @@
     psEl("psBtnPortrait").addEventListener("click", function () { psSetMode("portrait"); });
     psEl("psBtnOrig").addEventListener("click", function () { psSetMode("orig"); });
     psEl("psReset").addEventListener("click", function () { psSetMode("portrait"); });
+    psEl("psChange").addEventListener("click", function () { try { fileInput.click(); } catch (x) {} });
     psEl("psZoom").addEventListener("input", function () { psSetZoom(parseFloat(this.value), psFW() / 2, psFH() / 2); });
     fr.addEventListener("pointerdown", function (e) {
       if (PS.mode === "orig") return;
@@ -2482,7 +2499,7 @@
   }
   async function psLoad(f) {
     var my = ++PS.token, box = psEl("photoSizer"), bmp = null, objectUrl = null;
-    PS.file = f; PS.ok = false; box.classList.remove("show");
+    PS.file = f; PS.ok = false; psWire();
     if (PS.url) { try { URL.revokeObjectURL(PS.url); } catch (e) {} PS.url = null; }
     try {
       var src = null, w = 0, h = 0;
@@ -2497,21 +2514,26 @@
       if (my !== PS.token) return;
       if (!w || !h) throw new Error("no size");
       var k = Math.min(1, 1400 / Math.max(w, h)), pw = Math.max(1, Math.round(w * k)), ph = Math.max(1, Math.round(h * k));
-      var c = document.createElement("canvas"); c.width = pw; c.height = ph;
-      var g = c.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, pw, ph); g.imageSmoothingQuality = "high"; g.drawImage(src, 0, 0, pw, ph);
-      var blob = await new Promise(function (done) { c.toBlob(function (b) { done(b); }, "image/jpeg", 0.85); });
-      if (my !== PS.token || !blob) return;
-      PS.url = URL.createObjectURL(blob); PS.nw = pw; PS.nh = ph;
-      psWire();
+      // a lighter copy for the screen (a 12-megapixel photo is heavy to drag around); if that cannot be made, show the file itself
+      var blob = null;
+      try {
+        var c = document.createElement("canvas"); c.width = pw; c.height = ph;
+        var g = c.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, pw, ph); g.imageSmoothingQuality = "high"; g.drawImage(src, 0, 0, pw, ph);
+        blob = await new Promise(function (done) { c.toBlob(function (b) { done(b); }, "image/jpeg", 0.85); });
+      } catch (e4) { blob = null; }
+      if (my !== PS.token) return;
+      if (blob) { PS.url = URL.createObjectURL(blob); PS.nw = pw; PS.nh = ph; }
+      else { PS.url = URL.createObjectURL(f); PS.nw = w; PS.nh = h; }
       var im = psEl("psImg");
-      im.style.width = pw + "px"; im.style.height = ph + "px";
+      im.style.width = PS.nw + "px"; im.style.height = PS.nh + "px";
       im.onload = function () {
         if (my !== PS.token) return;
-        PS.ok = true; box.classList.add("show"); psSetMode("portrait");
+        PS.ok = true; psShow(true); psSetMode("portrait");
       };
+      im.onerror = function () { if (my === PS.token) { PS.ok = false; psShow(false, "This photo could not be opened for sizing, so it will post as it is. (Tap Change photo to pick another.)"); } };
       im.src = PS.url;
     } catch (e) {
-      if (my === PS.token) { PS.ok = false; box.classList.remove("show"); }
+      if (my === PS.token) { PS.ok = false; psShow(false, "This photo could not be opened for sizing, so it will post as it is. (Tap Change photo to pick another.) [" + ((e && e.name) || "error") + "]"); }
     } finally {
       try { if (bmp && bmp.close) bmp.close(); } catch (e2) {}
       try { if (objectUrl) URL.revokeObjectURL(objectUrl); } catch (e3) {}
@@ -2521,7 +2543,7 @@
     try {
       var box = psEl("photoSizer"); if (!box) return;
       var f = (typeof selectedFile !== "undefined") ? selectedFile : null;
-      if (!f || fileKind(f) !== "photo") { if (PS.file) psClear(); box.classList.remove("show"); return; }
+      if (!f || fileKind(f) !== "photo") { if (PS.file) psClear(); psShow(false); return; }
       if (PS.file === f) return;      // same photo: keep the member's framing
       psLoad(f);
     } catch (e) {}
