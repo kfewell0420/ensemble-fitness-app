@@ -58,6 +58,7 @@
       var pr; try { pr = audio.play(); } catch (e) { return; }
       if (!pr || !pr.catch) return;
       pr.catch(function (err) {
+        if (err && err.name !== "NotAllowedError" && err.name !== "AbortError") { heal(); return; }
         if (!err || err.name !== "NotAllowedError" || audio.muted) return;
         if (typeof window.efSoundBlocked === "function") { try { window.efSoundBlocked(video); } catch (e2) {} }
         if (!video.muted) return;                       // page chose not to mute (not the audible video): nothing more to do
@@ -66,6 +67,22 @@
         if (again && again.catch) again.catch(function () {});   // muted playback is always allowed: keeps the song in step
       });
     }
+    // Oct 2026: if the song cannot be loaded at all (its link expired while the app sat in the background), ask the page for a
+    // fresh link once, load it, and start the song beside the picture. Tried at most once every 20 seconds per video.
+    var healing = false, lastHeal = 0;
+    function heal() {
+      if (healing || typeof audio.efResign !== "function" || Date.now() - lastHeal < 20000) return;
+      healing = true; lastHeal = Date.now();
+      Promise.resolve().then(function () { return audio.efResign(); }).then(function (url) {
+        healing = false;
+        if (!url) return;
+        var wasMuted = audio.muted;
+        try { audio.src = url; audio.load(); } catch (e) { return; }
+        audio.muted = wasMuted;
+        if (!video.paused && inWin()) { seekAudio(); tryPlay(); }
+      }).catch(function () { healing = false; });
+    }
+    audio.addEventListener("error", heal);
     function sync() {
       if (stalled) return;
       var drift = Math.abs(audio.currentTime - expected());
