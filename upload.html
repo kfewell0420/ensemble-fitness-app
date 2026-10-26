@@ -289,6 +289,29 @@
   .vl-item .vl-what { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
   .vl-item .vl-x { flex: 0 0 auto; border: 0; background: none; color: #ff9a9a; font-size: 18px; padding: 4px 8px; cursor: pointer; }
   .vl-msg { font-size: 12.5px; color: #ffb199; min-height: 16px; margin: 0 0 6px; }
+
+  /* Size your photo (Ken, Oct 2026): a photo now shows here before you post, in the same tall shape as the feed. Drag to move,
+     pinch or slide to zoom, or tap "Original" to post the whole picture. Only photos see this. */
+  #photoSizer { display: none; margin: 12px 0 6px; padding: 12px; border-radius: 16px; background: rgba(255,255,255,0.06); }
+  #photoSizer.show { display: block; }
+  #photoSizer .ps-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  #photoSizer .ps-title { font-size: 15px; font-weight: 700; color: #fff; }
+  #photoSizer .ps-reset { border: 0; background: none; color: #ffb35c; font-size: 13px; font-weight: 700; padding: 6px 4px; cursor: pointer; }
+  #photoSizer .ps-frame { position: relative; width: min(100%, calc(46svh * 0.8)); aspect-ratio: 4 / 5; margin: 0 auto; background: #000;
+    border-radius: 12px; overflow: hidden; touch-action: none; cursor: grab; -webkit-user-select: none; user-select: none; }
+  #photoSizer .ps-frame.ps-orig { touch-action: auto; cursor: default; }
+  #photoSizer .ps-frame img { position: absolute; left: 0; top: 0; transform-origin: 0 0; max-width: none; -webkit-user-drag: none; pointer-events: none; }
+  #photoSizer .ps-grid { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity .2s;
+    background: linear-gradient(rgba(255,255,255,.4) 1px, transparent 1px) 0 33.33% / 100% 33.33%, linear-gradient(90deg, rgba(255,255,255,.4) 1px, transparent 1px) 33.33% 0 / 33.33% 100%; }
+  #photoSizer .ps-frame.ps-drag .ps-grid { opacity: 1; }
+  #photoSizer .ps-hint { text-align: center; font-size: 12px; line-height: 1.35; color: rgba(255,255,255,0.72); margin: 8px 0 10px; min-height: 16px; }
+  #photoSizer .ps-seg { display: grid; grid-template-columns: 1fr 1fr; background: rgba(255,255,255,0.12); border-radius: 12px; padding: 3px; margin-bottom: 10px; }
+  #photoSizer .ps-seg button { border: 0; background: none; padding: 9px 6px; border-radius: 10px; font-size: 13.5px; font-weight: 700; color: rgba(255,255,255,0.75); cursor: pointer; }
+  #photoSizer .ps-seg button.on { background: #fff; color: #14161a; }
+  #photoSizer .ps-zoom { display: flex; align-items: center; gap: 10px; }
+  #photoSizer .ps-zoom span { font-size: 18px; color: rgba(255,255,255,0.7); line-height: 1; }
+  #photoSizer .ps-zoom input { flex: 1; accent-color: #fff; min-width: 0; }
+  #photoSizer .ps-zoom.ps-off { opacity: .35; pointer-events: none; }
 </style>
 
 </head>
@@ -690,6 +713,15 @@
         <span id="dropzoneHint">JPG, PNG, MP4, MOV, MP3, M4A, or WAV</span>
         <input type="file" id="fileInput" accept="image/*,video/*,audio/*" />
       </label>
+
+      <!-- Size your photo: shown only for a photo (see updatePhotoSizer in the script). -->
+      <div id="photoSizer">
+        <div class="ps-top"><span class="ps-title">Size your photo</span><button type="button" class="ps-reset" id="psReset">Reset</button></div>
+        <div class="ps-frame" id="psFrame"><img id="psImg" alt="Your photo" draggable="false" /><div class="ps-grid"></div></div>
+        <div class="ps-hint" id="psHint"></div>
+        <div class="ps-seg" role="group" aria-label="Photo size"><button type="button" id="psBtnPortrait" class="on">Portrait (fills feed)</button><button type="button" id="psBtnOrig">Original (whole photo)</button></div>
+        <div class="ps-zoom" id="psZoomRow"><span aria-hidden="true">&minus;</span><input id="psZoom" type="range" min="1" max="4" step="0.01" value="1" aria-label="Zoom" /><span aria-hidden="true">+</span></div>
+      </div>
 
       <!-- Ken's ask (Oct 2026): members already edit their videos on their phone
            before uploading, so this page no longer trims or stitches video. The
@@ -1872,6 +1904,7 @@
       resetTrimUI();
     }
     toggleDropzoneForVideo(isVideo);
+    updatePhotoSizer();
   }
 
   // ---- Several clips in one post --------------------------------------------
@@ -2296,6 +2329,214 @@
         resolve(file);
       }
     });
+  }
+
+  // Oct 2026 (Ken: "we are not doing this for 102 people, we are doing this for 10,002"): the feed shows every photo at no more
+  // than 1080 wide, but until now it had to ask Supabase to make that smaller copy AGAIN for every viewer (one extra request per
+  // photo, each one billed and slower the first time it is seen). So the shrinking now happens once, here, on the member's own phone:
+  // the photo is saved at the size the feed shows it (max 1080 wide / 1920 tall -- the same size the feed was already serving, so
+  // nothing looks softer), and the file name ends in "-s.jpg" so the feed knows it can use it as is. Phone photos drop from
+  // about 4 MB to a few hundred KB. Best-effort like everything here: if the photo cannot be decoded, the old path runs and the
+  // original goes up untouched. Photo orientation (sideways phone photos) is applied while decoding.
+  var FEED_PHOTO_MAX_W = 1080, FEED_PHOTO_MAX_H = 1920, FEED_PHOTO_QUALITY = 0.82;
+  async function shrinkPhotoForFeed(file, crop) {   // crop (optional): {x,y,w,h} as fractions of the photo, from the Size your photo screen
+    var bmp = null, img = null, objectUrl = null;
+    try {
+      var src = null, w = 0, h = 0;
+      if (window.createImageBitmap) {
+        try { bmp = await createImageBitmap(file, { imageOrientation: "from-image" }); } catch (e1) { bmp = null; }
+      }
+      if (bmp) { src = bmp; w = bmp.width; h = bmp.height; }
+      else {
+        objectUrl = URL.createObjectURL(file);
+        img = new Image();
+        await new Promise(function (ok, no) { img.onload = ok; img.onerror = no; img.src = objectUrl; });
+        src = img; w = img.naturalWidth; h = img.naturalHeight;
+      }
+      if (!w || !h) return { blob: file, shrunk: false };
+      // the part of the photo to keep: all of it, or the framed part the member chose
+      var sx = 0, sy = 0, sw = w, sh = h;
+      if (crop && crop.w > 0 && crop.h > 0) {
+        sx = Math.max(0, Math.min(w - 1, Math.round(crop.x * w)));
+        sy = Math.max(0, Math.min(h - 1, Math.round(crop.y * h)));
+        sw = Math.max(1, Math.min(w - sx, Math.round(crop.w * w)));
+        sh = Math.max(1, Math.min(h - sy, Math.round(crop.h * h)));
+      }
+      var scale = Math.min(1, FEED_PHOTO_MAX_W / sw, FEED_PHOTO_MAX_H / sh);
+      var tw = Math.max(1, Math.round(sw * scale)), th = Math.max(1, Math.round(sh * scale));
+      // step down by halves while more than twice the target: keeps fine detail clean (one big jump looks jagged on some browsers)
+      var cur = src, cw = sw, ch = sh, cx0 = sx, cy0 = sy;
+      while (cw / 2 >= tw && ch / 2 >= th) {
+        var nw = Math.floor(cw / 2), nh = Math.floor(ch / 2);
+        var step = document.createElement("canvas"); step.width = nw; step.height = nh;
+        var sg = step.getContext("2d"); sg.imageSmoothingQuality = "high"; sg.drawImage(cur, cx0, cy0, cw, ch, 0, 0, nw, nh);
+        cur = step; cw = nw; ch = nh; cx0 = 0; cy0 = 0;
+      }
+      var canvas = document.createElement("canvas"); canvas.width = tw; canvas.height = th;
+      var g = canvas.getContext("2d");
+      g.fillStyle = "#fff"; g.fillRect(0, 0, tw, th);        // a see-through PNG becomes white, not black
+      g.imageSmoothingQuality = "high"; g.drawImage(cur, cx0, cy0, cw, ch, 0, 0, tw, th);
+      var blob = await new Promise(function (done) { canvas.toBlob(function (b) { done(b); }, "image/jpeg", FEED_PHOTO_QUALITY); });
+      if (!blob || !blob.size) return { blob: file, shrunk: false };
+      return { blob: blob, shrunk: true };
+    } catch (e) {
+      return { blob: file, shrunk: false };
+    } finally {
+      try { if (bmp && bmp.close) bmp.close(); } catch (e2) {}
+      try { if (objectUrl) URL.revokeObjectURL(objectUrl); } catch (e3) {}
+    }
+  }
+
+
+  // ---- Size your photo (Ken, Oct 2026) ----------------------------------------------------------------------------
+  // After a photo is chosen it appears in a frame the same tall shape as the feed (4:5). Drag to move, pinch or slide to zoom;
+  // "Original" posts the whole picture instead (the feed then shows it whole on a dark background). What is inside the frame
+  // when Post is tapped is exactly what gets saved: psGetCrop() hands shrinkPhotoForFeed the framed part as fractions of the
+  // photo, so it works at any resolution. If the photo cannot be decoded here (an unusual format), the screen simply does not
+  // show and the photo posts the way it always did.
+  var PS = { file: null, token: 0, ok: false, mode: "portrait", nw: 0, nh: 0, s: 1, minS: 1, tx: 0, ty: 0, z: 1, url: null, wired: false, pts: {}, d0: 0, z0: 1 };
+  function psEl(id) { return document.getElementById(id); }
+  function psFW() { return psEl("psFrame").clientWidth; }
+  function psFH() { return psEl("psFrame").clientHeight; }
+  function psClamp() {
+    var w = PS.nw * PS.s, h = PS.nh * PS.s;
+    PS.tx = Math.min(0, Math.max(psFW() - w, PS.tx));
+    PS.ty = Math.min(0, Math.max(psFH() - h, PS.ty));
+  }
+  function psDraw() { psEl("psImg").style.transform = "translate(" + PS.tx + "px," + PS.ty + "px) scale(" + PS.s + ")"; }
+  function psHint() {
+    var h = psEl("psHint");
+    if (PS.mode === "orig") { h.textContent = "The whole photo is posted. Nothing is cut off."; return; }
+    var w = PS.nw * PS.s, hh = PS.nh * PS.s, slackX = w - psFW() > 1, slackY = hh - psFH() > 1;
+    h.textContent = slackX && slackY ? "Drag to move · pinch or slide to zoom"
+      : slackX ? "Drag left and right · zoom in to move up and down"
+      : slackY ? "Drag up and down · zoom in to move left and right"
+      : "Zoom in to move the photo";
+  }
+  function psLayout(reset) {
+    if (!PS.ok || !psFW() || !psFH()) return;
+    if (PS.mode === "orig") {
+      PS.minS = Math.min(psFW() / PS.nw, psFH() / PS.nh); PS.s = PS.minS;
+      PS.tx = (psFW() - PS.nw * PS.s) / 2; PS.ty = (psFH() - PS.nh * PS.s) / 2;
+    } else {
+      PS.minS = Math.max(psFW() / PS.nw, psFH() / PS.nh);
+      if (reset) { PS.z = 1; psEl("psZoom").value = 1; PS.s = PS.minS; PS.tx = (psFW() - PS.nw * PS.s) / 2; PS.ty = (psFH() - PS.nh * PS.s) / 2; }
+      else PS.s = PS.minS * PS.z;
+      psClamp();
+    }
+    psDraw(); psHint();
+  }
+  function psSetZoom(nz, cx, cy) {
+    nz = Math.min(4, Math.max(1, nz));
+    var ns = PS.minS * nz, r = ns / PS.s;
+    PS.tx = cx - (cx - PS.tx) * r; PS.ty = cy - (cy - PS.ty) * r; PS.s = ns; PS.z = nz;
+    psEl("psZoom").value = nz; psClamp(); psDraw(); psHint();
+  }
+  function psSetMode(m) {
+    PS.mode = m;
+    psEl("psBtnPortrait").classList.toggle("on", m === "portrait");
+    psEl("psBtnOrig").classList.toggle("on", m === "orig");
+    psEl("psZoomRow").classList.toggle("ps-off", m === "orig");
+    psEl("psFrame").classList.toggle("ps-orig", m === "orig");
+    psLayout(true);
+  }
+  function psWire() {
+    if (PS.wired) return; PS.wired = true;
+    var fr = psEl("psFrame");
+    psEl("psBtnPortrait").addEventListener("click", function () { psSetMode("portrait"); });
+    psEl("psBtnOrig").addEventListener("click", function () { psSetMode("orig"); });
+    psEl("psReset").addEventListener("click", function () { psSetMode("portrait"); });
+    psEl("psZoom").addEventListener("input", function () { psSetZoom(parseFloat(this.value), psFW() / 2, psFH() / 2); });
+    fr.addEventListener("pointerdown", function (e) {
+      if (PS.mode === "orig") return;
+      try { fr.setPointerCapture(e.pointerId); } catch (x) {}
+      PS.pts[e.pointerId] = [e.clientX, e.clientY]; fr.classList.add("ps-drag");
+      var k = Object.keys(PS.pts);
+      if (k.length === 2) { var a = PS.pts[k[0]], b = PS.pts[k[1]]; PS.d0 = Math.hypot(a[0] - b[0], a[1] - b[1]) || 1; PS.z0 = PS.z; }
+    });
+    fr.addEventListener("pointermove", function (e) {
+      var px = PS.pts[e.pointerId]; if (!px) return;
+      var k = Object.keys(PS.pts);
+      if (k.length === 1) { PS.tx += e.clientX - px[0]; PS.ty += e.clientY - px[1]; psClamp(); psDraw(); psHint(); }
+      else if (k.length === 2) {
+        PS.pts[e.pointerId] = [e.clientX, e.clientY];
+        var a = PS.pts[k[0]], b = PS.pts[k[1]], d = Math.hypot(a[0] - b[0], a[1] - b[1]), r = fr.getBoundingClientRect();
+        psSetZoom(PS.z0 * d / PS.d0, (a[0] + b[0]) / 2 - r.left, (a[1] + b[1]) / 2 - r.top);
+      }
+      PS.pts[e.pointerId] = [e.clientX, e.clientY];
+    });
+    function up(e) { delete PS.pts[e.pointerId]; if (!Object.keys(PS.pts).length) fr.classList.remove("ps-drag"); }
+    fr.addEventListener("pointerup", up); fr.addEventListener("pointercancel", up);
+    fr.addEventListener("wheel", function (e) {
+      if (PS.mode === "orig") return;
+      e.preventDefault(); var r = fr.getBoundingClientRect();
+      psSetZoom(PS.z * (e.deltaY < 0 ? 1.08 : 1 / 1.08), e.clientX - r.left, e.clientY - r.top);
+    }, { passive: false });
+    if (window.ResizeObserver) { try { new ResizeObserver(function () { psLayout(false); }).observe(fr); } catch (x) {} }
+    else window.addEventListener("resize", function () { psLayout(false); });
+  }
+  function psClear() {
+    PS.token++; PS.file = null; PS.ok = false;
+    if (PS.url) { try { URL.revokeObjectURL(PS.url); } catch (e) {} PS.url = null; }
+    var im = psEl("psImg"); if (im) { im.removeAttribute("src"); }
+  }
+  async function psLoad(f) {
+    var my = ++PS.token, box = psEl("photoSizer"), bmp = null, objectUrl = null;
+    PS.file = f; PS.ok = false; box.classList.remove("show");
+    if (PS.url) { try { URL.revokeObjectURL(PS.url); } catch (e) {} PS.url = null; }
+    try {
+      var src = null, w = 0, h = 0;
+      if (window.createImageBitmap) { try { bmp = await createImageBitmap(f, { imageOrientation: "from-image" }); } catch (e1) { bmp = null; } }
+      if (bmp) { src = bmp; w = bmp.width; h = bmp.height; }
+      else {
+        objectUrl = URL.createObjectURL(f);
+        var img = new Image();
+        await new Promise(function (ok, no) { img.onload = ok; img.onerror = no; img.src = objectUrl; });
+        src = img; w = img.naturalWidth; h = img.naturalHeight;
+      }
+      if (my !== PS.token) return;
+      if (!w || !h) throw new Error("no size");
+      var k = Math.min(1, 1400 / Math.max(w, h)), pw = Math.max(1, Math.round(w * k)), ph = Math.max(1, Math.round(h * k));
+      var c = document.createElement("canvas"); c.width = pw; c.height = ph;
+      var g = c.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, pw, ph); g.imageSmoothingQuality = "high"; g.drawImage(src, 0, 0, pw, ph);
+      var blob = await new Promise(function (done) { c.toBlob(function (b) { done(b); }, "image/jpeg", 0.85); });
+      if (my !== PS.token || !blob) return;
+      PS.url = URL.createObjectURL(blob); PS.nw = pw; PS.nh = ph;
+      psWire();
+      var im = psEl("psImg");
+      im.style.width = pw + "px"; im.style.height = ph + "px";
+      im.onload = function () {
+        if (my !== PS.token) return;
+        PS.ok = true; box.classList.add("show"); psSetMode("portrait");
+      };
+      im.src = PS.url;
+    } catch (e) {
+      if (my === PS.token) { PS.ok = false; box.classList.remove("show"); }
+    } finally {
+      try { if (bmp && bmp.close) bmp.close(); } catch (e2) {}
+      try { if (objectUrl) URL.revokeObjectURL(objectUrl); } catch (e3) {}
+    }
+  }
+  function updatePhotoSizer() {
+    try {
+      var box = psEl("photoSizer"); if (!box) return;
+      var f = (typeof selectedFile !== "undefined") ? selectedFile : null;
+      if (!f || fileKind(f) !== "photo") { if (PS.file) psClear(); box.classList.remove("show"); return; }
+      if (PS.file === f) return;      // same photo: keep the member's framing
+      psLoad(f);
+    } catch (e) {}
+  }
+  // The framed part of the photo as fractions (null = post the whole photo)
+  function psGetCrop() {
+    try {
+      if (!PS.ok || PS.file !== selectedFile || PS.mode === "orig") return null;
+      var fw = psFW(), fh = psFH(); if (!fw || !fh) return null;
+      var x = -PS.tx / PS.s / PS.nw, y = -PS.ty / PS.s / PS.nh, w = fw / PS.s / PS.nw, h = fh / PS.s / PS.nh;
+      x = Math.max(0, Math.min(1, x)); y = Math.max(0, Math.min(1, y));
+      w = Math.min(1 - x, w); h = Math.min(1 - y, h);
+      if (w >= 0.995 && h >= 0.995) return null;
+      return { x: x, y: y, w: w, h: h };
+    } catch (e) { return null; }
   }
 
   // Ken's ask (Oct 2026): "we should have a preview that automatically
@@ -3703,14 +3944,17 @@
       // uploaded at all, instead of storing (and serving, forever after,
       // to every viewer) the camera's full-resolution original.
       var fileToUpload = selectedFile;
+      var photoShrunk = false;   // true when the photo was saved at feed size (see shrinkPhotoForFeed)
       if (kind === "photo") {
-        fileToUpload = await resizeImageFile(selectedFile, 1920, 0.85);
+        var shrunkPhoto = await shrinkPhotoForFeed(selectedFile, psGetCrop());
+        if (shrunkPhoto.shrunk) { fileToUpload = shrunkPhoto.blob; photoShrunk = true; }
+        else fileToUpload = await resizeImageFile(selectedFile, 1920, 0.85);   // could not decode here: the earlier safe path
       } else if (kind === "video") {
         fileToUpload = await makeStreamable(selectedFile); // index to the front so the video starts fast and seeks cleanly
       }
 
       var ext = kind === "photo" ? "jpg" : getExt(selectedFile.name);
-      var path = currentUser.id + "/" + crypto.randomUUID() + "." + ext;
+      var path = currentUser.id + "/" + crypto.randomUUID() + (photoShrunk ? "-s" : "") + "." + ext;
 
       var uploadOpts = { cacheControl: "3600", upsert: false };
       if (kind === "photo") uploadOpts.contentType = "image/jpeg";

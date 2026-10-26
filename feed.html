@@ -582,6 +582,11 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
      need a small scroll.) The 9:10 setting above, and its skeleton
      placeholder, are replaced, not added to. */
   .rp-media video { object-position: center 30%; }
+  /* Ken (Oct 2026): a sideways (wide) photo was losing the left and right of the picture, about a third of it, because the post
+     box is a tall shape and photos filled it edge to edge. A photo that would lose more than about a third of itself is now shown
+     whole on the black background instead (the script below decides, once it knows the photo's real shape and the box's real
+     size). Tall phone photos, and photos framed on the upload screen, still fill the box edge to edge exactly as before. */
+  .rp-media > img.rp-photo-whole { object-fit: contain; object-position: center; background: #000; }
   @keyframes rpMediaFadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
@@ -2222,6 +2227,39 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
       if (mq.addEventListener) mq.addEventListener("change", apply);
       else if (mq.addListener) mq.addListener(apply);
     } catch (e) {}
+  })();
+  </script>
+
+  <script>
+  /* Show a wide photo whole instead of cutting its sides off (Ken, Oct 2026). Cover (fill the box) is kept whenever it would
+     lose no more than PHOTO_WHOLE_ABOVE of the photo's length in the cropped direction; past that the photo is shown whole.
+     Examples: a phone photo (3:4) in the phone box (3:4) loses 0% and fills; a tall 4:5 framed photo in the full-screen phone
+     box loses about 20% and fills; a sideways 4:3 photo loses 44% or more and is shown whole. Re-checked when the screen turns. */
+  (function () {
+    var PHOTO_WHOLE_ABOVE = 0.35;
+    function judge(img) {
+      try {
+        if (!img || img.tagName !== "IMG") return;
+        var box = img.parentNode;
+        if (!box || !box.classList || !box.classList.contains("rp-media")) return;
+        var w = img.naturalWidth, h = img.naturalHeight, bw = box.clientWidth, bh = box.clientHeight;
+        if (!w || !h || !bw || !bh) return;
+        var r = w / h, b = bw / bh, kept = Math.min(r / b, b / r);
+        img.classList.toggle("rp-photo-whole", (1 - kept) > PHOTO_WHOLE_ABOVE);
+      } catch (e) {}
+    }
+    function all() {
+      try {
+        var list = document.querySelectorAll(".rp-media > img");
+        for (var i = 0; i < list.length; i++) if (list[i].complete) judge(list[i]);
+      } catch (e) {}
+    }
+    document.addEventListener("load", function (e) { judge(e.target); }, true);
+    var t = null;
+    function later() { clearTimeout(t); t = setTimeout(all, 150); }
+    window.addEventListener("resize", later);
+    window.addEventListener("orientationchange", later);
+    window.addEventListener("load", function () { later(); setTimeout(all, 1200); });
   })();
   </script>
 
