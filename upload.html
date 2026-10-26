@@ -3998,7 +3998,9 @@
       }
 
       var ext = kind === "photo" ? "jpg" : getExt(selectedFile.name);
-      var path = currentUser.id + "/" + crypto.randomUUID() + (photoShrunk ? "-s" : "") + "." + ext;
+      // "-w" at the end of the name = the member chose "Original (whole photo)": the feed shows such a photo whole instead of filling the box
+      var photoWhole = kind === "photo" && (function () { try { return PS.ok && PS.file === selectedFile && PS.mode === "orig"; } catch (e) { return false; } })();
+      var path = currentUser.id + "/" + crypto.randomUUID() + (photoShrunk ? "-s" : "") + (photoWhole ? "-w" : "") + "." + ext;
 
       var uploadOpts = { cacheControl: "3600", upsert: false };
       if (kind === "photo") uploadOpts.contentType = "image/jpeg";
