@@ -6,6 +6,36 @@
 <title>My Profile — Ensemble Fitness</title>
 <link rel="stylesheet" href="css/fonts.css" onerror="this.onerror=null;this.href='https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&family=Caveat:wght@600;700&family=Dancing+Script:wght@600;700&display=swap'">
 <link rel="stylesheet" href="css/app.css?v=5" />
+<style id="pf-activity-css">
+  /* Item 9 (Ken, Oct 27): Likes stat, Received/Sent + comments lists, Reply / thumbs-up buttons. */
+  .pf-stat-likes { order: 4; }
+  .act-seg { display: flex; gap: 6px; margin: 4px 0 12px; }
+  .act-seg button { flex: 1; font: inherit; font-size: 13px; font-weight: 700; padding: 8px 6px; border-radius: 999px; border: 0; cursor: pointer;
+    background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.7); -webkit-tap-highlight-color: transparent; }
+  .act-seg button.on { background: #fff; color: #0b0f1a; }
+  .act-row { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
+  .act-pill { font: inherit; font-size: 12.5px; font-weight: 700; padding: 6px 13px; border-radius: 999px; border: 0; cursor: pointer;
+    background: rgba(255,255,255,0.12); color: #fff; -webkit-tap-highlight-color: transparent; }
+  .act-pill.act-reply, .act-pill.act-send { background: #db1f52; }
+  .act-pill.on { background: #ffb02e; color: #000; }
+  .act-pill:disabled { opacity: .6; }
+  .act-tick { font-size: 12px; color: rgba(255,255,255,0.6); }
+  .act-tick.on { color: #ffb02e; font-weight: 700; }
+  .pf-network .follow-stats-row { gap: 20px; }
+  .act-card { display: block; background: #0f1524; border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 10px 11px; margin-bottom: 8px; color: #fff; text-decoration: none; }
+  .act-post { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; }
+  .act-thumb { width: 36px; height: 36px; flex: none; border-radius: 8px; border: 0; padding: 0; cursor: pointer; font-size: 16px; line-height: 36px; text-align: center;
+    background: #1d2540 center / cover no-repeat; color: #fff; }
+  .act-on { font-size: 12px; color: rgba(255,255,255,0.6); }
+  .act-top { display: flex; justify-content: space-between; align-items: baseline; font-size: 14px; }
+  .act-body { font-size: 14px; line-height: 1.4; margin-top: 2px; word-wrap: break-word; overflow-wrap: anywhere; }
+  .act-reps:empty { display: none; }
+  .act-rep { margin: 7px 0 0 12px; padding-left: 9px; border-left: 2px solid rgba(255,255,255,0.18); font-size: 13px; color: rgba(255,255,255,0.82); overflow-wrap: anywhere; }
+  .act-rep b { color: #fff; }
+  .act-replybox { display: flex; gap: 6px; margin-top: 8px; }
+  .act-replybox input { flex: 1; min-width: 0; font: inherit; font-size: 16px; padding: 7px 12px; border-radius: 999px; background: #05070d; border: 1px solid rgba(255,255,255,0.18); color: #fff; }
+  #sentList[hidden], #inboxList[hidden] { display: none; }
+</style>
 </head>
 <body>
 
@@ -398,6 +428,10 @@
         <strong id="pfUploadsCount">0</strong>
         <span>Uploads</span>
       </div>
+      <div class="follow-stat pf-stat-uploads pf-stat-likes" id="pfLikesStat">
+        <strong id="pfLikesCount">0</strong>
+        <span>Likes</span>
+      </div>
     </div>
   </div>
 
@@ -410,6 +444,7 @@
     <button type="button" class="pf-pill active" data-pf="uploads" role="tab" aria-label="Uploads" title="Uploads"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><g fill="currentColor"><rect x="3" y="3" width="5" height="5" rx="1"/><rect x="9.5" y="3" width="5" height="5" rx="1"/><rect x="16" y="3" width="5" height="5" rx="1"/><rect x="3" y="9.5" width="5" height="5" rx="1"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/><rect x="16" y="9.5" width="5" height="5" rx="1"/><rect x="3" y="16" width="5" height="5" rx="1"/><rect x="9.5" y="16" width="5" height="5" rx="1"/><rect x="16" y="16" width="5" height="5" rx="1"/></g></svg></button>
     <button type="button" class="pf-pill" data-pf="music" id="pfPillMusic" role="tab" aria-label="My music" title="My music" style="display:none;">🎵</button>
     <button type="button" class="pf-pill" data-pf="messages" role="tab" aria-label="Messages" title="Messages"><svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" stroke-linecap="round"><rect x="2.5" y="5" width="19" height="14" rx="2.6"/><path d="M3.3 6.6 12 13.2l8.7-6.6"/></svg></button>
+    <button type="button" class="pf-pill" data-pf="comments" role="tab" aria-label="Comments" title="Comments"><svg viewBox="0 0 24 24" width="25" height="25" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" stroke-linecap="round"><path d="M4 5.5h16a1.5 1.5 0 0 1 1.5 1.5v9a1.5 1.5 0 0 1-1.5 1.5H10l-4.5 3.5V17.5H4A1.5 1.5 0 0 1 2.5 16V7A1.5 1.5 0 0 1 4 5.5z"/></svg></button>
     <button type="button" class="pf-pill" data-pf="blocked" role="tab" aria-label="Blocked members" title="Blocked members"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" fill="none" stroke="#e5322d" stroke-width="2.6" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg></button>
     <button type="button" class="pf-pill" data-pf="payouts" id="pfPillPayouts" role="tab" aria-label="Payouts" title="Payouts" style="display:none;">💰</button>
     <button type="button" class="pf-pill" data-pf="security" role="tab" aria-label="Security" title="Security">🔒</button>
@@ -419,10 +454,20 @@
   <div class="card compact-card pf-panel" data-pf="messages">
     <div class="eyebrow">Inbox</div>
     <h2 style="font-size:18px;">Messages</h2>
-    <p class="card-sub">Short one-way notes other members have sent you — like "Good job. Keep going."</p>
+    <p class="card-sub">Short notes from other members — like "Good job. Keep going." Tap Reply to answer, or 👍 to say thanks quietly.</p>
+    <div class="act-seg" id="msgSeg"><button type="button" class="on" data-mv="received">Received</button><button type="button" data-mv="sent">Sent</button></div>
     <div id="inboxList">
       <div class="empty-state">Loading…</div>
     </div>
+    <div id="sentList" hidden></div>
+  </div>
+
+  <div class="card compact-card pf-panel" data-pf="comments">
+    <div class="eyebrow">Activity</div>
+    <h2 style="font-size:18px;">Comments</h2>
+    <p class="card-sub">See what people said on your posts, and answer them.</p>
+    <div class="act-seg" id="cmSeg"><button type="button" class="on" data-cm="mine">On my posts</button><button type="button" data-cm="made">I commented</button></div>
+    <div id="commentsList"><div class="empty-state">Tap to load…</div></div>
   </div>
 
   <div class="card compact-card pf-panel" data-pf="blocked">
@@ -773,6 +818,7 @@
     currentUser = await requireAuth();
     if (!currentUser) return;
     setModerationUser(currentUser.id);
+    try { if (typeof setMessageSender === "function") setMessageSender(currentUser.id); } catch (e) {}
 
     // Speed (Ken, Oct 2026): these used to run one after another (~15 round trips, each ~100-130 ms on a
     // phone => 2+ s before the page settled). None of them depends on another's result, so they all start
@@ -789,6 +835,7 @@
       safely("music", loadMyMusic()),
       safely("follows", loadFollowCounts()),
       safely("inbox", loadInbox()),
+      safely("likes", loadLikesTotal()),
       safely("blockedList", loadBlockedMembers())
     ]);
   }
@@ -1028,15 +1075,58 @@
     document.body.style.overflow = "";
   }
 
-  // ---- Inbox (one-way messages received) ---------------------------------
+  // ---- Messages: received (with Reply + quiet thumbs-up) and sent -------------------------------------
+  // Ken (Oct 27, item 9). Reply opens the same quick-message box used on member pages (openMessageModal).
+  // The thumbs-up is a quiet "got it, thanks" mark stored on the message (messages.thanked_at, see
+  // sql/message-thanks.sql). Both are best-effort: if that column isn't there yet the 👍 button simply
+  // doesn't show and everything else works exactly as before.
+  var msgHasThanks = true;
+  var msgView = "received";
+
+  function setMsgView(v) {
+    msgView = v;
+    var rec = document.getElementById("inboxList"), snt = document.getElementById("sentList");
+    if (rec) rec.hidden = v !== "received";
+    if (snt) snt.hidden = v !== "sent";
+    Array.prototype.forEach.call(document.querySelectorAll("#msgSeg button"), function (b) {
+      b.classList.toggle("on", b.getAttribute("data-mv") === v);
+    });
+    if (v === "sent") loadSent();
+  }
+  (function wireMsgSeg() {
+    var seg = document.getElementById("msgSeg");
+    if (!seg) return;
+    seg.addEventListener("click", function (e) {
+      var b = e.target.closest ? e.target.closest("button[data-mv]") : null;
+      if (b) setMsgView(b.getAttribute("data-mv"));
+    });
+  })();
+
+  function thanksBtnHtml(m) {
+    if (!msgHasThanks) return "";
+    var on = !!m.thanked_at;
+    return '<button type="button" class="act-pill act-thanks' + (on ? " on" : "") + '" data-thanks="' + m.id + '" aria-pressed="' + on + '">👍' + (on ? " Thanked" : "") + "</button>";
+  }
+
   async function loadInbox() {
     var list = document.getElementById("inboxList");
+    var base = "id, body, created_at, read_at, sender_id, profiles!messages_sender_id_fkey(display_name)";
     var { data, error } = await window.sb
       .from("messages")
-      .select("id, body, created_at, read_at, profiles!messages_sender_id_fkey(display_name)")
+      .select(base + ", thanked_at")
       .eq("recipient_id", currentUser.id)
       .order("created_at", { ascending: false })
       .limit(30);
+    if (error) {
+      msgHasThanks = false;
+      var again = await window.sb
+        .from("messages")
+        .select(base)
+        .eq("recipient_id", currentUser.id)
+        .order("created_at", { ascending: false })
+        .limit(30);
+      data = again.data; error = again.error;
+    }
 
     if (error || !data || data.length === 0) {
       list.innerHTML = '<div class="empty-state pf-empty-art" data-art="💌">No messages yet — when another member sends you one, it\'ll show up here.</div>';
@@ -1045,16 +1135,22 @@
 
     list.innerHTML = "";
     var unreadIds = [];
+    var canReply = typeof openMessageModal === "function";
     data.forEach(function (m) {
       var name = (m.profiles && m.profiles.display_name) || "A member";
       var isUnread = !m.read_at;
       if (isUnread) unreadIds.push(m.id);
       var item = document.createElement("div");
       item.className = "inbox-item" + (isUnread ? " unread" : "");
+      item.setAttribute("data-mid", m.id);
       item.innerHTML =
         '<span class="inbox-item-name">' + escapeHtml(name) + "</span>" +
         '<span class="inbox-item-time">' + timeAgo(m.created_at) + "</span>" +
-        '<div class="inbox-item-body">' + escapeHtml(m.body) + "</div>";
+        '<div class="inbox-item-body">' + escapeHtml(m.body) + "</div>" +
+        '<div class="act-row">' +
+          (canReply && m.sender_id ? '<button type="button" class="act-pill act-reply" data-reply-to="' + escapeHtml(String(m.sender_id)) + '" data-reply-name="' + escapeHtml(name) + '">↩ Reply</button>' : "") +
+          thanksBtnHtml(m) +
+        "</div>";
       list.appendChild(item);
     });
 
@@ -1063,6 +1159,271 @@
       await window.sb.from("messages").update({ read_at: new Date().toISOString() }).in("id", unreadIds);
     }
   }
+
+  document.getElementById("inboxList").addEventListener("click", async function (e) {
+    var rb = e.target.closest ? e.target.closest("[data-reply-to]") : null;
+    if (rb) {
+      try { openMessageModal(rb.getAttribute("data-reply-to"), rb.getAttribute("data-reply-name") || "this member"); } catch (err) { console.error(err); }
+      return;
+    }
+    var tb = e.target.closest ? e.target.closest("[data-thanks]") : null;
+    if (!tb || tb.disabled) return;
+    var turningOn = !tb.classList.contains("on");
+    tb.disabled = true;
+    var res = await window.sb.from("messages")
+      .update({ thanked_at: turningOn ? new Date().toISOString() : null })
+      .eq("id", tb.getAttribute("data-thanks")).eq("recipient_id", currentUser.id);
+    tb.disabled = false;
+    if (res && res.error) { tb.textContent = "Try again"; setTimeout(function () { tb.textContent = tb.classList.contains("on") ? "👍 Thanked" : "👍"; }, 1500); return; }
+    tb.classList.toggle("on", turningOn);
+    tb.setAttribute("aria-pressed", turningOn ? "true" : "false");
+    tb.textContent = turningOn ? "👍 Thanked" : "👍";
+  });
+
+  async function loadSent() {
+    var list = document.getElementById("sentList");
+    list.innerHTML = '<div class="empty-state">Loading…</div>';
+    var cols = "id, body, created_at, read_at, recipient_id";
+    var { data, error } = await window.sb.from("messages").select(cols + ", thanked_at")
+      .eq("sender_id", currentUser.id).order("created_at", { ascending: false }).limit(30);
+    if (error) {
+      var again = await window.sb.from("messages").select(cols)
+        .eq("sender_id", currentUser.id).order("created_at", { ascending: false }).limit(30);
+      data = again.data; error = again.error;
+    }
+    if (error || !data || data.length === 0) {
+      list.innerHTML = '<div class="empty-state pf-empty-art" data-art="📤">Nothing sent yet — tap Message on a member\'s page to send one.</div>';
+      return;
+    }
+    var ids = []; data.forEach(function (m) { if (m.recipient_id && ids.indexOf(m.recipient_id) < 0) ids.push(m.recipient_id); });
+    var names = {};
+    try {
+      var pr = await window.sb.from("profiles").select("id, display_name").in("id", ids);
+      (pr.data || []).forEach(function (p) { names[p.id] = p.display_name; });
+    } catch (e) { /* names fall back to "A member" */ }
+    list.innerHTML = "";
+    data.forEach(function (m) {
+      var item = document.createElement("div");
+      item.className = "inbox-item";
+      var status = m.thanked_at ? '<span class="act-tick on">👍 Thanked you</span>' : (m.read_at ? '<span class="act-tick">✓ Seen</span>' : '<span class="act-tick">Sent</span>');
+      item.innerHTML =
+        '<span class="inbox-item-name">To ' + escapeHtml(names[m.recipient_id] || "A member") + "</span>" +
+        '<span class="inbox-item-time">' + timeAgo(m.created_at) + "</span>" +
+        '<div class="inbox-item-body">' + escapeHtml(m.body) + "</div>" +
+        '<div class="act-row">' + status + "</div>";
+      list.appendChild(item);
+    });
+  }
+
+  // ---- Likes total + comments on my posts (Ken, Oct 27, item 9) -------------------------------------------
+  // Likes = every reaction (heart, thumbs-up, muscle) other members put on my posts. Reads the same
+  // media_reactions table the feed uses, so it needs no database change.
+  var myMediaCache = null;
+  async function myMediaInfo() {
+    if (myMediaCache) return myMediaCache;
+    var r = await window.sb.from("media")
+      .select("id, kind, storage_path, poster_path, workout_type")
+      .eq("user_id", currentUser.id).order("created_at", { ascending: false }).limit(1000);
+    myMediaCache = (r && r.data) || [];
+    return myMediaCache;
+  }
+  function chunkIds(ids, n) {
+    var out = []; for (var i = 0; i < ids.length; i += n) out.push(ids.slice(i, i + n)); return out;
+  }
+  async function loadLikesTotal() {
+    var el = document.getElementById("pfLikesCount");
+    if (!el) return;
+    var media = await myMediaInfo();
+    var ids = media.map(function (m) { return m.id; });
+    if (!ids.length) { el.textContent = "0"; return; }
+    var counts = await Promise.all(chunkIds(ids, 100).map(function (c) {
+      return window.sb.from("media_reactions").select("media_id", { count: "exact", head: true })
+        .in("media_id", c).neq("user_id", currentUser.id);
+    }));
+    var total = 0; counts.forEach(function (r) { total += (r && r.count) || 0; });
+    el.textContent = total.toLocaleString();
+  }
+
+  var cmView = "mine", cmSigned = {};
+  function kindLabel(m) {
+    var k = m && m.kind;
+    return k === "video" ? "video" : (k === "photo" ? "photo" : (k ? "voice post" : "post"));
+  }
+  function thumbPlaceholder(m) { return m && m.kind === "video" ? "🎬" : (m && m.kind === "photo" ? "📷" : "🎙️"); }
+
+  async function signThumbs(root, mediaById) {
+    var thumbs = Array.prototype.slice.call(root.querySelectorAll(".act-thumb[data-mid]"));
+    await Promise.all(thumbs.map(async function (t) {
+      var id = t.getAttribute("data-mid"), m = mediaById[id];
+      if (!m) return;
+      var path = m.kind === "video" ? m.poster_path : (m.kind === "photo" ? m.storage_path : "");
+      if (!path) return;
+      try {
+        if (!cmSigned[id]) { var s = await window.sb.storage.from("media").createSignedUrl(path, 3600); cmSigned[id] = s && s.data ? s.data.signedUrl : ""; }
+        if (cmSigned[id]) { t.style.backgroundImage = "url('" + cmSigned[id] + "')"; t.textContent = ""; }
+      } catch (e) { /* the emoji placeholder stays */ }
+    }));
+  }
+
+  async function loadCommentsMine() {
+    var list = document.getElementById("commentsList");
+    list.innerHTML = '<div class="empty-state">Loading…</div>';
+    var media = await myMediaInfo();
+    var mediaById = {}; media.forEach(function (m) { mediaById[m.id] = m; });
+    var ids = media.map(function (m) { return m.id; });
+    var rows = [];
+    if (ids.length) {
+      var res = await Promise.all(chunkIds(ids, 100).map(function (c) {
+        return window.sb.from("media_comments").select("id, media_id, user_id, body, created_at, profiles(display_name)")
+          .in("media_id", c).order("created_at", { ascending: false }).limit(150);
+      }));
+      res.forEach(function (r) { (r.data || []).forEach(function (x) { rows.push(x); }); });
+    }
+    if (typeof filterOutBlocked === "function") { try { rows = filterOutBlocked(rows); } catch (e) {} }
+    rows.sort(function (a, b) { return a.created_at < b.created_at ? 1 : -1; });
+    var others = rows.filter(function (r) { return r.user_id !== currentUser.id; });
+    var mine = rows.filter(function (r) { return r.user_id === currentUser.id && /^@/.test(r.body || ""); });
+    // A reply of mine starts with "@Name" and sits under that member's latest earlier comment on the same post.
+    var repliesFor = {};
+    mine.forEach(function (rep) {
+      var parent = null;
+      others.forEach(function (p) {
+        var nm = (p.profiles && p.profiles.display_name) || "";
+        if (p.media_id === rep.media_id && p.created_at <= rep.created_at && nm && (rep.body || "").indexOf("@" + nm) === 0) {
+          if (!parent || p.created_at > parent.created_at) parent = p;
+        }
+      });
+      if (parent) { (repliesFor[parent.id] = repliesFor[parent.id] || []).push(rep); }
+    });
+    others = others.slice(0, 40);
+    if (!others.length) {
+      list.innerHTML = '<div class="empty-state pf-empty-art" data-art="💬">No comments yet — when someone comments on one of your posts, it\'ll show up here.</div>';
+      return;
+    }
+    list.innerHTML = "";
+    others.forEach(function (c) {
+      var m = mediaById[c.media_id] || {};
+      var name = (c.profiles && c.profiles.display_name) || "A member";
+      var card = document.createElement("div");
+      card.className = "act-card";
+      var reps = (repliesFor[c.id] || []).slice().sort(function (a, b) { return a.created_at > b.created_at ? 1 : -1; });
+      card.innerHTML =
+        '<div class="act-post"><button type="button" class="act-thumb" data-mid="' + escapeHtml(String(c.media_id)) + '" aria-label="Open this post">' + thumbPlaceholder(m) + '</button>' +
+        '<span class="act-on">on your ' + kindLabel(m) + (m.workout_type ? " · " + escapeHtml(m.workout_type) : "") + "</span></div>" +
+        '<div class="act-top"><b>' + escapeHtml(name) + '</b><span class="inbox-item-time">' + timeAgo(c.created_at) + "</span></div>" +
+        '<div class="act-body">' + escapeHtml(c.body) + "</div>" +
+        '<div class="act-reps">' + reps.map(function (r) { return '<div class="act-rep"><b>You:</b> ' + escapeHtml(r.body) + "</div>"; }).join("") + "</div>" +
+        '<div class="act-row"><button type="button" class="act-pill act-reply" data-cm-reply="' + escapeHtml(String(c.id)) + '">↩ Reply</button></div>';
+      card._c = c; card._name = name;
+      list.appendChild(card);
+    });
+    signThumbs(list, mediaById);
+  }
+
+  async function loadCommentsMade() {
+    var list = document.getElementById("commentsList");
+    list.innerHTML = '<div class="empty-state">Loading…</div>';
+    var res = await window.sb.from("media_comments").select("id, media_id, body, created_at")
+      .eq("user_id", currentUser.id).order("created_at", { ascending: false }).limit(60);
+    var rows = (res && res.data) || [];
+    var mediaIds = []; rows.forEach(function (r) { if (mediaIds.indexOf(r.media_id) < 0) mediaIds.push(r.media_id); });
+    var mediaById = {}, names = {};
+    if (mediaIds.length) {
+      var mr = await window.sb.from("media").select("id, user_id, kind, workout_type").in("id", mediaIds);
+      (mr.data || []).forEach(function (m) { mediaById[m.id] = m; });
+      var owners = []; Object.keys(mediaById).forEach(function (k) { var o = mediaById[k].user_id; if (owners.indexOf(o) < 0) owners.push(o); });
+      if (owners.length) {
+        var pr = await window.sb.from("profiles").select("id, display_name").in("id", owners);
+        (pr.data || []).forEach(function (p) { names[p.id] = p.display_name; });
+      }
+    }
+    // Only comments on other members' posts (my own replies on my posts live under "On my posts").
+    rows = rows.filter(function (r) { var m = mediaById[r.media_id]; return m && m.user_id !== currentUser.id; }).slice(0, 40);
+    if (!rows.length) {
+      list.innerHTML = '<div class="empty-state pf-empty-art" data-art="💬">You haven\'t commented on anyone\'s post yet.</div>';
+      return;
+    }
+    list.innerHTML = "";
+    rows.forEach(function (r) {
+      var m = mediaById[r.media_id];
+      var nm = names[m.user_id] || "a member";
+      var card = document.createElement("a");
+      card.className = "act-card act-link";
+      card.href = "member.html?id=" + encodeURIComponent(m.user_id);
+      card.innerHTML =
+        '<div class="act-post"><span class="act-on">You commented on ' + escapeHtml(nm) + "'s " + kindLabel(m) + "</span></div>" +
+        '<div class="act-body">' + escapeHtml(r.body) + '</div><div class="act-row"><span class="act-tick">' + timeAgo(r.created_at) + "</span></div>";
+      list.appendChild(card);
+    });
+  }
+
+  function setCmView(v) {
+    cmView = v;
+    Array.prototype.forEach.call(document.querySelectorAll("#cmSeg button"), function (b) {
+      b.classList.toggle("on", b.getAttribute("data-cm") === v);
+    });
+    return v === "mine" ? loadCommentsMine() : loadCommentsMade();
+  }
+  (function wireComments() {
+    var seg = document.getElementById("cmSeg"), list = document.getElementById("commentsList"), pills = document.getElementById("pfPills");
+    if (!seg || !list) return;
+    seg.addEventListener("click", function (e) {
+      var b = e.target.closest ? e.target.closest("button[data-cm]") : null;
+      if (b) setCmView(b.getAttribute("data-cm"));
+    });
+    if (pills) pills.addEventListener("click", function (e) {
+      var b = e.target.closest ? e.target.closest(".pf-pill") : null;
+      if (!b) return;
+      if (b.getAttribute("data-pf") === "comments") setCmView(cmView);
+      if (b.getAttribute("data-pf") === "messages" && msgView === "sent") loadSent();
+    });
+    list.addEventListener("click", async function (e) {
+      var th = e.target.closest ? e.target.closest(".act-thumb[data-mid]") : null;
+      if (th) {
+        // open that post on My uploads
+        var id = th.getAttribute("data-mid");
+        var upill = document.querySelector('.pf-pill[data-pf="uploads"]');
+        if (upill) upill.click();
+        setTimeout(function () {
+          try {
+            var del = document.querySelector('#mediaGrid .media-tile-delete[data-id="' + id + '"]');
+            var wrap = del && del.closest(".media-tile-wrap");
+            var tile = wrap && wrap.querySelector(".media-tile");
+            if (tile) tile.click();
+          } catch (err) { /* the Uploads grid still opens */ }
+        }, 60);
+        return;
+      }
+      var rb = e.target.closest ? e.target.closest("[data-cm-reply]") : null;
+      if (rb) {
+        var card = rb.closest(".act-card");
+        var open = list.querySelector(".act-replybox");
+        if (open) { var same = open.parentNode === card; open.remove(); if (same) return; }
+        var box = document.createElement("div");
+        box.className = "act-replybox";
+        box.innerHTML = '<input type="text" maxlength="500" placeholder="Reply to ' + escapeHtml(card._name) + '…" aria-label="Reply"><button type="button" class="act-pill act-send">Send</button>';
+        card.appendChild(box);
+        var inp = box.querySelector("input");
+        try { inp.focus(); } catch (err) {}
+        return;
+      }
+      var sb = e.target.closest ? e.target.closest(".act-send") : null;
+      if (sb) {
+        var card2 = sb.closest(".act-card"), input = card2.querySelector(".act-replybox input");
+        var text = (input.value || "").trim();
+        if (!text) return;
+        sb.disabled = true;
+        var body = "@" + card2._name + " " + text;
+        var ins = await window.sb.from("media_comments").insert({ media_id: card2._c.media_id, user_id: currentUser.id, body: body });
+        sb.disabled = false;
+        if (ins && ins.error) { sb.textContent = "Try again"; setTimeout(function () { sb.textContent = "Send"; }, 1500); return; }
+        var rep = document.createElement("div");
+        rep.className = "act-rep"; rep.innerHTML = "<b>You:</b> " + escapeHtml(body);
+        card2.querySelector(".act-reps").appendChild(rep);
+        card2.querySelector(".act-replybox").remove();
+      }
+    });
+  })();
 
   // ---- Blocked Members ----------------------------------------------------
   async function loadBlockedMembers() {
