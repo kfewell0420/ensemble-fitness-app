@@ -1848,6 +1848,19 @@
     if (window.MutationObserver) { try { new MutationObserver(tidyClosedTiles).observe(grid, { childList: true }); } catch (e) {} }
     tidyClosedTiles();
     var savedScrollY = null;
+    // Oct 27 (Ken + the artist: "I open a video, press back, and it throws me to a vertical page instead of my grid"): the phone's
+    // own Back (swipe or button) used to leave the page. Opening a post now adds one history step, so Back closes the post and
+    // shows the grid again; the "← Back" button above the post does the same thing.
+    var pushedState = false;
+    function closeByUser(wrap) {
+      if (pushedState) { pushedState = false; try { window.history.back(); return; } catch (e) {} }
+      closeWrap(wrap);
+    }
+    window.addEventListener("popstate", function () {
+      if (!grid.querySelector(".pf-open")) { pushedState = false; return; }
+      pushedState = false;
+      Array.prototype.forEach.call(grid.querySelectorAll(".pf-open"), closeWrap);
+    });
     function closeWrap(wrap) {
       wrap.classList.remove("pf-open");
       Array.prototype.forEach.call(wrap.querySelectorAll("video, audio"), function (m) { try { m.pause(); } catch (e) {} });
@@ -1859,6 +1872,7 @@
     }
     function openWrap(wrap) {
       if (savedScrollY === null) savedScrollY = window.pageYOffset || 0;
+      if (!pushedState) { try { window.history.pushState({ pfPost: 1 }, ""); pushedState = true; } catch (e) {} }
       wrap.classList.add("pf-open");
       grid.classList.add("pf-single");
       setCtl(wrap, true);
@@ -1880,7 +1894,7 @@
       if (e.target.closest(".media-tile-delete")) return;
       var wrap = e.target.closest(".media-tile-wrap");
       if (!wrap) return;
-      if (e.target.closest(".pf-back") || e.target.closest(".pf-close")) { closeWrap(wrap); return; }
+      if (e.target.closest(".pf-back") || e.target.closest(".pf-close")) { closeByUser(wrap); return; }
       if (!wrap.classList.contains("pf-open")) {
         Array.prototype.forEach.call(grid.querySelectorAll(".pf-open"), closeWrap);
         openWrap(wrap);

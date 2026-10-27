@@ -466,6 +466,18 @@
     });
     tidyClosedTiles();
     var savedScrollY = null;
+    // Oct 27 (Ken + the artist): the phone's own Back used to leave the page; opening a post now adds one history step so Back
+    // closes the post and shows the grid again. The "← Back" button above the post does the same.
+    var pushedState = false;
+    function closeByUser(wrap) {
+      if (pushedState) { pushedState = false; try { window.history.back(); return; } catch (e) {} }
+      closeWrap(wrap);
+    }
+    window.addEventListener("popstate", function () {
+      if (!grid.querySelector(".mp-open")) { pushedState = false; return; }
+      pushedState = false;
+      Array.prototype.forEach.call(grid.querySelectorAll(".mp-open"), closeWrap);
+    });
     function closeWrap(wrap) {
       wrap.classList.remove("mp-open");
       Array.prototype.forEach.call(wrap.querySelectorAll("video, audio"), function (m) { try { m.pause(); } catch (e) {} });
@@ -477,6 +489,7 @@
     }
     function openWrap(wrap) {
       if (savedScrollY === null) savedScrollY = window.pageYOffset || 0;
+      if (!pushedState) { try { window.history.pushState({ mpPost: 1 }, ""); pushedState = true; } catch (e) {} }
       wrap.classList.add("mp-open");
       grid.classList.add("mp-single");
       setCtl(wrap, true);
@@ -497,7 +510,7 @@
       if (!isPhone()) return;
       var wrap = e.target.closest ? e.target.closest(".media-tile-wrap") : null;
       if (!wrap) return;
-      if (e.target.closest(".mp-back") || e.target.closest(".mp-close")) { closeWrap(wrap); return; }
+      if (e.target.closest(".mp-back") || e.target.closest(".mp-close")) { closeByUser(wrap); return; }
       if (!wrap.classList.contains("mp-open")) {
         Array.prototype.forEach.call(grid.querySelectorAll(".mp-open"), closeWrap);
         openWrap(wrap);
