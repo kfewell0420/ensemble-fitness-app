@@ -582,10 +582,6 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
      need a small scroll.) The 9:10 setting above, and its skeleton
      placeholder, are replaced, not added to. */
   .rp-media video { object-position: center 30%; }
-  /* Oct 2026: photos fill the post box edge to edge, exactly as before (Ken: the flowers photo must stay full, top to bottom).
-     The ONLY photos shown whole are ones the member posted with "Original (whole photo)" on the upload screen; those are saved
-     with a name ending in -w (see upload.html) and the feed marks them data-whole. */
-  .rp-media > img[data-whole="1"] { object-fit: contain; object-position: center; background: #000; }
   @keyframes rpMediaFadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
@@ -2390,7 +2386,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
 <script src="js/shared-session.js"></script>
 <script src="js/supabaseClient.js"></script>
 <script src="js/text-labels-v2.js?v=1"></script>
-<script src="js/feed-sound.js?v=4"></script>
+<script src="js/feed-sound.js?v=3"></script>
 <script src="js/moderation.js"></script>
 <script src="js/social.js"></script>
 <script>
@@ -3416,12 +3412,10 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
   // query — NOT added to fetchBatch's select — so a missing column (before
   // sql/keep-original-audio.sql is run) or any failure can never break the feed itself.
   var postSoundCache = {};
-  var postSoundAt = {};   // when each post's song link was signed: links go stale, so old ones are signed again (Oct 2026)
-  var POST_SOUND_FRESH_MS = 6 * 60 * 60 * 1000;
   async function loadPostSounds(rows) {
     var ids = [];
     rows.forEach(function (r) {
-      if (r.kind === "video" && r.id && (!(r.id in postSoundCache) || (postSoundAt[r.id] || 0) < Date.now() - POST_SOUND_FRESH_MS) && ids.indexOf(r.id) === -1) ids.push(r.id);
+      if (r.kind === "video" && r.id && !(r.id in postSoundCache) && ids.indexOf(r.id) === -1) ids.push(r.id);
     });
     if (!ids.length) return;
     var found = {};
@@ -3448,7 +3442,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
       async function sign(bucket, paths) {
         var map = {};
         if (!paths.length) return map;
-        var out = await window.sb.storage.from(bucket).createSignedUrls(paths, (typeof SIGNED_URL_TTL_SECONDS === "number" ? SIGNED_URL_TTL_SECONDS : 86400));
+        var out = await window.sb.storage.from(bucket).createSignedUrls(paths, 3600);
         ((out && out.data) || []).forEach(function (x) { if (x && x.signedUrl) map[x.path] = x.signedUrl; });
         return map;
       }
@@ -3465,25 +3459,10 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
           mDelay = Number(r.music_delay_seconds) || 0;
           mLength = Number(r.music_length_seconds) > 0 ? Number(r.music_length_seconds) : null;
         }
-        if (url) found[r.id] = { url: url, keep: keep, isMusic: isMusic, start: mStart, delay: mDelay, length: mLength, durations: durs, path: (r.narration_path || (r.tracks && r.tracks.storage_path) || ""), bucket: (r.narration_path ? "media" : "tracks") };
+        if (url) found[r.id] = { url: url, keep: keep, isMusic: isMusic, start: mStart, delay: mDelay, length: mLength, durations: durs };
       });
     } catch (e) { found = {}; }
-    ids.forEach(function (id) { postSoundCache[id] = found[id] || null; postSoundAt[id] = Date.now(); });
-  }
-
-  // A photo posted with "Original (whole photo)" has a storage name ending in -w (see upload.html): show it whole. Everything else fills the box.
-  function isWholePhoto(item) { return !!item && item.kind !== "video" && /-w\.[A-Za-z0-9]+$/.test(item.storage_path || ""); }
-
-  // Oct 2026 (Ken: "after I leave the app for a while and come back, the speaker is on but the video has no song"): a song link
-  // is only good for a limited time, and a phone keeps the page open in the background, so a video that scrolled into view
-  // after a long break was asking for its song with an expired link and getting nothing. wireFeedSound now calls this to get a
-  // fresh link the moment the song fails to load, then carries on in time with the picture.
-  function makeSongResign(item) {
-    if (!item || !item.soundPath) return null;
-    return async function () {
-      var out = await window.sb.storage.from(item.soundBucket || "tracks").createSignedUrl(item.soundPath, (typeof SIGNED_URL_TTL_SECONDS === "number" ? SIGNED_URL_TTL_SECONDS : 86400));
-      return out && out.data && out.data.signedUrl ? out.data.signedUrl : "";
-    };
+    ids.forEach(function (id) { postSoundCache[id] = found[id] || null; });
   }
 
   var connStatusCache = {};
@@ -3585,8 +3564,6 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
       it.connectionStatus = connStatusCache[it.user_id] || "";
       var snd = postSoundCache[it.id];
       it.soundUrl = snd ? snd.url : "";
-      it.soundPath = snd ? (snd.path || "") : "";
-      it.soundBucket = snd ? (snd.bucket || "tracks") : "";
       it.keepOriginalAudio = snd ? snd.keep : false;
       it.isMusicSound = snd ? !!snd.isMusic : false;
       it.musicStart = snd ? (snd.start || 0) : 0;
@@ -4224,7 +4201,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     // video itself.
     var mediaHtml = item.kind === "video"
       ? '<video data-src="' + item.url + '" poster="' + videoPoster + '"' + (reelMuted ? ' muted' : '') + ' loop playsinline preload="metadata"></video>'
-      : '<img src="' + (item.imgUrl || item.url) + '" data-orig="' + item.url + '" onerror="if(this.dataset.orig&&this.src!==this.dataset.orig){this.src=this.dataset.orig}"' + (isWholePhoto(item) ? ' data-whole="1"' : '') + ' alt="Workout post" loading="' + (loadedItems.length <= 8 ? 'eager' : 'lazy') + '" decoding="async" />';
+      : '<img src="' + (item.imgUrl || item.url) + '" data-orig="' + item.url + '" onerror="if(this.dataset.orig&&this.src!==this.dataset.orig){this.src=this.dataset.orig}" alt="Workout post" loading="' + (loadedItems.length <= 8 ? 'eager' : 'lazy') + '" decoding="async" />';
 
     var badgeParts = [];
     if (item.workout_type) {
@@ -4350,7 +4327,6 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
           var reelAudio = new Audio();
           reelAudio.preload = "none";
           reelAudio.src = item.soundUrl;
-          reelAudio.efResign = makeSongResign(item);
           wireFeedSound(videoEl, reelAudio, !!item.keepOriginalAudio, item.trim_start, item.musicStart, item.musicWin, reel, true);
         }
       } else if (item.soundUrl) {
@@ -4358,7 +4334,6 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
         var postAudio = new Audio();
         postAudio.preload = "none";
         postAudio.src = item.soundUrl;
-        postAudio.efResign = makeSongResign(item);
         wireFeedSound(videoEl, postAudio, !!item.keepOriginalAudio, item.trim_start, item.musicStart, item.musicWin, null, !!item.isMusicSound);
       }
       // Exercise labels (slide in from the left, hold, fade out) drawn over the video.
