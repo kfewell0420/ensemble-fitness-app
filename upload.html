@@ -2757,6 +2757,16 @@
   // cause turned out to be the preview thumbnails seeking the watched player (fixed), so the picture is back on iPhones
   // too, as Ken asked: the orange bar shows the song's real volume/pitch bars, with no wording on it.
   var IS_IOS_DEVICE = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  // Oct 27 (the artist: "when I drag the bar the sound sometimes hangs, thinking, until it catches up"): the preview song streamed
+  // from the internet, so every jump to a new spot had to fetch that part of the song first. The picture of the song's wave already
+  // downloads the whole file, so that same copy is now kept on the phone and the preview plays from it: a jump is instant.
+  var songBlobUrl = {};
+  function swapToBlob(id) {
+    var u = songBlobUrl[id], a = musicPreviewAudio;
+    if (!u || !a || a.dataset.trackId !== id || a.dataset.blobFor === id || !a.paused) return;
+    var t = a.currentTime || 0;
+    try { a.src = u; a.dataset.blobFor = id; a.load(); try { a.currentTime = t; } catch (e) {} } catch (e) {}
+  }
   function ensureWave(trackId) {
     if (!trackId || wavePeaks[trackId] || waveLoading[trackId]) return;
     var t = tracksById[trackId];
@@ -2768,6 +2778,12 @@
         if (!r || !r.data) return;
         var buf = await xhrBuffer(r.data.signedUrl);
         if (!buf || buf.byteLength > 30 * 1024 * 1024) return; // very long file: skip the picture, it all still works
+        try {
+          var ext = (t.storage_path || "").split(".").pop().toLowerCase();
+          var mime = { mp3: "audio/mpeg", m4a: "audio/mp4", aac: "audio/aac", wav: "audio/wav", ogg: "audio/ogg", webm: "audio/webm", caf: "audio/x-caf" }[ext] || "";
+          songBlobUrl[trackId] = URL.createObjectURL(new Blob([buf.slice(0)], { type: mime }));
+          swapToBlob(trackId);
+        } catch (blobErr) { /* keep streaming: nothing is lost */ }
         var AC = window.AudioContext || window.webkitAudioContext;
         if (!AC) return;
         var ctx = new AC();
@@ -3481,7 +3497,9 @@
       if (!signed) return false;
       musicPreviewAudio.src = signed.signedUrl;
       musicPreviewAudio.dataset.trackId = trackId;
+      delete musicPreviewAudio.dataset.blobFor;
     }
+    swapToBlob(trackId); // the saved copy, once it has finished downloading and the song is not playing
     return true;
   }
   async function playTrackPreview(trackId) {
@@ -3809,6 +3827,7 @@
     musicPreviewAudio.pause();
     musicPreviewAudio.removeAttribute("src");
     delete musicPreviewAudio.dataset.trackId; // the next pick must fetch its link again
+    delete musicPreviewAudio.dataset.blobFor;
   }
 
   // Music and a recorded voiceover are mutually exclusive — whichever one
