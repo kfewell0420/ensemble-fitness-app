@@ -2458,7 +2458,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
   // fresh app launch started from a blank screen). Trusted for 6 hours, and the real
   // fetch still always runs and replaces it. Bumped to v2 because items now also
   // carry imgUrl (the resized photo link).
-  var FEED_CACHE_VERSION = "v4";
+  var FEED_CACHE_VERSION = "v5";   // bumped Oct 27: drops saved screens that hold song links signed for only 1 hour
   var FEED_CACHE_MAX_AGE_MS = 6 * 60 * 60 * 1000; // 6 hours
   var cacheFlashNodes = [];
   var renderingCacheFlash = false;
@@ -3442,7 +3442,11 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
       async function sign(bucket, paths) {
         var map = {};
         if (!paths.length) return map;
-        var out = await window.sb.storage.from(bucket).createSignedUrls(paths, 3600);
+        // Oct 27 (Ken: "after a few hours away the first videos with music have no sound, even after I tap the speaker"): song links
+        // were signed for only 1 hour, but the instant screen the app paints from its saved copy (kept up to 6 hours) and then KEEPS
+        // when nothing changed was holding links that had already expired, so the song could not load. Signed for a day now, the same
+        // as the pictures and videos.
+        var out = await window.sb.storage.from(bucket).createSignedUrls(paths, (typeof SIGNED_URL_TTL_SECONDS === "number" ? SIGNED_URL_TTL_SECONDS : 86400));
         ((out && out.data) || []).forEach(function (x) { if (x && x.signedUrl) map[x.path] = x.signedUrl; });
         return map;
       }
