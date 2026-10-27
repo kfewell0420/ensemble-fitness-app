@@ -64,6 +64,57 @@
   }
 </style>
 
+<style>
+  /* Oct 27 (Ken): another member's posts now look and behave exactly like "My uploads" on your own profile.
+     Phones: a tight 3-across grid of same-size boxes. A video box shows a still picture with a small play badge (no big grey
+     play button). Tap a box to open just that post, full width and the same shape every time; tap "Close" or another box
+     to go back to the grid. Wide screens: the same boxes in a roomier grid, with the caption under each. */
+  .mp-uploads { margin-top: 6px; }
+  .mp-grid .mp-card-meta { padding: 8px 2px 0; }
+  .mp-grid .mp-card-sub { font-size: 12.5px; color: var(--faint-invert); }
+  .mp-grid .mp-card-caption { font-size: 13.5px; color: var(--muted-invert); margin: 4px 0 0; }
+  .mp-grid .media-tile.mp-has-video::after { display: none; }
+  .mp-close { display: none; }
+  @media (min-width: 721px) {
+    #mediaGrid.mp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+    .mp-grid .media-tile { aspect-ratio: 3 / 4; }
+    .mp-grid .empty-state { grid-column: 1 / -1; }
+  }
+  @media (max-width: 720px) {
+    .mp-uploads { padding: 2px; }
+    #mediaGrid.mp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; }
+    .mp-grid .media-tile-wrap { gap: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    .mp-grid .media-tile { aspect-ratio: 3 / 4; border-radius: 4px; border: 0; }
+    .mp-grid .media-tile .kind-badge { top: 4px; left: 4px; font-size: 8.5px; padding: 2px 5px; }
+    .mp-grid .media-tile video, .mp-grid .media-tile audio { pointer-events: none; }
+    .mp-grid .media-tile video::-webkit-media-controls { display: none !important; }
+    .mp-grid .media-tile-wrap:not(.mp-open) .media-tile video::-webkit-media-controls-start-playback-button,
+    .mp-grid .media-tile-wrap:not(.mp-open) .media-tile video::-webkit-media-controls-overlay-play-button,
+    .mp-grid .media-tile-wrap:not(.mp-open) .media-tile video::-webkit-media-controls-panel { display: none !important; -webkit-appearance: none; }
+    .mp-grid .media-tile-wrap:not(.mp-open) .media-tile.mp-has-video::after {
+      display: block; content: "\25B6"; position: absolute; left: 50%; top: 50%; width: 30px; height: 30px; margin: -15px 0 0 -15px;
+      border-radius: 50%; background: rgba(0,0,0,0.55); color: #fff; font-size: 12px; line-height: 30px; text-align: center;
+      padding-left: 2px; box-sizing: border-box; pointer-events: none; z-index: 2; }
+    .mp-grid .media-tile audio, .mp-grid .media-tile .audio-card audio { display: none; }
+    .mp-grid .mp-card-meta { display: none; }
+    .mp-grid .empty-state { grid-column: 1 / -1; }
+    .mp-grid .media-tile-wrap.mp-open { grid-column: 1 / -1; gap: 6px; cursor: default; }
+    .mp-grid .media-tile-wrap.mp-open .media-tile { border-radius: var(--radius-sm); }
+    .mp-grid .media-tile-wrap.mp-open .media-tile video,
+    .mp-grid .media-tile-wrap.mp-open .media-tile audio { pointer-events: auto; }
+    .mp-grid .media-tile-wrap.mp-open .media-tile video::-webkit-media-controls { display: flex !important; }
+    .mp-grid .media-tile-wrap.mp-open .media-tile .audio-card audio { display: block; }
+    .mp-grid .media-tile-wrap.mp-open .mp-card-meta { display: block; }
+    .mp-grid .media-tile-wrap.mp-open .media-tile .kind-badge { top: 8px; left: 8px; font-size: 10px; padding: 3px 7px; }
+    .mp-close {
+      position: absolute; top: 8px; right: 8px; z-index: 3; height: 24px; border-radius: 12px;
+      background: rgba(5,7,13,0.65); color: #fff; border: none; font-size: 11.5px; font-weight: 700;
+      font-family: inherit; line-height: 24px; text-align: center; cursor: pointer; padding: 0 10px;
+    }
+    .mp-grid .media-tile-wrap.mp-open .mp-close { display: block; }
+  }
+</style>
+
 <div class="app-shell">
 
   <a href="members.html" style="display:inline-block; margin-bottom:18px; font-size:13.5px; color:var(--faint-invert); font-weight:700;">&larr; Back to Find Members</a>
@@ -75,7 +126,7 @@
   <div class="eyebrow" id="mediaEyebrow" style="margin-top:32px; display:none;"></div>
   <h2 id="mediaHeading" style="margin-bottom:6px; display:none;"></h2>
 
-  <div class="feed-grid" id="mediaGrid"></div>
+  <div class="mp-uploads"><div class="media-grid mp-grid" id="mediaGrid"></div></div>
 
 </div>
 
@@ -248,7 +299,7 @@
 
     var { data, error } = await window.sb
       .from("media")
-      .select("id, kind, storage_path, caption, workout_type, location, created_at, narration_path, is_profile_photo, trim_start, trim_end, music_track_id, tracks(storage_path, title, artist_name)")
+      .select("id, kind, storage_path, poster_path, caption, workout_type, location, created_at, narration_path, is_profile_photo, trim_start, trim_end, music_track_id, tracks(storage_path, title, artist_name)")
       .eq("user_id", memberId)
       .eq("status", "approved")
       .order("created_at", { ascending: false });
@@ -327,7 +378,12 @@
         var { data: signedMusic } = await window.sb.storage.from("tracks").createSignedUrl(item.tracks.storage_path, 3600);
         musicUrl = signedMusic ? signedMusic.signedUrl : "";
       }
-      return { url: url, narrationUrl: narrationUrl, musicUrl: musicUrl };
+      var posterUrl = "";
+      if (item.kind === "video" && item.poster_path) {
+        var { data: signedPoster } = await window.sb.storage.from("media").createSignedUrl(item.poster_path, 3600);
+        posterUrl = signedPoster ? signedPoster.signedUrl : "";
+      }
+      return { url: url, narrationUrl: narrationUrl, musicUrl: musicUrl, posterUrl: posterUrl };
     }));
 
     for (var i = 0; i < items.length; i++) {
@@ -335,6 +391,7 @@
       var url = resolved[i].url;
       var narrationUrl = resolved[i].narrationUrl;
       var musicUrl = resolved[i].musicUrl;
+      var posterUrl = resolved[i].posterUrl;
       var soundUrl = narrationUrl || musicUrl;
       var soundClass = narrationUrl ? "narration-track" : "music-track";
       var keepOriginal = !!keepOriginalById[item.id] && !!musicUrl && !narrationUrl;
@@ -343,25 +400,25 @@
       // (wireNarrationSync below) — a plain video plays with its own real
       // sound the moment someone presses play, no separate unmute needed.
       var mediaEl = item.kind === "video"
-        ? '<video src="' + url + '"' + (soundUrl && !keepOriginal ? " muted" : "") + ' controls playsinline></video>' + (soundUrl ? '<audio class="' + soundClass + '" src="' + soundUrl + '" preload="auto"></audio>' : '')
+        ? '<video src="' + url + (url && url.indexOf("#") < 0 ? "#t=0.001" : "") + '"' + (posterUrl ? ' poster="' + posterUrl + '"' : '') + ' preload="metadata"' + (soundUrl && !keepOriginal ? " muted" : "") + ' controls playsinline></video>' + (soundUrl ? '<audio class="' + soundClass + '" src="' + soundUrl + '" preload="auto"></audio>' : '')
         : item.kind === "audio"
         ? '<div class="audio-card"><span class="audio-ico">🎙️</span><audio src="' + url + '" controls></audio></div>'
-        : '<img src="' + url + '" alt="Workout photo" />';
+        : '<img src="' + url + '" alt="Workout photo" loading="lazy" decoding="async" />';
 
       var card = document.createElement("div");
-      card.className = "feed-card";
+      card.className = "media-tile-wrap";
 
       var subParts = [timeAgo(item.created_at)];
       if (item.workout_type) subParts.push(escapeHtml(item.workout_type));
       if (item.location) subParts.push(escapeHtml(item.location));
 
       card.innerHTML =
-        '<div class="feed-card-thumb">' + mediaEl +
+        '<div class="media-tile">' + mediaEl +
           '<span class="kind-badge">' + item.kind + (narrationUrl ? ' 🎙️' : musicUrl ? ' 🎵' : '') + '</span>' +
         '</div>' +
-        '<div class="feed-card-meta">' +
-          '<div class="feed-card-sub">' + subParts.join(" · ") + (narrationUrl ? ' · 🎙️ narrated' : musicUrl ? ' · 🎵 ' + escapeHtml(item.tracks.title) + ' — ' + escapeHtml(item.tracks.artist_name) : '') + '</div>' +
-          (item.caption ? '<p class="feed-card-caption">' + escapeHtml(item.caption) + '</p>' : "") +
+        '<div class="mp-card-meta">' +
+          '<div class="mp-card-sub">' + subParts.join(" · ") + (narrationUrl ? ' · 🎙️ narrated' : musicUrl ? ' · 🎵 ' + escapeHtml(item.tracks.title) + ' — ' + escapeHtml(item.tracks.artist_name) : '') + '</div>' +
+          (item.caption ? '<p class="mp-card-caption">' + escapeHtml(item.caption) + '</p>' : "") +
         '</div>';
 
       grid.appendChild(card);
@@ -378,6 +435,58 @@
       }
     }
   }
+
+  // Phones: same tap-to-open behavior as "My uploads" on your own profile (Ken, Oct 27). Closed video boxes carry no
+  // "controls" (that is what makes iPhone paint its big grey play button); opening a box adds them, closing takes them off.
+  (function () {
+    var grid = document.getElementById("mediaGrid");
+    if (!grid) return;
+    function isPhone() { return window.matchMedia("(max-width: 720px)").matches; }
+    function setCtl(wrap, on) {
+      Array.prototype.forEach.call(wrap.querySelectorAll("video"), function (v) {
+        if (on) v.setAttribute("controls", ""); else v.removeAttribute("controls");
+      });
+    }
+    function tidyClosedTiles() {
+      if (!isPhone()) return;
+      Array.prototype.forEach.call(grid.querySelectorAll(".media-tile-wrap:not(.mp-open)"), function (w) {
+        var t = w.querySelector(".media-tile");
+        if (t && t.querySelector("video")) { t.classList.add("mp-has-video"); setCtl(w, false); }
+      });
+    }
+    if (window.MutationObserver) { try { new MutationObserver(tidyClosedTiles).observe(grid, { childList: true }); } catch (e) {} }
+    window.addEventListener("resize", function () {
+      if (isPhone()) { tidyClosedTiles(); return; }
+      Array.prototype.forEach.call(grid.querySelectorAll(".media-tile-wrap"), function (w) { w.classList.remove("mp-open"); setCtl(w, true); });
+    });
+    tidyClosedTiles();
+    function closeWrap(wrap) {
+      wrap.classList.remove("mp-open");
+      Array.prototype.forEach.call(wrap.querySelectorAll("video, audio"), function (m) { try { m.pause(); } catch (e) {} });
+      if (isPhone()) setCtl(wrap, false);
+    }
+    function openWrap(wrap) {
+      wrap.classList.add("mp-open");
+      setCtl(wrap, true);
+      var tile = wrap.querySelector(".media-tile");
+      if (tile && !tile.querySelector(".mp-close")) {
+        var x = document.createElement("button");
+        x.type = "button"; x.className = "mp-close"; x.setAttribute("aria-label", "Close"); x.textContent = "Close";
+        tile.appendChild(x);
+      }
+      setTimeout(function () { try { wrap.scrollIntoView({ behavior: "smooth", block: "nearest" }); } catch (e) {} }, 30);
+    }
+    grid.addEventListener("click", function (e) {
+      if (!isPhone()) return;
+      var wrap = e.target.closest ? e.target.closest(".media-tile-wrap") : null;
+      if (!wrap) return;
+      if (e.target.closest(".mp-close")) { closeWrap(wrap); return; }
+      if (!wrap.classList.contains("mp-open")) {
+        Array.prototype.forEach.call(grid.querySelectorAll(".mp-open"), closeWrap);
+        openWrap(wrap);
+      }
+    });
+  })();
 
   document.getElementById("signOutLink").addEventListener("click", function (e) {
     e.preventDefault();
