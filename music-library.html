@@ -1091,11 +1091,14 @@
     // something, without reopening a big gap under it.
     list.innerHTML = '<div class="empty-state">Loading…</div>';
 
-    var { data, error } = await window.sb
-      .from("tracks")
-      .select("id, title, artist_name, tagline, duration_seconds, is_independent_artist")
-      .eq("is_active", true)
-      .order("title", { ascending: true });
+    var trackQuery = function (cols) {
+      return window.sb.from("tracks").select(cols).eq("is_active", true).order("title", { ascending: true });
+    };
+    // Oct 27: spoken quotes (genre "Positive Message") live in their own Quotes tab when a member adds sound to a video, so
+    // they no longer sit in this song list. (If the genre column is not there yet, the list loads exactly as before.)
+    var { data, error } = await trackQuery("id, title, artist_name, tagline, duration_seconds, is_independent_artist, genre");
+    if (error) ({ data, error } = await trackQuery("id, title, artist_name, tagline, duration_seconds, is_independent_artist"));
+    if (!error && data) data = data.filter(function (t) { return t.genre !== "Positive Message"; });
 
     if (error) {
       list.innerHTML = '<div class="empty-state">Couldn\'t load the Music Library right now — please refresh.</div>';

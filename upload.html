@@ -143,6 +143,23 @@
     font-family: inherit;
   }
   .extra-clip-controls button:disabled { opacity: 0.3; cursor: default; }
+  /* Recording choice (Oct 27): compact so it fits a phone without scrolling */
+  #recordChoice { padding: 2px 0 6px; }
+  .rc-back { background: none; border: 0; color: var(--muted-invert); font: 700 14px/1 inherit; font-family: inherit; padding: 6px 2px 10px; cursor: pointer; }
+  .rc-title { font-size: 19px; font-weight: 800; margin: 0 0 12px; color: #fff; }
+  .rc-card { display: block; width: 100%; text-align: left; margin: 0 0 10px; padding: 14px 14px 13px; border-radius: 18px; cursor: pointer;
+    background: #0b0f1a; border: 1px solid rgba(255,255,255,0.12); color: #fff; font-family: inherit; -webkit-tap-highlight-color: transparent; }
+  .rc-card:active { transform: scale(0.99); }
+  .rc-head { display: flex; align-items: center; gap: 10px; }
+  .rc-head strong { font-size: 17px; color: #fff; }
+  .rc-ic { font-size: 24px; line-height: 1; }
+  .rc-desc { display: block; margin-top: 6px; font-size: 13.5px; line-height: 1.35; color: rgba(255,255,255,0.7); }
+  .rc-tag { display: inline-block; margin-top: 9px; font-size: 12px; font-weight: 700; color: #ffd0a6; background: rgba(255,106,26,0.22); border-radius: 999px; padding: 4px 10px; }
+  @keyframes efPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(255,106,26,0); } 50% { box-shadow: 0 0 0 4px rgba(255,106,26,0.55); } }
+  .ef-pulse { animation: efPulse 1.1s ease-in-out 3; border-radius: 16px; }
+  .mt-tabs { display: flex; gap: 8px; padding: 0 16px 10px; }
+  .mt-tab { flex: 1; padding: 9px 8px; border-radius: 999px; border: 1.5px solid rgba(255,255,255,0.18); background: rgba(255,255,255,0.05); color: #fff; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+  .mt-tab.on { background: #fff; border-color: #fff; color: #0b0f1a; }
 </style>
 <style>
   /* Ken (Oct 2026): first the phone page was dark, then orange. Oct 18, 2026 (Ken): now charcoal gray so it
@@ -597,7 +614,24 @@
       <button type="button" class="upload-category-tile" data-category="message">
         <span class="upload-category-icon">🎙️</span>
         <strong>Recording</strong>
-        <span>Record your motivational quote</span>
+        <span>Voiceover or a quote</span>
+      </button>
+    </div>
+
+    <!-- Oct 27 (Ken + the artist): tapping Recording asks what the recording is for, so a voiceover for a video is never
+         mistaken for a standalone quote. Voiceover (video) opens the video flow with the voiceover tile ready; Quote opens
+         the same recorder as before (saved as a Positive Message). -->
+    <div id="recordChoice" style="display:none;">
+      <button type="button" class="rc-back" id="rcBack">&larr; Back</button>
+      <div class="rc-title">What would you like to record?</div>
+      <button type="button" class="rc-card" id="rcVoiceover">
+        <span class="rc-head"><span class="rc-ic">&#127916;&#127897;&#65039;</span><strong>Voiceover (video)</strong></span>
+        <span class="rc-desc">Talk over your workout video.</span>
+      </button>
+      <button type="button" class="rc-card" id="rcQuote">
+        <span class="rc-head"><span class="rc-ic">&#128172;</span><strong>Quote</strong></span>
+        <span class="rc-desc">A positive message or quote (saved to the Quote Library).</span>
+        <span class="rc-tag">Others can use it on their videos</span>
       </button>
     </div>
 
@@ -842,7 +876,7 @@
           <input type="text" id="location" name="location" placeholder="Add ›" maxlength="80" autocomplete="off" aria-label="Location (optional)" />
         </div>
         <div class="ef-tile ef-narr" id="tileNarr" style="display:none;">
-          <button type="button" class="ef-hit" id="recordNarrationBtn"><span class="et-ic">🎙️</span><span class="et-t">Record narration</span><span class="et-v mute">Tap to record</span></button>
+          <button type="button" class="ef-hit" id="recordNarrationBtn"><span class="et-ic">🎙️</span><span class="et-t">Voiceover</span><span class="et-v mute">Tap to record</span></button>
           <div class="ef-done" id="narrDone">
             <span class="et-ic">🎙️</span><span class="et-t">Narration added</span>
             <span class="et-v"><button type="button" id="reRecordBtn">Re-record</button><button type="button" id="removeNarrationBtn">Remove</button></span>
@@ -1536,11 +1570,38 @@
     document.getElementById("scGoBtn").onclick = leave;
   }
 
+  // Oct 27: the Recording tile asks first (Voiceover for a video, or a Quote); every other tile works exactly as before.
+  var recordChoice = document.getElementById("recordChoice");
+  var voiceoverIntent = false;
+  function showRecordChoice() {
+    categoryGrid.style.display = "none";
+    uploadEyebrow.style.display = "none"; uploadHeading.style.display = "none"; uploadSub.style.display = "none";
+    recordChoice.style.display = "block";
+  }
+  function hideRecordChoice() { if (recordChoice) recordChoice.style.display = "none"; }
   Array.prototype.forEach.call(categoryGrid.querySelectorAll(".upload-category-tile"), function (tile) {
     tile.addEventListener("click", function () {
-      selectCategory(tile.getAttribute("data-category"));
+      var cat = tile.getAttribute("data-category");
+      if (cat === "message" && recordChoice) { showRecordChoice(); return; }
+      voiceoverIntent = false;
+      selectCategory(cat);
     });
   });
+  if (recordChoice) {
+    document.getElementById("rcBack").addEventListener("click", function () {
+      hideRecordChoice();
+      categoryGrid.style.display = "grid";
+      uploadEyebrow.style.display = ""; uploadHeading.style.display = ""; uploadSub.style.display = "";
+    });
+    document.getElementById("rcVoiceover").addEventListener("click", function () {
+      hideRecordChoice(); voiceoverIntent = true;
+      selectCategory("video");
+    });
+    document.getElementById("rcQuote").addEventListener("click", function () {
+      hideRecordChoice(); voiceoverIntent = false;
+      selectCategory("message");
+    });
+  }
 
   // Ken's ask (Oct 2026): removed the visible "← Choose a different type"
   // link — once someone's tapped a tile, they already know what they
@@ -1551,6 +1612,8 @@
   // in without carrying a stale file/field selection into a new category.
   function resetToCategoryGrid() {
     messageMode = false;
+    voiceoverIntent = false;
+    try { hideRecordChoice(); } catch (e) {}
     try { msgRecReset(); } catch (e) {}
     var mr = document.getElementById("msgRecorder"); if (mr) mr.style.display = "none";
     categoryGrid.style.display = "grid";
@@ -1682,7 +1745,7 @@
     reRecordBtn.style.display = "none";
     removeNarrationBtn.style.display = "none";
     recordNarrationBtn.style.display = "block";
-    setNarrBtn("🎙️", "Record narration", "Tap to record");
+    setNarrBtn("🎙️", "Voiceover", "Tap to record");
     recordNarrationBtn.classList.remove("recording");
     var tn0 = document.getElementById("tileNarr"); if (tn0) tn0.classList.remove("rec-done");
     narrationTimer.style.display = "none";
@@ -1694,6 +1757,19 @@
     var isVideo = !!selectedFile && fileKind(selectedFile) === "video" && clips.length <= 1;
     if (isVideo && narrationSupported) {
       narrationSection.classList.add("show");
+      if (voiceoverIntent) {
+        voiceoverIntent = false;
+        setTimeout(function () {
+          try {
+            var tn = document.getElementById("tileNarr");
+            if (tn && tn.getBoundingClientRect().height > 0) {
+              tn.classList.add("ef-pulse");
+              tn.scrollIntoView({ behavior: "smooth", block: "center" });
+              setTimeout(function () { tn.classList.remove("ef-pulse"); }, 3600);
+            }
+          } catch (e) {}
+        }, 600);
+      }
     } else {
       narrationSection.classList.remove("show");
       if (mediaRecorder && mediaRecorder.state === "recording") stopRecording();
@@ -3437,6 +3513,12 @@
   var trackSheet = null, trackSheetList = null, trackSheetSearch = null, trackSheetMore = null;
   var SHEET_PAGE = 60, sheetLimit = SHEET_PAGE, sheetQuery = "";
   var sheetFilter = ""; // "" = all, "__new" = newest, otherwise a category name
+  // Oct 27 (Ken + the artist): spoken quotes ("Positive Message" recordings) are kept apart from songs. The picker has two tabs:
+  // Music (every song) and Quotes (recorded voice quotes). A quote attaches to a video exactly like a song does.
+  var sheetMode = "music";
+  function isQuoteTrack(t) { return !!t && t.genre === "Positive Message"; }
+  function musicOnly() { return allTracks.filter(function (t) { return !isQuoteTrack(t); }); }
+  function quotesOnly() { return allTracks.filter(isQuoteTrack); }
   var NEW_COUNT = 40;
   var sheetAudio = null, sheetPreviewId = "", sheetUrls = {};
 
@@ -3445,7 +3527,7 @@
     var t = tracksById[musicTrackSelect.value];
     if (t) {
       trackPickerRow.innerHTML =
-        '<div class="mt-selected" role="button" tabindex="0"><span class="mt-art"></span><span class="et-ic">🎵</span><span class="et-t">Music tracks</span>' +
+        '<div class="mt-selected" role="button" tabindex="0"><span class="mt-art"></span><span class="et-ic">' + (isQuoteTrack(t) ? "💬" : "🎵") + '</span><span class="et-t">' + (isQuoteTrack(t) ? "Quote" : "Music tracks") + '</span>' +
         '<span class="et-v mt-sel-text"><b></b></span>' +
         '<span class="mt-acts"><span class="mt-meta"></span>' +
         '<button type="button" class="mt-remove" aria-label="Remove music" title="Remove music">✕</button></span></div>';
@@ -3458,7 +3540,7 @@
       trackPickerRow.querySelector(".mt-meta").textContent = metaBits.join(" · ");
     } else {
       document.getElementById("musicSection").classList.remove("has-song");
-      trackPickerRow.innerHTML = '<button type="button" class="mt-choose"><span class="et-ic">🎵</span><span class="et-t">Music tracks</span><span class="et-v mt-count">' + allTracks.length + ' tracks ›</span></button>';
+      trackPickerRow.innerHTML = '<button type="button" class="mt-choose"><span class="et-ic">🎵</span><span class="et-t">Music tracks</span><span class="et-v mt-count">' + musicOnly().length + ' tracks ›</span></button>';
     }
   }
 
@@ -3479,7 +3561,8 @@
     trackSheet.className = "mt-overlay";
     trackSheet.innerHTML =
       '<div class="mt-panel" role="dialog" aria-label="Music tracks">' +
-        '<div class="mt-head"><strong>Music tracks</strong><button type="button" class="mt-close" aria-label="Close">✕</button></div>' +
+        '<div class="mt-head"><strong>Add sound</strong><button type="button" class="mt-close" aria-label="Close">✕</button></div>' +
+        '<div class="mt-tabs"><button type="button" class="mt-tab on" data-mode="music">🎵 Music</button><button type="button" class="mt-tab" data-mode="quotes">💬 Quotes</button></div>' +
         '<input type="search" class="mt-search" placeholder="Search songs or artists" autocomplete="off" />' +
         '<div class="mt-chips"></div>' +
         '<div class="mt-list"></div>' +
@@ -3499,6 +3582,15 @@
       if (!chip) return;
       sheetFilter = chip.getAttribute("data-filter") || "";
       sheetLimit = SHEET_PAGE;
+      renderTrackSheetList();
+      trackSheetList.scrollTop = 0;
+    });
+    trackSheet.querySelector(".mt-tabs").addEventListener("click", function (e) {
+      var tab = e.target.closest(".mt-tab");
+      if (!tab) return;
+      stopSheetPreview();
+      sheetMode = tab.getAttribute("data-mode") === "quotes" ? "quotes" : "music";
+      sheetFilter = ""; sheetQuery = ""; trackSheetSearch.value = ""; sheetLimit = SHEET_PAGE;
       renderTrackSheetList();
       trackSheetList.scrollTop = 0;
     });
@@ -3560,10 +3652,10 @@
   function renderTrackSheetChips() {
     var chipBox = trackSheet.querySelector(".mt-chips");
     var counts = {};
-    allTracks.forEach(function (t) { if (t.genre) counts[t.genre] = (counts[t.genre] || 0) + 1; });
+    musicOnly().forEach(function (t) { if (t.genre) counts[t.genre] = (counts[t.genre] || 0) + 1; });
     var names = Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a] || (a < b ? -1 : 1); });
     var items = [["", "All"], ["__new", "✨ New"]].concat(names.map(function (g) { return [g, g]; }));
-    chipBox.style.display = items.length > 2 ? "flex" : "none"; // nothing to filter by until artists tag their songs
+    chipBox.style.display = (items.length > 2 && sheetMode === "music") ? "flex" : "none"; // nothing to filter by until artists tag their songs (and none for quotes)
     chipBox.innerHTML = "";
     items.forEach(function (it) {
       var c = document.createElement("button");
@@ -3577,11 +3669,14 @@
   function renderTrackSheetList() {
     var current = musicTrackSelect.value || "";
     renderTrackSheetChips();
-    var pool = allTracks;
+    var baseTracks = sheetMode === "quotes" ? quotesOnly() : musicOnly();
+    Array.prototype.forEach.call(trackSheet.querySelectorAll(".mt-tab"), function (b) { b.classList.toggle("on", b.getAttribute("data-mode") === sheetMode); });
+    trackSheetSearch.placeholder = sheetMode === "quotes" ? "Search quotes" : "Search songs or artists";
+    var pool = baseTracks;
     if (sheetFilter === "__new") {
-      pool = allTracks.slice().sort(function (a, b) { return (b.created_at || "") < (a.created_at || "") ? -1 : (b.created_at || "") > (a.created_at || "") ? 1 : 0; }).slice(0, NEW_COUNT);
+      pool = baseTracks.slice().sort(function (a, b) { return (b.created_at || "") < (a.created_at || "") ? -1 : (b.created_at || "") > (a.created_at || "") ? 1 : 0; }).slice(0, NEW_COUNT);
     } else if (sheetFilter) {
-      pool = allTracks.filter(function (t) { return t.genre === sheetFilter; });
+      pool = baseTracks.filter(function (t) { return t.genre === sheetFilter; });
     }
     var matches = pool.filter(function (t) {
       return !sheetQuery || (t.title || "").toLowerCase().indexOf(sheetQuery) !== -1 || (t.artist_name || "").toLowerCase().indexOf(sheetQuery) !== -1;
@@ -3600,12 +3695,12 @@
       b.querySelector("small").textContent = artist || "";
       trackSheetList.appendChild(b);
     }
-    if (!sheetQuery && !sheetFilter) row("", "🚫", "No music", "Use my video's own sound", false, false);
-    matches.slice(0, sheetLimit).forEach(function (t) { row(t.id, "", t.title, t.artist_name + (t.genre && !sheetFilter ? " · " + t.genre : ""), t.is_independent_artist, true); });
+    if (!sheetQuery && !sheetFilter) row("", "🚫", sheetMode === "quotes" ? "No quote" : "No music", "Use my video's own sound", false, false);
+    matches.slice(0, sheetLimit).forEach(function (t) { row(t.id, "", t.title, t.artist_name + (t.genre && !sheetFilter && sheetMode === "music" ? " · " + t.genre : ""), t.is_independent_artist, true); });
     if (!matches.length) {
       var empty = document.createElement("div");
       empty.className = "mt-empty";
-      empty.textContent = sheetQuery ? "No songs match that search." : "No songs in this category yet.";
+      empty.textContent = sheetMode === "quotes" ? (sheetQuery ? "No quotes match that search." : "No quotes yet. Record one: Post → Recording → Quote.") : (sheetQuery ? "No songs match that search." : "No songs in this category yet.");
       trackSheetList.appendChild(empty);
     }
     if (matches.length > sheetLimit) {
@@ -3621,6 +3716,7 @@
     if (musicTrackSelect.disabled) return;
     buildTrackSheet();
     sheetQuery = ""; sheetFilter = ""; sheetLimit = SHEET_PAGE; trackSheetSearch.value = "";
+    sheetMode = isQuoteTrack(tracksById[musicTrackSelect.value]) ? "quotes" : "music";
     renderTrackSheetList();
     trackSheet.classList.add("open");
     document.body.style.overflow = "hidden";
