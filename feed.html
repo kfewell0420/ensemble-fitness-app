@@ -3922,6 +3922,28 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
   // silently (needsSoundTap) and turns the sound on at the first tap, without remembering anything.
   var reelMuted = false;
   var needsSoundTap = false;
+  // Oct 27 (Ken + the artist on an iPhone 17 in Safari: "every video starts on mute"): Safari will not play sound until the
+  // member touches the screen once, and no code can change that. So, in a browser only (never inside the phone apps, which
+  // allow sound), a small "Tap for sound" label shows while a video is waiting for that first touch, and goes away at the
+  // first touch. It never blocks a tap (pointer-events: none) and never touches the saved speaker choice.
+  var soundHintEl = null;
+  function isInsidePhoneApp() { try { var C = window.Capacitor; return !!(C && ((C.isNativePlatform && C.isNativePlatform()) || (C.getPlatform && C.getPlatform() !== "web"))); } catch (e) { return false; } }
+  function showSoundHint() {
+    try {
+      if (isInsidePhoneApp() || isWideLayout) return;
+      if (!soundHintEl) {
+        soundHintEl = document.createElement("div");
+        soundHintEl.setAttribute("aria-hidden", "true");
+        soundHintEl.style.cssText = "position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom, 0px));transform:translateX(-50%);z-index:60;pointer-events:none;background:rgba(0,0,0,0.72);color:#fff;font:600 14px/1 -apple-system,system-ui,sans-serif;padding:10px 16px;border-radius:999px;border:1px solid rgba(255,255,255,0.28);letter-spacing:0.2px;opacity:0;transition:opacity .25s ease;";
+        soundHintEl.textContent = "\uD83D\uDD0A Tap for sound";
+        document.body.appendChild(soundHintEl);
+      }
+      void soundHintEl.offsetWidth;
+      soundHintEl.style.opacity = "1";
+    } catch (e) {}
+  }
+  function hideSoundHint() { try { if (soundHintEl) soundHintEl.style.opacity = "0"; } catch (e) {} }
+  document.addEventListener("pointerup", function () { hideSoundHint(); }, true);
   try {
     var storedReelMute = localStorage.getItem("efit_reel_muted_choice");
     if (storedReelMute !== null) reelMuted = storedReelMute === "true";
@@ -3975,6 +3997,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     if (video.muted || !video.isConnected) return;
     video.muted = true;
     needsSoundTap = true; // only THIS video is silent; not saved as the member's choice (see reelMuted above)
+    showSoundHint();
     syncMuteBtn(slideEl, video);
     var retry = video.play();
     if (retry && retry.catch) retry.catch(function () {});
@@ -3986,6 +4009,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     var slide = video.closest ? video.closest(".rp-slide") : null;
     video.muted = true;
     needsSoundTap = true; // not saved as the member's choice
+    showSoundHint();
     if (slide) syncMuteBtn(slide, video);
   };
   document.addEventListener("pointerup", function (e) {
@@ -3994,6 +4018,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     var v = currentlyAudibleVideo;
     if (!v || !v.muted || !v.isConnected) return;
     needsSoundTap = false;
+    hideSoundHint();
     v.muted = false;
     var slide = v.closest ? v.closest(".rp-slide") : null;
     if (slide) syncMuteBtn(slide, v);
