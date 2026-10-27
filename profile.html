@@ -111,7 +111,12 @@
       background: rgba(5,7,13,0.65); color: #fff; border: none; font-size: 11.5px; font-weight: 700;
       font-family: inherit; line-height: 24px; text-align: center; cursor: pointer; padding: 0 10px; display: none;
     }
-    .pf-uploads .media-tile-wrap.pf-open .pf-close { display: block; }
+    .pf-uploads .media-tile-wrap.pf-open .pf-close { display: none; }
+    /* Ken (Oct 27, artist): opening a post shows ONLY that post, with a Back bar above it; every other post is hidden until you go back. */
+    .pf-uploads #mediaGrid.pf-single .media-tile-wrap:not(.pf-open) { display: none; }
+    .pf-back { display: none; align-self: flex-start; margin: 2px 0 8px 4px; padding: 8px 14px; border: 0; border-radius: 999px;
+      background: rgba(255,255,255,0.12); color: #fff; font: 700 14px/1 inherit; font-family: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    .pf-uploads .media-tile-wrap.pf-open .pf-back { display: inline-block; }
   }
 </style>
 
@@ -1842,28 +1847,40 @@
     }
     if (window.MutationObserver) { try { new MutationObserver(tidyClosedTiles).observe(grid, { childList: true }); } catch (e) {} }
     tidyClosedTiles();
+    var savedScrollY = null;
     function closeWrap(wrap) {
       wrap.classList.remove("pf-open");
       Array.prototype.forEach.call(wrap.querySelectorAll("video, audio"), function (m) { try { m.pause(); } catch (e) {} });
       if (isPhone()) setCtl(wrap, false);
+      if (!grid.querySelector(".pf-open")) {
+        grid.classList.remove("pf-single");
+        if (savedScrollY !== null) { var y = savedScrollY; savedScrollY = null; requestAnimationFrame(function () { try { window.scrollTo(0, y); } catch (e) {} }); }
+      }
     }
     function openWrap(wrap) {
+      if (savedScrollY === null) savedScrollY = window.pageYOffset || 0;
       wrap.classList.add("pf-open");
+      grid.classList.add("pf-single");
       setCtl(wrap, true);
+      if (!wrap.querySelector(".pf-back")) {
+        var bk = document.createElement("button");
+        bk.type = "button"; bk.className = "pf-back"; bk.setAttribute("aria-label", "Back to all posts"); bk.textContent = "\u2190 Back";
+        wrap.insertBefore(bk, wrap.firstChild);
+      }
       var tile = wrap.querySelector(".media-tile");
       if (tile && !tile.querySelector(".pf-close")) {
         var x = document.createElement("button");
         x.type = "button"; x.className = "pf-close"; x.setAttribute("aria-label", "Close"); x.textContent = "Close";
         tile.appendChild(x);
       }
-      setTimeout(function () { try { wrap.scrollIntoView({ behavior: "smooth", block: "nearest" }); } catch (e) {} }, 30);
+      setTimeout(function () { try { var top = grid.getBoundingClientRect().top + (window.pageYOffset || 0) - 60; window.scrollTo(0, Math.max(0, top)); } catch (e) {} }, 30);
     }
     grid.addEventListener("click", function (e) {
       if (!isPhone()) return;
       if (e.target.closest(".media-tile-delete")) return;
       var wrap = e.target.closest(".media-tile-wrap");
       if (!wrap) return;
-      if (e.target.closest(".pf-close")) { closeWrap(wrap); return; }
+      if (e.target.closest(".pf-back") || e.target.closest(".pf-close")) { closeWrap(wrap); return; }
       if (!wrap.classList.contains("pf-open")) {
         Array.prototype.forEach.call(grid.querySelectorAll(".pf-open"), closeWrap);
         openWrap(wrap);
