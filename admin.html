@@ -377,7 +377,7 @@
     <div class="admin-tab-panel" data-tab="quotes" hidden>
       <div class="eyebrow">Quote Library</div>
       <h2>Quotes shown on the Quote Library page</h2>
-      <p class="card-sub" style="margin-bottom:24px;">Add a quote here and it instantly shows up on quote-library.html. "Edit" fixes a typo in place (without affecting its spot in the daily rotation); "Deactivate" pulls a quote from that page without deleting it.</p>
+      <p class="card-sub" style="margin-bottom:24px;">Add a quote here and it instantly shows up on quote-library.html. "Edit" fixes a typo in place (without affecting its spot in the daily rotation); "Delete" removes a quote for good.</p>
 
       <div class="card" style="margin-bottom:20px;">
         <div class="form-msg" id="quoteMsg"></div>
@@ -1775,16 +1775,22 @@ var REASON_CHIPS_MEDIA = [
         '</div>' +
         '<div class="review-actions">' +
           '<button class="btn btn-ghost btn-sm edit-quote-btn" data-id="' + item.id + '">Edit</button>' +
-          '<button class="btn btn-ghost btn-sm toggle-quote-btn" data-id="' + item.id + '" data-active="' + item.is_active + '">' + (item.is_active ? "Deactivate" : "Reactivate") + '</button>' +
+          '<button class="btn btn-ghost btn-sm delete-quote-btn" data-id="' + item.id + '">Delete</button>' +
         '</div>';
       el.appendChild(row);
     }
 
-    el.querySelectorAll(".toggle-quote-btn").forEach(function (btn) {
+    // Ken (Oct 28): no more Deactivate/Reactivate (they looked too alike at a glance). Delete just deletes.
+    el.querySelectorAll(".delete-quote-btn").forEach(function (btn) {
       btn.addEventListener("click", async function () {
+        if (!window.confirm("Delete this quote for good?")) return;
         btn.disabled = true;
-        var isActive = btn.getAttribute("data-active") === "true";
-        await window.sb.from("quotes").update({ is_active: !isActive }).eq("id", btn.getAttribute("data-id"));
+        var res = await window.sb.from("quotes").delete().eq("id", btn.getAttribute("data-id")).select("id");
+        if (res.error || !res.data || !res.data.length) {
+          btn.disabled = false;
+          alert("Couldn't delete that quote" + (res.error ? ": " + res.error.message : " (the database didn't allow it - tell Claude)."));
+          return;
+        }
         await loadQuotes();
       });
     });
