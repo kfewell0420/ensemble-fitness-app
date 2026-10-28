@@ -2130,6 +2130,8 @@
         if (posterPath) pathsToRemove.push(posterPath);
         await window.sb.storage.from("media").remove(pathsToRemove);
         await window.sb.from("media").delete().eq("id", id);
+        // Oct 28 (artist + Ken): after deleting from an open post, go straight back to the grid of all uploads.
+        try { if (window.pfExitSingle) window.pfExitSingle(); } catch (e) {}
         await loadMyMedia();
       });
     });
@@ -2271,6 +2273,14 @@
     }
     syncOptional();
     apply();
+    // Called after a delete: close the open post and show the grid of everything again (phones).
+    window.pfExitSingle = function () {
+      Array.prototype.forEach.call(grid.querySelectorAll(".pf-open"), function (w) { w.classList.remove("pf-open"); });
+      grid.classList.remove("pf-single");
+      savedScrollY = null;
+      if (pushedState) { pushedState = false; try { window.history.back(); } catch (e) {} }
+      setTimeout(function () { try { var top = grid.getBoundingClientRect().top + (window.pageYOffset || 0) - 60; window.scrollTo(0, Math.max(0, top)); } catch (e) {} }, 60);
+    };
     window.pfToggleEdit = function () {
       pauseAll();
       current = current === "details" ? "uploads" : "details";
