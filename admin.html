@@ -835,13 +835,13 @@ var REASON_CHIPS_MEDIA = [
     } else if (item.target_media_id) {
       var { data: media } = await window.sb
         .from("media")
-        .select("id, kind, caption, storage_path, profiles!media_user_id_fkey(display_name)")
+        .select("id, user_id, kind, caption, storage_path, profiles!media_user_id_fkey(display_name)")
         .eq("id", item.target_media_id)
         .maybeSingle();
       if (media) {
         var authorName = (media.profiles && media.profiles.display_name) || "A member";
         targetHtml = '<div style="font-size:13px; margin-top:4px;">Reported ' + media.kind + ' by <strong>' + escapeHtmlAdmin(authorName) + '</strong>' + (media.caption ? ': “' + escapeHtmlAdmin(media.caption) + '”' : '') + '</div>';
-        removeBtnHtml = '<button class="btn btn-danger btn-sm remove-content-btn" data-remove="media" data-id="' + media.id + '" data-path="' + media.storage_path + '">Remove Post</button>';
+        removeBtnHtml = '<button class="btn btn-danger btn-sm remove-content-btn" data-remove="media" data-id="' + media.id + '" data-owner="' + (media.user_id || "") + '" data-path="' + media.storage_path + '">Remove Post</button>';
       } else {
         targetHtml = '<div style="font-size:13px; margin-top:4px; color:var(--faint-invert);">This post has already been removed.</div>';
       }
@@ -892,6 +892,11 @@ var REASON_CHIPS_MEDIA = [
     if (removeBtn) {
       removeBtn.addEventListener("click", async function () {
         if (!confirm("Remove this content? This can't be undone.")) return;
+        var removalReason = null;
+        if (removeBtn.getAttribute("data-remove") === "media") {
+          removalReason = prompt("Write a short reason to send them as a notification, or leave this empty to send nothing:", "");
+          if (removalReason === null) return;
+        }
         removeBtn.disabled = true;
         var type = removeBtn.getAttribute("data-remove");
         var id = removeBtn.getAttribute("data-id");
@@ -899,6 +904,9 @@ var REASON_CHIPS_MEDIA = [
           var path = removeBtn.getAttribute("data-path");
           if (path) await window.sb.storage.from("media").remove([path]);
           await window.sb.from("media").delete().eq("id", id);
+          if (removalReason && removalReason.trim() && removeBtn.getAttribute("data-owner")) {
+            try { await window.sb.rpc("send_removal_notice", { p_recipient: removeBtn.getAttribute("data-owner"), p_text: ("Your post was removed. " + removalReason.trim()).slice(0, 300) }); } catch (e) { /* the post is removed either way */ }
+          }
         } else if (type === "comment") {
           await window.sb.from("media_comments").delete().eq("id", id);
         } else if (type === "message") {
@@ -1604,15 +1612,9 @@ var REASON_CHIPS_MEDIA = [
         // anyone.
         var noteBody = null;
         if (submittedBy) {
-          var extra = prompt(
-            "This track was uploaded directly by " + artistName + ". We'll send them a quick, friendly note that it's been removed from the Music Library. Add anything specific you'd like included (optional), or just click OK to send our default message:",
-            ""
-          );
-          if (extra === null) return; // admin backed out — don't delete or message anyone
-          noteBody = "Hey! Thanks so much for sharing \"" + title + "\" with the Ensemble Fitness community. After a listen, we don't think it's quite the right fit for our motivational vibe right now, so we've taken it down from the Music Library." +
-            (extra.trim() ? " " + extra.trim() : "") +
-            " No hard feelings at all — we'd love for you to upload something new anytime!";
-          if (noteBody.length > 500) noteBody = noteBody.slice(0, 497) + "...";
+          var extra = prompt("Delete \"" + title + "\" by " + artistName + ". Write a short reason to send them as a notification, or leave this empty to send nothing:", "");
+          if (extra === null) return; // admin backed out — don't delete or notify anyone
+          noteBody = extra.trim() ? ("Your song \u201c" + title + "\u201d was removed from the Music Library. " + extra.trim()) : null;
         }
 
         btn.disabled = true;
@@ -1625,11 +1627,7 @@ var REASON_CHIPS_MEDIA = [
 
           if (noteBody) {
             try {
-              await window.sb.from("messages").insert({
-                sender_id: currentUser.id,
-                recipient_id: submittedBy,
-                body: noteBody
-              });
+              await window.sb.rpc("send_removal_notice", { p_recipient: submittedBy, p_text: String(noteBody).slice(0, 300) });
             } catch (e) { /* track is deleted either way — the note is best-effort */ }
           }
 
