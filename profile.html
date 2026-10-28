@@ -41,6 +41,38 @@
   .act-av { flex: none; width: 36px; height: 36px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center;
     font-weight: 800; font-size: 15px; color: #fff; cursor: pointer; }
   .act-av img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  /* Messages = a list of people, then one conversation (Oct 28) */
+  .conv-row { display: flex; align-items: center; gap: 12px; padding: 11px 2px; border-top: 1px solid rgba(255,255,255,0.08); cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .conv-row:first-child { border-top: 0; }
+  .conv-av-wrap .act-av { width: 48px; height: 48px; font-size: 19px; }
+  .conv-mid { flex: 1; min-width: 0; }
+  .conv-mid b { display: block; font-size: 15px; color: #fff; }
+  .conv-last { display: block; font-size: 13px; color: rgba(255,255,255,0.62); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .conv-row.unread .conv-last { color: #fff; font-weight: 600; }
+  .conv-tm { font-size: 11.5px; color: rgba(255,255,255,0.55); text-align: right; min-width: 34px; }
+  .conv-dot { display: block; width: 9px; height: 9px; border-radius: 50%; background: #ff6a1a; margin: 6px 0 0 auto; }
+  .conv-thread { position: fixed; left: 0; right: 0; top: 0; bottom: 0; z-index: 2147483000; background: #0b0f1a; color: #fff; display: flex; flex-direction: column; }
+  .conv-thread[hidden] { display: none; }
+  .conv-hd { display: flex; align-items: center; gap: 10px; padding: calc(10px + env(safe-area-inset-top, 0px)) 12px 10px; border-bottom: 1px solid rgba(255,255,255,0.1); flex: none; }
+  .conv-back { background: none; border: 0; color: #fff; font-size: 30px; line-height: 1; padding: 0 8px 4px 0; cursor: pointer; }
+  .conv-hd .act-av { width: 38px; height: 38px; }
+  .conv-hd-text { cursor: pointer; min-width: 0; }
+  .conv-hd-text b { display: block; font-size: 16px; }
+  .conv-hd-text small { color: rgba(255,255,255,0.55); font-size: 11.5px; }
+  .conv-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 12px; display: flex; flex-direction: column; gap: 6px; width: 100%; max-width: 640px; margin: 0 auto; box-sizing: border-box; }
+  .conv-day { align-self: center; color: rgba(255,255,255,0.5); font-size: 11.5px; margin: 8px 0 2px; }
+  .conv-b { max-width: 78%; padding: 9px 13px; border-radius: 18px; font-size: 14.5px; line-height: 1.4; overflow-wrap: anywhere; white-space: pre-wrap; }
+  .conv-b.in { align-self: flex-start; background: #1b2440; border-bottom-left-radius: 5px; }
+  .conv-b.out { align-self: flex-end; background: #db1f52; border-bottom-right-radius: 5px; }
+  .conv-thx { align-self: flex-start; font: inherit; font-size: 12.5px; border: 0; border-radius: 999px; padding: 3px 10px; margin: -2px 0 2px 4px; background: #2a3350; color: #fff; cursor: pointer; }
+  .conv-thx.on { background: #ffb02e; color: #000; font-weight: 700; }
+  .conv-meta { align-self: flex-end; font-size: 11px; color: rgba(255,255,255,0.55); margin: -2px 4px 2px; }
+  .conv-err { text-align: center; color: #ff9a8f; font-size: 13px; padding: 4px 12px; }
+  .conv-bar { display: flex; gap: 8px; align-items: center; padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid rgba(255,255,255,0.1); flex: none; width: 100%; max-width: 640px; margin: 0 auto; box-sizing: border-box; }
+  .conv-bar input { flex: 1; min-width: 0; font: inherit; font-size: 16px; padding: 10px 14px; border-radius: 999px; background: #05070d; border: 1px solid rgba(255,255,255,0.18); color: #fff; }
+  .conv-send { font: inherit; font-weight: 700; font-size: 14px; border: 0; border-radius: 999px; padding: 10px 17px; background: #db1f52; color: #fff; cursor: pointer; }
+  .conv-send:disabled { opacity: .6; }
+  body.conv-open { overflow: hidden; }
 </style>
 </head>
 <body>
@@ -460,12 +492,9 @@
   <div class="card compact-card pf-panel" data-pf="messages">
     <div class="eyebrow">Inbox</div>
     <h2 style="font-size:18px;">Messages</h2>
-    <p class="card-sub">Short notes from other members — like "Good job. Keep going." Tap Reply to answer, or 👍 to say thanks quietly.</p>
-    <div class="act-seg" id="msgSeg"><button type="button" class="on" data-mv="received">Received</button><button type="button" data-mv="sent">Sent</button></div>
     <div id="inboxList">
       <div class="empty-state">Loading…</div>
     </div>
-    <div id="sentList" hidden></div>
   </div>
 
   <div class="card compact-card pf-panel" data-pf="comments">
@@ -610,6 +639,16 @@
      have felt slower since that change went in, not the CDN itself. Loading
      directly from the CDN, plainly, is both simpler and faster than the
      broken fallback dance was. -->
+<div class="conv-thread" id="convThread" hidden role="dialog" aria-label="Conversation">
+  <div class="conv-hd">
+    <button type="button" class="conv-back" id="convBack" aria-label="Back to messages">‹</button>
+    <span class="act-av" id="convAv"></span>
+    <div class="conv-hd-text" id="convNameWrap"><b id="convName"></b><small>Tap to see their grid</small></div>
+  </div>
+  <div class="conv-body" id="convBody"></div>
+  <div class="conv-err" id="convErr" hidden></div>
+  <div class="conv-bar"><input type="text" id="convInput" maxlength="500" placeholder="Message…" aria-label="Message" autocomplete="off" enterkeyhint="send"><button type="button" id="convSend" class="conv-send">Send</button></div>
+</div>
 <script src="js/vendor/supabase.js"></script>
 <script>window.supabase||document.write('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"><\/script>')</script>
 <script src="js/config.js"></script>
@@ -844,6 +883,11 @@
       safely("likes", loadLikesTotal()),
       safely("blockedList", loadBlockedMembers())
     ]);
+    // A message notification opens that conversation straight away (profile.html?chat=<member>#messages).
+    try {
+      var chatWith = new URLSearchParams(window.location.search).get("chat");
+      if (chatWith) openConv(chatWith);
+    } catch (e) {}
   }
 
   // ---- Followers / Following ---------------------------------------------
@@ -1120,7 +1164,7 @@
       }));
     } catch (e) { /* the colored initial stays */ }
   }
-  ["inboxList", "sentList", "commentsList"].forEach(function (id) {
+  ["inboxList", "commentsList"].forEach(function (id) {
     var el = document.getElementById(id);
     if (!el) return;
     el.addEventListener("click", function (e) {
@@ -1133,144 +1177,237 @@
     }, true);
   });
 
+  // ---- Messages as conversations (Ken, Oct 28 -- like TikTok's inbox) ---------------------------------------
+  // The inbox is a list of PEOPLE (circle, name, last message, time, orange dot if something is new). Tap one and the whole
+  // back-and-forth with that member opens, yours on the right and theirs on the left, with a reply box at the bottom.
+  // Needs no new table: it reads the same messages table, both the ones sent to you and the ones you sent (sending needs the
+  // "Senders can read their sent messages" permission from sql/message-thanks.sql; without it only their side shows).
   var msgHasThanks = true;
-  var msgView = "received";
+  var convRows = [];          // every message to or from me (newest 500)
+  var convNames = {};         // other member's id -> display name
+  var convOpen = null;        // the member whose conversation is open
+  var convPushed = false;
+  var convPoll = null;
 
-  function setMsgView(v) {
-    msgView = v;
-    var rec = document.getElementById("inboxList"), snt = document.getElementById("sentList");
-    if (rec) rec.hidden = v !== "received";
-    if (snt) snt.hidden = v !== "sent";
-    Array.prototype.forEach.call(document.querySelectorAll("#msgSeg button"), function (b) {
-      b.classList.toggle("on", b.getAttribute("data-mv") === v);
-    });
-    if (v === "sent") loadSent();
+  function convShortTime(iso) {
+    var d = new Date(iso), now = new Date(), s = Math.floor((now - d) / 1000);
+    if (s < 60) return "now";
+    if (s < 3600) return Math.floor(s / 60) + "m";
+    if (s < 86400 && d.getDate() === now.getDate()) return Math.floor(s / 3600) + "h";
+    if (s < 6 * 86400) return d.toLocaleDateString(undefined, { weekday: "short" });
+    return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
   }
-  (function wireMsgSeg() {
-    var seg = document.getElementById("msgSeg");
-    if (!seg) return;
-    seg.addEventListener("click", function (e) {
-      var b = e.target.closest ? e.target.closest("button[data-mv]") : null;
-      if (b) setMsgView(b.getAttribute("data-mv"));
-    });
-  })();
+  function convDayLabel(iso) {
+    var d = new Date(iso), now = new Date();
+    var a = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+    var b = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    var diff = Math.round((b - a) / 86400000);
+    if (diff === 0) return "Today";
+    if (diff === 1) return "Yesterday";
+    return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  }
+  function otherOf(m) { return m.sender_id === currentUser.id ? m.recipient_id : m.sender_id; }
 
-  function thanksBtnHtml(m) {
-    if (!msgHasThanks) return "";
-    var on = !!m.thanked_at;
-    return '<button type="button" class="act-pill act-thanks' + (on ? " on" : "") + '" data-thanks="' + m.id + '" aria-pressed="' + on + '">👍' + (on ? " Thanked" : "") + "</button>";
+  async function fetchConvRows() {
+    var me = currentUser.id;
+    var cols = "id, sender_id, recipient_id, body, created_at, read_at";
+    var q = function (c) {
+      return window.sb.from("messages").select(c)
+        .or("sender_id.eq." + me + ",recipient_id.eq." + me)
+        .order("created_at", { ascending: false }).limit(500);
+    };
+    var r = await q(cols + ", thanked_at");
+    if (r.error) { msgHasThanks = false; r = await q(cols); }
+    var rows = (r && r.data) || [];
+    return rows.filter(function (m) { return m.sender_id === me || m.recipient_id === me; })
+      .sort(function (x, y) { return x.created_at < y.created_at ? 1 : (x.created_at > y.created_at ? -1 : 0); });
+  }
+
+  async function loadNames(ids) {
+    var need = ids.filter(function (id) { return id && !convNames[id]; });
+    if (!need.length) return;
+    try {
+      var pr = await window.sb.from("profiles").select("id, display_name").in("id", need);
+      (pr.data || []).forEach(function (p) { convNames[p.id] = p.display_name; });
+    } catch (e) { /* names fall back to "A member" */ }
+  }
+
+  function renderConvList() {
+    var list = document.getElementById("inboxList");
+    var me = currentUser.id;
+    var by = {}, order = [];
+    convRows.forEach(function (m) {           // newest first, so the first seen per person is their latest
+      var o = otherOf(m);
+      if (!by[o]) { by[o] = { id: o, last: m, unread: 0 }; order.push(o); }
+      if (m.recipient_id === me && !m.read_at) by[o].unread++;
+    });
+    if (!order.length) {
+      list.innerHTML = '<div class="empty-state pf-empty-art" data-art="💌">No messages yet — tap Message on a member\'s page to start one.</div>';
+      return;
+    }
+    list.innerHTML = "";
+    order.forEach(function (o) {
+      var c = by[o], name = convNames[o] || "A member";
+      var row = document.createElement("div");
+      row.className = "conv-row" + (c.unread ? " unread" : "");
+      row.setAttribute("data-conv", o);
+      row.setAttribute("role", "button");
+      row.tabIndex = 0;
+      row.innerHTML =
+        '<span class="conv-av-wrap">' + actAv(o, name) + "</span>" +
+        '<div class="conv-mid"><b>' + escapeHtml(name) + "</b>" +
+        '<span class="conv-last">' + (c.last.sender_id === me ? "You: " : "") + escapeHtml(c.last.body) + "</span></div>" +
+        '<div class="conv-tm">' + escapeHtml(convShortTime(c.last.created_at)) + (c.unread ? '<span class="conv-dot"></span>' : "") + "</div>";
+      list.appendChild(row);
+    });
+    hydrateActAvatars(list, order);
   }
 
   async function loadInbox() {
     var list = document.getElementById("inboxList");
-    var base = "id, body, created_at, read_at, sender_id, profiles!messages_sender_id_fkey(display_name)";
-    var { data, error } = await window.sb
-      .from("messages")
-      .select(base + ", thanked_at")
-      .eq("recipient_id", currentUser.id)
-      .order("created_at", { ascending: false })
-      .limit(30);
-    if (error) {
-      msgHasThanks = false;
-      var again = await window.sb
-        .from("messages")
-        .select(base)
-        .eq("recipient_id", currentUser.id)
-        .order("created_at", { ascending: false })
-        .limit(30);
-      data = again.data; error = again.error;
-    }
-
-    if (error || !data || data.length === 0) {
-      list.innerHTML = '<div class="empty-state pf-empty-art" data-art="💌">No messages yet — when another member sends you one, it\'ll show up here.</div>';
-      return;
-    }
-
-    list.innerHTML = "";
-    var unreadIds = [];
-    var canReply = typeof openMessageModal === "function";
-    data.forEach(function (m) {
-      var name = (m.profiles && m.profiles.display_name) || "A member";
-      var isUnread = !m.read_at;
-      if (isUnread) unreadIds.push(m.id);
-      var item = document.createElement("div");
-      item.className = "inbox-item" + (isUnread ? " unread" : "");
-      item.setAttribute("data-mid", m.id);
-      item.innerHTML =
-        '<div class="act-head">' + actAv(m.sender_id, name) + '<div class="act-headtext">' +
-          '<span class="inbox-item-name act-go"' + (m.sender_id ? ' data-go="' + escapeHtml(String(m.sender_id)) + '"' : "") + ">" + escapeHtml(name) + "</span>" +
-          '<span class="inbox-item-time">' + timeAgo(m.created_at) + "</span></div></div>" +
-        '<div class="inbox-item-body">' + escapeHtml(m.body) + "</div>" +
-        '<div class="act-row">' +
-          (canReply && m.sender_id ? '<button type="button" class="act-pill act-reply" data-reply-to="' + escapeHtml(String(m.sender_id)) + '" data-reply-name="' + escapeHtml(name) + '">↩ Reply</button>' : "") +
-          thanksBtnHtml(m) +
-        "</div>";
-      list.appendChild(item);
-    });
-
-    hydrateActAvatars(list, data.map(function (m) { return m.sender_id; }));
-    // Mark newly-seen messages as read now that they've been rendered.
-    if (unreadIds.length) {
-      await window.sb.from("messages").update({ read_at: new Date().toISOString() }).in("id", unreadIds);
-    }
+    try {
+      convRows = await fetchConvRows();
+      var ids = []; convRows.forEach(function (m) { var o = otherOf(m); if (ids.indexOf(o) < 0) ids.push(o); });
+      await loadNames(ids);
+    } catch (e) { convRows = []; }
+    renderConvList();
+    if (convOpen) renderThread(false);
   }
 
-  document.getElementById("inboxList").addEventListener("click", async function (e) {
-    var rb = e.target.closest ? e.target.closest("[data-reply-to]") : null;
-    if (rb) {
-      try { openMessageModal(rb.getAttribute("data-reply-to"), rb.getAttribute("data-reply-name") || "this member"); } catch (err) { console.error(err); }
-      return;
+  document.getElementById("inboxList").addEventListener("click", function (e) {
+    var av = e.target.closest ? e.target.closest(".act-av[data-go]") : null;
+    if (av) return; // (handled by the profile-circle rule: opens their grid)
+    var row = e.target.closest ? e.target.closest("[data-conv]") : null;
+    if (row) openConv(row.getAttribute("data-conv"));
+  });
+  document.getElementById("inboxList").addEventListener("keydown", function (e) {
+    if (e.key !== "Enter") return;
+    var row = e.target.closest ? e.target.closest("[data-conv]") : null;
+    if (row) openConv(row.getAttribute("data-conv"));
+  });
+
+  // ---- one conversation -----------------------------------------------------------------------------------
+  function threadMsgs() {
+    var me = currentUser.id, o = convOpen;
+    return convRows.filter(function (m) {
+      return (m.sender_id === me && m.recipient_id === o) || (m.sender_id === o && m.recipient_id === me);
+    }).slice().sort(function (a, b) { return a.created_at < b.created_at ? -1 : (a.created_at > b.created_at ? 1 : 0); });
+  }
+  function renderThread(scrollDown) {
+    var box = document.getElementById("convBody");
+    if (!box || !convOpen) return;
+    var me = currentUser.id, msgs = threadMsgs(), html = "", lastDay = "";
+    var lastOut = null; msgs.forEach(function (m) { if (m.sender_id === me) lastOut = m; });
+    msgs.forEach(function (m) {
+      var day = convDayLabel(m.created_at);
+      if (day !== lastDay) { html += '<div class="conv-day">' + escapeHtml(day) + "</div>"; lastDay = day; }
+      var mine = m.sender_id === me;
+      html += '<div class="conv-b ' + (mine ? "out" : "in") + '" data-mid="' + escapeHtml(String(m.id)) + '">' + escapeHtml(m.body) + "</div>";
+      if (!mine && msgHasThanks) {
+        var on = !!m.thanked_at;
+        html += '<button type="button" class="conv-thx' + (on ? " on" : "") + '" data-thanks="' + escapeHtml(String(m.id)) + '" aria-pressed="' + on + '">👍' + (on ? " Thanked" : "") + "</button>";
+      }
+      if (mine && m === lastOut) {
+        html += '<div class="conv-meta">' + (m._sending ? "Sending…" : (m._failed ? "Not sent — tap Send to retry" : (m.read_at ? "✓ Seen" : "Sent " + escapeHtml(convShortTime(m.created_at)) + (convShortTime(m.created_at) === "now" ? "" : " ago")))) + (m.thanked_at ? "  ·  👍 Thanked" : "") + "</div>";
+      }
+    });
+    var atBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 80;
+    box.innerHTML = html || '<div class="conv-day">Say hello 👋</div>';
+    if (scrollDown || atBottom) box.scrollTop = box.scrollHeight;
+  }
+
+  function fitThreadToScreen() {
+    var th = document.getElementById("convThread");
+    if (!th || th.hidden) return;
+    var vv = window.visualViewport;
+    if (vv && window.matchMedia("(max-width: 720px)").matches) {
+      th.style.top = Math.max(0, vv.offsetTop) + "px";
+      th.style.height = vv.height + "px";
+    } else { th.style.top = ""; th.style.height = ""; }
+  }
+  async function openConv(uid, fromPop) {
+    if (!uid) return;
+    convOpen = uid;
+    await loadNames([uid]);
+    var name = convNames[uid] || "A member";
+    var th = document.getElementById("convThread");
+    document.getElementById("convName").textContent = name;
+    document.getElementById("convNameWrap").setAttribute("data-go", uid);
+    var av = document.getElementById("convAv");
+    av.className = "act-av"; av.setAttribute("data-go", uid); av.setAttribute("data-av", uid);
+    av.style.background = actColor(uid); av.textContent = ((name.trim().charAt(0)) || "?").toUpperCase();
+    document.getElementById("convInput").placeholder = "Message " + name + "…";
+    th.hidden = false;
+    document.body.classList.add("conv-open");
+    fitThreadToScreen();
+    hydrateActAvatars(th, [uid]);
+    renderThread(true);
+    if (!fromPop && !convPushed) { try { window.history.pushState({ pfConv: 1 }, ""); convPushed = true; } catch (e) {} }
+    // opening it is "I saw these": mark what they sent as read
+    var unread = convRows.filter(function (m) { return m.sender_id === uid && m.recipient_id === currentUser.id && !m.read_at; });
+    if (unread.length) {
+      var now = new Date().toISOString();
+      unread.forEach(function (m) { m.read_at = now; });
+      try { await window.sb.from("messages").update({ read_at: now }).in("id", unread.map(function (m) { return m.id; })); } catch (e) {}
+      renderConvList();
     }
+    if (convPoll) clearInterval(convPoll);
+    convPoll = setInterval(function () { if (convOpen && !document.hidden) loadInbox(); }, 15000);
+  }
+  function closeConvUI() {
+    var th = document.getElementById("convThread");
+    if (th) th.hidden = true;
+    document.body.classList.remove("conv-open");
+    convOpen = null;
+    if (convPoll) { clearInterval(convPoll); convPoll = null; }
+    renderConvList();
+  }
+  function closeConv() {
+    if (convPushed) { convPushed = false; try { window.history.back(); return; } catch (e) {} }
+    closeConvUI();
+  }
+  window.addEventListener("popstate", function () {
+    if (convOpen) { convPushed = false; closeConvUI(); }
+  });
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", fitThreadToScreen);
+    window.visualViewport.addEventListener("scroll", fitThreadToScreen);
+  }
+
+  async function sendConv() {
+    var input = document.getElementById("convInput"), btn = document.getElementById("convSend");
+    var text = (input.value || "").trim();
+    if (!text || !convOpen || btn.disabled) return;
+    var tmp = { id: "tmp-" + Date.now(), sender_id: currentUser.id, recipient_id: convOpen, body: text, created_at: new Date().toISOString(), read_at: null, _sending: true };
+    convRows.unshift(tmp);
+    input.value = "";
+    btn.disabled = true;
+    renderThread(true);
+    var res = await window.sb.from("messages").insert({ sender_id: currentUser.id, recipient_id: convOpen, body: text });
+    btn.disabled = false;
+    if (res && res.error) { tmp._sending = false; tmp._failed = true; input.value = text; convRows.shift(); renderThread(true); var er = document.getElementById("convErr"); er.textContent = "Couldn't send that. Try again."; er.hidden = false; setTimeout(function () { er.hidden = true; }, 3500); return; }
+    tmp._sending = false;
+    renderThread(true);
+    renderConvList();
+    try { input.focus({ preventScroll: true }); } catch (e) {}
+  }
+  document.getElementById("convSend").addEventListener("click", sendConv);
+  document.getElementById("convInput").addEventListener("keydown", function (e) { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendConv(); } });
+  document.getElementById("convBack").addEventListener("click", closeConv);
+  document.getElementById("convThread").addEventListener("click", async function (e) {
+    var go = e.target.closest ? e.target.closest("[data-go]") : null;
+    if (go) { var uid = go.getAttribute("data-go"); if (uid) window.location.href = "member.html?id=" + encodeURIComponent(uid); return; }
     var tb = e.target.closest ? e.target.closest("[data-thanks]") : null;
     if (!tb || tb.disabled) return;
     var turningOn = !tb.classList.contains("on");
+    var id = tb.getAttribute("data-thanks");
     tb.disabled = true;
-    var res = await window.sb.from("messages")
-      .update({ thanked_at: turningOn ? new Date().toISOString() : null })
-      .eq("id", tb.getAttribute("data-thanks")).eq("recipient_id", currentUser.id);
+    var res = await window.sb.from("messages").update({ thanked_at: turningOn ? new Date().toISOString() : null }).eq("id", id).eq("recipient_id", currentUser.id);
     tb.disabled = false;
-    if (res && res.error) { tb.textContent = "Try again"; setTimeout(function () { tb.textContent = tb.classList.contains("on") ? "👍 Thanked" : "👍"; }, 1500); return; }
-    tb.classList.toggle("on", turningOn);
-    tb.setAttribute("aria-pressed", turningOn ? "true" : "false");
-    tb.textContent = turningOn ? "👍 Thanked" : "👍";
+    if (res && res.error) return;
+    convRows.forEach(function (m) { if (String(m.id) === id) m.thanked_at = turningOn ? new Date().toISOString() : null; });
+    renderThread(false);
   });
-
-  async function loadSent() {
-    var list = document.getElementById("sentList");
-    list.innerHTML = '<div class="empty-state">Loading…</div>';
-    var cols = "id, body, created_at, read_at, recipient_id";
-    var { data, error } = await window.sb.from("messages").select(cols + ", thanked_at")
-      .eq("sender_id", currentUser.id).order("created_at", { ascending: false }).limit(30);
-    if (error) {
-      var again = await window.sb.from("messages").select(cols)
-        .eq("sender_id", currentUser.id).order("created_at", { ascending: false }).limit(30);
-      data = again.data; error = again.error;
-    }
-    if (error || !data || data.length === 0) {
-      list.innerHTML = '<div class="empty-state pf-empty-art" data-art="📤">Nothing sent yet — tap Message on a member\'s page to send one.</div>';
-      return;
-    }
-    var ids = []; data.forEach(function (m) { if (m.recipient_id && ids.indexOf(m.recipient_id) < 0) ids.push(m.recipient_id); });
-    var names = {};
-    try {
-      var pr = await window.sb.from("profiles").select("id, display_name").in("id", ids);
-      (pr.data || []).forEach(function (p) { names[p.id] = p.display_name; });
-    } catch (e) { /* names fall back to "A member" */ }
-    list.innerHTML = "";
-    data.forEach(function (m) {
-      var item = document.createElement("div");
-      item.className = "inbox-item";
-      var status = m.thanked_at ? '<span class="act-tick on">👍 Thanked you</span>' : (m.read_at ? '<span class="act-tick">✓ Seen</span>' : '<span class="act-tick">Sent</span>');
-      item.innerHTML =
-        '<div class="act-head">' + actAv(m.recipient_id, names[m.recipient_id] || "A member") + '<div class="act-headtext">' +
-        '<span class="inbox-item-name act-go"' + (m.recipient_id ? ' data-go="' + escapeHtml(String(m.recipient_id)) + '"' : "") + '>To ' + escapeHtml(names[m.recipient_id] || "A member") + "</span>" +
-        '<span class="inbox-item-time">' + timeAgo(m.created_at) + "</span></div></div>" +
-        '<div class="inbox-item-body">' + escapeHtml(m.body) + "</div>" +
-        '<div class="act-row">' + status + "</div>";
-      list.appendChild(item);
-    });
-    hydrateActAvatars(list, ids);
-  }
 
   // ---- Likes total + comments on my posts (Ken, Oct 27, item 9) -------------------------------------------
   // Likes = every reaction (heart, thumbs-up, muscle) other members put on my posts. Reads the same
@@ -1433,7 +1570,7 @@
       var b = e.target.closest ? e.target.closest(".pf-pill") : null;
       if (!b) return;
       if (b.getAttribute("data-pf") === "comments") setCmView(cmView);
-      if (b.getAttribute("data-pf") === "messages" && msgView === "sent") loadSent();
+      if (b.getAttribute("data-pf") === "messages") loadInbox();
     });
     list.addEventListener("click", async function (e) {
       var th = e.target.closest ? e.target.closest(".act-thumb[data-mid]") : null;
