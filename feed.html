@@ -1382,6 +1382,27 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     .rp-comments-modal.rp-compose-only .rp-emoji-strip { display: none; }
     .rp-comments-modal.rp-compose-only .rp-comments-modal-box::before { display: none; }
   }
+  /* Ken (Oct 2026, from the artist's phone): the typing area was far too big and the comments sheet "devoured the page".
+     Phones only: the typing bar and Post button are about 40% shorter, the quick-emoji row is slimmer, and the sheet is
+     lower and shorter (at most 60% of the free area) with NO dark cover, so the post stays visible above it, like TikTok.
+     (The text stays 16px: smaller than that makes iPhones zoom the page when the box is tapped.) */
+  @media (max-width: 899px) {
+    .rp-comments-modal .rp-comment-input-row,
+    .rp-comments-modal.rp-compose-only .rp-comment-input-row { align-items: center; gap: 8px; padding: 4px 10px calc(env(safe-area-inset-bottom, 0px) + 4px); }
+    .rp-comments-modal .rp-comment-input,
+    .rp-comments-modal.rp-compose-only .rp-comment-input { font-size: 16px; line-height: 1.2; padding: 4px 12px; min-width: 0; }
+    .rp-comments-modal .rp-comment-send,
+    .rp-comments-modal.rp-compose-only .rp-comment-send { font-size: 13px; padding: 6px 14px; box-shadow: 0 2px 8px rgba(124,92,255,0.3); }
+    .rp-comments-modal .rp-comment-cancel,
+    .rp-comments-modal.rp-compose-only .rp-comment-cancel { font-size: 15px; padding: 4px 2px; }
+    .rp-comments-modal .rp-emoji-strip { padding: 0 0 1px; }
+    .rp-comments-modal .rp-emoji-strip button { font-size: 17px; padding: 1px 0; }
+    .rp-comments-modal:not(.rp-compose-only) .rp-comments-modal-backdrop { background: transparent; }
+    .rp-comments-modal:not(.rp-compose-only) .rp-comments-modal-box { max-height: 60%; }
+    .rp-comments-modal .rp-comments-header { padding: 12px 44px 8px; }
+    .rp-comments-modal .rp-comment-item { padding: 9px 0; }
+    .rp-comments-modal .rp-comment-avatar { width: 34px; height: 34px; }
+  }
   .rp-comment-toast {
     position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%);
     background: rgba(20,24,34,0.95); color: #fff; font-size: 13px; font-weight: 700;
@@ -4922,7 +4943,6 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
       try { window.scrollTo({ top: slideEl.getBoundingClientRect().top + composeReturnY, behavior: "smooth" }); }
       catch (e) { window.scrollTo(0, slideEl.getBoundingClientRect().top + composeReturnY); }
     }
-
     modal.hidden = false;
     lockFeedScroll(true);
     syncCommentsViewport();
