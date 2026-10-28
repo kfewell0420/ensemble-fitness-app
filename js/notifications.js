@@ -46,6 +46,8 @@
 
   function describe(row) {
     var name = escapeHtml((row.actorName || "Someone"));
+    // Oct 28 (Ken + the artist): tap the name (or the little photo) to see who it is -- opens their profile grid.
+    if (row.actor_id) name = '<span class="efit-notif-name" data-go="' + escapeHtml(String(row.actor_id)) + '">' + name + "</span>";
     if (row.type === "reaction") {
       return "<strong>" + name + "</strong> reacted " + reactionEmoji(row.reaction_type) + " to your post";
     }
@@ -62,9 +64,11 @@
   }
 
   function destinationFor(row) {
-    if (row.type === "reaction" || row.type === "comment") return "feed.html";
+    // Oct 28 (Ken): a comment notification opens your Comments list (see who said it, reply, tap their photo); a message opens Messages.
+    if (row.type === "comment") return "profile.html#comments";
+    if (row.type === "reaction") return "feed.html";
     if (row.type === "follow") return row.actor_id ? "member.html?id=" + encodeURIComponent(row.actor_id) : "members.html";
-    if (row.type === "message") return "profile.html";
+    if (row.type === "message") return "profile.html#messages";
     return "feed.html";
   }
 
@@ -142,6 +146,77 @@
     return wrap;
   }
 
+  // ---- little profile circles (Oct 28) -------------------------------------------------------------
+  function avatarColor(uid) {
+    var h = 0, str = String(uid || "");
+    for (var i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0;
+    return "hsl(" + (h % 360) + " 45% 38%)";
+  }
+  function avatarHtml(row) {
+    var name = row.actorName || "Someone";
+    var initial = (name.trim().charAt(0) || "?").toUpperCase();
+    var uid = row.actor_id ? String(row.actor_id) : "";
+    return '<span class="efit-notif-av" ' + (uid ? 'data-go="' + escapeHtml(uid) + '" data-av="' + escapeHtml(uid) + '" ' : "") +
+      'style="background:' + avatarColor(uid) + '">' + escapeHtml(initial) + "</span>";
+  }
+  // Same rule the feed uses: a member's picture is their newest approved profile photo.
+  async function hydrateAvatars(panel, rows) {
+    try {
+      var ids = [], seen = {};
+      rows.forEach(function (r) { if (r.actor_id && !seen[r.actor_id]) { seen[r.actor_id] = true; ids.push(r.actor_id); } });
+      if (!ids.length) return;
+      var res = await window.sb.from("media").select("user_id, storage_path, created_at")
+        .in("user_id", ids).eq("kind", "photo").eq("is_profile_photo", true).eq("status", "approved")
+        .order("created_at", { ascending: false });
+      if (!res || res.error || !res.data) return;
+      var pathBy = {};
+      res.data.forEach(function (r) { if (!pathBy[r.user_id]) pathBy[r.user_id] = r.storage_path; });
+      await Promise.all(Object.keys(pathBy).map(async function (uid) {
+        var s = await window.sb.storage.from("media").createSignedUrl(pathBy[uid], 3600);
+        var url = s && s.data ? s.data.signedUrl : "";
+        if (!url) return;
+        Array.prototype.forEach.call(panel.querySelectorAll('.efit-notif-av[data-av="' + uid + '"]'), function (el) {
+          el.style.background = "";
+          el.innerHTML = '<img src="' + escapeHtml(url) + '" alt="" />';
+        });
+      }));
+    } catch (e) { /* the colored initial stays */ }
+  }
+
+  // ---- phones: the notifications open as a full-width sheet (Oct 28) --------------------------------
+  // Ken: "you have to scroll to the side to see your notifications ... they are really small on the right." On a phone the
+  // dropdown hung off the right edge of the page. Now, on a phone, it is pinned to the screen: the full width, right under the
+  // header, scrolling inside itself.
+  function isPhone() { return window.matchMedia && window.matchMedia("(max-width: 720px)").matches; }
+  function placeSheet(panel) {
+    if (!isPhone()) { panel.classList.remove("efit-notif-sheet"); panel.style.cssText = ""; return; }
+    try { window.scrollTo(0, window.pageYOffset || 0); document.documentElement.scrollLeft = 0; document.body.scrollLeft = 0; } catch (e) {}
+    var nav = document.querySelector(".app-nav");
+    var T = nav ? Math.max(0, Math.round(nav.getBoundingClientRect().bottom)) : 0;
+    panel.classList.add("efit-notif-sheet");
+    panel.style.cssText = "position:fixed;left:0;right:auto;top:" + T + "px;width:100vw;max-width:100vw;margin:0;transform:none;box-sizing:border-box;" +
+      "max-height:" + Math.max(160, window.innerHeight - T - 72) + "px;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;z-index:2147483000;";
+    // If a parent (blur/transform) makes "fixed" measure from the header instead of the screen, correct the offset once.
+    var r = panel.getBoundingClientRect();
+    var dx = r.left, dy = r.top - T;
+    if (Math.abs(dx) > 0.5) panel.style.left = (-dx) + "px";
+    if (Math.abs(dy) > 0.5) panel.style.top = (T - dy) + "px";
+  }
+  function injectStyles() {
+    if (document.getElementById("efitNotifExtraCss")) return;
+    var st = document.createElement("style");
+    st.id = "efitNotifExtraCss";
+    st.textContent =
+      ".efit-notif-item { display: flex; align-items: flex-start; gap: 10px; }" +
+      ".efit-notif-text { flex: 1; min-width: 0; overflow-wrap: anywhere; }" +
+      ".efit-notif-av { flex: none; width: 38px; height: 38px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center;" +
+      " font-weight: 800; font-size: 15px; color: #fff; cursor: pointer; }" +
+      ".efit-notif-av img { width: 100%; height: 100%; object-fit: cover; display: block; }" +
+      ".efit-notif-name { cursor: pointer; text-decoration: underline; text-decoration-color: rgba(255,255,255,0.35); text-underline-offset: 2px; }" +
+      "@media (max-width: 720px) { .efit-notif-sheet .efit-notif-item { padding-top: 12px; padding-bottom: 12px; } }";
+    document.head.appendChild(st);
+  }
+
   function renderList(panel, rows) {
     if (!rows.length) {
       panel.innerHTML =
@@ -156,8 +231,9 @@
     rows.forEach(function (row) {
       html +=
         '<a href="' + destinationFor(row) + '" class="efit-notif-item' + (row.read_at ? "" : " unread") + '" data-id="' + row.id + '">' +
-          describe(row) +
-          '<span class="efit-notif-item-time">' + timeAgo(row.created_at) + "</span>" +
+          avatarHtml(row) +
+          '<span class="efit-notif-text">' + describe(row) +
+          '<span class="efit-notif-item-time">' + timeAgo(row.created_at) + "</span></span>" +
         "</a>";
     });
     panel.innerHTML = html;
@@ -218,6 +294,8 @@
     var bell = document.getElementById("efitNotifBell");
     if (!panel) return;
     panel.hidden = true;
+    panel.classList.remove("efit-notif-sheet");
+    panel.style.cssText = "";
     if (bell) bell.setAttribute("aria-expanded", "false");
     panelOpen = false;
   }
@@ -238,8 +316,11 @@
       autoMarkReadTimeoutId = null;
     }
 
+    placeSheet(panel);
     var rows = await fetchRows(userId);
     renderList(panel, rows);
+    placeSheet(panel); // (the list just changed height)
+    hydrateAvatars(panel, rows);
 
     var markAllBtn = document.getElementById("efitNotifMarkAll");
     if (markAllBtn) {
@@ -283,6 +364,17 @@
       openPanel(userId);
     });
 
+    // Tap a person's photo or name inside a notification -> their profile and grid (not the notification's own page).
+    var panelEl = document.getElementById("efitNotifPanel");
+    if (panelEl) panelEl.addEventListener("click", function (e) {
+      var t = e.target.closest ? e.target.closest("[data-go]") : null;
+      if (!t) return;
+      e.preventDefault(); e.stopPropagation();
+      var uid = t.getAttribute("data-go");
+      if (uid) window.location.href = (uid === userId) ? "profile.html" : "member.html?id=" + encodeURIComponent(uid);
+    });
+    window.addEventListener("resize", function () { if (panelOpen) { var p = document.getElementById("efitNotifPanel"); if (p) placeSheet(p); } });
+
     document.addEventListener("click", function (e) {
       var wrap = document.getElementById("efitNotifWrap");
       if (panelOpen && wrap && !wrap.contains(e.target)) closePanel();
@@ -300,6 +392,7 @@
     if (!userId) return; // signed out — nothing to show yet
 
     currentUserId = userId;
+    injectStyles();
     buildHomeLink();
     var wrap = buildBell();
     if (!wrap) return;

@@ -35,6 +35,12 @@
   .act-replybox { display: flex; gap: 6px; margin-top: 8px; }
   .act-replybox input { flex: 1; min-width: 0; font: inherit; font-size: 16px; padding: 7px 12px; border-radius: 999px; background: #05070d; border: 1px solid rgba(255,255,255,0.18); color: #fff; }
   #sentList[hidden], #inboxList[hidden] { display: none; }
+  .act-head { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+  .act-headtext { flex: 1; min-width: 0; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .act-headtext .inbox-item-name, .act-headtext b { font-weight: 800; color: #fff; cursor: pointer; }
+  .act-av { flex: none; width: 36px; height: 36px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 15px; color: #fff; cursor: pointer; }
+  .act-av img { width: 100%; height: 100%; object-fit: cover; display: block; }
 </style>
 </head>
 <body>
@@ -1080,6 +1086,53 @@
   // The thumbs-up is a quiet "got it, thanks" mark stored on the message (messages.thanked_at, see
   // sql/message-thanks.sql). Both are best-effort: if that column isn't there yet the 👍 button simply
   // doesn't show and everything else works exactly as before.
+  // ---- little profile circles next to messages and comments (Oct 28: "the little circle with my photo needs to go with
+  // the comment, needs to go with the message ... click it and it goes to my page where they see my grid") ----------
+  function actColor(uid) {
+    var h = 0, str = String(uid || "");
+    for (var i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0;
+    return "hsl(" + (h % 360) + " 45% 38%)";
+  }
+  function actAv(uid, name) {
+    var initial = ((name || "?").trim().charAt(0) || "?").toUpperCase();
+    uid = uid ? String(uid) : "";
+    return '<span class="act-av" ' + (uid ? 'data-go="' + escapeHtml(uid) + '" data-av="' + escapeHtml(uid) + '" ' : "") +
+      'style="background:' + actColor(uid) + '">' + escapeHtml(initial) + "</span>";
+  }
+  async function hydrateActAvatars(root, uids) {
+    try {
+      var ids = [], seen = {};
+      (uids || []).forEach(function (u) { if (u && !seen[u]) { seen[u] = true; ids.push(u); } });
+      if (!ids.length) return;
+      var res = await window.sb.from("media").select("user_id, storage_path, created_at")
+        .in("user_id", ids).eq("kind", "photo").eq("is_profile_photo", true).eq("status", "approved")
+        .order("created_at", { ascending: false });
+      if (!res || res.error || !res.data) return;
+      var pathBy = {};
+      res.data.forEach(function (r) { if (!pathBy[r.user_id]) pathBy[r.user_id] = r.storage_path; });
+      await Promise.all(Object.keys(pathBy).map(async function (uid) {
+        var sg = await window.sb.storage.from("media").createSignedUrl(pathBy[uid], 3600);
+        var url = sg && sg.data ? sg.data.signedUrl : "";
+        if (!url) return;
+        Array.prototype.forEach.call(root.querySelectorAll('.act-av[data-av="' + uid + '"]'), function (el) {
+          el.style.background = ""; el.innerHTML = '<img src="' + escapeHtml(url) + '" alt="" />';
+        });
+      }));
+    } catch (e) { /* the colored initial stays */ }
+  }
+  ["inboxList", "sentList", "commentsList"].forEach(function (id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener("click", function (e) {
+      var t = e.target.closest ? e.target.closest("[data-go]") : null;
+      if (!t) return;
+      var uid = t.getAttribute("data-go");
+      if (!uid) return;
+      e.preventDefault(); e.stopPropagation();
+      window.location.href = (currentUser && uid === currentUser.id) ? "profile.html" : "member.html?id=" + encodeURIComponent(uid);
+    }, true);
+  });
+
   var msgHasThanks = true;
   var msgView = "received";
 
@@ -1144,8 +1197,9 @@
       item.className = "inbox-item" + (isUnread ? " unread" : "");
       item.setAttribute("data-mid", m.id);
       item.innerHTML =
-        '<span class="inbox-item-name">' + escapeHtml(name) + "</span>" +
-        '<span class="inbox-item-time">' + timeAgo(m.created_at) + "</span>" +
+        '<div class="act-head">' + actAv(m.sender_id, name) + '<div class="act-headtext">' +
+          '<span class="inbox-item-name act-go"' + (m.sender_id ? ' data-go="' + escapeHtml(String(m.sender_id)) + '"' : "") + ">" + escapeHtml(name) + "</span>" +
+          '<span class="inbox-item-time">' + timeAgo(m.created_at) + "</span></div></div>" +
         '<div class="inbox-item-body">' + escapeHtml(m.body) + "</div>" +
         '<div class="act-row">' +
           (canReply && m.sender_id ? '<button type="button" class="act-pill act-reply" data-reply-to="' + escapeHtml(String(m.sender_id)) + '" data-reply-name="' + escapeHtml(name) + '">↩ Reply</button>' : "") +
@@ -1154,6 +1208,7 @@
       list.appendChild(item);
     });
 
+    hydrateActAvatars(list, data.map(function (m) { return m.sender_id; }));
     // Mark newly-seen messages as read now that they've been rendered.
     if (unreadIds.length) {
       await window.sb.from("messages").update({ read_at: new Date().toISOString() }).in("id", unreadIds);
@@ -1207,12 +1262,14 @@
       item.className = "inbox-item";
       var status = m.thanked_at ? '<span class="act-tick on">👍 Thanked you</span>' : (m.read_at ? '<span class="act-tick">✓ Seen</span>' : '<span class="act-tick">Sent</span>');
       item.innerHTML =
-        '<span class="inbox-item-name">To ' + escapeHtml(names[m.recipient_id] || "A member") + "</span>" +
-        '<span class="inbox-item-time">' + timeAgo(m.created_at) + "</span>" +
+        '<div class="act-head">' + actAv(m.recipient_id, names[m.recipient_id] || "A member") + '<div class="act-headtext">' +
+        '<span class="inbox-item-name act-go"' + (m.recipient_id ? ' data-go="' + escapeHtml(String(m.recipient_id)) + '"' : "") + '>To ' + escapeHtml(names[m.recipient_id] || "A member") + "</span>" +
+        '<span class="inbox-item-time">' + timeAgo(m.created_at) + "</span></div></div>" +
         '<div class="inbox-item-body">' + escapeHtml(m.body) + "</div>" +
         '<div class="act-row">' + status + "</div>";
       list.appendChild(item);
     });
+    hydrateActAvatars(list, ids);
   }
 
   // ---- Likes total + comments on my posts (Ken, Oct 27, item 9) -------------------------------------------
@@ -1310,7 +1367,7 @@
       card.innerHTML =
         '<div class="act-post"><button type="button" class="act-thumb" data-mid="' + escapeHtml(String(c.media_id)) + '" aria-label="Open this post">' + thumbPlaceholder(m) + '</button>' +
         '<span class="act-on">on your ' + kindLabel(m) + (m.workout_type ? " · " + escapeHtml(m.workout_type) : "") + "</span></div>" +
-        '<div class="act-top"><b>' + escapeHtml(name) + '</b><span class="inbox-item-time">' + timeAgo(c.created_at) + "</span></div>" +
+        '<div class="act-head">' + actAv(c.user_id, name) + '<div class="act-top act-headtext"><b class="act-go"' + (c.user_id ? ' data-go="' + escapeHtml(String(c.user_id)) + '"' : "") + ">" + escapeHtml(name) + '</b><span class="inbox-item-time">' + timeAgo(c.created_at) + "</span></div></div>" +
         '<div class="act-body">' + escapeHtml(c.body) + "</div>" +
         '<div class="act-reps">' + reps.map(function (r) { return '<div class="act-rep"><b>You:</b> ' + escapeHtml(r.body) + "</div>"; }).join("") + "</div>" +
         '<div class="act-row"><button type="button" class="act-pill act-reply" data-cm-reply="' + escapeHtml(String(c.id)) + '">↩ Reply</button></div>';
@@ -1318,6 +1375,7 @@
       list.appendChild(card);
     });
     signThumbs(list, mediaById);
+    hydrateActAvatars(list, others.map(function (c) { return c.user_id; }));
   }
 
   async function loadCommentsMade() {
@@ -2273,6 +2331,15 @@
     }
     syncOptional();
     apply();
+    // A notification can open Comments or Messages straight away (profile.html#comments / #messages).
+    function goHash() {
+      var h = (window.location.hash || "").replace("#", "");
+      if (!h) return;
+      var hb = pills.querySelector('.pf-pill[data-pf="' + h + '"]');
+      if (hb && h !== current) hb.click();
+    }
+    goHash();
+    window.addEventListener("hashchange", goHash);
     // Called after a delete: close the open post and show the grid of everything again (phones).
     window.pfExitSingle = function () {
       Array.prototype.forEach.call(grid.querySelectorAll(".pf-open"), function (w) { w.classList.remove("pf-open"); });
