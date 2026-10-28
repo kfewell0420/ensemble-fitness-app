@@ -388,7 +388,7 @@
   .mix-handle { flex: 0 0 16px; cursor: ew-resize; touch-action: none; background: rgba(255,255,255,0.92); display: flex; align-items: center; justify-content: center; }
   .mix-handle::after { content: ""; width: 3px; height: 16px; border-radius: 2px; background: #c9431a; }
   .mix-handle-l { border-radius: 8px 0 0 8px; }
-  .mix-handle-r { border-radius: 0 8px 8px 0; }
+  .mix-handle-r { border-radius: 0 8px 8px 0; display: none !important; }  /* (right-hand cut tab removed, Oct 2026: only the left start-grab is kept) */
   /* Touch screens (Ken's ask, Oct 2026): the song bar's grab handles used to be full-height tabs down
      the left and right edges. On a phone the bar sits low on the screen, so a thumb on those edges
      often ended up at the very bottom, where iOS's swipe-up (app switcher) takes over and the grab
@@ -436,17 +436,26 @@
      little media player flashed for half a second before the picture appeared). The buttons come in with the first picture. */
   #trimPreviewVideo.pv-wait { background: #000; }
   .pv-wait-on .pv-ctl { visibility: hidden; }
-  .pv-ctl { display: none; align-items: center; gap: 10px; padding: 10px 2px 4px; }
-  .pv-ctl.on { display: flex; }
-  .pv-ctl button { flex: 0 0 auto; width: 42px; height: 42px; border-radius: 50%; border: 0; background: #ff6b3d; color: #fff; font-size: 15px; line-height: 1; cursor: pointer; padding: 0; }
-  .pv-time { flex: 0 0 auto; min-width: 34px; text-align: center; font-size: 12.5px; color: #e6e8ef; font-variant-numeric: tabular-nums; }
-  .pv-bar { position: relative; flex: 1; height: 34px; touch-action: none; cursor: pointer; }
-  .pv-bar::before { content: ""; position: absolute; left: 0; right: 0; top: 15px; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.28); }
-  .pv-fill { position: absolute; left: 0; top: 15px; height: 4px; border-radius: 2px; background: #fff; width: 0; }
-  .pv-ball { position: absolute; top: 8px; left: 0; width: 18px; height: 18px; margin-left: -9px; border-radius: 50%; background: #fff; box-shadow: 0 1px 5px rgba(0,0,0,0.55); }
+  /* One controller (Ken, Oct 2026): the slider row under the video is gone. The small round button + the time sit on the
+     "Keep original sound" row, and the white cursor over the bars is the only scrubber. */
+  .pv-row { display: none; align-items: center; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+  .pv-row.on { display: flex; }
+  .pv-row button#pvPlay { flex: 0 0 auto; width: 36px; height: 36px; border-radius: 50%; border: 0; background: #ff6b3d; color: #fff; font-size: 13px; line-height: 1; cursor: pointer; padding: 0; }
+  .pv-time { flex: 0 0 auto; font-size: 13px; font-weight: 700; color: #e6e8ef; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .pv-row #keepOriginalRow { margin: 0 0 0 auto !important; }
   .drag-bubble { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 3; max-width: 92%; padding: 10px 22px; border-radius: 999px; background: rgba(0,0,0,0.7); color: #fff; font-size: 30px; font-weight: 800; letter-spacing: 0.5px; text-align: center; white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity .25s; box-shadow: 0 2px 10px rgba(0,0,0,0.5); }
   .drag-bubble.show { opacity: 1; }
-  .mix-playhead { position: absolute; top: -3px; bottom: 3px; width: 2px; background: #fff; box-shadow: 0 0 4px rgba(0,0,0,0.6); pointer-events: none; left: 0; }
+  .mix-playhead { position: absolute; top: -3px; bottom: 0; width: 2px; margin-left: -1px; background: #fff; box-shadow: 0 0 4px rgba(0,0,0,0.6); pointer-events: none; left: 0; z-index: 4; }
+  /* The round grab dot sits at the BOTTOM of the cursor line, under both bars. It is the only part of the cursor that can be
+     grabbed (the line itself ignores touches, so grabbing the song bar can never move the cursor), and with the cursor at the far
+     left a thumb on it is nowhere near Pause/Play. The dot's touch area is bigger than what is drawn. */
+  .mix-dot { position: absolute; left: 50%; bottom: 0; width: 56px; height: 52px; margin-left: -28px; pointer-events: auto; touch-action: none; cursor: ew-resize; -webkit-tap-highlight-color: transparent; }
+  .mix-dot::before { content: ""; position: absolute; left: 50%; bottom: 4px; width: 26px; height: 26px; margin-left: -13px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 3px rgba(11,15,26,0.9), 0 0 0 4.5px rgba(255,255,255,0.35), 0 2px 8px rgba(0,0,0,0.6); }
+  .mix-tracks { padding-bottom: 40px; margin: 0 14px; }
+  .mix-video.solid { background: linear-gradient(90deg, #4c3fa5, #7a68d8); cursor: default; }
+  .mix-video.solid .mix-filmstrip { display: none; }
+  .mix-video-label { display: none; position: absolute; left: 10px; top: 0; bottom: 0; align-items: center; font-size: 13px; font-weight: 700; color: #fff; pointer-events: none; text-shadow: 0 1px 3px rgba(0,0,0,0.5); }
+  .mix-video.solid .mix-video-label { display: flex; }
   @media (max-width: 560px) {
     #trimPreviewVideo { aspect-ratio: 4 / 3; margin-bottom: 8px; }
     #previewSoundNote { display: none; }
@@ -783,12 +792,6 @@
           <div class="trim-media" style="position:relative;">
             <div id="dragBubble" class="drag-bubble" aria-live="polite"></div>
             <video id="trimPreviewVideo" muted playsinline controls class="trim-preview-video"></video>
-            <div class="pv-ctl" id="pvCtl" aria-label="Video controls">
-              <button type="button" id="pvPlay" aria-label="Play">&#9654;</button>
-              <span class="pv-time" id="pvCur">0:00</span>
-              <div class="pv-bar" id="pvBar" role="slider" aria-label="Where you are in the video"><div class="pv-fill" id="pvFill"></div><div class="pv-ball" id="pvBall"></div></div>
-              <span class="pv-time" id="pvDur">0:00</span>
-            </div>
             <button type="button" class="vl-open" id="vlOpenBtn" aria-label="Add an exercise label to your video" title="Add an exercise label"><span class="vl-word">Label</span><span class="vl-count" id="vlCount"></span></button>
             <div class="clip-tray" id="clipTray" style="display:none;">
               <div class="clip-tray-row" id="clipTrayRow"></div>
@@ -821,17 +824,20 @@
         <!-- Timeline: the song locked to the video. Drag the bar to slide it along
              the video, drag its left end to trim the front of the song, drag its
              right end to cut the song earlier. Tap the video strip to scrub. -->
+        <div class="pv-row" id="pvRow" aria-label="Video controls">
+          <button type="button" id="pvPlay" aria-label="Play">&#9654;</button>
+          <span class="pv-time"><span id="pvCur">0:00</span> / <span id="pvDur">0:00</span></span>
+        </div>
         <div id="mixTimeline" style="display:none; margin-top:8px;">
           <div class="mix-tracks" id="mixTracks">
-            <div class="mix-track mix-video" id="mixVideoTrack"><div class="mix-filmstrip" id="mixFilmstrip"></div></div>
+            <div class="mix-track mix-video" id="mixVideoTrack"><div class="mix-filmstrip" id="mixFilmstrip"></div><span class="mix-video-label">Your video</span></div>
             <div class="mix-track mix-music" id="mixMusicTrack">
               <div class="mix-clip" id="mixClip">
                 <div class="mix-handle mix-handle-l" id="mixHandleL" title="Drag to trim the front of the song"></div>
                 <div class="mix-clip-body" id="mixClipBody" title="Drag to slide the song along your video"><canvas class="mix-wave" id="mixWave"></canvas><span class="mix-clip-label" id="mixClipLabel"></span></div>
-                <div class="mix-handle mix-handle-r" id="mixHandleR" title="Drag to cut the song earlier"></div>
               </div>
             </div>
-            <div class="mix-playhead" id="mixPlayhead"></div>
+            <div class="mix-playhead" id="mixPlayhead"><div class="mix-dot" id="mixDot" role="slider" aria-label="Drag to move through your video"></div></div>
           </div>
           <div id="syncReadout" style="display:none; font-size:12.5px; color:var(--muted-invert, #b9bccb); margin-top:8px; line-height:1.4;"></div>
         </div>
@@ -1878,12 +1884,48 @@
   // A longer video must NOT mean more tiles to scroll through; a member
   // with a 1:42 video should see exactly the same four choices as someone
   // with a 10-second one.
+  // Smooth-cursor fix (Oct 2026): two artists said the cursor "moves slowly, like it is generating" for the first while and is
+  // fine after playing with it. The page was doing picture work in the background (preview pictures, clip thumbnails) and
+  // decoding the song for its sound-wave picture while the member was already scrubbing: all of it fights the one video
+  // decoder an iPhone has. Now that background work only runs in a QUIET moment: the video is not playing, no finger has touched
+  // the page for 2.5 s, no drag is in progress. A phone that hands back black pictures is remembered, so it never tries again.
+  var lastTouchAt = performance.now();
+  ["pointerdown", "pointermove", "touchstart", "touchmove", "keydown"].forEach(function (ev) {
+    document.addEventListener(ev, function () { lastTouchAt = performance.now(); }, { capture: true, passive: true });
+  });
+  function pageIsQuiet() {
+    return trimPreviewVideo.paused && !trimPreviewVideo.seeking && !scrubDrag.hold && !scrubDrag.on && !mixDrag && !(pvSwapper && pvSwapper.busy()) &&
+           (performance.now() - lastTouchAt) > 2500;
+  }
+  // Resolves true when quiet, false if it never got quiet within maxMs (the caller decides whether to go ahead anyway).
+  function whenQuiet(maxMs) {
+    return new Promise(function (resolve) {
+      var waited = 0;
+      (function look() {
+        if (pageIsQuiet()) { resolve(true); return; }
+        if (waited >= maxMs) { resolve(false); return; }
+        waited += 400; setTimeout(look, 400);
+      })();
+    });
+  }
+  function phoneMakesBlankPictures() { try { return localStorage.getItem("efBlankFrames") === "1"; } catch (e) { return false; } }
+  function rememberBlankPictures() { try { localStorage.setItem("efBlankFrames", "1"); } catch (e) {} }
+
   async function generateTrimFilmstrip(videoEl, duration) {
     var myGeneration = ++filmstripGeneration;
     var count = 8;
-    coverPickerRow.innerHTML = '<span class="cover-picker-status">Generating previews…</span>';
-    coverPicker.style.display = "block";
-    selectedCoverTime = null;
+    if (IS_IOS_DEVICE) {
+      // iPhones: the bar under the cursor is a plain "Your video" bar, so these pictures are only the cover-photo choices.
+      // Skip them for good on a phone known to give black pictures; otherwise make them only once things are quiet.
+      coverPicker.style.display = "none"; coverPickerRow.innerHTML = ""; selectedCoverTime = null;
+      if (phoneMakesBlankPictures()) return;
+      var okQ = await whenQuiet(90000);
+      if (!okQ || myGeneration !== filmstripGeneration) return;
+    } else {
+      coverPickerRow.innerHTML = '<span class="cover-picker-status">Generating previews…</span>';
+      coverPicker.style.display = "block";
+      selectedCoverTime = null;
+    }
 
     // iPhone 17 fix #2 (Oct 2026): the previews used to be taken by seeking the SAME player the member watches
     // (and that the song is locked to). On an iPhone 17 each of those 8 seeks took ~3 s, so for the first ~25 s
@@ -1897,12 +1939,12 @@
       var waited = 0;
       for (var i = 0; i < count; i++) {
         if (myGeneration !== filmstripGeneration) return;
-        while (IS_IOS_DEVICE && (!trimPreviewVideo.paused || scrubDrag.hold || trimPreviewVideo.seeking) && waited < 30000) { await new Promise(function (r) { setTimeout(r, 400); }); waited += 400; if (myGeneration !== filmstripGeneration) return; }
+        while (IS_IOS_DEVICE && !pageIsQuiet() && waited < 30000) { await new Promise(function (r) { setTimeout(r, 400); }); waited += 400; if (myGeneration !== filmstripGeneration) return; }
         var t = Math.min(Math.max((duration * i) / (count - 1), 0.05), Math.max(duration - 0.05, 0));
         var dataUrl = await captureFrameDataUrl(v, t, IS_IOS_DEVICE, i === 0 ? 360 : 0); // (first one is bigger: it doubles as the player's cover picture)
         if (myGeneration !== filmstripGeneration) return; // a newer file took over mid-generation
         if (dataUrl) { frames.push({ time: t, dataUrl: dataUrl }); blankInARow = 0; }
-        else if (IS_IOS_DEVICE && ++blankInARow >= 2 && !frames.length) return; // this phone hands back black pictures: stop wasting time
+        else if (IS_IOS_DEVICE && ++blankInARow >= 2 && !frames.length) { rememberBlankPictures(); return; } // this phone hands back black pictures: stop wasting time, and never try again
       }
     }, 90000);
     if (myGeneration !== filmstripGeneration) return;
@@ -1916,6 +1958,7 @@
       coverPicker.style.display = "none";
       return;
     }
+    if (IS_IOS_DEVICE) coverPicker.style.display = "block";
 
     var filmEl = document.getElementById("mixFilmstrip");
     if (clips.length <= 1) {
@@ -1925,6 +1968,7 @@
         im.src = f.dataUrl; im.alt = "";
         filmEl.appendChild(im);
       });
+      try { renderTimeline(); } catch (e) {}
     } else {
       rebuildReelFilmstrip(); // several clips: one segment per clip instead (cover choices still come from clip 1)
     }
@@ -2013,6 +2057,7 @@
       // decoded". A tiny nudge forward makes the browser paint the clip's first frame, with no sound or playback.
       try { if (duration > 0.05 && trimPreviewVideo.paused && trimPreviewVideo.currentTime === 0) trimPreviewVideo.currentTime = 0.01; } catch (e) {}
       if (clips.length === 1) clips[0].dur = duration;
+      try { renderTimeline(); } catch (e) {}
       generateTrimFilmstrip(trimPreviewVideo, duration);
     };
   }
@@ -2063,9 +2108,16 @@
     for (var i = 0; i < list.length; i++) {
       var c = list[i];
       if (c.dur && c.thumb) continue;
+      var blankPhone = IS_IOS_DEVICE && phoneMakesBlankPictures();
+      if (blankPhone && (c.dur || list.length === 1)) continue;   // nothing to learn: the clip's length arrives with the player, and this phone's pictures are black anyway
+      if (IS_IOS_DEVICE && !blankPhone) {                          // iPhones: thumbnails only in a quiet moment, so the cursor is never competing
+        var quiet = await whenQuiet(60000);
+        if (!clips.length) return;
+        if (!quiet && c.dur) continue;
+      }
       await withTempVideo(c, async function (v) {
         c.dur = isFinite(v.duration) ? v.duration : 0;
-        var tries = [0.3, 0.8, 1.5, 0.1];
+        var tries = blankPhone ? [] : [0.3, 0.8, 1.5, 0.1];
         for (var ti = 0; ti < tries.length && !c.thumb; ti++) {
           c.thumb = await captureFrameDataUrl(v, Math.min(tries[ti], Math.max(0.05, c.dur - 0.1)), ti < tries.length - 1);
         }
@@ -2078,6 +2130,7 @@
   }
   async function rebuildReelFilmstrip() {
     if (clips.length <= 1) return;
+    if (IS_IOS_DEVICE) { renderTimeline(); return; }   // iPhones show the plain "Your video" bar
     var gen = ++reelFilmGen;
     var filmEl = document.getElementById("mixFilmstrip");
     var per = clips.length <= 3 ? 4 : clips.length <= 6 ? 3 : 2;
@@ -2091,6 +2144,7 @@
         srcs.forEach(function (u) { var im = document.createElement("img"); im.src = u; im.alt = ""; seg.appendChild(im); });
         filmEl.appendChild(seg);
       });
+      try { renderTimeline(); } catch (e) {}
     }
     paint();
     for (var i = 0; i < clips.length; i++) {
@@ -2792,6 +2846,7 @@
         } catch (blobErr) { /* keep streaming: nothing is lost */ }
         var AC = window.AudioContext || window.webkitAudioContext;
         if (!AC) return;
+        await whenQuiet(20000);   // decoding the song for its sound-wave picture is heavy: do it while nothing else is happening
         var ctx = new AC();
         var audio = await new Promise(function (res, rej) { var p = ctx.decodeAudioData(buf, res, rej); if (p && p.catch) p.catch(rej); });
         var ch = audio.getChannelData(0), rate = 25;
@@ -2840,9 +2895,13 @@
   }
 
   function renderTimeline() {
-    var show = hasMusicSelected() && vidDur() > 0;
+    var hasM = hasMusicSelected(), show = vidDur() > 0 && clips.length > 0;
     mixTimeline.style.display = show ? "block" : "none";
-    if (!show) { syncReadout.style.display = "none"; return; }
+    var mt = document.getElementById("mixMusicTrack");
+    if (mt) mt.style.display = hasM ? "" : "none";
+    var vtr = document.getElementById("mixVideoTrack");
+    if (vtr) vtr.classList.toggle("solid", IS_IOS_DEVICE || !document.getElementById("mixFilmstrip").children.length);
+    if (!show || !hasM) { syncReadout.style.display = "none"; if (show) updatePlayhead(); return; }
     var vd = vidDur(), s = musicStartPicker.getValue();
     mixClip.style.left = (mDelay / vd * 100) + "%";
     mixClip.style.width = (mLen / vd * 100) + "%";
@@ -3037,60 +3096,37 @@
     // if the time shown was being counted by the wall clock (the player's own time was stuck), remember where it stopped
     if (IS_IOS_DEVICE && clips.length <= 1 && pvClockS.estLast != null && !trimPreviewVideo.ended) pvClockS.hold = pvClockS.estLast;
   });
-  var pvCtl = document.getElementById("pvCtl"), pvPlayBtn = document.getElementById("pvPlay"), pvBar = document.getElementById("pvBar");
-  var pvFill = document.getElementById("pvFill"), pvBall = document.getElementById("pvBall");
+  var pvRow = document.getElementById("pvRow"), pvPlayBtn = document.getElementById("pvPlay");
   var pvCur = document.getElementById("pvCur"), pvDurEl = document.getElementById("pvDur");
-  var pvCtlOn = false;
+  var pvCtlOn = false;    // true on iPhones: the player's own buttons are removed there (this row is the only play/pause)
+  var pvRowOn = false;
   function pvFmt(sec) { sec = Math.max(0, Math.floor(sec || 0)); return Math.floor(sec / 60) + ":" + ("0" + (sec % 60)).slice(-2); }
   function updatePvCtl() {
-    if (!pvCtlOn) return;
+    if (!pvRowOn) return;
     var d = vidDur() || trimPreviewVideo.duration || 0, t = scrubDrag.hold ? scrubDrag.shown : reelNow();
     if (d) t = Math.min(t, d);
-    var f = d ? Math.max(0, Math.min(1, t / d)) : 0;
-    pvFill.style.width = (f * 100) + "%"; pvBall.style.left = (f * 100) + "%";
-    pvCur.textContent = pvFmt(t); pvDurEl.textContent = pvFmt(d);
+    var ct = pvFmt(t), dt = pvFmt(d);
+    if (pvCur.textContent !== ct) pvCur.textContent = ct;
+    if (pvDurEl.textContent !== dt) pvDurEl.textContent = dt;
     var label = trimPreviewVideo.paused ? "\u25B6" : "\u275A\u275A";
     if (pvPlayBtn.textContent !== label) { pvPlayBtn.textContent = label; pvPlayBtn.setAttribute("aria-label", trimPreviewVideo.paused ? "Play" : "Pause"); }
   }
-  if (IS_IOS_DEVICE && pvCtl) {
-    pvCtlOn = true;
-    trimPreviewVideo.removeAttribute("controls");
-    pvCtl.classList.add("on");
+  if (pvRow) {
+    pvRowOn = true;
+    pvRow.classList.add("on");
+    // "Keep original sound" moves onto this row (same element, same code), so the controls and that choice share one line.
+    var kor = document.getElementById("keepOriginalRow");
+    if (kor) pvRow.appendChild(kor);
     var pvToggle = function () {
       if (trimPreviewVideo.paused) trimPreviewVideo.play().catch(function () {}); else trimPreviewVideo.pause();
     };
     pvPlayBtn.addEventListener("click", pvToggle);
-    trimPreviewVideo.addEventListener("click", pvToggle);
+    if (IS_IOS_DEVICE) {
+      pvCtlOn = true;
+      trimPreviewVideo.removeAttribute("controls");
+      trimPreviewVideo.addEventListener("click", pvToggle);
+    }
     ["play", "pause", "seeked", "loadedmetadata", "durationchange", "ended", "timeupdate"].forEach(function (ev) { trimPreviewVideo.addEventListener(ev, updatePvCtl); });
-    var pvScrub = false, pvScrubWasPlaying = false, pvTarget = null;
-    var pvSeekTo = function (e) {
-      var r = pvBar.getBoundingClientRect(), d = vidDur() || trimPreviewVideo.duration || 0;
-      if (!d || !r.width) return;
-      pvTarget = Math.min(Math.max(0, (e.clientX - r.left) / r.width * d), d - 0.05);
-      scrubDragSeek(pvTarget);
-      updatePvCtl();
-    };
-    pvBar.addEventListener("pointerdown", function (e) {
-      e.preventDefault();
-      pvScrub = true;
-      scrubBegin();
-      pvScrubWasPlaying = !trimPreviewVideo.paused;
-      if (replayTimer) { clearTimeout(replayTimer); replayTimer = null; }
-      if (!trimPreviewVideo.paused) trimPreviewVideo.pause();
-      musicPreviewAudio.pause();
-      try { pvBar.setPointerCapture(e.pointerId); } catch (err) {}
-      pvSeekTo(e);
-    });
-    pvBar.addEventListener("pointermove", function (e) { if (pvScrub) pvSeekTo(e); });
-    var pvEnd = function () {
-      if (!pvScrub) return;
-      pvScrub = false;
-      var wasPlaying = pvScrubWasPlaying, tgt = pvTarget;
-      pvScrubWasPlaying = false;
-      scrubFinish(tgt).then(function () { updatePvCtl(); if (wasPlaying) resumeAfterJump(); });
-    };
-    pvBar.addEventListener("pointerup", pvEnd);
-    pvBar.addEventListener("pointercancel", pvEnd);
   }
 
   var musicStarting = false, musicLastFix = 0;
@@ -3322,8 +3358,8 @@
     hideBubbleSoon();
     scheduleReplay();
   }
-  ["move", "left", "right"].forEach(function (mode) {
-    var el = mode === "move" ? document.getElementById("mixClipBody") : document.getElementById(mode === "left" ? "mixHandleL" : "mixHandleR");
+  ["move", "left"].forEach(function (mode) {
+    var el = mode === "move" ? document.getElementById("mixClipBody") : document.getElementById("mixHandleL");
     el.addEventListener("pointerdown", function (e) { mixPointerDown(mode, e); });
     el.addEventListener("pointermove", mixPointerMove);
     el.addEventListener("pointerup", mixPointerUp);
@@ -3361,10 +3397,11 @@
   }
   // Tap or drag on the video strip to scrub to that moment.
   var scrubbing = false, scrubTarget = null;
+  var dotGrabDx = 0;   // where on the dot the finger took hold, so the dot never jumps under the thumb
   function scrubTo(e) {
     var r = mixTracks.getBoundingClientRect(), vd = vidDur();
-    if (!vd) return;
-    scrubTarget = Math.min(Math.max(0, (e.clientX - r.left) / r.width * vd), vd - 0.05);
+    if (!vd || !r.width) return;
+    scrubTarget = Math.min(Math.max(0, (e.clientX - dotGrabDx - r.left) / r.width * vd), vd - 0.05);
     scrubDragSeek(scrubTarget);
   }
   // Oct 27 (the artist, iPhone 17: "I drag the bar back to the start to test the song from there. Sometimes it goes all the way back,
@@ -3390,7 +3427,7 @@
       })();
     });
   }
-  var mixVideoTrack = document.getElementById("mixVideoTrack");
+  var mixVideoTrack = document.getElementById("mixDot");   // (Oct 2026: only the round dot scrubs -- the bars and the line never do)
   var scrubWasPlaying = false;
   // After a jump, carry on playing from exactly there (song locked to the picture) if it was playing before.
   function resumeAfterJump() {
@@ -3406,6 +3443,7 @@
     scrubbing = true;
     scrubBegin();
     scrubWasPlaying = !trimPreviewVideo.paused || !!(pvSwapper && pvSwapper.busy());
+    try { var _r = mixTracks.getBoundingClientRect(), _vd = vidDur(); var _cx = _r.left + (_vd ? Math.min(reelNow(), _vd) / _vd : 0) * _r.width; dotGrabDx = Math.max(-30, Math.min(30, e.clientX - _cx)); } catch (_e) { dotGrabDx = 0; }
     if (replayTimer) { clearTimeout(replayTimer); replayTimer = null; }
     if (!trimPreviewVideo.paused) trimPreviewVideo.pause();
     musicPreviewAudio.pause(); // the song never keeps going on its own while the picture is held
