@@ -982,6 +982,12 @@
   var clipSel = 0;           // clip highlighted in the tray
   var reelIdx = 0;           // clip currently loaded in the preview player
   var reelSwitching = false, reelPending = null, reelLoadTok = 0, reelFilmGen = 0;
+  // Oct 28 (the artist, iPhone 17: "the white bar looks like it's thinking / loading; sometimes it locks, sometimes it doesn't, and after
+  // a while it works"). Dragging used to fire a new "jump here" for every pixel the finger moved, and the bar was drawn from where the
+  // picture happened to be, not from the finger. Now: the bar sits exactly under the finger while it is held (hold/shown), the picture
+  // is asked for ONE jump at a time (want/busy; the phone's quick keyframe jump while dragging), the exact jump happens when the finger
+  // lifts, and the little previews being made in the background wait while the finger is on the bar.
+  var scrubDrag = { on: false, hold: false, shown: 0, want: null, busy: false };
   var autoAdvancing = false; // true only while the preview rolls on by itself from one clip into the next
   var pvSwapper = null; // clean cuts between clips (see createClipSwapper in js/supabaseClient.js)
   var memberDisplayName = "";
@@ -1891,7 +1897,7 @@
       var waited = 0;
       for (var i = 0; i < count; i++) {
         if (myGeneration !== filmstripGeneration) return;
-        while (IS_IOS_DEVICE && !trimPreviewVideo.paused && waited < 30000) { await new Promise(function (r) { setTimeout(r, 400); }); waited += 400; if (myGeneration !== filmstripGeneration) return; }
+        while (IS_IOS_DEVICE && (!trimPreviewVideo.paused || scrubDrag.hold || trimPreviewVideo.seeking) && waited < 30000) { await new Promise(function (r) { setTimeout(r, 400); }); waited += 400; if (myGeneration !== filmstripGeneration) return; }
         var t = Math.min(Math.max((duration * i) / (count - 1), 0.05), Math.max(duration - 0.05, 0));
         var dataUrl = await captureFrameDataUrl(v, t, IS_IOS_DEVICE, i === 0 ? 360 : 0); // (first one is bigger: it doubles as the player's cover picture)
         if (myGeneration !== filmstripGeneration) return; // a newer file took over mid-generation
@@ -2884,7 +2890,7 @@
   function updatePlayhead() {
     var vd = vidDur();
     if (reelSwitching) return;
-    mixPlayhead.style.left = (vd ? (Math.min(reelNow(), vd) / vd * 100) : 0) + "%";
+    mixPlayhead.style.left = (vd ? (Math.min(scrubDrag.hold ? scrubDrag.shown : reelNow(), vd) / vd * 100) : 0) + "%";
     if (typeof updatePvCtl === "function") updatePvCtl();
   }
 
@@ -3038,7 +3044,7 @@
   function pvFmt(sec) { sec = Math.max(0, Math.floor(sec || 0)); return Math.floor(sec / 60) + ":" + ("0" + (sec % 60)).slice(-2); }
   function updatePvCtl() {
     if (!pvCtlOn) return;
-    var d = vidDur() || trimPreviewVideo.duration || 0, t = reelNow();
+    var d = vidDur() || trimPreviewVideo.duration || 0, t = scrubDrag.hold ? scrubDrag.shown : reelNow();
     if (d) t = Math.min(t, d);
     var f = d ? Math.max(0, Math.min(1, t / d)) : 0;
     pvFill.style.width = (f * 100) + "%"; pvBall.style.left = (f * 100) + "%";
@@ -3061,12 +3067,13 @@
       var r = pvBar.getBoundingClientRect(), d = vidDur() || trimPreviewVideo.duration || 0;
       if (!d || !r.width) return;
       pvTarget = Math.min(Math.max(0, (e.clientX - r.left) / r.width * d), d - 0.05);
-      reelSeek(pvTarget);
+      scrubDragSeek(pvTarget);
       updatePvCtl();
     };
     pvBar.addEventListener("pointerdown", function (e) {
       e.preventDefault();
       pvScrub = true;
+      scrubBegin();
       pvScrubWasPlaying = !trimPreviewVideo.paused;
       if (replayTimer) { clearTimeout(replayTimer); replayTimer = null; }
       if (!trimPreviewVideo.paused) trimPreviewVideo.pause();
@@ -3080,7 +3087,7 @@
       pvScrub = false;
       var wasPlaying = pvScrubWasPlaying, tgt = pvTarget;
       pvScrubWasPlaying = false;
-      confirmScrubLanded(tgt).then(function () { updatePvCtl(); if (wasPlaying) resumeAfterJump(); });
+      scrubFinish(tgt).then(function () { updatePvCtl(); if (wasPlaying) resumeAfterJump(); });
     };
     pvBar.addEventListener("pointerup", pvEnd);
     pvBar.addEventListener("pointercancel", pvEnd);
@@ -3322,18 +3329,48 @@
     el.addEventListener("pointerup", mixPointerUp);
     el.addEventListener("pointercancel", mixPointerUp);
   });
+  function scrubBegin() { scrubDrag.on = true; scrubDrag.hold = true; scrubDrag.want = null; scrubDrag.busy = false; }
+  function pumpScrubSeek() {
+    var v = trimPreviewVideo;
+    if (scrubDrag.busy || scrubDrag.want == null || !scrubDrag.on) return;
+    var t = scrubDrag.want, tm = null;
+    scrubDrag.want = null; scrubDrag.busy = true;
+    var done = function () {
+      v.removeEventListener("seeked", done); clearTimeout(tm);
+      scrubDrag.busy = false;
+      if (scrubDrag.want != null && scrubDrag.on) pumpScrubSeek();
+    };
+    tm = setTimeout(done, 450); // never wait forever on a phone that skips the "seeked" signal
+    v.addEventListener("seeked", done);
+    try { if (typeof v.fastSeek === "function") v.fastSeek(t); else v.currentTime = t; } catch (e) { try { v.currentTime = t; } catch (e2) {} }
+  }
+  // While the finger is down: the bar follows the finger at once; the picture is asked for one jump at a time.
+  function scrubDragSeek(t) {
+    scrubDrag.shown = t;
+    var vd = vidDur();
+    if (vd) { mixPlayhead.style.left = (Math.min(t, vd) / vd * 100) + "%"; }
+    if (clips.length > 1) { reelSeek(t); return; }
+    scrubDrag.want = t;
+    pumpScrubSeek();
+  }
+  // Finger lifted: make the one exact jump, then wait until the picture has really arrived (confirmScrubLanded).
+  function scrubFinish(target) {
+    scrubDrag.on = false; scrubDrag.want = null;
+    if (clips.length <= 1 && target != null) { try { trimPreviewVideo.currentTime = target; } catch (e) {} }
+    return confirmScrubLanded(target).then(function () { scrubDrag.hold = false; }, function () { scrubDrag.hold = false; });
+  }
   // Tap or drag on the video strip to scrub to that moment.
   var scrubbing = false, scrubTarget = null;
   function scrubTo(e) {
     var r = mixTracks.getBoundingClientRect(), vd = vidDur();
     if (!vd) return;
     scrubTarget = Math.min(Math.max(0, (e.clientX - r.left) / r.width * vd), vd - 0.05);
-    reelSeek(scrubTarget);
+    scrubDragSeek(scrubTarget);
   }
   // Oct 27 (the artist, iPhone 17: "I drag the bar back to the start to test the song from there. Sometimes it goes all the way back,
   // sometimes it carries on from where it was"): on an iPhone the picture can quietly ignore a jump (or finish it a moment late, or
   // keep a stale position), and play was starting straight away, before the jump had landed. After the finger lifts, wait until the
-  // picture has really arrived at the spot that was chosen (jump again, up to 3 times, if it has not), clear the stale iPhone clock,
+  // picture has really arrived at the spot that was chosen (jump again, up to 5 times, if it has not), clear the stale iPhone clock,
   // and only then carry on playing. One clip only: several clips switch clips and have their own safeguards.
   function confirmScrubLanded(target) {
     return new Promise(function (resolve) {
@@ -3342,7 +3379,7 @@
       (function check() {
         var ct = v.currentTime || 0;
         if (v.seeking && waited < 1000) { waited += 60; setTimeout(check, 60); return; }
-        if (Math.abs(ct - target) > 0.35 && jumps < 3) {
+        if (Math.abs(ct - target) > 0.35 && jumps < 5) {
           jumps++; waited = 0;
           try { v.currentTime = target; } catch (e) {}
           setTimeout(check, 200);
@@ -3367,6 +3404,7 @@
     if (!vidDur()) return;
     e.preventDefault();
     scrubbing = true;
+    scrubBegin();
     scrubWasPlaying = !trimPreviewVideo.paused || !!(pvSwapper && pvSwapper.busy());
     if (replayTimer) { clearTimeout(replayTimer); replayTimer = null; }
     if (!trimPreviewVideo.paused) trimPreviewVideo.pause();
@@ -3380,7 +3418,7 @@
     scrubbing = false;
     var wasPlaying = scrubWasPlaying, tgt = scrubTarget;
     scrubWasPlaying = false;
-    confirmScrubLanded(tgt).then(function () { if (wasPlaying) resumeAfterJump(); });
+    scrubFinish(tgt).then(function () { if (wasPlaying) resumeAfterJump(); });
   }
   mixVideoTrack.addEventListener("pointerup", endScrub);
   mixVideoTrack.addEventListener("pointercancel", endScrub);
