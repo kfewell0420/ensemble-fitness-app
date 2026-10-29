@@ -258,7 +258,10 @@
       "#rpAppNav .efit-nav-utility { display: flex; align-items: center; gap: 6px; margin-left: 8px; flex: none; }" +
       // computer: the bell sits right after the member's name; its list drops down underneath it
       ".rp-dash-bell-slot .efit-feedbell svg { width: 21px; height: 21px; }" +
-      ".rp-dash-bell-slot .efit-notif-panel { position: absolute; top: calc(100% + 8px); left: 0; right: auto; width: min(400px, 92vw); max-height: 70vh; overflow-y: auto; z-index: 60; }";
+      ".rp-dash-bell-slot .efit-notif-panel { position: absolute; top: calc(100% + 8px); left: 0; right: auto; width: min(400px, 92vw); max-height: 70vh; overflow-y: auto; z-index: 60; }" +
+      // phones only (Oct 29, Ken): the Home button is one size on every phone page -- a 40px circle with a 23px house (was 32px / 18px)
+      "@media (max-width: 899px) { #efitHomeLink.efit-home-link { display: inline-flex !important; align-items: center; justify-content: center; width: 40px !important; height: 40px !important; min-width: 40px; padding: 0 !important; border-radius: 50% !important; flex: none; }" +
+      " #efitHomeLink.efit-home-link svg { width: 23px !important; height: 23px !important; } }";
     document.head.appendChild(st);
   }
 
@@ -476,6 +479,8 @@
     IS_HOME = !!document.getElementById("rpDashBellSlot");
     injectStyles();
     buildHomeLink();
+    // Marketplace (gear.html, the Amazon picks): Home button only, no bell (Ken, Oct 29)
+    if (/(^|\/)gear(\.html)?(\?|#|$)/.test(window.location.pathname)) return;
     var wrap = buildBell();
     if (!wrap) return;
 
