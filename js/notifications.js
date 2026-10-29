@@ -235,6 +235,11 @@
       ".efit-notif-av { flex: none; width: 38px; height: 38px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center;" +
       " font-weight: 800; font-size: 15px; color: #fff; cursor: pointer; }" +
       ".efit-notif-av img { width: 100%; height: 100%; object-fit: cover; display: block; }" +
+      ".efit-notif-close { display: none; }" +
+      ".efit-notif-sheet .efit-notif-panel-header { display: flex !important; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 3; background: inherit; }" +
+      ".efit-notif-sheet .efit-notif-panel-header > span:first-child { flex: 1 1 auto; }" +
+      ".efit-notif-sheet .efit-notif-close { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 46px; height: 46px; margin: -8px -8px -8px auto; padding: 0;" +
+      " border: 0; border-radius: 50%; background: rgba(255,255,255,0.10); color: #fff; font-size: 24px; font-weight: 800; line-height: 1; cursor: pointer; -webkit-tap-highlight-color: transparent; }" +
       ".efit-notif-name { cursor: pointer; text-decoration: underline; text-decoration-color: rgba(255,255,255,0.35); text-underline-offset: 2px; }" +
       "@media (max-width: 720px) { .efit-notif-sheet .efit-notif-item { padding-top: 12px; padding-bottom: 12px; } }" +
       // ---- Home page bell (Oct 29) ----
@@ -254,17 +259,21 @@
     document.head.appendChild(st);
   }
 
+  // Oct 29 (Ken): on a phone the list is a full-width sheet with no way to put it away, so it gets a big X at the far right of the
+  // "Notifications" line. (Hidden on a computer, where the list is a small dropdown that closes when you click elsewhere.)
+  var CLOSE_BTN = '<button type="button" class="efit-notif-close" id="efitNotifClose" aria-label="Close notifications">\u2715</button>';
+
   function renderList(panel, rows) {
     if (!rows.length) {
       panel.innerHTML =
-        '<div class="efit-notif-panel-header">Notifications</div>' +
+        '<div class="efit-notif-panel-header"><span>Notifications</span>' + CLOSE_BTN + '</div>' +
         '<div class="empty-state">No notifications yet — when someone reacts, comments, follows, or messages you, it’ll show up here.</div>';
       return;
     }
     var hasUnread = rows.some(function (r) { return !r.read_at; });
     var html = '<div class="efit-notif-panel-header"><span>Notifications</span>';
     if (hasUnread) html += '<button type="button" class="efit-notif-mark-all" id="efitNotifMarkAll">Mark all read</button>';
-    html += "</div>";
+    html += CLOSE_BTN + "</div>";
     rows.forEach(function (row) {
       html +=
         '<a href="' + destinationFor(row) + '" class="efit-notif-item' + (row.read_at ? "" : " unread") + '" data-id="' + row.id + '">' +
@@ -281,13 +290,21 @@
     // actor_id) — a plain "profiles(display_name)" embed is ambiguous and
     // errors out (the exact bug hit earlier with media_reactions/comments),
     // so the actor's name is fetched via the explicitly-named FK hint.
-    var { data, error } = await window.sb
-      .from("notifications")
-      .select("id, type, media_id, reaction_type, preview, actor_id, created_at, read_at, profiles!notifications_actor_id_fkey(display_name)")
-      .eq("recipient_id", userId)
-      .order("created_at", { ascending: false })
-      .limit(20);
-    if (error || !data) return [];
+    var SEL = "id, type, media_id, reaction_type, preview, actor_id, created_at, read_at, profiles!notifications_actor_id_fkey(display_name)";
+    // Oct 29 (Ken: "I looked at all 8 and it still says 8"): the list used to be only the newest 20, so unread ones older than that were
+    // counted by the bell but never shown or cleared. Now: the newest 30, plus every unread one (up to 60), merged.
+    var results = await Promise.all([
+      window.sb.from("notifications").select(SEL).eq("recipient_id", userId).order("created_at", { ascending: false }).limit(30),
+      window.sb.from("notifications").select(SEL).eq("recipient_id", userId).is("read_at", null).order("created_at", { ascending: false }).limit(60)
+    ]);
+    var data = null, seenIds = {};
+    results.forEach(function (res) {
+      if (!res || res.error || !res.data) return;
+      data = data || [];
+      res.data.forEach(function (r) { if (!seenIds[r.id]) { seenIds[r.id] = true; data.push(r); } });
+    });
+    if (!data) return [];
+    data.sort(function (a, b) { return new Date(b.created_at) - new Date(a.created_at); });
     return data.map(function (row) {
       return {
         id: row.id,
@@ -320,16 +337,32 @@
     }
   }
 
-  async function markAllRead(userId, ids) {
-    if (!ids.length) return;
-    await window.sb.from("notifications").update({ read_at: new Date().toISOString() }).in("id", ids);
-    refreshBadge(userId);
+  // Marks every unread notification of this member as read in the database -- the same rows the website, the phone app and the
+  // Profile page all read, so seeing them anywhere clears the number everywhere (other screens pick it up within ~30s or when
+  // they come back to the front). Not just the rows on screen.
+  var markInFlight = false;
+  async function markAllRead(userId) {
+    if (markInFlight) return;
+    markInFlight = true;
+    try {
+      var res = await window.sb.from("notifications").update({ read_at: new Date().toISOString() })
+        .eq("recipient_id", userId).is("read_at", null).select("id");
+      if (res && res.error && window.console) console.warn("notifications: could not mark as read", res.error);
+    } catch (e) { if (window.console) console.warn("notifications: mark-read failed", e); }
+    markInFlight = false;
+    await refreshBadge(userId);
+  }
+  var pendingMark = false;
+  function flushMark() {
+    if (autoMarkReadTimeoutId) { clearTimeout(autoMarkReadTimeoutId); autoMarkReadTimeoutId = null; }
+    if (pendingMark && currentUserId) { pendingMark = false; markAllRead(currentUserId); }
   }
 
   function closePanel() {
     var panel = document.getElementById("efitNotifPanel");
     var bell = document.getElementById("efitNotifBell");
     if (!panel) return;
+    flushMark(); // closing = "I've seen them": don't lose the mark-as-read if it was still waiting its beat
     panel.hidden = true;
     panel.classList.remove("efit-notif-sheet");
     panel.style.cssText = "";
@@ -372,8 +405,8 @@
           clearTimeout(autoMarkReadTimeoutId);
           autoMarkReadTimeoutId = null;
         }
-        var unreadIds = rows.filter(function (r) { return !r.read_at; }).map(function (r) { return r.id; });
-        markAllRead(userId, unreadIds);
+        pendingMark = false;
+        markAllRead(userId);
         panel.querySelectorAll(".efit-notif-item.unread").forEach(function (el) { el.classList.remove("unread"); });
         markAllBtn.remove();
       });
@@ -382,11 +415,14 @@
     // Opening the panel is "I saw these" — mark whatever was unread at open
     // time as read a beat later, so the highlight doesn't vanish out from
     // under someone still reading it.
-    var unreadIds = rows.filter(function (r) { return !r.read_at; }).map(function (r) { return r.id; });
-    if (unreadIds.length) {
+    var badgeEl = document.getElementById("efitNotifBadge");
+    var anyUnread = rows.some(function (r) { return !r.read_at; }) || (badgeEl && !badgeEl.hidden);
+    if (anyUnread) {
+      pendingMark = true;
       autoMarkReadTimeoutId = setTimeout(function () {
         autoMarkReadTimeoutId = null;
-        markAllRead(userId, unreadIds);
+        pendingMark = false;
+        markAllRead(userId);
       }, 1500);
     }
   }
@@ -403,6 +439,11 @@
 
     // Tap a person's photo or name inside a notification -> their profile and grid (not the notification's own page).
     var panelEl = document.getElementById("efitNotifPanel");
+    if (panelEl) panelEl.addEventListener("click", function (e) {
+      if (e.target.closest && e.target.closest("#efitNotifClose")) { e.preventDefault(); e.stopPropagation(); closePanel(); return; }
+    });
+    window.addEventListener("pagehide", flushMark);
+    document.addEventListener("visibilitychange", function () { if (document.hidden) flushMark(); });
     if (panelEl) panelEl.addEventListener("click", function (e) {
       var t = e.target.closest ? e.target.closest("[data-go]") : null;
       if (!t) return;
