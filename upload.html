@@ -449,12 +449,13 @@
   /* The round grab dot sits at the BOTTOM of the cursor line, under both bars. It is the only part of the cursor that can be
      grabbed (the line itself ignores touches, so grabbing the song bar can never move the cursor), and with the cursor at the far
      left a thumb on it is nowhere near Pause/Play. The dot's touch area is bigger than what is drawn. */
-  .mix-dot { position: absolute; left: 50%; bottom: 0; width: 56px; height: 52px; margin-left: -28px; pointer-events: auto; touch-action: none; cursor: ew-resize; -webkit-tap-highlight-color: transparent; }
-  .mix-dot::before { content: ""; position: absolute; left: 50%; bottom: 4px; width: 26px; height: 26px; margin-left: -13px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 3px rgba(11,15,26,0.9), 0 0 0 4.5px rgba(255,255,255,0.35), 0 2px 8px rgba(0,0,0,0.6); }
-  .mix-tracks { padding-bottom: 40px; margin: 0 14px; }
+  .mix-dot { position: absolute; left: 50%; bottom: 0; width: 48px; height: 44px; margin-left: -24px; pointer-events: auto; touch-action: none; cursor: ew-resize; -webkit-tap-highlight-color: transparent; }
+  .mix-dot::before { content: ""; position: absolute; left: 50%; bottom: 3px; width: 18px; height: 18px; margin-left: -9px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 2.5px rgba(11,15,26,0.9), 0 0 0 4px rgba(255,255,255,0.35), 0 2px 6px rgba(0,0,0,0.6); }
+  .mix-tracks { padding-bottom: 30px; margin: 0; }
+  .mix-track.mix-video { height: 24px !important; margin-bottom: 5px; }
   .mix-video.solid { background: linear-gradient(90deg, #4c3fa5, #7a68d8); cursor: default; }
   .mix-video.solid .mix-filmstrip { display: none; }
-  .mix-video-label { display: none; position: absolute; left: 10px; top: 0; bottom: 0; align-items: center; font-size: 13px; font-weight: 700; color: #fff; pointer-events: none; text-shadow: 0 1px 3px rgba(0,0,0,0.5); }
+  .mix-video-label { display: none; position: absolute; left: 10px; top: 0; bottom: 0; align-items: center; font-size: 11.5px; font-weight: 700; color: #fff; pointer-events: none; text-shadow: 0 1px 3px rgba(0,0,0,0.5); }
   .mix-video.solid .mix-video-label { display: flex; }
   @media (max-width: 560px) {
     #trimPreviewVideo { aspect-ratio: 4 / 3; margin-bottom: 8px; }
@@ -1908,8 +1909,22 @@
       })();
     });
   }
-  function phoneMakesBlankPictures() { try { return localStorage.getItem("efBlankFrames") === "1"; } catch (e) { return false; } }
-  function rememberBlankPictures() { try { localStorage.setItem("efBlankFrames", "1"); } catch (e) {} }
+  // (Oct 28, Ken: a lighter rule for the little pictures themselves -- they were stuck waiting for a long quiet spell and never
+  // appeared. They only need the player to be idle: not playing, not being dragged, not seeking.)
+  function pageIsBusy() { return !trimPreviewVideo.paused || trimPreviewVideo.seeking || scrubDrag.hold || scrubDrag.on || !!mixDrag || !!(pvSwapper && pvSwapper.busy()); }
+  function whenIdle(maxMs) {
+    return new Promise(function (resolve) {
+      var waited = 0;
+      (function look() {
+        if (!pageIsBusy()) { resolve(true); return; }
+        if (waited >= maxMs) { resolve(false); return; }
+        waited += 300; setTimeout(look, 300);
+      })();
+    });
+  }
+  // Only a phone that really hands back black pictures skips them -- remembered for this visit only, never forever.
+  function phoneMakesBlankPictures() { try { return window.sessionStorage.getItem("efBlankFrames") === "1"; } catch (e) { return false; } }
+  function rememberBlankPictures() { try { window.sessionStorage.setItem("efBlankFrames", "1"); } catch (e) {} }
 
   async function generateTrimFilmstrip(videoEl, duration) {
     var myGeneration = ++filmstripGeneration;
@@ -1919,7 +1934,7 @@
       // Skip them for good on a phone known to give black pictures; otherwise make them only once things are quiet.
       coverPicker.style.display = "none"; coverPickerRow.innerHTML = ""; selectedCoverTime = null;
       if (phoneMakesBlankPictures()) return;
-      var okQ = await whenQuiet(90000);
+      var okQ = await whenIdle(90000);
       if (!okQ || myGeneration !== filmstripGeneration) return;
     } else {
       coverPickerRow.innerHTML = '<span class="cover-picker-status">Generating previews…</span>';
@@ -1939,7 +1954,7 @@
       var waited = 0;
       for (var i = 0; i < count; i++) {
         if (myGeneration !== filmstripGeneration) return;
-        while (IS_IOS_DEVICE && !pageIsQuiet() && waited < 30000) { await new Promise(function (r) { setTimeout(r, 400); }); waited += 400; if (myGeneration !== filmstripGeneration) return; }
+        while (IS_IOS_DEVICE && pageIsBusy() && waited < 30000) { await new Promise(function (r) { setTimeout(r, 400); }); waited += 400; if (myGeneration !== filmstripGeneration) return; }
         var t = Math.min(Math.max((duration * i) / (count - 1), 0.05), Math.max(duration - 0.05, 0));
         var dataUrl = await captureFrameDataUrl(v, t, IS_IOS_DEVICE, i === 0 ? 360 : 0); // (first one is bigger: it doubles as the player's cover picture)
         if (myGeneration !== filmstripGeneration) return; // a newer file took over mid-generation
@@ -2111,7 +2126,7 @@
       var blankPhone = IS_IOS_DEVICE && phoneMakesBlankPictures();
       if (blankPhone && (c.dur || list.length === 1)) continue;   // nothing to learn: the clip's length arrives with the player, and this phone's pictures are black anyway
       if (IS_IOS_DEVICE && !blankPhone) {                          // iPhones: thumbnails only in a quiet moment, so the cursor is never competing
-        var quiet = await whenQuiet(60000);
+        var quiet = await whenIdle(60000);
         if (!clips.length) return;
         if (!quiet && c.dur) continue;
       }
@@ -2130,7 +2145,6 @@
   }
   async function rebuildReelFilmstrip() {
     if (clips.length <= 1) return;
-    if (IS_IOS_DEVICE) { renderTimeline(); return; }   // iPhones show the plain "Your video" bar
     var gen = ++reelFilmGen;
     var filmEl = document.getElementById("mixFilmstrip");
     var per = clips.length <= 3 ? 4 : clips.length <= 6 ? 3 : 2;
@@ -2150,6 +2164,7 @@
     for (var i = 0; i < clips.length; i++) {
       var c = clips[i];
       if (c.frames || !c.dur) continue;
+      if (IS_IOS_DEVICE) { if (phoneMakesBlankPictures()) continue; await whenIdle(60000); if (gen !== reelFilmGen) return; }
       var got = await withTempVideo(c, async function (v) {
         var out = [];
         for (var k = 0; k < per; k++) {
@@ -2189,6 +2204,14 @@
       b.setAttribute("aria-label", "Clip " + (i + 1));
       if (c.thumb) b.style.backgroundImage = "url(" + c.thumb + ")";
       b.innerHTML = '<span class="clip-n">' + (i + 1) + '</span>' + (c.dur ? '<span class="clip-d">' + clipLabel(c) + '</span>' : '') + '<span class="clip-x" data-act="remove" aria-label="Remove clip ' + (i + 1) + '">✕</span>';
+      if (!c.thumb && IS_IOS_DEVICE && c.url) {
+        // a phone that hands back black pictures from the canvas still paints a video's first frame natively: show that
+        var fv = document.createElement("video");
+        fv.muted = true; fv.setAttribute("muted", ""); fv.playsInline = true; fv.setAttribute("playsinline", ""); fv.preload = "metadata"; fv.tabIndex = -1;
+        fv.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;object-fit:cover;pointer-events:none;border-radius:inherit;";
+        fv.src = c.url + (c.url.indexOf("#") < 0 ? "#t=0.1" : "");
+        b.insertBefore(fv, b.firstChild);
+      }
       row.appendChild(b);
     });
     if (clips.length < MAX_CLIPS) {
@@ -2900,7 +2923,7 @@
     var mt = document.getElementById("mixMusicTrack");
     if (mt) mt.style.display = hasM ? "" : "none";
     var vtr = document.getElementById("mixVideoTrack");
-    if (vtr) vtr.classList.toggle("solid", IS_IOS_DEVICE || !document.getElementById("mixFilmstrip").children.length);
+    if (vtr) vtr.classList.toggle("solid", !document.getElementById("mixFilmstrip").children.length);
     if (!show || !hasM) { syncReadout.style.display = "none"; if (show) updatePlayhead(); return; }
     var vd = vidDur(), s = musicStartPicker.getValue();
     mixClip.style.left = (mDelay / vd * 100) + "%";
