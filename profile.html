@@ -73,6 +73,16 @@
   .conv-send { font: inherit; font-weight: 700; font-size: 14px; border: 0; border-radius: 999px; padding: 10px 17px; background: #db1f52; color: #fff; cursor: pointer; }
   .conv-send:disabled { opacity: .6; }
   body.conv-open { overflow: hidden; }
+  /* Oct 29 (Ken): a full "Messages" page -- only the people who have written to you. A conversation opened from a notification
+     sits on top of it, so the conversation's back arrow lands here (not on "my profile"). */
+  .msg-page { position: fixed; left: 0; right: 0; top: 0; bottom: 0; z-index: 2147482900; background: #0b0f1a; color: #fff; display: flex; flex-direction: column; }
+  .msg-page[hidden] { display: none; }
+  .msg-hd { display: flex; align-items: center; gap: 10px; padding: calc(10px + env(safe-area-inset-top, 0px)) 12px 12px; border-bottom: 1px solid rgba(255,255,255,0.1); flex: none; }
+  .msg-hd .conv-back { width: 42px; height: 42px; padding: 0 0 4px; border-radius: 50%; background: rgba(255,255,255,0.10); font-size: 30px; display: flex; align-items: center; justify-content: center; }
+  .msg-ttl { font-size: 24px; font-weight: 800; }
+  .msg-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 6px 16px calc(24px + env(safe-area-inset-bottom, 0px)); width: 100%; max-width: 640px; margin: 0 auto; box-sizing: border-box; }
+  .msg-page .conv-row { padding: 14px 2px; }
+  body.msg-open { overflow: hidden; }
 </style>
 </head>
 <body>
@@ -639,6 +649,10 @@
      have felt slower since that change went in, not the CDN itself. Loading
      directly from the CDN, plainly, is both simpler and faster than the
      broken fallback dance was. -->
+<div class="msg-page" id="msgPage" hidden role="dialog" aria-label="Messages">
+  <div class="msg-hd"><button type="button" class="conv-back" id="msgPageBack" aria-label="Back">&#8249;</button><span class="msg-ttl">Messages</span></div>
+  <div class="msg-body"><div id="msgPageList"><div class="empty-state">Loading&hellip;</div></div></div>
+</div>
 <div class="conv-thread" id="convThread" hidden role="dialog" aria-label="Conversation">
   <div class="conv-hd">
     <button type="button" class="conv-back" id="convBack" aria-label="Back to messages">‹</button>
@@ -886,7 +900,11 @@
     // A message notification opens that conversation straight away (profile.html?chat=<member>#messages).
     try {
       var chatWith = new URLSearchParams(window.location.search).get("chat");
-      if (chatWith) { convDeepLink = true; openConv(chatWith); }
+      var hashMsgs = (window.location.hash || "") === "#messages";
+      if (chatWith || hashMsgs) {
+        showMsgPage();
+        if (chatWith) { try { window.history.replaceState(null, "", window.location.pathname + "#messages"); } catch (e) {} openConv(chatWith); }
+      }
     } catch (e) {}
   }
 
@@ -1164,7 +1182,7 @@
       }));
     } catch (e) { /* the colored initial stays */ }
   }
-  ["inboxList", "commentsList"].forEach(function (id) {
+  ["inboxList", "commentsList", "msgPageList"].forEach(function (id) {
     var el = document.getElementById(id);
     if (!el) return;
     el.addEventListener("click", function (e) {
@@ -1233,7 +1251,11 @@
   }
 
   function renderConvList() {
-    var list = document.getElementById("inboxList");
+    renderConvListInto(document.getElementById("inboxList"));
+    var mp = document.getElementById("msgPageList");
+    if (mp) renderConvListInto(mp);
+  }
+  function renderConvListInto(list) {
     var me = currentUser.id;
     var by = {}, order = [];
     convRows.forEach(function (m) {           // newest first, so the first seen per person is their latest
@@ -1277,6 +1299,17 @@
   document.getElementById("inboxList").addEventListener("click", function (e) {
     var av = e.target.closest ? e.target.closest(".act-av[data-go]") : null;
     if (av) return; // (handled by the profile-circle rule: opens their grid)
+    var row = e.target.closest ? e.target.closest("[data-conv]") : null;
+    if (row) openConv(row.getAttribute("data-conv"));
+  });
+  document.getElementById("msgPageList").addEventListener("click", function (e) {
+    var av = e.target.closest ? e.target.closest(".act-av[data-go]") : null;
+    if (av) return;
+    var row = e.target.closest ? e.target.closest("[data-conv]") : null;
+    if (row) openConv(row.getAttribute("data-conv"));
+  });
+  document.getElementById("msgPageList").addEventListener("keydown", function (e) {
+    if (e.key !== "Enter") return;
     var row = e.target.closest ? e.target.closest("[data-conv]") : null;
     if (row) openConv(row.getAttribute("data-conv"));
   });
@@ -1354,21 +1387,28 @@
     if (convPoll) clearInterval(convPoll);
     convPoll = setInterval(function () { if (convOpen && !document.hidden) loadInbox(); }, 15000);
   }
-  // Oct 29 (Ken): a conversation opened straight from a notification sits on top of the profile page, so backing out of it used to
-  // drop you at the TOP of "my profile" (photo, followers, Edit profile) with the messages far below. Now the back arrow lands
-  // on the Messages list itself -- everyone who has written to you -- so you can pick the next person to answer.
-  var convDeepLink = false;
-  function showMessagesList() {
-    try {
-      var pill = document.querySelector('#pfPills .pf-pill[data-pf="messages"]');
-      if (pill && !pill.classList.contains("active")) pill.click();
-      var bar = document.getElementById("pfPills") || document.getElementById("inboxList");
-      if (bar) {
-        var top = bar.getBoundingClientRect().top + (window.pageYOffset || 0) - 56;   // (a little room for the page header)
-        window.scrollTo(0, Math.max(0, top));
-      }
-    } catch (e) {}
+  // The Messages page (Oct 29): shown when the page is opened from a notification (?chat=<member>) or as #messages.
+  function showMsgPage() {
+    var mp = document.getElementById("msgPage");
+    if (!mp) return;
+    mp.hidden = false;
+    document.body.classList.add("msg-open");
+    try { renderConvList(); } catch (e) {}
   }
+  function hideMsgPage() {
+    var mp = document.getElementById("msgPage");
+    if (mp) mp.hidden = true;
+    document.body.classList.remove("msg-open");
+  }
+  // ‹ on the Messages page: back to the page the member came from (Home, usually). If the phone will not step back, go Home.
+  function leaveMsgPage() {
+    var left = false;
+    window.addEventListener("pagehide", function () { left = true; }, { once: true });
+    try { window.history.back(); } catch (e) {}
+    setTimeout(function () { if (!left) { hideMsgPage(); window.location.href = "feed.html"; } }, 600);
+  }
+  document.getElementById("msgPageBack").addEventListener("click", leaveMsgPage);
+  setInterval(function () { var mp = document.getElementById("msgPage"); if (mp && !mp.hidden && !document.hidden) loadInbox(); }, 15000);
   function closeConvUI() {
     var th = document.getElementById("convThread");
     if (th) th.hidden = true;
@@ -1376,7 +1416,6 @@
     convOpen = null;
     if (convPoll) { clearInterval(convPoll); convPoll = null; }
     renderConvList();
-    if (convDeepLink) { convDeepLink = false; setTimeout(showMessagesList, 60); }
   }
   function closeConv() {
     if (convPushed) { convPushed = false; try { window.history.back(); return; } catch (e) {} }
