@@ -337,8 +337,11 @@
     // "Keep my video's own sound" flags — own best-effort query so this page keeps
     // working before sql/keep-original-audio.sql has been run.
     var keepOriginalById = {}, musicStartById = {}, musicWinById = {}, clipDursById = {}, clipsById = {};
+    var vidIds = items.filter(function (it) { return it.kind === "video"; }).map(function (it) { return it.id; });
+    // (Oct 28, speed pass: these two lookups used to run one after the other; they are independent, so they now run together.)
+    await Promise.all([
+      (async function () {
     try {
-      var vidIds = items.filter(function (it) { return it.kind === "video"; }).map(function (it) { return it.id; });
       var keepRes = await window.sb.from("media").select("id, keep_original_audio, music_start_seconds, music_delay_seconds, music_length_seconds, clip_durations").in("id", vidIds);
       if (keepRes && keepRes.error) keepRes = await window.sb.from("media").select("id, keep_original_audio, music_start_seconds, music_delay_seconds, music_length_seconds").in("id", vidIds);
       if (keepRes && keepRes.error) keepRes = await window.sb.from("media").select("id, keep_original_audio, music_start_seconds").in("id", vidIds);
@@ -353,7 +356,8 @@
         });
       }
     } catch (keepErr) { /* columns not there yet — ignore */ }
-    // Clip 2 onward of multi-clip posts (see sql/multi-clip-reels.sql) — best-effort, a miss just means clip 1 only.
+      })(),
+      (async function () {
     try {
       if (vidIds.length) {
         var clipRes = await window.sb.from("media_clips").select("media_id, order_index, storage_path, trim_start, trim_end").in("media_id", vidIds).order("order_index", { ascending: true });
@@ -366,6 +370,8 @@
         });
       }
     } catch (clipErr) { /* ignore */ }
+      })()
+    ]);
 
     grid.innerHTML = "";
     // Ken's ask (Oct 2026): this used to await each item's signed URL(s) —
@@ -374,29 +380,53 @@
     // before the grid finished painting. Resolving every item's URLs
     // concurrently with Promise.all means the whole page waits only as
     // long as the slowest single lookup, not the sum of all of them.
-    var resolved = await Promise.all(items.map(async function (item) {
-      var { data: signed } = await window.sb.storage.from("media").createSignedUrl(item.storage_path, 3600);
-      var url = signed ? signed.signedUrl : "";
-
-      var narrationUrl = "";
-      if (item.kind === "video" && item.narration_path) {
-        var { data: signedNarration } = await window.sb.storage.from("media").createSignedUrl(item.narration_path, 3600);
-        narrationUrl = signedNarration ? signedNarration.signedUrl : "";
-      }
-
-      var musicUrl = "";
-      if (item.kind === "video" && !narrationUrl && item.music_track_id && item.tracks) {
-        var { data: signedMusic } = await window.sb.storage.from("tracks").createSignedUrl(item.tracks.storage_path, 3600);
-        musicUrl = signedMusic ? signedMusic.signedUrl : "";
-      }
-      var posterUrl = "";
-      if (item.kind === "video" && item.poster_path) {
-        var { data: signedPoster } = await window.sb.storage.from("media").createSignedUrl(item.poster_path, 3600);
-        posterUrl = signedPoster ? signedPoster.signedUrl : "";
-      }
+    // (Oct 28, speed pass: this asked for each post's video, narration, song and poster link one after another, per post. Now every
+    // link is asked for in ONE request per storage bucket, and the same song used by several posts is only asked for once.)
+    async function signMany(bucket, paths) {
+      var seen = {}, uniq = [], map = {};
+      paths.forEach(function (pth) { if (pth && !seen[pth]) { seen[pth] = 1; uniq.push(pth); } });
+      if (!uniq.length) return map;
+      try {
+        var r = await window.sb.storage.from(bucket).createSignedUrls(uniq, 3600);
+        ((r && r.data) || []).forEach(function (row) { if (row && row.signedUrl && row.path) map[row.path] = row.signedUrl; });
+      } catch (e) { /* fall back below */ }
+      var missing = uniq.filter(function (pth) { return !map[pth]; });
+      await Promise.all(missing.map(async function (pth) {
+        try { var one = await window.sb.storage.from(bucket).createSignedUrl(pth, 3600); if (one && one.data && one.data.signedUrl) map[pth] = one.data.signedUrl; } catch (e) {}
+      }));
+      return map;
+    }
+    var mediaPaths = [], trackPaths = [];
+    items.forEach(function (it) {
+      mediaPaths.push(it.storage_path);
+      if (it.kind === "video" && it.narration_path) mediaPaths.push(it.narration_path);
+      if (it.kind === "video" && it.poster_path) mediaPaths.push(it.poster_path);
+      if (it.kind === "video" && !it.narration_path && it.music_track_id && it.tracks) trackPaths.push(it.tracks.storage_path);
+    });
+    var signedMaps = await Promise.all([signMany("media", mediaPaths), signMany("tracks", trackPaths)]);
+    var mMap = signedMaps[0], tMap = signedMaps[1];
+    var resolved = items.map(function (item) {
+      var url = mMap[item.storage_path] || "";
+      var narrationUrl = (item.kind === "video" && item.narration_path) ? (mMap[item.narration_path] || "") : "";
+      var musicUrl = (item.kind === "video" && !narrationUrl && item.music_track_id && item.tracks) ? (tMap[item.tracks.storage_path] || "") : "";
+      var posterUrl = (item.kind === "video" && item.poster_path) ? (mMap[item.poster_path] || "") : "";
       return { url: url, narrationUrl: narrationUrl, musicUrl: musicUrl, posterUrl: posterUrl };
-    }));
+    });
 
+    var phoneNow = window.matchMedia("(max-width: 720px)").matches;
+    var lazyIO = null;
+    if ("IntersectionObserver" in window) {
+      try {
+        lazyIO = new IntersectionObserver(function (entries) {
+          entries.forEach(function (en) {
+            if (!en.isIntersecting) return;
+            var v = en.target; lazyIO.unobserve(v);
+            var src = v.getAttribute("data-lazy-src");
+            if (src) { v.removeAttribute("data-lazy-src"); v.src = src; try { v.load(); } catch (e) {} }
+          });
+        }, { rootMargin: "700px 0px" });
+      } catch (e) { lazyIO = null; }
+    }
     for (var i = 0; i < items.length; i++) {
       var item = items[i];
       var url = resolved[i].url;
@@ -411,7 +441,7 @@
       // (wireNarrationSync below) — a plain video plays with its own real
       // sound the moment someone presses play, no separate unmute needed.
       var mediaEl = item.kind === "video"
-        ? '<video src="' + url + (url && url.indexOf("#") < 0 ? "#t=0.001" : "") + '"' + (posterUrl ? ' poster="' + posterUrl + '"' : '') + ' preload="metadata"' + (soundUrl && !keepOriginal ? " muted" : "") + ' controls playsinline></video>' + (soundUrl ? '<audio class="' + soundClass + '" src="' + soundUrl + '" preload="auto"></audio>' : '')
+        ? '<video ' + ((lazyIO && i >= 9) ? 'data-lazy-src="' : 'src="') + url + (url && url.indexOf("#") < 0 ? "#t=0.001" : "") + '"' + (posterUrl ? ' poster="' + posterUrl + '"' : '') + ' preload="metadata"' + (soundUrl && !keepOriginal ? " muted" : "") + ' controls playsinline></video>' + (soundUrl ? '<audio class="' + soundClass + '" src="' + soundUrl + '" preload="' + (phoneNow ? "none" : "metadata") + '"></audio>' : '')
         : item.kind === "audio"
         ? '<div class="audio-card"><span class="audio-ico">🎙️</span><audio src="' + url + '" controls></audio></div>'
         : '<img src="' + url + '" alt="Workout photo" loading="lazy" decoding="async" />';
@@ -433,6 +463,7 @@
         '</div>';
 
       grid.appendChild(card);
+      if (lazyIO) { var lv = card.querySelector("video[data-lazy-src]"); if (lv) lazyIO.observe(lv); }
 
       var cardReel = null;
       if (item.kind === "video" && (clipsById[item.id] || []).length) {
@@ -518,6 +549,8 @@
       wrap.classList.add("mp-open");
       grid.classList.add("mp-single");
       setCtl(wrap, true);
+      Array.prototype.forEach.call(wrap.querySelectorAll("video[data-lazy-src]"), function (v) { var src = v.getAttribute("data-lazy-src"); v.removeAttribute("data-lazy-src"); if (src) { v.src = src; try { v.load(); } catch (e) {} } });
+      Array.prototype.forEach.call(wrap.querySelectorAll("audio"), function (a) { try { if (a.preload !== "auto") { a.preload = "auto"; a.load(); } } catch (e) {} });
       if (!wrap.querySelector(".mp-back")) {
         var bk = document.createElement("button");
         bk.type = "button"; bk.className = "mp-back"; bk.setAttribute("aria-label", "Close and go back to the grid"); bk.textContent = "\u2715 Close";
@@ -594,24 +627,29 @@
     currentUserId = user.id;
     setMessageSender(currentUserId);
     setModerationUser(currentUserId);
-    await loadBlockedIds();
-    if (await isCurrentUserAdmin()) {
-      document.getElementById("adminLink").style.display = "inline";
-    }
-
-    var { data: followingRows } = await window.sb.from("follows").select("followee_id").eq("follower_id", currentUserId);
-    followingIds = new Set((followingRows || []).map(function (r) { return r.followee_id; }));
-
+    // (Oct 28, speed pass: these lookups were chained one after another -- about a dozen round trips before anything showed.
+    // The ones that do not depend on each other now run together, and the posts start loading while the profile card does.)
+    var blockedP = loadBlockedIds();
+    isCurrentUserAdmin().then(function (isAdmin) { if (isAdmin) document.getElementById("adminLink").style.display = "inline"; }).catch(function () {});
+    var followsP = window.sb.from("follows").select("followee_id").eq("follower_id", currentUserId).then(function (res) {
+      followingIds = new Set(((res && res.data) || []).map(function (r) { return r.followee_id; }));
+    });
     var memberId = getMemberId();
     if (!memberId) {
       document.getElementById("profileCard").innerHTML = '<div class="empty-state">No member selected. Head back to <a href="members.html" style="color:var(--accent-2);">Find Members</a> and pick someone to view.</div>';
       return;
     }
-
+    await Promise.all([blockedP, followsP]);
+    var mediaP = isBlocked(memberId) ? null : loadMemberMedia(memberId);
     var member = await loadProfileCard(memberId);
-    if (member && !isBlocked(memberId)) {
-      await loadMemberMedia(memberId);
+    if (!member || isBlocked(memberId)) {
+      // the posts were already on their way; if there is no member (or they are blocked) nothing of theirs may show
+      try { await mediaP; } catch (e) {}
+      var g = document.getElementById("mediaGrid"); if (g) g.innerHTML = "";
+      ["mediaEyebrow", "mediaHeading"].forEach(function (id) { var el = document.getElementById(id); if (el) el.style.display = "none"; });
+      return;
     }
+    if (mediaP) await mediaP;
   })();
 </script>
 
