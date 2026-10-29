@@ -90,6 +90,9 @@
   /* Oct 29 (Ken): "we're still coming up with the video player button" -- on a computer the boxes were still the old inline video
      players. Now every screen size gets the same boxes: a still picture with a small play badge; click one to open just that post. */
   @media all {
+    .mp-grid .media-tile { background: #141824; }
+    .mp-grid .media-tile video.mp-nopost:not(.mp-ready) { opacity: 0; }
+    .mp-grid .media-tile-wrap.mp-open .media-tile video.mp-nopost { opacity: 1 !important; }
     .mp-grid .media-tile-wrap { gap: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
     .mp-grid .media-tile { aspect-ratio: 3 / 4; border-radius: 4px; border: 0; }
     .mp-grid .media-tile .kind-badge { top: 4px; left: 4px; font-size: 8.5px; padding: 2px 5px; }
@@ -453,7 +456,7 @@
       // (wireNarrationSync below) — a plain video plays with its own real
       // sound the moment someone presses play, no separate unmute needed.
       var mediaEl = item.kind === "video"
-        ? '<video ' + ((lazyIO && i >= 9) ? 'data-lazy-src="' : 'src="') + url + (url && url.indexOf("#") < 0 ? "#t=0.001" : "") + '"' + (posterUrl ? ' poster="' + posterUrl + '"' : '') + ' preload="' + (posterUrl ? "none" : "metadata") + '"' + (soundUrl && !keepOriginal ? " muted" : "") + ' controls playsinline></video>' + (soundUrl ? '<audio class="' + soundClass + '" src="' + soundUrl + '" preload="' + (phoneNow ? "none" : "metadata") + '"></audio>' : '')
+        ? '<video ' + ((lazyIO && i >= 9) ? 'data-lazy-src="' : 'src="') + url + (url && url.indexOf("#") < 0 ? (posterUrl ? "#t=0.001" : "#t=0.1") : "") + '"' + (posterUrl ? ' poster="' + posterUrl + '"' : ' class="mp-nopost"') + ' preload="' + (posterUrl ? "none" : "auto") + '"' + (soundUrl && !keepOriginal ? " muted" : "") + ' controls playsinline></video>' + (soundUrl ? '<audio class="' + soundClass + '" src="' + soundUrl + '" preload="' + (phoneNow ? "none" : "metadata") + '"></audio>' : '')
         : item.kind === "audio"
         ? '<div class="audio-card"><span class="audio-ico">🎙️</span><audio src="' + url + '" controls></audio></div>'
         : '<img src="' + url + '" alt="Workout photo" loading="lazy" decoding="async" />';
@@ -475,6 +478,12 @@
         '</div>';
 
       grid.appendChild(card);
+      // Oct 29 (Ken): a video box with no saved picture used to show Android's own big grey play-button placeholder until its first
+      // frame arrived. Now that box stays plain dark (just the small badge) and the video is only shown once a real frame is ready.
+      Array.prototype.forEach.call(card.querySelectorAll("video.mp-nopost"), function (nv) {
+        var ready = function () { nv.classList.add("mp-ready"); };
+        if (nv.readyState >= 2) ready(); else { nv.addEventListener("loadeddata", ready, { once: true }); nv.addEventListener("seeked", ready, { once: true }); }
+      });
       if (lazyIO) { var lv = card.querySelector("video[data-lazy-src]"); if (lv) lazyIO.observe(lv); }
 
       var cardReel = null;
