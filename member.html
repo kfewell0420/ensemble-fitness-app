@@ -109,6 +109,8 @@
   @media all {
     .mp-grid .media-tile { background: #141824; }
     .mp-grid .media-tile video.mp-nopost:not(.mp-ready) { opacity: 0; }
+    .mp-grid .media-tile video.mp-wp:not([poster]) { opacity: 0; }
+    .mp-grid .media-tile img[data-tpath]:not([src]) { visibility: hidden; }
     .mp-grid .media-tile-wrap.mp-open .media-tile video.mp-nopost { opacity: 1 !important; }
     .mp-grid .media-tile-wrap { gap: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
     .mp-grid .media-tile { aspect-ratio: 3 / 4; border-radius: 4px; border: 0; }
@@ -356,6 +358,23 @@
     // posts (the feed shows them) and stay in the grid, matching the member's own "My uploads".
     var items = (data || []).filter(function (item) { return !(item.kind === "photo" && item.is_profile_photo === true && !item.workout_type); });
 
+    // Oct 29 (speed): the grid boxes only need small pictures (about a third of the screen wide), not the 1080-pixel originals
+    // (~290 KB each). Supabase makes a small copy on request; the links for the first screen's pictures are asked for right now,
+    // in parallel with the rest of the page, and if a small copy ever can't be made the full picture is used instead.
+    var THUMB = { width: 360, height: 480, resize: "cover", quality: 70 };
+    var thumbCache = {};
+    function thumbFor(path) {
+      if (!path) return Promise.resolve("");
+      if (!thumbCache[path]) thumbCache[path] = (async function () {
+        try {
+          var r = await window.sb.storage.from("media").createSignedUrl(path, 3600, { transform: THUMB });
+          return (r && r.data && r.data.signedUrl) || "";
+        } catch (e) { return ""; }
+      })();
+      return thumbCache[path];
+    }
+    items.slice(0, 18).forEach(function (it) { thumbFor(it.kind === "photo" ? it.storage_path : (it.kind === "video" ? it.poster_path : "")); });
+
     eyebrow.style.display = "block";
     heading.style.display = "block";
     eyebrow.textContent = "Shared updates";
@@ -463,6 +482,34 @@
         }, { rootMargin: "700px 0px" });
       } catch (e) { lazyIO = null; }
     }
+    var thumbIO = null;
+    if (window.IntersectionObserver) {
+      try {
+        thumbIO = new IntersectionObserver(function (entries) {
+          entries.forEach(function (en) { if (en.isIntersecting) { thumbIO.unobserve(en.target); if (en.target._applyThumb) en.target._applyThumb(); } });
+        }, { rootMargin: "900px 0px" });
+      } catch (e) { thumbIO = null; }
+    }
+    function wireThumb(el, index) {
+      var tp = el.getAttribute("data-tpath");
+      if (!tp) return;
+      var isVideo = el.tagName === "VIDEO";
+      var full = isVideo ? el.getAttribute("data-fullposter") : el.getAttribute("data-full");
+      el._applyThumb = function () {
+        thumbFor(tp).then(function (u) {
+          var use = u || full || "";
+          if (!use) return;
+          if (isVideo) {
+            // (a poster has no error event of its own, so the small picture is loaded first and the full one is the fallback)
+            var pi = new Image();
+            pi.onload = function () { el.setAttribute("poster", use); };
+            pi.onerror = function () { if (full) el.setAttribute("poster", full); };
+            pi.src = use;
+          } else { el.onerror = function () { el.onerror = null; if (full && el.getAttribute("src") !== full) el.src = full; }; el.src = use; }
+        });
+      };
+      if (thumbIO && index >= 18) thumbIO.observe(el); else el._applyThumb();
+    }
     for (var i = 0; i < items.length; i++) {
       var item = items[i];
       var url = resolved[i].url;
@@ -477,10 +524,10 @@
       // (wireNarrationSync below) — a plain video plays with its own real
       // sound the moment someone presses play, no separate unmute needed.
       var mediaEl = item.kind === "video"
-        ? '<video ' + ((lazyIO && i >= 9) ? 'data-lazy-src="' : 'src="') + url + (url && url.indexOf("#") < 0 ? (posterUrl ? "#t=0.001" : "#t=0.1") : "") + '"' + (posterUrl ? ' poster="' + posterUrl + '"' : ' class="mp-nopost"') + ' preload="' + (posterUrl ? "none" : "auto") + '"' + (soundUrl && !keepOriginal ? " muted" : "") + ' controls playsinline></video>' + (soundUrl ? '<audio class="' + soundClass + '" src="' + soundUrl + '" preload="' + (phoneNow ? "none" : "metadata") + '"></audio>' : '')
+        ? '<video ' + ((lazyIO && i >= 9) ? 'data-lazy-src="' : 'src="') + url + (url && url.indexOf("#") < 0 ? (posterUrl ? "#t=0.001" : "#t=0.1") : "") + '"' + (posterUrl ? ' class="mp-wp" data-tpath="' + escapeHtml(item.poster_path) + '" data-fullposter="' + posterUrl + '"' : ' class="mp-nopost"') + ' preload="' + (posterUrl ? "none" : "auto") + '"' + (soundUrl && !keepOriginal ? " muted" : "") + ' controls playsinline></video>' + (soundUrl ? '<audio class="' + soundClass + '" src="' + soundUrl + '" preload="' + (phoneNow ? "none" : "metadata") + '"></audio>' : '')
         : item.kind === "audio"
         ? '<div class="audio-card"><span class="audio-ico">🎙️</span><audio src="' + url + '" controls></audio></div>'
-        : '<img src="' + url + '" alt="Workout photo" loading="lazy" decoding="async" />';
+        : '<img data-tpath="' + escapeHtml(item.storage_path) + '" data-full="' + url + '" alt="Workout photo" decoding="async" />';
 
       var card = document.createElement("div");
       card.className = "media-tile-wrap";
@@ -502,6 +549,7 @@
       grid.appendChild(card);
       // Oct 29 (Ken): a video box with no saved picture used to show Android's own big grey play-button placeholder until its first
       // frame arrived. Now that box stays plain dark (just the small badge) and the video is only shown once a real frame is ready.
+      Array.prototype.forEach.call(card.querySelectorAll("[data-tpath]"), function (el) { wireThumb(el, i); });
       Array.prototype.forEach.call(card.querySelectorAll("video.mp-nopost"), function (nv) {
         var ready = function () { nv.classList.add("mp-ready"); };
         if (nv.readyState >= 2) ready(); else { nv.addEventListener("loadeddata", ready, { once: true }); nv.addEventListener("seeked", ready, { once: true }); }
@@ -608,6 +656,14 @@
       grid.classList.add("mp-single");
       setPostOpen(true);
       setCtl(wrap, true);
+      Array.prototype.forEach.call(wrap.querySelectorAll("img[data-full]"), function (im) {
+        var full = im.getAttribute("data-full");
+        if (full && im.getAttribute("src") !== full) { var pre = new Image(); pre.onload = function () { im.src = full; }; pre.src = full; }
+      });
+      Array.prototype.forEach.call(wrap.querySelectorAll("video[data-fullposter]"), function (v) {
+        var fp = v.getAttribute("data-fullposter");
+        if (fp && v.getAttribute("poster") !== fp) { var pr = new Image(); pr.onload = function () { v.setAttribute("poster", fp); }; pr.src = fp; }
+      });
       // a box that was showing only its picture starts fetching the video now
       Array.prototype.forEach.call(wrap.querySelectorAll("video"), function (v) {
         if (v.getAttribute("preload") === "none" && v.getAttribute("src")) { v.setAttribute("preload", "auto"); try { if (v.readyState === 0) v.load(); } catch (e) {} }
