@@ -86,6 +86,10 @@
   @media (max-width: 720px) {
     .mp-uploads { padding: 2px; }
     #mediaGrid.mp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; }
+  }
+  /* Oct 29 (Ken): "we're still coming up with the video player button" -- on a computer the boxes were still the old inline video
+     players. Now every screen size gets the same boxes: a still picture with a small play badge; click one to open just that post. */
+  @media all {
     .mp-grid .media-tile-wrap { gap: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
     .mp-grid .media-tile { aspect-ratio: 3 / 4; border-radius: 4px; border: 0; }
     .mp-grid .media-tile .kind-badge { top: 4px; left: 4px; font-size: 8.5px; padding: 2px 5px; }
@@ -123,6 +127,14 @@
     .mp-back { display: none; align-self: flex-start; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 8px); z-index: 6; margin: 2px 0 8px 4px; padding: 11px 18px; border: 0; border-radius: 999px;
       background: rgba(40,44,62,0.94); color: #fff; font: 800 15px/1 inherit; font-family: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; box-shadow: 0 2px 10px rgba(0,0,0,0.5); }
     .mp-grid .media-tile-wrap.mp-open .mp-back { display: inline-block; }
+  }
+  @media (min-width: 721px) {
+    .mp-grid .media-tile-wrap { gap: 6px; }
+    .mp-grid .media-tile-wrap:not(.mp-open) .mp-card-meta { display: block; }
+    .mp-grid .media-tile { border-radius: 10px; }
+    .mp-grid .media-tile .kind-badge { top: 8px; left: 8px; font-size: 10px; padding: 3px 7px; }
+    .mp-grid .media-tile-wrap:not(.mp-open) .media-tile.mp-has-video::after { width: 46px; height: 46px; margin: -23px 0 0 -23px; font-size: 17px; line-height: 46px; padding-left: 3px; }
+    .mp-grid .media-tile-wrap.mp-open { max-width: 720px; width: 100%; justify-self: center; }
   }
 </style>
 
@@ -441,7 +453,7 @@
       // (wireNarrationSync below) — a plain video plays with its own real
       // sound the moment someone presses play, no separate unmute needed.
       var mediaEl = item.kind === "video"
-        ? '<video ' + ((lazyIO && i >= 9) ? 'data-lazy-src="' : 'src="') + url + (url && url.indexOf("#") < 0 ? "#t=0.001" : "") + '"' + (posterUrl ? ' poster="' + posterUrl + '"' : '') + ' preload="metadata"' + (soundUrl && !keepOriginal ? " muted" : "") + ' controls playsinline></video>' + (soundUrl ? '<audio class="' + soundClass + '" src="' + soundUrl + '" preload="' + (phoneNow ? "none" : "metadata") + '"></audio>' : '')
+        ? '<video ' + ((lazyIO && i >= 9) ? 'data-lazy-src="' : 'src="') + url + (url && url.indexOf("#") < 0 ? "#t=0.001" : "") + '"' + (posterUrl ? ' poster="' + posterUrl + '"' : '') + ' preload="' + (posterUrl ? "none" : "metadata") + '"' + (soundUrl && !keepOriginal ? " muted" : "") + ' controls playsinline></video>' + (soundUrl ? '<audio class="' + soundClass + '" src="' + soundUrl + '" preload="' + (phoneNow ? "none" : "metadata") + '"></audio>' : '')
         : item.kind === "audio"
         ? '<div class="audio-card"><span class="audio-ico">🎙️</span><audio src="' + url + '" controls></audio></div>'
         : '<img src="' + url + '" alt="Workout photo" loading="lazy" decoding="async" />';
@@ -483,7 +495,7 @@
   (function () {
     var grid = document.getElementById("mediaGrid");
     if (!grid) return;
-    function isPhone() { return window.matchMedia("(max-width: 720px)").matches; }
+    function isPhone() { return true; } // (name kept: the grid now behaves the same on every screen size)
     function setCtl(wrap, on) {
       Array.prototype.forEach.call(wrap.querySelectorAll("video"), function (v) {
         if (on) v.setAttribute("controls", ""); else v.removeAttribute("controls");
@@ -549,6 +561,10 @@
       wrap.classList.add("mp-open");
       grid.classList.add("mp-single");
       setCtl(wrap, true);
+      // a box that was showing only its picture starts fetching the video now
+      Array.prototype.forEach.call(wrap.querySelectorAll("video"), function (v) {
+        if (v.getAttribute("preload") === "none" && v.getAttribute("src")) { v.setAttribute("preload", "auto"); try { if (v.readyState === 0) v.load(); } catch (e) {} }
+      });
       Array.prototype.forEach.call(wrap.querySelectorAll("video[data-lazy-src]"), function (v) { var src = v.getAttribute("data-lazy-src"); v.removeAttribute("data-lazy-src"); if (src) { v.src = src; try { v.load(); } catch (e) {} } });
       Array.prototype.forEach.call(wrap.querySelectorAll("audio"), function (a) { try { if (a.preload !== "auto") { a.preload = "auto"; a.load(); } } catch (e) {} });
       if (!wrap.querySelector(".mp-back")) {
