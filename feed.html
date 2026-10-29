@@ -3972,9 +3972,15 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
   }
   function hideSoundHint() { try { if (soundHintEl) soundHintEl.style.opacity = "0"; } catch (e) {} }
   document.addEventListener("pointerup", function () { hideSoundHint(); }, true);
+  // Oct 29 (Ken: "on the mobile app it somehow went back to muting the videos -- we want it ALWAYS unmuted"): on a phone the
+  // saved "muted" choice is no longer read, and any old saved one is cleared. Every time the feed opens, videos start with sound
+  // on. Tapping the speaker still mutes for as long as the member keeps scrolling, but it is never remembered for next time.
   try {
-    var storedReelMute = localStorage.getItem("efit_reel_muted_choice");
-    if (storedReelMute !== null) reelMuted = storedReelMute === "true";
+    if (!isWideLayout) { localStorage.removeItem("efit_reel_muted_choice"); }
+    else {
+      var storedReelMute = localStorage.getItem("efit_reel_muted_choice");
+      if (storedReelMute !== null) reelMuted = storedReelMute === "true";
+    }
   } catch (e) {}
   // Ken's ask (Oct 2026): on the website's desktop grid several videos play
   // at once (unlike the phone, which shows one at a time), and a member who
@@ -3991,7 +3997,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
   function setReelMuted(value) {
     reelMuted = value;
     if (isWideLayout) return;
-    try { localStorage.setItem("efit_reel_muted_choice", value ? "true" : "false"); } catch (e) {}
+    // (phones: deliberately not saved -- see above; sound is on every time the feed opens)
   }
 
   function syncMuteBtn(slideEl, video) {

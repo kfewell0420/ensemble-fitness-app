@@ -78,6 +78,22 @@
   .mp-grid .mp-card-caption { font-size: 13.5px; color: var(--muted-invert); margin: 4px 0 0; }
   .mp-grid .media-tile.mp-has-video::after { display: none; }
   .mp-close { display: none; }
+  /* Oct 29 (Ken): an opened post -- the profile buttons stay just under the clock, "Close" sits at the right end of the
+     "Photos & Videos" line (lined up with the right edge of the post), the post is sized so the comment bar is always on screen. */
+  #memberActions .follow-btn.following { color: #fff !important; }
+  .mp-headrow { position: relative; }
+  .mp-close-top { display: none; position: absolute; right: 0; bottom: 2px; z-index: 6; padding: 9px 15px; border: 0; border-radius: 999px;
+    background: rgba(40,44,62,0.94); color: #fff; font: 800 14px/1 inherit; font-family: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; box-shadow: 0 2px 10px rgba(0,0,0,0.45); }
+  body.mp-post-open .mp-close-top { display: inline-block; }
+  body.mp-post-open #mediaEyebrow { margin-top: 8px !important; }
+  body.mp-post-open #mediaHeading { margin-bottom: 8px !important; }
+  body.mp-post-open #profileCard { margin-bottom: 0; }
+  .mp-cmt { display: none; align-items: center; gap: 8px; margin: 2px 0 0; }
+  .mp-grid .media-tile-wrap.mp-open .mp-cmt { display: flex; }
+  .mp-cmt input { flex: 1 1 auto; min-width: 0; height: 40px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.18); background: #1b1f33; color: #fff; padding: 0 14px; font-family: inherit; font-size: 15px; }
+  .mp-cmt input::placeholder { color: #8b91a8; }
+  .mp-cmt button { flex: none; width: 40px; height: 40px; border-radius: 50%; border: 0; background: #ff6a1a; color: #fff; font-size: 17px; font-weight: 800; line-height: 1; cursor: pointer; padding: 0; }
+  .mp-cmt button:disabled { opacity: 0.55; }
   @media (min-width: 721px) {
     #mediaGrid.mp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
     .mp-grid .media-tile { aspect-ratio: 3 / 4; }
@@ -85,6 +101,7 @@
   }
   @media (max-width: 720px) {
     .mp-uploads { padding: 2px; }
+    .mp-close-top { right: 2px; }
     #mediaGrid.mp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; }
   }
   /* Oct 29 (Ken): "we're still coming up with the video player button" -- on a computer the boxes were still the old inline video
@@ -112,7 +129,7 @@
     .mp-grid .media-tile-wrap.mp-open .media-tile { border-radius: var(--radius-sm); aspect-ratio: auto; }
     /* Ken (Oct 28): an opened post shows the WHOLE photo / video (full frame, nothing cropped). */
     .mp-grid .media-tile-wrap.mp-open .media-tile img,
-    .mp-grid .media-tile-wrap.mp-open .media-tile video { width: 100%; height: auto; max-height: 78vh; object-fit: contain; background: #000; }
+    .mp-grid .media-tile-wrap.mp-open .media-tile video { width: 100%; height: auto; max-height: calc(100vh - 255px); object-fit: contain; background: #000; }
     .mp-grid .media-tile-wrap.mp-open .media-tile video,
     .mp-grid .media-tile-wrap.mp-open .media-tile audio { pointer-events: auto; }
     .mp-grid .media-tile-wrap.mp-open .media-tile video::-webkit-media-controls { display: flex !important; }
@@ -129,7 +146,7 @@
     #mediaGrid.mp-grid.mp-single .media-tile-wrap:not(.mp-open) { display: none; }
     .mp-back { display: none; align-self: flex-start; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 8px); z-index: 6; margin: 2px 0 8px 4px; padding: 11px 18px; border: 0; border-radius: 999px;
       background: rgba(40,44,62,0.94); color: #fff; font: 800 15px/1 inherit; font-family: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; box-shadow: 0 2px 10px rgba(0,0,0,0.5); }
-    .mp-grid .media-tile-wrap.mp-open .mp-back { display: inline-block; }
+    .mp-grid .media-tile-wrap.mp-open .mp-back { display: none !important; }
   }
   @media (min-width: 721px) {
     .mp-grid .media-tile-wrap { gap: 6px; }
@@ -138,6 +155,7 @@
     .mp-grid .media-tile .kind-badge { top: 8px; left: 8px; font-size: 10px; padding: 3px 7px; }
     .mp-grid .media-tile-wrap:not(.mp-open) .media-tile.mp-has-video::after { width: 46px; height: 46px; margin: -23px 0 0 -23px; font-size: 17px; line-height: 46px; padding-left: 3px; }
     .mp-grid .media-tile-wrap.mp-open { max-width: 720px; width: 100%; justify-self: center; }
+    body.mp-post-open .mp-headrow { max-width: 720px; margin-left: auto; margin-right: auto; }
   }
 </style>
 
@@ -149,8 +167,11 @@
     <div class="empty-state">Loading…</div>
   </div>
 
-  <div class="eyebrow" id="mediaEyebrow" style="margin-top:32px; display:none;"></div>
-  <h2 id="mediaHeading" style="margin-bottom:6px; display:none;"></h2>
+  <div class="mp-headrow" id="mpHeadRow">
+    <div class="eyebrow" id="mediaEyebrow" style="margin-top:32px; display:none;"></div>
+    <h2 id="mediaHeading" style="margin-bottom:6px; display:none;"></h2>
+    <button type="button" class="mp-close-top" id="mpCloseTop" aria-label="Close and go back to the grid">&#10005; Close</button>
+  </div>
 
   <div class="mp-uploads"><div class="media-grid mp-grid" id="mediaGrid"></div></div>
 
@@ -475,7 +496,8 @@
         '<div class="mp-card-meta">' +
           '<div class="mp-card-sub">' + subParts.join(" · ") + (narrationUrl ? ' · 🎙️ narrated' : musicUrl ? ' · 🎵 ' + escapeHtml(item.tracks.title) + ' — ' + escapeHtml(item.tracks.artist_name) : '') + '</div>' +
           (item.caption ? '<p class="mp-card-caption">' + escapeHtml(item.caption) + '</p>' : "") +
-        '</div>';
+        '</div>' +
+        '<form class="mp-cmt" data-mid="' + escapeHtml(String(item.id)) + '" autocomplete="off"><input type="text" maxlength="500" placeholder="Add a comment\u2026" aria-label="Add a comment" enterkeyhint="send"><button type="submit" aria-label="Send comment">\u27A4</button></form>';
 
       grid.appendChild(card);
       // Oct 29 (Ken): a video box with no saved picture used to show Android's own big grey play-button placeholder until its first
@@ -529,6 +551,7 @@
     function normalizeGrid() {
       grid.classList.add("mp-grid");
       var opened = grid.querySelectorAll(".mp-open");
+      if (!opened.length) setPostOpen(false);
       if (!isPhone()) { Array.prototype.forEach.call(opened, function (w) { w.classList.remove("mp-open"); }); grid.classList.remove("mp-single"); return; }
       if (opened.length > 1 || (opened.length === 0 && grid.classList.contains("mp-single"))) {
         Array.prototype.forEach.call(opened, function (w) {
@@ -537,6 +560,7 @@
           setCtl(w, false);
         });
         grid.classList.remove("mp-single");
+        setPostOpen(false);
       }
     }
     window.addEventListener("pageshow", function () { normalizeGrid(); });
@@ -555,12 +579,25 @@
       pushedState = false;
       Array.prototype.forEach.call(grid.querySelectorAll(".mp-open"), closeWrap);
     });
+    function setPostOpen(on) { try { document.body.classList.toggle("mp-post-open", !!on); } catch (e) {} }
+    function topInset() {
+      var h = 0;
+      try {
+        var probe = document.createElement("div");
+        probe.style.cssText = "position:fixed;top:0;left:0;width:1px;height:env(safe-area-inset-top, 0px);visibility:hidden;pointer-events:none";
+        document.body.appendChild(probe); h = probe.getBoundingClientRect().height || 0; document.body.removeChild(probe);
+      } catch (e) {}
+      var coarse = false; try { coarse = window.matchMedia("(pointer: coarse)").matches; } catch (e) {}
+      return Math.max(h, coarse ? 30 : 0) + 8;   // under the phone's clock / camera notch
+    }
     function closeWrap(wrap) {
       wrap.classList.remove("mp-open");
       Array.prototype.forEach.call(wrap.querySelectorAll("video, audio"), function (m) { try { m.pause(); } catch (e) {} });
       if (isPhone()) setCtl(wrap, false);
       if (!grid.querySelector(".mp-open")) {
         grid.classList.remove("mp-single");
+        grid.style.paddingBottom = "";
+        setPostOpen(false);
         if (savedScrollY !== null) { var y = savedScrollY; savedScrollY = null; requestAnimationFrame(function () { try { window.scrollTo(0, y); } catch (e) {} }); }
       }
     }
@@ -569,6 +606,7 @@
       if (!pushedState) { try { window.history.pushState({ mpPost: 1 }, ""); pushedState = true; } catch (e) {} }
       wrap.classList.add("mp-open");
       grid.classList.add("mp-single");
+      setPostOpen(true);
       setCtl(wrap, true);
       // a box that was showing only its picture starts fetching the video now
       Array.prototype.forEach.call(wrap.querySelectorAll("video"), function (v) {
@@ -576,19 +614,43 @@
       });
       Array.prototype.forEach.call(wrap.querySelectorAll("video[data-lazy-src]"), function (v) { var src = v.getAttribute("data-lazy-src"); v.removeAttribute("data-lazy-src"); if (src) { v.src = src; try { v.load(); } catch (e) {} } });
       Array.prototype.forEach.call(wrap.querySelectorAll("audio"), function (a) { try { if (a.preload !== "auto") { a.preload = "auto"; a.load(); } } catch (e) {} });
-      if (!wrap.querySelector(".mp-back")) {
-        var bk = document.createElement("button");
-        bk.type = "button"; bk.className = "mp-back"; bk.setAttribute("aria-label", "Close and go back to the grid"); bk.textContent = "\u2715 Close";
-        wrap.insertBefore(bk, wrap.firstChild);
-      }
       var tile = wrap.querySelector(".media-tile");
       if (tile && !tile.querySelector(".mp-close")) {
         var x = document.createElement("button");
         x.type = "button"; x.className = "mp-close"; x.setAttribute("aria-label", "Close"); x.textContent = "Close";
         tile.appendChild(x);
       }
-      setTimeout(function () { try { var top = grid.getBoundingClientRect().top + (window.pageYOffset || 0) - 60; window.scrollTo(0, Math.max(0, top)); } catch (e) {} }, 30);
+      // scroll so the Follow / Message / Report / Block buttons sit right under the clock, with the post and its comment bar below
+      setTimeout(function () { try {
+        var ref = document.getElementById("memberActions") || document.getElementById("mpHeadRow") || grid;
+        var y = ref.getBoundingClientRect().top + (window.pageYOffset || 0) - topInset();
+        // a page with just one post is short; give it enough room below to scroll that far
+        var need = y + window.innerHeight - document.documentElement.scrollHeight;
+        if (need > 0) grid.style.paddingBottom = Math.ceil(need + 4) + "px";
+        window.scrollTo(0, Math.max(0, y));
+      } catch (e) {} }, 40);
     }
+    var topClose = document.getElementById("mpCloseTop");
+    if (topClose) topClose.addEventListener("click", function () { var w = grid.querySelector(".mp-open"); if (w) closeByUser(w); });
+    // the slim comment bar under an opened post (same media_comments table the Home feed uses)
+    grid.addEventListener("submit", async function (e) {
+      var f = e.target && e.target.closest ? e.target.closest(".mp-cmt") : null;
+      if (!f) return;
+      e.preventDefault();
+      var inp = f.querySelector("input"), btn = f.querySelector("button");
+      var body = (inp.value || "").trim();
+      if (!body || btn.disabled) return;
+      btn.disabled = true;
+      var ok = false;
+      try {
+        var res = await window.sb.from("media_comments").insert({ media_id: f.getAttribute("data-mid"), user_id: currentUserId, body: body });
+        ok = !(res && res.error);
+      } catch (er) { ok = false; }
+      btn.disabled = false;
+      if (ok) { inp.value = ""; inp.placeholder = "Comment posted \u2713"; try { inp.blur(); } catch (er) {}
+        setTimeout(function () { inp.placeholder = "Add a comment\u2026"; }, 2500); }
+      else { inp.placeholder = "Couldn\u2019t post \u2014 try again"; setTimeout(function () { inp.placeholder = "Add a comment\u2026"; }, 3000); }
+    });
     grid.addEventListener("click", function (e) {
       if (!isPhone()) return;
       var wrap = e.target.closest ? e.target.closest(".media-tile-wrap") : null;
