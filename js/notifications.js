@@ -48,7 +48,9 @@
   function describe(row) {
     var name = escapeHtml((row.actorName || "Someone"));
     // Oct 28 (Ken + the artist): tap the name (or the little photo) to see who it is -- opens their profile grid.
-    if (row.actor_id) name = '<span class="efit-notif-name" data-go="' + escapeHtml(String(row.actor_id)) + '">' + name + "</span>";
+    // Oct 29 (Ken): a MESSAGE notification opens the conversation so you can answer -- tapping the name or the photo there used to
+    // jump to the sender's profile instead. (Other kinds keep "tap the name/photo to see who it is".)
+    if (row.actor_id && row.type !== "message") name = '<span class="efit-notif-name" data-go="' + escapeHtml(String(row.actor_id)) + '">' + name + "</span>";
     if (row.type === "reaction") {
       return "<strong>" + name + "</strong> reacted " + reactionEmoji(row.reaction_type) + " to your post";
     }
@@ -59,7 +61,7 @@
       return "<strong>" + name + "</strong> started following you";
     }
     if (row.type === "message") {
-      return "<strong>" + name + "</strong> sent you a message: “" + escapeHtml(row.preview || "") + "”";
+      return "<strong>" + name + "</strong> sent you a message: “" + escapeHtml(row.preview || "") + "”" + '<span class="efit-notif-reply">Tap to reply \u203A</span>';
     }
     // Oct 28 (Ken): when a song/video is taken down, the reason is a notification (not a message in Messages).
     if (row.type === "removal") {
@@ -179,7 +181,7 @@
     var name = row.actorName || "Someone";
     var initial = (name.trim().charAt(0) || "?").toUpperCase();
     var uid = row.actor_id ? String(row.actor_id) : "";
-    return '<span class="efit-notif-av" ' + (uid ? 'data-go="' + escapeHtml(uid) + '" data-av="' + escapeHtml(uid) + '" ' : "") +
+    return '<span class="efit-notif-av" ' + (uid ? (row.type !== "message" ? 'data-go="' + escapeHtml(uid) + '" ' : "") + 'data-av="' + escapeHtml(uid) + '" ' : "") +
       'style="background:' + avatarColor(uid) + '">' + escapeHtml(initial) + "</span>";
   }
   // Same rule the feed uses: a member's picture is their newest approved profile photo.
@@ -236,6 +238,7 @@
       " font-weight: 800; font-size: 15px; color: #fff; cursor: pointer; }" +
       ".efit-notif-av img { width: 100%; height: 100%; object-fit: cover; display: block; }" +
       ".efit-notif-close { display: none; }" +
+      ".efit-notif-reply { display: block; margin-top: 3px; font-size: 12.5px; font-weight: 700; color: #ff8a4c; }" +
       ".efit-notif-sheet .efit-notif-panel-header { display: flex !important; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 3; background: inherit; }" +
       ".efit-notif-sheet .efit-notif-panel-header > span:first-child { flex: 1 1 auto; }" +
       ".efit-notif-sheet .efit-notif-close { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 46px; height: 46px; margin: -8px -8px -8px auto; padding: 0;" +
