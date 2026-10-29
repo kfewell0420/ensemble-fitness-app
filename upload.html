@@ -2850,10 +2850,44 @@
     var t = a.currentTime || 0;
     try { a.src = u; a.dataset.blobFor = id; a.load(); try { a.currentTime = t; } catch (e) {} } catch (e) {}
   }
+  // Oct 28 (Ken: "it builds the sound bar only after I pause"): drawing the sound bar means downloading and decoding the whole song.
+  // That decode no longer waits for the video to stop -- it only steps aside while a finger is on the screen -- and a finished
+  // sound bar is remembered on this phone, so choosing the same song again shows it at once.
+  function whenFingerFree(maxMs) {
+    return new Promise(function (resolve) {
+      var waited = 0;
+      (function look() {
+        var busy = scrubDrag.hold || scrubDrag.on || !!mixDrag || (performance.now() - lastTouchAt) < 700;
+        if (!busy || waited >= maxMs) { resolve(); return; }
+        waited += 250; setTimeout(look, 250);
+      })();
+    });
+  }
+  function waveCacheKey(id) { return "efit_wave_v1:" + id; }
+  function loadWaveCache(id) {
+    try {
+      var raw = window.localStorage.getItem(waveCacheKey(id));
+      if (!raw) return null;
+      var o = JSON.parse(raw);
+      if (!o || !o.rate || !o.p) return null;
+      var bin = atob(o.p), n = bin.length, peaks = new Float32Array(n);
+      for (var i = 0; i < n; i++) peaks[i] = bin.charCodeAt(i) / 255;
+      return { rate: o.rate, peaks: peaks };
+    } catch (e) { return null; }
+  }
+  function saveWaveCache(id, w) {
+    try {
+      var n = w.peaks.length, bytes = "";
+      for (var i = 0; i < n; i++) bytes += String.fromCharCode(Math.max(0, Math.min(255, Math.round(w.peaks[i] * 255))));
+      window.localStorage.setItem(waveCacheKey(id), JSON.stringify({ rate: w.rate, p: btoa(bytes) }));
+    } catch (e) { /* storage full or blocked: it simply is not remembered */ }
+  }
   function ensureWave(trackId) {
     if (!trackId || wavePeaks[trackId] || waveLoading[trackId]) return;
     var t = tracksById[trackId];
     if (!t) return;
+    var cachedWave = loadWaveCache(trackId);
+    if (cachedWave) { wavePeaks[trackId] = cachedWave; try { renderTimeline(); } catch (e) {} }
     waveLoading[trackId] = true;
     (async function () {
       try {
@@ -2869,7 +2903,8 @@
         } catch (blobErr) { /* keep streaming: nothing is lost */ }
         var AC = window.AudioContext || window.webkitAudioContext;
         if (!AC) return;
-        await whenQuiet(20000);   // decoding the song for its sound-wave picture is heavy: do it while nothing else is happening
+        if (wavePeaks[trackId]) return;                 // already drawn from the saved copy: the song itself is downloaded (above) for playback, nothing more to do
+        await whenFingerFree(3000);                      // decoding is heavy: only step aside while a finger is on the screen
         var ctx = new AC();
         var audio = await new Promise(function (res, rej) { var p = ctx.decodeAudioData(buf, res, rej); if (p && p.catch) p.catch(rej); });
         var ch = audio.getChannelData(0), rate = 25;
@@ -2885,6 +2920,7 @@
         for (var k = 0; k < n; k++) peaks[k] = Math.min(1, peaks[k] / ref);
         try { ctx.close(); } catch (e) {}
         wavePeaks[trackId] = { rate: rate, peaks: peaks };
+        saveWaveCache(trackId, wavePeaks[trackId]);
         renderTimeline();
       } catch (e) { /* no picture — the bar just stays plain */ }
       finally { delete waveLoading[trackId]; }
