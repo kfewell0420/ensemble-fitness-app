@@ -1824,6 +1824,8 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
       color: #fff;
     }
     .rp-dash-title span { color: var(--accent-2); }
+    .rp-dash-titlerow { display: flex; align-items: center; gap: 16px; }
+    .rp-dash-bell-slot { display: inline-flex; align-items: center; position: relative; }
     /* Friendly nudge under "Welcome back" — encourages posting/cheering. */
     .rp-dash-sub {
       margin: 8px 0 0;
@@ -2113,7 +2115,11 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
        instead of the plain minimal top of the mobile app. -->
   <div class="rp-dash-header" id="rpDashHeader">
     <span class="rp-dash-eyebrow"><span class="rp-dash-dot"></span>YOUR COMMUNITY</span>
-    <h1 class="rp-dash-title">Welcome back<span id="rpDashName"></span></h1>
+    <div class="rp-dash-titlerow">
+      <h1 class="rp-dash-title">Welcome back<span id="rpDashName"></span></h1>
+      <!-- Ken (Oct 29): the notification bell sits right after the member's name. js/notifications.js puts the one bell here on a computer. -->
+      <span class="rp-dash-bell-slot" id="rpDashBellSlot"></span>
+    </div>
     <p class="rp-dash-sub">Your journey can inspire someone. <strong>Share a moment</strong>, <strong>celebrate a win</strong>, or <strong>cheer someone on.</strong></p>
     <!-- Ken (Oct 2026): the "What do these mean?" link was removed from the welcome area; the badge key lives on the Fitness+ page. -->
     <span class="app-nav-connect" aria-hidden="true">
@@ -2410,6 +2416,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
 <script src="js/feed-sound.js?v=4"></script>
 <script src="js/moderation.js"></script>
 <script src="js/social.js"></script>
+<script src="js/notifications.js"></script>
 <script>
   // The phone-frame column (mobile / Simulator) is "the cell phone app" and
   // is untouched by any of this — this flag only steers the desktop grid

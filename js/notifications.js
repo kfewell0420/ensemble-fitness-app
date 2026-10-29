@@ -16,10 +16,11 @@
    mid-redirect, etc.) — safe to include everywhere.
    ========================================================================= */
 (function () {
-  var POLL_MS = 60000; // backstop only — also refreshes on window focus and right after opening the panel
+  var POLL_MS = 30000; // checked every 30s while the page is on screen (a tiny count-only question), and again whenever the app comes back to the front or the panel opens
   var currentUserId = null;
   var panelOpen = false;
   var autoMarkReadTimeoutId = null;
+  var IS_HOME = false; // set on DOMContentLoaded: true on the Home page (feed.html), which has its own "Welcome back" header
 
   function escapeHtml(str) {
     var div = document.createElement("div");
@@ -103,6 +104,18 @@
     return group;
   }
 
+  // Home page only: on a computer the bell lives right after the member's name on the "Welcome back" line; on a phone it lives in
+  // the header right after "Ensemble Fitness". One bell, moved to whichever spot is showing.
+  function placeHomeBell() {
+    var wrap = document.getElementById("efitNotifWrap");
+    if (!wrap || !IS_HOME) return;
+    var slot = document.getElementById("rpDashBellSlot");
+    var wide = window.matchMedia && window.matchMedia("(min-width: 900px)").matches;
+    var target = wide ? slot : document.getElementById("efitNavUtility");
+    if (target && wrap.parentNode !== target) target.appendChild(wrap);
+    if (panelOpen) closePanel();
+  }
+
   function buildHomeLink() {
     var group = getUtilityGroup();
     if (!group || document.getElementById("efitHomeLink")) return null;
@@ -140,9 +153,14 @@
     var wrap = document.createElement("div");
     wrap.className = "efit-notif-wrap";
     wrap.id = "efitNotifWrap";
+    // Home page (Oct 29, Ken): a plain yellow bell, no circle, drawn about as tall and as bold as the "Ensemble Fitness" /
+    // member-name text next to it (so the order is logo, then name, then bell -- big to small). Other pages keep the 🔔 they had.
+    var BELL_SVG = '<svg viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.22" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<path d="M18 9a6 6 0 0 0-12 0c0 6.5-2.5 8-2.5 8h17S18 15.5 18 9z"></path><path d="M10.2 20.5a2 2 0 0 0 3.6 0"></path></svg>';
+    if (IS_HOME) wrap.className += " efit-feedbell-wrap";
     wrap.innerHTML =
-      '<button type="button" class="efit-notif-bell" id="efitNotifBell" aria-haspopup="true" aria-expanded="false" aria-label="Notifications">' +
-        "🔔" +
+      '<button type="button" class="efit-notif-bell' + (IS_HOME ? " efit-feedbell" : "") + '" id="efitNotifBell" aria-haspopup="true" aria-expanded="false" aria-label="Notifications">' +
+        (IS_HOME ? BELL_SVG : "🔔") +
         '<span class="efit-notif-badge" id="efitNotifBadge" hidden>0</span>' +
       "</button>" +
       '<div class="efit-notif-panel" id="efitNotifPanel" hidden role="menu"></div>';
@@ -218,7 +236,21 @@
       " font-weight: 800; font-size: 15px; color: #fff; cursor: pointer; }" +
       ".efit-notif-av img { width: 100%; height: 100%; object-fit: cover; display: block; }" +
       ".efit-notif-name { cursor: pointer; text-decoration: underline; text-decoration-color: rgba(255,255,255,0.35); text-underline-offset: 2px; }" +
-      "@media (max-width: 720px) { .efit-notif-sheet .efit-notif-item { padding-top: 12px; padding-bottom: 12px; } }";
+      "@media (max-width: 720px) { .efit-notif-sheet .efit-notif-item { padding-top: 12px; padding-bottom: 12px; } }" +
+      // ---- Home page bell (Oct 29) ----
+      ".efit-notif-wrap.efit-feedbell-wrap { position: relative; display: inline-flex; align-items: center; }" +
+      ".efit-notif-bell.efit-feedbell { position: relative; background: none !important; border: 0 !important; box-shadow: none !important; border-radius: 0 !important;" +
+      " width: 34px; height: 34px; padding: 0 !important; margin: 0; font-size: 0 !important; line-height: 0; color: #ffd23f; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; -webkit-tap-highlight-color: transparent; }" +
+      ".efit-feedbell svg { width: 20px; height: 20px; display: block; }" +
+      // the count: a red number floating by itself on the yellow bell (no circle)
+      ".efit-feedbell .efit-notif-badge { position: absolute !important; top: -3px !important; right: -4px !important; left: auto !important; min-width: 0 !important; height: auto !important; padding: 0 !important;" +
+      " background: none !important; border: 0 !important; border-radius: 0 !important; box-shadow: none !important; color: #ff3b30 !important; font-family: 'Inter', -apple-system, 'Segoe UI', Arial, sans-serif !important;" +
+      " font-size: 16px !important; font-weight: 800 !important; font-variant-numeric: lining-nums; line-height: 1 !important; pointer-events: none; text-shadow: 0 0 3px #000, 0 1px 2px #000, 0 -1px 2px #000; }" +
+      ".efit-feedbell .efit-notif-badge[hidden] { display: none !important; }" +
+      "#rpAppNav .efit-nav-utility { display: flex; align-items: center; gap: 6px; margin-left: 8px; flex: none; }" +
+      // computer: the bell sits right after the member's name; its list drops down underneath it
+      ".rp-dash-bell-slot .efit-feedbell svg { width: 21px; height: 21px; }" +
+      ".rp-dash-bell-slot .efit-notif-panel { position: absolute; top: calc(100% + 8px); left: 0; right: auto; width: min(400px, 92vw); max-height: 70vh; overflow-y: auto; z-index: 60; }";
     document.head.appendChild(st);
   }
 
@@ -281,7 +313,7 @@
       .is("read_at", null);
     var n = count || 0;
     if (n > 0) {
-      badge.textContent = n > 9 ? "9+" : String(n);
+      badge.textContent = n > 99 ? "99+" : String(n);
       badge.hidden = false;
     } else {
       badge.hidden = true;
@@ -397,14 +429,22 @@
     if (!userId) return; // signed out — nothing to show yet
 
     currentUserId = userId;
+    IS_HOME = !!document.getElementById("rpDashBellSlot");
     injectStyles();
     buildHomeLink();
     var wrap = buildBell();
     if (!wrap) return;
 
+    placeHomeBell();
+    if (IS_HOME && window.matchMedia) {
+      var mq = window.matchMedia("(min-width: 900px)");
+      if (mq.addEventListener) mq.addEventListener("change", placeHomeBell); else if (mq.addListener) mq.addListener(placeHomeBell);
+    }
     wireEvents(userId);
     refreshBadge(userId);
-    setInterval(function () { refreshBadge(userId); }, POLL_MS);
+    // Live count: every 30 seconds while the page is showing, and straight away when the app/tab comes back to the front.
+    setInterval(function () { if (!document.hidden) refreshBadge(userId); }, POLL_MS);
     window.addEventListener("focus", function () { refreshBadge(userId); });
+    document.addEventListener("visibilitychange", function () { if (!document.hidden) refreshBadge(userId); });
   });
 })();
