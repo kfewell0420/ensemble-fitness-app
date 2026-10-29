@@ -443,15 +443,23 @@
   .pv-row button#pvPlay { flex: 0 0 auto; width: 36px; height: 36px; border-radius: 50%; border: 0; background: #ff6b3d; color: #fff; font-size: 13px; line-height: 1; cursor: pointer; padding: 0; }
   .pv-time { flex: 0 0 auto; font-size: 13px; font-weight: 700; color: #e6e8ef; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .pv-row #keepOriginalRow { margin: 0 0 0 auto !important; }
+  /* Phones/computers whose video box already shows its own play button and time (everything except iPhone): this row holds only "Keep original sound", at the left, and is hidden when no song is picked. */
+  .pv-row.native { margin-top: 8px; }
+  .pv-row.native #pvPlay, .pv-row.native .pv-time { display: none !important; }
+  .pv-row.native #keepOriginalRow { margin: 0 !important; }
+  .pv-row.native:not(.on) { display: none; }
   .drag-bubble { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 3; max-width: 92%; padding: 10px 22px; border-radius: 999px; background: rgba(0,0,0,0.7); color: #fff; font-size: 30px; font-weight: 800; letter-spacing: 0.5px; text-align: center; white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity .25s; box-shadow: 0 2px 10px rgba(0,0,0,0.5); }
   .drag-bubble.show { opacity: 1; }
   .mix-playhead { position: absolute; top: -3px; bottom: 0; width: 2px; margin-left: -1px; background: #fff; box-shadow: 0 0 4px rgba(0,0,0,0.6); pointer-events: none; left: 0; z-index: 4; }
   /* The round grab dot sits at the BOTTOM of the cursor line, under both bars. It is the only part of the cursor that can be
      grabbed (the line itself ignores touches, so grabbing the song bar can never move the cursor), and with the cursor at the far
      left a thumb on it is nowhere near Pause/Play. The dot's touch area is bigger than what is drawn. */
-  .mix-dot { position: absolute; left: 50%; bottom: 0; width: 48px; height: 44px; margin-left: -24px; pointer-events: auto; touch-action: none; cursor: ew-resize; -webkit-tap-highlight-color: transparent; }
-  .mix-dot::before { content: ""; position: absolute; left: 50%; bottom: 3px; width: 18px; height: 18px; margin-left: -9px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 2.5px rgba(11,15,26,0.9), 0 0 0 4px rgba(255,255,255,0.35), 0 2px 6px rgba(0,0,0,0.6); }
-  .mix-tracks { padding-bottom: 30px; margin: 0; }
+  .mix-dot { position: absolute; left: 50%; bottom: -14px; width: 48px; height: 44px; margin-left: -24px; pointer-events: auto; touch-action: none; cursor: ew-resize; -webkit-tap-highlight-color: transparent; }
+  .mix-dot::before { content: ""; position: absolute; left: 50%; bottom: 16px; width: 18px; height: 18px; margin-left: -9px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 2.5px rgba(11,15,26,0.9), 0 0 0 4px rgba(255,255,255,0.35), 0 2px 6px rgba(0,0,0,0.6); }
+  /* the white circle hangs right under the song bar and touches it (Ken, Oct 2026); with no song it touches the video strip instead */
+  .mix-tracks { padding-bottom: 20px; margin: 0; }
+  .mix-tracks.nosong { padding-bottom: 15px; }
+  .mix-track.mix-music { margin-bottom: 0; }
   .mix-track.mix-video { height: 24px !important; margin-bottom: 5px; }
   .mix-video.solid { background: linear-gradient(90deg, #4c3fa5, #7a68d8); cursor: default; }
   .mix-video.solid .mix-filmstrip { display: none; }
@@ -2958,6 +2966,8 @@
     mixTimeline.style.display = show ? "block" : "none";
     var mt = document.getElementById("mixMusicTrack");
     if (mt) mt.style.display = hasM ? "" : "none";
+    var mtracks = document.getElementById("mixTracks");
+    if (mtracks) mtracks.classList.toggle("nosong", !hasM);
     var vtr = document.getElementById("mixVideoTrack");
     if (vtr) vtr.classList.toggle("solid", !document.getElementById("mixFilmstrip").children.length);
     if (!show || !hasM) { syncReadout.style.display = "none"; if (show) updatePlayhead(); return; }
@@ -3176,6 +3186,9 @@
     // "Keep original sound" moves onto this row (same element, same code), so the controls and that choice share one line.
     var kor = document.getElementById("keepOriginalRow");
     if (kor) pvRow.appendChild(kor);
+    // Everywhere except iPhone the video box has its own play button and time, so ours stay hidden there (Ken, Oct 2026).
+    if (!IS_IOS_DEVICE) pvRow.classList.add("native");
+    pvRow.classList.toggle("on", IS_IOS_DEVICE || !!(kor && kor.style.display !== "none"));
     var pvToggle = function () {
       if (trimPreviewVideo.paused) trimPreviewVideo.play().catch(function () {}); else trimPreviewVideo.pause();
     };
@@ -3930,6 +3943,7 @@
   function updateKeepOriginalRow() {
     var hasMusic = !!musicTrackSelect.value && !musicTrackSelect.disabled;
     keepOriginalRow.style.display = hasMusic ? "flex" : "none";
+    if (pvRow) pvRow.classList.toggle("on", pvRowOn && (IS_IOS_DEVICE || hasMusic));
     if (!hasMusic) keepOriginalAudio.checked = false;
   }
   // "Start the song at …" — lets the artist skip a long intro. Saved as media.music_start_seconds.
