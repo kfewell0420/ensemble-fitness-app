@@ -55,7 +55,7 @@
       return "<strong>" + name + "</strong> reacted " + reactionEmoji(row.reaction_type) + " to your post";
     }
     if (row.type === "comment") {
-      return "<strong>" + name + "</strong> commented: “" + escapeHtml(row.preview || "") + "”";
+      return "<strong>" + name + "</strong> commented: “" + escapeHtml(row.preview || "") + "”" + '<span class="efit-notif-reply">Tap to reply \u203A</span>';
     }
     if (row.type === "follow") {
       return "<strong>" + name + "</strong> started following you";

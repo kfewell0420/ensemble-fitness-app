@@ -663,6 +663,23 @@
   <div class="conv-err" id="convErr" hidden></div>
   <div class="conv-bar"><input type="text" id="convInput" maxlength="500" placeholder="Message…" aria-label="Message" autocomplete="off" enterkeyhint="send"><button type="button" id="convSend" class="conv-send">Send</button></div>
 </div>
+<script>
+  // Oct 29 (Ken): no flash of "my profile" when a notification opens Messages. The Messages page (and, for a tapped message, an
+  // empty conversation frame) goes up the instant the page starts; the real content fills in when it has loaded.
+  (function () {
+    try {
+      var qs = new URLSearchParams(window.location.search), h = window.location.hash || "";
+      var chat = qs.get("chat");
+      if (!chat && h !== "#messages") return;
+      var mp = document.getElementById("msgPage");
+      if (mp) { mp.hidden = false; document.body.classList.add("msg-open"); }
+      if (chat) {
+        var th = document.getElementById("convThread");
+        if (th) { th.hidden = false; document.body.classList.add("conv-open"); }
+      }
+    } catch (e) {}
+  })();
+</script>
 <script src="js/vendor/supabase.js"></script>
 <script>window.supabase||document.write('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"><\/script>')</script>
 <script src="js/config.js"></script>
