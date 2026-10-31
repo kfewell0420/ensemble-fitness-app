@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>Community — Ensemble Fitness</title>
 <script>
-/* Fresh-on-return (Ken, Oct 2026): if the app/tab was away for 30+ minutes, show the newest posts instead of
+/* Fresh-on-return (Ken, Oct 2026): if the app/tab was away for 10+ minutes, show the newest posts instead of
    leaving you where you left off. Short trips (a text, a call) keep your place. Works three ways, because
    phones handle "away" differently: (1) the page wakes up and sees the clock jumped, (2) the page was closed
    by the phone and reopens, (3) the usual show/hide events. The saved "last screenful" is cleared first so old
    posts never flash and then swap. Runs first in the page, before Home reads that saved screenful. */
 (function () {
-  var AWAY_MS = 30 * 60 * 1000, KEY = "efit_alive_at", reloading = false, hiddenAt = 0, lastTick = Date.now();
+  var AWAY_MS = 10 * 60 * 1000, KEY = "efit_alive_at", reloading = false, hiddenAt = 0, lastTick = Date.now();
   function ls(fn) { try { return fn(window.localStorage); } catch (e) { return null; } }
   function stamp() { ls(function (s) { s.setItem(KEY, String(Date.now())); }); }
   function clearFeedCaches() {
@@ -50,7 +50,7 @@
     var now = Date.now();
     if (now - lastTick >= AWAY_MS) { lastTick = now; refreshNow(); return; }
     lastTick = now;
-    if (!document.hidden) stamp();
+    if (!document.hidden && !hiddenAt) stamp();
   }, 5000);
   /* (3) show/hide events */
   function markHidden() { if (!hiddenAt) hiddenAt = Date.now(); stamp(); }
@@ -64,6 +64,23 @@
   window.addEventListener("pageshow", function (e) { if (e.persisted) markShown(); });
   document.addEventListener("pause", markHidden, false);
   document.addEventListener("resume", markShown, false);
+  /* (4) the phone app itself (Capacitor) tells us the moment it goes to / comes back from the background */
+  var nativeWired = false;
+  function wireNative() {
+    if (nativeWired) return;
+    try {
+      var C = window.Capacitor, A = C && C.Plugins && C.Plugins.App;
+      if (!A && C && C.registerPlugin && C.isNativePlatform && C.isNativePlatform()) A = C.registerPlugin("App");
+      if (A && A.addListener) {
+        nativeWired = true;
+        A.addListener("appStateChange", function (st) { if (st && st.isActive === false) markHidden(); else markShown(); });
+      }
+    } catch (e) {}
+  }
+  wireNative();
+  document.addEventListener("DOMContentLoaded", wireNative);
+  window.addEventListener("load", wireNative);
+  var tries = 0, t = setInterval(function () { wireNative(); if (nativeWired || ++tries > 20) clearInterval(t); }, 500);
 })();
 </script>
 <script>
