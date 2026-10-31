@@ -4287,6 +4287,45 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     } catch (e) {}
   }
 
+  // Oct 31 (Ken, "1001, 1002" skip): the FIRST time a video's song starts it can begin a second or so behind the picture (the phone is
+  // still setting its sound player up). The player noticed 2.5 seconds later and jumped the song forward -- the skip you hear. Now the
+  // moment the song really starts, if it is behind the picture it is moved into place while it is silenced for that instant, then
+  // let back in: music that enters a beat later on the very first view, instead of a skip in the middle of it.
+  // (Plain single-clip posts with no music window only; everything else keeps the normal player.)
+  function attachSongAlign(slideEl, audio, item) {
+    try {
+      if (!item || (item.extraClips && item.extraClips.length)) return;
+      var w = item.musicWin;
+      if (w && ((w.delay > 0) || (w.length > 0))) return;
+      var vid = slideEl.querySelector("video");
+      if (!vid) return;
+      var off = Number(item.musicStart) || 0, st = Number(item.trim_start) || 0;
+      var busy = false, lastAt = 0;
+      audio.addEventListener("playing", function __songAlignOnPlaying() {
+        try {
+          if (busy || vid.paused || vid.ended) return;
+          var now = Date.now();
+          if (now - lastAt < 1500) return;
+          var want = off + Math.max(0, vid.currentTime - st) + 0.12;
+          var d = want - audio.currentTime;
+          if (Math.abs(d) <= 0.25 || Math.abs(d) > 20) return;
+          busy = true; lastAt = now;
+          var wasMuted = audio.muted;
+          if (!wasMuted) audio.muted = true;
+          var done = function () {
+            if (!busy) return;
+            busy = false;
+            audio.removeEventListener("seeked", done);
+            if (!wasMuted && audio.muted) audio.muted = false;
+          };
+          audio.addEventListener("seeked", done);
+          try { audio.currentTime = want; } catch (e) { done(); return; }
+          setTimeout(done, 900);
+        } catch (e) { busy = false; }
+      });
+    } catch (e) {}
+  }
+
   function buildSlide(item) {
     var el = document.createElement("div");
     el.className = "rp-slide";
@@ -4463,6 +4502,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
         postAudio.efResign = makeSongResign(item);
         wireFeedSound(videoEl, postAudio, !!item.keepOriginalAudio, item.trim_start, item.musicStart, item.musicWin, null, !!item.isMusicSound);
         attachSongWarm(el, postAudio, 0);
+        attachSongAlign(el, postAudio, item);
       }
       // Exercise labels (slide in from the left, hold, fade out) drawn over the video.
       if (item.textLabels && item.textLabels.length && videoEl) {
