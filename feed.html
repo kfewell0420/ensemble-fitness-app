@@ -4156,6 +4156,8 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
 
   var reelObserver = new IntersectionObserver(function (entries) {
     entries.forEach(function (entry) {
+      // (a photo post counts too: the song of the video AFTER it gets its head start while the photo is on screen)
+      if (entry.isIntersecting && entry.intersectionRatio > 0.6) warmSongsFor(entry.target);
       var video = entry.target.querySelector("video");
       if (!video) return;
       if (entry.isIntersecting && entry.intersectionRatio > 0.6) {
@@ -4237,6 +4239,42 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     var hash = 0;
     for (var i = 0; i < (userId || "").length; i++) hash = (hash * 31 + userId.charCodeAt(i)) >>> 0;
     return AVATAR_COLORS[hash % AVATAR_COLORS.length];
+  }
+
+  // Oct 31 (Ken): the song of a video you scroll to used to start downloading only when that video began playing, so the first time
+  // through there was a catch-up hitch about 3 seconds in (the next time it was already saved, so it played clean). A slide now
+  // gets a "warm" function: it starts that song's download early (from the spot where the post's music starts), for the video that
+  // just came on screen and for the one right after it. Only the song is fetched ahead -- never the video.
+  function attachSongWarm(slideEl, audio, startAt) {
+    slideEl._efWarmSong = function () {
+      try {
+        if (audio._efWarm) return;
+        audio._efWarm = true;
+        if (!audio.paused || audio.readyState > 0 || (audio.currentTime || 0) > 0.5) return;
+        audio.preload = "auto";
+        audio.addEventListener("loadedmetadata", function onMeta() {
+          audio.removeEventListener("loadedmetadata", onMeta);
+          try { if (audio.paused && (audio.currentTime || 0) < 0.5 && startAt > 0) audio.currentTime = startAt; } catch (e) {}
+        });
+        audio.load();
+      } catch (e) {}
+    };
+  }
+  function warmSongsFor(slideEl) {
+    try {
+      if (slideEl._efWarmSong) slideEl._efWarmSong();
+      setTimeout(function () {
+        try {
+          var r = slideEl.getBoundingClientRect();
+          if (r.bottom <= 0 || r.top >= window.innerHeight) return; // already scrolled away -- do not fetch ahead
+          var n = slideEl.nextElementSibling, hops = 0;
+          while (n && hops < 2) {
+            if (n._efWarmSong) { n._efWarmSong(); break; }
+            n = n.nextElementSibling; hops++;
+          }
+        } catch (e) {}
+      }, 1200);
+    } catch (e) {}
   }
 
   function buildSlide(item) {
@@ -4405,6 +4443,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
           reelAudio.src = item.soundUrl;
           reelAudio.efResign = makeSongResign(item);
           wireFeedSound(videoEl, reelAudio, !!item.keepOriginalAudio, item.trim_start, item.musicStart, item.musicWin, reel, true);
+          attachSongWarm(el, reelAudio, Number(item.musicStart) || 0);
         }
       } else if (item.soundUrl) {
         // Attached music/voice-over (single-clip posts only). See wireFeedSound.
@@ -4413,6 +4452,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
         postAudio.src = item.soundUrl;
         postAudio.efResign = makeSongResign(item);
         wireFeedSound(videoEl, postAudio, !!item.keepOriginalAudio, item.trim_start, item.musicStart, item.musicWin, null, !!item.isMusicSound);
+        attachSongWarm(el, postAudio, Number(item.musicStart) || 0);
       }
       // Exercise labels (slide in from the left, hold, fade out) drawn over the video.
       if (item.textLabels && item.textLabels.length && videoEl) {
