@@ -680,51 +680,6 @@
     } catch (e) {}
   })();
 </script>
-<script>
-  // TEMPORARY sound detective (Oct 31). Remembers any sound that starts on this page in its first 10 seconds and, for Ken's account
-  // only, shows a small yellow note at the bottom saying what started it. Remove after the "song blip on Profile" is found.
-  (function () {
-    var seen = [], t0 = (window.performance && performance.now) ? performance.now() : 0;
-    function now() { return Math.round(((window.performance && performance.now) ? performance.now() : 0) - t0); }
-    function tail(u) { u = String(u || ""); u = u.split("?")[0]; return u.slice(-34); }
-    function note(kind, el, extra) {
-      if (now() > 10000 || seen.length >= 8) return;
-      try {
-        seen.push(kind + " @" + now() + "ms " + (el && el.tagName ? el.tagName : "?") + " " + tail(el && (el.currentSrc || el.src)) +
-          " muted=" + (el ? el.muted : "?") + (extra ? " | " + extra : ""));
-      } catch (e) {}
-    }
-    try {
-      var op = HTMLMediaElement.prototype.play;
-      HTMLMediaElement.prototype.play = function () {
-        var st = ""; try { st = String(new Error().stack || "").split("\n").slice(2, 5).map(function (l) { return l.replace(/https?:\/\/[^\/]+\//, "").replace(/^\s+at\s+/, "").slice(0, 70); }).join(" < "); } catch (e) {}
-        note("play()", this, st);
-        return op.apply(this, arguments);
-      };
-      document.addEventListener("playing", function (e) { note("playing", e.target, ""); }, true);
-    } catch (e) {}
-    window.__soundDetective = function () {
-      if (!seen.length) return;
-      var d = document.createElement("div");
-      d.style.cssText = "position:fixed;left:8px;right:8px;bottom:8px;z-index:2147483647;background:#ffd23f;color:#111;font:11px/1.35 monospace;padding:8px 28px 8px 8px;border-radius:8px;max-height:40vh;overflow:auto;white-space:pre-wrap;word-break:break-all";
-      d.textContent = "SOUND STARTED ON PROFILE:\n" + seen.join("\n");
-      var x = document.createElement("span"); x.textContent = "\u2715"; x.style.cssText = "position:absolute;right:8px;top:4px;font-size:16px";
-      d.appendChild(x); d.addEventListener("click", function () { d.remove(); });
-      document.body.appendChild(d);
-    };
-    window.addEventListener("load", function () {
-      setTimeout(function () {
-        try {
-          if (window.__soundDetectiveForce) { window.__soundDetective(); return; }
-          window.sb.auth.getSession().then(function (r) {
-            var em = r && r.data && r.data.session && r.data.session.user && r.data.session.user.email;
-            if (em === "ken.fewell@gmail.com") window.__soundDetective();
-          });
-        } catch (e) {}
-      }, 4000);
-    });
-  })();
-</script>
 <script src="js/vendor/supabase.js"></script>
 <script>window.supabase||document.write('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"><\/script>')</script>
 <script src="js/config.js"></script>
@@ -2374,11 +2329,13 @@
       var soundClass = narrationUrl ? "narration-track" : "music-track";
       var keepOriginal = !!keepOriginalById[item.id] && !!musicUrl && !narrationUrl;
 
+      // Oct 31 (Ken): a tile with a cover picture does not load its video until it is tapped (the phone otherwise opens an audio
+      // channel for every tile on load -- a faint pop after Home has been playing sound).
       // muted only when there's a narration/music track to sync instead
       // (wireNarrationSync below) — a plain video plays with its own real
       // sound the moment someone presses play, no separate unmute needed.
       var mediaEl = item.kind === "video"
-        ? '<video src="' + url + (url && url.indexOf("#") < 0 ? "#t=0.001" : "") + '"' + (posterUrl ? ' poster="' + posterUrl + '"' : '') + ' preload="metadata"' + (soundUrl && !keepOriginal ? " muted" : "") + ' controls playsinline></video>' + (soundUrl ? '<audio class="' + soundClass + '" src="' + soundUrl + '" preload="auto"></audio>' : '')
+        ? '<video src="' + url + (url && url.indexOf("#") < 0 ? "#t=0.001" : "") + '"' + (posterUrl ? ' poster="' + posterUrl + '"' : '') + ' preload="' + (posterUrl ? "none" : "metadata") + '"' + (soundUrl && !keepOriginal ? " muted" : "") + ' controls playsinline></video>' + (soundUrl ? '<audio class="' + soundClass + '" src="' + soundUrl + '" preload="' + (posterUrl ? "none" : "auto") + '"></audio>' : '')
         : item.kind === "audio"
         ? '<div class="audio-card"><span class="audio-ico">🎙️</span><audio src="' + url + '" controls></audio></div>'
         : '<img src="' + url + '" alt="Upload" loading="lazy" decoding="async" />';
