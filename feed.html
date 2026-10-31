@@ -5883,5 +5883,39 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
   } catch (e) {}
 })();
 </script>
+<script>
+// Oct 31 (Ken): tapping Profile (or any link that leaves Home) used to let the music keep playing until the next page was ready to
+// replace this one -- a little burst of sound. Now everything that is playing is stopped the moment the link is tapped. If the phone
+// later brings this same page back (Back button), exactly what was playing carries on.
+(function () {
+  var stopped = [];
+  function stopAll() {
+    stopped = [];
+    try {
+      Array.prototype.forEach.call(document.querySelectorAll("video, audio"), function (m) {
+        if (!m.paused) { stopped.push(m); try { m.pause(); } catch (e) {} }
+      });
+    } catch (e) {}
+  }
+  document.addEventListener("click", function (e) {
+    try {
+      if (e.defaultPrevented || e.button > 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      var a = e.target && e.target.closest ? e.target.closest("a[href]") : null;
+      if (!a) return;
+      var href = a.getAttribute("href") || "";
+      if (!href || href.charAt(0) === "#" || /^(javascript|mailto|tel|sms):/i.test(href)) return;
+      var tg = (a.getAttribute("target") || "").toLowerCase();
+      if (tg && tg !== "_self") return;
+      stopAll();
+    } catch (err) {}
+  }, false);
+  window.addEventListener("pageshow", function (e) {
+    if (!e.persisted || !stopped.length) return;
+    var list = stopped; stopped = [];
+    list.sort(function (a, b) { return (a.tagName === "VIDEO" ? 0 : 1) - (b.tagName === "VIDEO" ? 0 : 1); });
+    list.forEach(function (m) { try { var pr = m.play(); if (pr && pr.catch) pr.catch(function () {}); } catch (err) {} });
+  });
+})();
+</script>
 </body>
 </html>
