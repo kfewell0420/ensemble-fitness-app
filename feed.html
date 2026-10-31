@@ -4239,54 +4239,6 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     return AVATAR_COLORS[hash % AVATAR_COLORS.length];
   }
 
-  // TEMPORARY song detective (Oct 31). Notes every time a post's song is moved to a new spot, and when one of those moves is a
-  // jump of more than a quarter second (a skip you can hear) it shows a small yellow note at the bottom -- for Ken's account only.
-  var __sk = { log: [], isKen: null, box: null };
-  function __skKen(cb) {
-    if (__sk.isKen !== null) { cb(__sk.isKen); return; }
-    try {
-      window.sb.auth.getSession().then(function (r) {
-        var em = r && r.data && r.data.session && r.data.session.user && r.data.session.user.email;
-        __sk.isKen = (em === "ken.fewell@gmail.com"); cb(__sk.isKen);
-      });
-    } catch (e) { __sk.isKen = false; cb(false); }
-  }
-  function __skShow() {
-    __skKen(function (ok) {
-      if (!ok) return;
-      if (!__sk.box) {
-        var d = document.createElement("div");
-        d.style.cssText = "position:fixed;left:6px;right:6px;bottom:6px;z-index:2147483647;background:#ffd23f;color:#111;font:10.5px/1.3 monospace;padding:6px 26px 6px 6px;border-radius:8px;max-height:36vh;overflow:auto;white-space:pre-wrap;word-break:break-all";
-        d.addEventListener("click", function () { d.remove(); __sk.box = null; __sk.log.length = 0; });
-        document.body.appendChild(d); __sk.box = d;
-      }
-      __sk.box.textContent = "SONG MOVED (tap to close):\n" + __sk.log.slice(-7).join("\n");
-    });
-  }
-  function attachSongWarm(slideEl, audio, startAt) {
-    try {
-      var vid = slideEl.querySelector("video"), t0 = 0;
-      var desc = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "currentTime");
-      Object.defineProperty(audio, "currentTime", {
-        configurable: true,
-        get: function () { return desc.get.call(audio); },
-        set: function (v) {
-          try {
-            var from = desc.get.call(audio), now = Date.now();
-            if (!t0) t0 = now;
-            var st = ""; try { st = String(new Error().stack || "").split("\n").slice(2, 4).map(function (l) { return l.replace(/^\s+at\s+/, "").replace(/\(.*[\/\\]/, "(").slice(0, 38); }).join(" < "); } catch (e) {}
-            if (Math.abs(v - from) > 0.25 && now - t0 > 600) {
-              __sk.log.push("+" + (now - t0) + "ms song " + from.toFixed(2) + "->" + (+v).toFixed(2) + " vid=" + (vid ? vid.currentTime.toFixed(2) : "?") +
-                " rs=" + audio.readyState + (audio.paused ? " paused" : " playing") + " | " + st);
-              __skShow();
-            }
-          } catch (e) {}
-          desc.set.call(audio, v);
-        }
-      });
-    } catch (e) {}
-  }
-
   // Oct 31 (Ken, "1001, 1002" skip): the FIRST time a video's song starts it can begin a second or so behind the picture (the phone is
   // still setting its sound player up). The player noticed 2.5 seconds later and jumped the song forward -- the skip you hear. Now the
   // moment the song really starts, if it is behind the picture it is moved into place while it is silenced for that instant, then
@@ -4492,7 +4444,6 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
           reelAudio.src = item.soundUrl;
           reelAudio.efResign = makeSongResign(item);
           wireFeedSound(videoEl, reelAudio, !!item.keepOriginalAudio, item.trim_start, item.musicStart, item.musicWin, reel, true);
-          attachSongWarm(el, reelAudio, 0);
         }
       } else if (item.soundUrl) {
         // Attached music/voice-over (single-clip posts only). See wireFeedSound.
@@ -4501,7 +4452,6 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
         postAudio.src = item.soundUrl;
         postAudio.efResign = makeSongResign(item);
         wireFeedSound(videoEl, postAudio, !!item.keepOriginalAudio, item.trim_start, item.musicStart, item.musicWin, null, !!item.isMusicSound);
-        attachSongWarm(el, postAudio, 0);
         attachSongAlign(el, postAudio, item);
       }
       // Exercise labels (slide in from the left, hold, fade out) drawn over the video.
