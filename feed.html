@@ -5957,5 +5957,44 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
   });
 })();
 </script>
+<script>
+/* Fresh-on-return (Ken, Oct 2026): if the app/tab was in the background for 30+ minutes, reload Home so the
+   newest posts show instead of leaving you stuck where you left off. Short trips (a text, a call) keep your
+   place. The saved "last screenful" is cleared first so you never see old posts flash and then swap. */
+(function () {
+  var AWAY_MS = 30 * 60 * 1000;
+  var hiddenAt = 0;
+  function markHidden() { if (!hiddenAt) hiddenAt = Date.now(); }
+  function busy() {
+    try {
+      var a = document.activeElement;
+      if (a && (a.tagName === "TEXTAREA" || (a.tagName === "INPUT" && /^(text|search|email|url|)$/i.test(a.type || ""))) && a.value) return true;
+    } catch (e) {}
+    return false;
+  }
+  function clearFeedCaches() {
+    [window.localStorage, window.sessionStorage].forEach(function (st) {
+      try {
+        var del = [];
+        for (var i = 0; i < st.length; i++) { var k = st.key(i); if (k && k.indexOf("efit_feed_cache_") === 0) del.push(k); }
+        del.forEach(function (k) { st.removeItem(k); });
+      } catch (e) {}
+    });
+  }
+  function markShown() {
+    var t = hiddenAt; hiddenAt = 0;
+    if (!t || (Date.now() - t) < AWAY_MS || busy()) return;
+    clearFeedCaches();
+    try { history.scrollRestoration = "manual"; } catch (e) {}
+    try { window.scrollTo(0, 0); } catch (e) {}
+    location.replace(location.href.split("#")[0]);
+  }
+  document.addEventListener("visibilitychange", function () { if (document.hidden) markHidden(); else markShown(); });
+  window.addEventListener("pagehide", markHidden);
+  window.addEventListener("pageshow", function (e) { if (e.persisted) markShown(); });
+  document.addEventListener("pause", markHidden, false);
+  document.addEventListener("resume", markShown, false);
+})();
+</script>
 </body>
 </html>
