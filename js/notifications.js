@@ -278,6 +278,7 @@
   // just counts what was posted after that (a count-only question per area, cached ~2 minutes). Own posts never count.
   // =====================================================================================================================
   var NEW_AREAS = [
+    { key: "journeys",   icon: "\uD83C\uDF05", one: "new Journey",     many: "new Journeys",     idle: "Journeys",   href: "fitness-journeys.html", page: /fitness-journeys/ },
     { key: "mealprep",   icon: "\uD83E\uDD57", one: "new Meal Prep",   many: "new Meal Preps",   idle: "Meal Preps", href: "meal-prep.html",  page: /meal-prep/ },
     { key: "challenges", icon: "\uD83C\uDFC6", one: "new Community Challenge", many: "new Community Challenges", idle: "Community Challenges", href: "challenges.html", page: /challenges/ }
   ];
