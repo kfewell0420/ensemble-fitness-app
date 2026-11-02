@@ -281,7 +281,7 @@
     { key: "journeys",   icon: "\uD83C\uDF05", one: "new Journey",     many: "new Journeys",     idle: "Journeys",   href: "fitness-journeys.html", page: /fitness-journeys/ },
     { key: "mealprep",   icon: "\uD83E\uDD57", one: "new Meal Prep",   many: "new Meal Preps",   idle: "Meal Preps", href: "meal-prep.html",        page: /meal-prep/ },
     { key: "posts",      icon: "\uD83D\uDE4C", one: "new member post", many: "new member posts", idle: "Member posts", href: "feed.html",           page: null },
-    { key: "challenges", icon: "\uD83C\uDFC6", one: "new Challenge",   many: "new Challenges",   idle: "Challenges", href: "challenges.html",       page: /challenges/ }
+    { key: "challenges", icon: "\uD83C\uDFC6", one: "new Community Challenge", many: "new Community Challenges", idle: "Community Challenges", href: "challenges.html",       page: /challenges/ }
   ];
   var NEW_TTL_MS = 120000;
   var newCounts = {};      // key -> number
