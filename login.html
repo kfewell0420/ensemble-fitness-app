@@ -185,7 +185,7 @@
     var today = new Date();
     var maxDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
     var minDate = new Date(today.getFullYear() - 100, today.getMonth(), today.getDate());
-    function iso(d) { return d.toISOString().slice(0, 10); }
+    function iso(d) { return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); }
     dobInput.setAttribute("max", iso(maxDate));
     dobInput.setAttribute("min", iso(minDate));
   })();
