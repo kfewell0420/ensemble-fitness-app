@@ -584,6 +584,67 @@ body.fj-lock { overflow: hidden; }
 @media (max-width: 385px) { .fj-rep-label { font-size: 11px; letter-spacing: 0.05em; padding-left: 24px; } .fj-seeall { font-size: 12px; padding: 5px 10px; } }
 </style>
 
+<style>
+/* ======================================================================
+   Nov 2026, round 3 (Ken, from mock-up): compact Journey card (about 40% shorter), orange border + orange headline bar on every
+   card, colour-split accents (category pill colours, green outlines with white symbols), one-line Community Support with no photo,
+   reaction pills open the "who sent it" window.  Phones only (the website keeps its look).
+   ====================================================================== */
+.fj-mine { display: none; align-items: center; gap: 10px; margin: 12px 0 2px; padding: 10px 12px; border-radius: 16px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.13); }
+.fj-mine-t { flex: 1; font-size: 13px; font-weight: 700; color: #cfd2d8; }
+.fj-mine-b { width: 42px; height: 42px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,0.2); background: #2a2b30; font-size: 21px; line-height: 1; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 0; }
+.fj-mine-b.on { background: rgba(255,194,71,0.22); border-color: #ffc247; }
+.fj-sheet { background: radial-gradient(ellipse 90% 260px at 100% 0%, rgba(255,138,40,0.32) 0%, rgba(120,170,80,0.20) 45%, rgba(30,31,35,0) 75%), #1e1f23; }
+.fj-reply-item[data-seeall] { cursor: pointer; }
+@media (max-width: 899px) {
+  .fj-grid { gap: 14px; }
+  .fj-card { padding: 12px 14px 14px; border-radius: 20px; border: 1.5px solid rgba(255,122,61,0.8); }
+  .fj-card::before { background: radial-gradient(ellipse 85% 300px at 100% 0%, rgba(255,138,40,0.50) 0%, rgba(222,190,52,0.38) 24%, rgba(120,170,80,0.30) 52%, rgba(30,31,35,0) 80%); }
+  .fj-card-head { gap: 10px; }
+  .fj-card-head > .fj-avatar { width: 40px !important; height: 40px !important; }
+  .fj-card-name { font-size: 15px; line-height: 1.15; }
+  .fj-card-sub { font-size: 11.5px; margin-top: 1px; }
+  .fj-menu-btn { font-size: 20px; }
+
+  .fj-cat-chip { margin: 9px 0 0; padding: 3px 11px; font-size: 12.5px; color: var(--cc, #ffb27a); background: var(--cbg, rgba(255,255,255,0.12)); border: 1px solid var(--cbd, rgba(255,255,255,0.24)); }
+  .fj-headline-box { margin: 9px 0 0; padding-left: 11px; }
+  .fj-headline-box .fj-headline { font-size: 20px; line-height: 1.15; }
+  .fj-quote { margin: 7px 0 0; font-size: 13.5px; line-height: 1.35; }
+  .fj-meta-line { margin: 9px 0 0; gap: 10px; font-size: 12.5px; }
+  .fj-m-ico { width: 17px; height: 17px; }
+  .fj-m-date { gap: 6px; line-height: 1.2; }
+  .fj-m-date .fj-m-ico { color: #8fb6ff; }
+  .fj-m-feel { gap: 6px; padding-left: 10px; color: #ffc247; line-height: 1.2; }
+  .fj-m-feel .fj-m-ico { color: #ffc247; }
+  .fj-meta-line:has(.fj-m-feel) .fj-m-date { max-width: 80px; flex: 0 0 auto; }
+
+  .fj-reactions { margin: 10px 0 0; padding-top: 10px; gap: 7px; }
+  .fj-reaction-pill { font-size: 13.5px; padding: 3px 11px; color: #fff; background: #2a2b30; border: 1px solid rgba(255,255,255,0.14); }
+  .fj-reaction-pill.active { color: #fff; background: rgba(255,194,71,0.16); border-color: #ffc247; }
+  .fj-ccount { gap: 5px; font-size: 13.5px; padding: 3px 11px; color: #fff; background: rgba(123,216,143,0.12); border: 1px solid #7bd88f; }
+  .fj-ccount .fj-m-ico { width: 16px; height: 16px; color: #fff; }
+
+  .fj-replies { margin: 10px 0 0; }
+  .fj-replies:not(:empty) { padding: 8px 11px; border: 1px solid rgba(123,216,143,0.55); border-radius: 13px; }
+  .fj-rep-head { min-height: 0; margin-bottom: 2px; }
+  .fj-rep-label { font-size: 11px; letter-spacing: 0.1em; color: #7bd88f; padding-left: 22px; min-height: 16px; line-height: 16px;
+    background: url("data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20viewBox=%270%200%2024%2024%27%20fill=%27none%27%20stroke=%27%23ffffff%27%20stroke-width=%272%27%20stroke-linecap=%27round%27%20stroke-linejoin=%27round%27%3E%3Cpath%20d=%27M16%2021v-2a4%204%200%200%200-4-4H6a4%204%200%200%200-4%204v2%27/%3E%3Ccircle%20cx=%279%27%20cy=%277%27%20r=%274%27/%3E%3Cpath%20d=%27M22%2021v-2a4%204%200%200%200-3-3.87M16%203.13a4%204%200%200%201%200%207.75%27/%3E%3C/svg%3E") no-repeat left center / 15px 15px; }
+  .fj-reply-item { padding: 0; margin: 0; gap: 8px; border: 0; }
+  .fj-reply-text { font-size: 13.5px; line-height: 1.35; -webkit-line-clamp: 1; }
+  .fj-reply-time { font-size: 11.5px; }
+
+  .fj-support { margin: 11px 0 0; }
+  .fj-support-label { color: #7bd88f; font-size: 11px; min-height: 16px; margin-bottom: 6px; gap: 7px; }
+  .fj-support-label::before { width: 15px; height: 15px; background-size: 15px 15px;
+    background-image: url("data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20viewBox=%270%200%2024%2024%27%20fill=%27none%27%20stroke=%27%23ffffff%27%20stroke-width=%272%27%20stroke-linecap=%27round%27%20stroke-linejoin=%27round%27%3E%3Cpath%20d=%27m22%202-7%2020-4-9-9-4Z%27/%3E%3Cpath%20d=%27M22%202%2011%2013%27/%3E%3C/svg%3E"); }
+  .fj-support-chips { gap: 6px; }
+  .fj-support-chip { padding: 6px 4px; font-size: 12px; color: #ffffff; background: #24272b; border: 1.5px solid rgba(123,216,143,0.55); }
+  .fj-reply-row { margin-top: 9px; gap: 8px; }
+  .fj-reply-input { height: 38px; padding: 0 14px; font-size: 13.5px; }
+  .fj-reply-send { height: 38px; padding: 0 20px; font-size: 14px; }
+}
+</style>
+
 <div class="app-shell">
 
   <div class="fj-hero">
@@ -1019,13 +1080,19 @@ body.fj-lock { overflow: hidden; }
     return Math.floor(d / 30) + "mo";
   }
   function repHeadHtml(total, live) {
-    return '<div class="fj-rep-head"><span class="fj-rep-label">Community support</span>' +
-      (total > 1 ? (live ? '<button type="button" class="fj-seeall" data-seeall>See all ' + total + ' ›</button>'
-                         : '<span class="fj-seeall">See all ' + total + ' ›</span>') : '') + '</div>';
+    return '<div class="fj-rep-head"><span class="fj-rep-label">Community support</span></div>';
+  }
+  // Nov 2026: each category gets its own accent on the category pill (breaks up the orange).
+  var CATEGORY_RGB = { "Weight Loss": "255,194,71", "Building Strength": "255,107,90", "Running": "76,195,255", "Nutrition": "90,209,122",
+                       "Recovery": "61,214,198", "Mental Health": "167,139,250", "Over 40": "255,159,67", "Beginners": "182,224,74" };
+  function chipStyle(cat) {
+    var rgb = CATEGORY_RGB[cat];
+    if (!rgb) return "";
+    return ' style="--cc:rgb(' + rgb + ');--cbg:rgba(' + rgb + ',0.16);--cbd:rgba(' + rgb + ',0.55);"';
   }
   function metaLineHtml(dateLabel, mood) {
     var bits = [];
-    if (dateLabel) bits.push('<span class="fj-m-date">' + ICO_CAL + escapeHtml(dateLabel) + '</span>');
+    if (dateLabel) bits.push('<span class="fj-m-date">' + ICO_CAL + (mood ? escapeHtml(dateLabel).replace(", ", ",<br>") : escapeHtml(dateLabel)) + '</span>');
     if (mood) bits.push('<span class="fj-m-feel">' + ICO_BOLT + 'Felt ' + escapeHtml(mood) + '</span>');
     return bits.join('<span class="fj-m-sep"> · </span>');
   }
@@ -1058,14 +1125,14 @@ body.fj-lock { overflow: hidden; }
       '</div>' +
       '<div class="fj-card-body">' +
         headlineBox(item.headline) +
-        '<div class="fj-cat-chip">' + icon + ' ' + escapeHtml(item.category) + '</div>' +
+        '<div class="fj-cat-chip"' + chipStyle(item.category) + '>' + icon + ' ' + escapeHtml(item.category) + '</div>' +
         '<div class="fj-quote">“' + escapeHtml(item.quote) + '”</div>' +
       '</div>' +
       '<div class="fj-reactions">' + STORY_REACTIONS.map(function (r) {
         return '<span class="fj-reaction-pill" style="cursor:default;">' + r.emoji + ' <span class="fj-reaction-count">' + (item.reactions[r.type] || 0) + '</span></span>';
       }).join("") + '<span class="fj-ccount">' + commentCountHtml(item.replies.length) + '</span></div>' +
       '<div class="fj-replies">' + repHeadHtml(item.replies.length, false) + item.replies.slice(0, 1).map(function (r) {
-        return '<div class="fj-reply-item">' + '<div class="fj-avatar" style="width:26px;height:26px;font-size:11px;background:' + avatarColor(r.name) + '">' + escapeHtml(r.name.charAt(0).toUpperCase()) + '</div>' +
+        return '<div class="fj-reply-item">' +
           '<div class="fj-reply-text"><strong>' + escapeHtml(r.name) + '</strong> ' + escapeHtml(r.body) + '</div></div>';
       }).join("") + '</div>' +
       supportRow(false) +
@@ -1179,7 +1246,7 @@ body.fj-lock { overflow: hidden; }
       '</div>' +
       '<div class="fj-card-body" data-body>' +
         headlineBox(headline) +
-        (item.category ? '<div class="fj-cat-chip">' + icon + ' ' + escapeHtml(item.category) + '</div>' : '') +
+        (item.category ? '<div class="fj-cat-chip"' + chipStyle(item.category) + '>' + icon + ' ' + escapeHtml(item.category) + '</div>' : '') +
         (item.notes ? '<div class="fj-quote">“' + escapeHtml(item.notes) + '”</div>' : '') +
         '<div class="fj-meta-line">' + metaLineHtml(dateLabel, item.mood) + '</div>' +
       '</div>' +
@@ -1238,7 +1305,7 @@ body.fj-lock { overflow: hidden; }
       var btn = reactionsEl.querySelector('[data-reaction="' + r.type + '"]');
       btn.classList.toggle("active", !!mine[r.type]);
       btn.querySelector(".fj-reaction-count").textContent = counts[r.type] || 0;
-      btn.addEventListener("click", function () { toggleStoryReaction(item.id, r.type, btn); });
+      btn.addEventListener("click", function () { openSheet(item, "reactions", r.type); });
     });
 
     // ---- replies ----
@@ -1293,12 +1360,15 @@ body.fj-lock { overflow: hidden; }
     item.replyTotal = total;
     var ccEl = card.querySelector("[data-ccount]");
     if (ccEl) ccEl.innerHTML = commentCountHtml(total);
-    if (!visible.length) { repliesEl.innerHTML = ""; return; }
+    if (!visible.length) {
+      repliesEl.innerHTML = repHeadHtml(0, true) + '<div class="fj-reply-item" data-seeall><div class="fj-reply-text" style="color:#a3a7b0;">Be the first to cheer them on</div></div>';
+      return;
+    }
     var r = visible[0];
     await attachAvatarUrls([r]);
     var name = (r.profiles && r.profiles.display_name) || "A member";
     repliesEl.innerHTML = repHeadHtml(total, true) +
-      '<div class="fj-reply-item">' + avatarHtml({ user_id: r.user_id, asker_name: name, avatarUrl: r.avatarUrl }, 26) +
+      '<div class="fj-reply-item" data-seeall>' +
         '<div class="fj-reply-text' + (r.user_id === item.user_id ? ' fj-reply-author' : '') + '"><strong>' + escapeHtml(name) + '</strong> ' + escapeHtml(r.reply_text) + '</div>' +
         '<span class="fj-reply-time">' + escapeHtml(timeAgo(r.created_at)) + '</span></div>';
   }
@@ -1395,6 +1465,9 @@ body.fj-lock { overflow: hidden; }
         '</div>' +
         '<div class="fj-sh-body" data-scroll>' +
           '<div class="fj-fchips" data-fchips style="display:none;"></div>' +
+          '<div class="fj-mine" data-mine style="display:none;"><span class="fj-mine-t">Your reaction</span>' + STORY_REACTIONS.map(function (r) {
+            return '<button type="button" class="fj-mine-b" data-mt="' + r.type + '" aria-label="React ' + r.type + '">' + r.emoji + '</button>';
+          }).join("") + '</div>' +
           '<div data-list></div>' +
           '<button type="button" class="fj-sh-more" data-more style="display:none;"></button>' +
         '</div>' +
@@ -1422,6 +1495,10 @@ body.fj-lock { overflow: hidden; }
       b.addEventListener("click", function () { sheetPost(b.getAttribute("data-shchip")); });
     });
     document.addEventListener("keydown", function (e) { if (e.key === "Escape" && sheet.open) closeSheet(); });
+    ov.addEventListener("click", function (e) {
+      var b = e.target.closest && e.target.closest("[data-mt]");
+      if (b) sheetToggleMine(b.getAttribute("data-mt"));
+    });
 
     // Android's back button / swipe-back closes the window instead of leaving the page
     window.addEventListener("popstate", function () {
@@ -1478,11 +1555,12 @@ body.fj-lock { overflow: hidden; }
     hideSheet();
   }
 
-  async function openSheet(item, tab) {
+  async function openSheet(item, tab, filter) {
     buildSheet();
     var ov = document.getElementById("fjSheetOv");
     sheet.item = item;
-    sheet.filter = "all";
+    sheet.filter = filter || "all";
+    sheet.mine = {};
     sheet.rCounts = null;
     sheet.cTotal = item.replyTotal || 0;
     sheet.token++;
@@ -1502,6 +1580,7 @@ body.fj-lock { overflow: hidden; }
     if (sheet.fit) sheet.fit();
     sheetSetTab(tab || "comments");
     sheetLoadReactionCounts();   // fills in the Reactions tab number
+    sheetLoadMine();
   }
 
   function sheetSetTab(tab) {
@@ -1509,6 +1588,7 @@ body.fj-lock { overflow: hidden; }
     document.querySelectorAll("#fjSheetOv [data-tab]").forEach(function (b) { b.classList.toggle("on", b.getAttribute("data-tab") === tab); });
     shEl("[data-composer]").style.display = tab === "comments" ? "" : "none";
     shEl("[data-fchips]").style.display = tab === "reactions" ? "flex" : "none";
+    shEl("[data-mine]").style.display = tab === "reactions" ? "flex" : "none";
     shEl("[data-scroll]").scrollTop = 0;
     if (tab === "comments") sheetLoadComments(true); else { sheetRenderChips(); sheetLoadReactions(true); }
   }
@@ -1556,6 +1636,48 @@ body.fj-lock { overflow: hidden; }
     }).join(""));
     shEl('[data-n="comments"]').textContent = sheet.cTotal;
     setMore(sheet.cTotal - sheet.cOff);
+  }
+
+  function sheetRenderMine() {
+    document.querySelectorAll("#fjSheetOv [data-mt]").forEach(function (b) {
+      b.classList.toggle("on", !!(sheet.mine && sheet.mine[b.getAttribute("data-mt")]));
+    });
+  }
+  async function sheetLoadMine() {
+    if (!currentUserId || !sheet.item) return;
+    var my = sheet.token;
+    try {
+      var res = await window.sb.from("story_reactions").select("reaction").eq("question_id", sheet.item.id).eq("user_id", currentUserId);
+      if (my !== sheet.token) return;
+      sheet.mine = {};
+      (res.data || []).forEach(function (r) { sheet.mine[r.reaction] = true; });
+    } catch (e) {}
+    sheetRenderMine();
+  }
+  var mineBusy = false;
+  async function sheetToggleMine(type) {
+    if (mineBusy || !currentUserId || !sheet.item) return;
+    mineBusy = true;
+    var item = sheet.item;
+    try {
+      var card = document.querySelector('.fj-card[data-id="' + item.id + '"]');
+      var btn = card && card.querySelector('[data-reaction="' + type + '"]');
+      if (btn) {
+        await toggleStoryReaction(item.id, type, btn);      // also updates the pill + count on the card
+        sheet.mine[type] = btn.classList.contains("active");
+      } else if (sheet.mine[type]) {
+        await window.sb.from("story_reactions").delete().eq("question_id", item.id).eq("user_id", currentUserId).eq("reaction", type);
+        sheet.mine[type] = false;
+      } else {
+        await window.sb.from("story_reactions").insert({ question_id: item.id, user_id: currentUserId, reaction: type });
+        sheet.mine[type] = true;
+      }
+      sheetRenderMine();
+      if (sheet.open && sheet.item === item) {
+        await sheetLoadReactionCounts();
+        if (sheet.tab === "reactions") { sheetRenderChips(); sheetLoadReactions(true); }
+      }
+    } finally { mineBusy = false; }
   }
 
   async function sheetLoadReactionCounts() {
