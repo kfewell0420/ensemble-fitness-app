@@ -278,10 +278,8 @@
   // just counts what was posted after that (a count-only question per area, cached ~2 minutes). Own posts never count.
   // =====================================================================================================================
   var NEW_AREAS = [
-    { key: "journeys",   icon: "\uD83C\uDF05", one: "new Journey",     many: "new Journeys",     idle: "Journeys",   href: "fitness-journeys.html", page: /fitness-journeys/ },
-    { key: "mealprep",   icon: "\uD83E\uDD57", one: "new Meal Prep",   many: "new Meal Preps",   idle: "Meal Preps", href: "meal-prep.html",        page: /meal-prep/ },
-    { key: "posts",      icon: "\uD83D\uDE4C", one: "new member post", many: "new member posts", idle: "Member posts", href: "feed.html",           page: null },
-    { key: "challenges", icon: "\uD83C\uDFC6", one: "new Community Challenge", many: "new Community Challenges", idle: "Community Challenges", href: "challenges.html",       page: /challenges/ }
+    { key: "mealprep",   icon: "\uD83E\uDD57", one: "new Meal Prep",   many: "new Meal Preps",   idle: "Meal Preps", href: "meal-prep.html",  page: /meal-prep/ },
+    { key: "challenges", icon: "\uD83C\uDFC6", one: "new Community Challenge", many: "new Community Challenges", idle: "Community Challenges", href: "challenges.html", page: /challenges/ }
   ];
   var NEW_TTL_MS = 120000;
   var newCounts = {};      // key -> number
@@ -399,27 +397,333 @@
     ".efit-new-t span { display: block; font-size: 12.5px; color: #b9bcc4; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }" +
     ".efit-new-cnt { flex: none; min-width: 26px; height: 26px; border-radius: 13px; background: #ff5a1f; color: #fff; font-weight: 800; font-size: 13px; display: flex; align-items: center; justify-content: center; padding: 0 7px; }" +
     ".efit-new-chev { flex: none; color: #8d919a; font-size: 20px; line-height: 1; }" +
+    ".efit-day { padding: 8px 16px 2px; font-size: 12px; font-weight: 700; color: #8d919a; }" +
+    ".efit-th { flex: none; position: relative; width: 46px; height: 58px; border-radius: 10px; border: 1.5px solid rgba(255,122,61,0.6); display: flex; align-items: center; justify-content: center; background: #2a2b2f; }" +
+    ".efit-th img { width: 100%; height: 100%; object-fit: cover; border-radius: 8.5px; display: block; }" +
+    ".efit-th-e { font-size: 22px; }" +
+    ".efit-th small { position: absolute; top: -7px; left: -7px; min-width: 22px; height: 22px; padding: 0 4px; border-radius: 11px; background: #26272b; border: 1.5px solid rgba(255,122,61,0.7); color: #fff; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; }" +
+    ".efit-q { color: #ffd6b8; font-weight: 800; }" +
+    ".efit-who { text-decoration: underline; text-decoration-color: rgba(255,255,255,0.35); text-underline-offset: 2px; }" +
+    ".efit-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }" +
+    ".efit-chips i { font-style: normal; font-size: 12.5px; font-weight: 800; color: #ffd6b8; background: rgba(255,90,31,0.15); border: 1px solid rgba(255,122,61,0.55); border-radius: 999px; padding: 2px 9px; }" +
+    ".efit-sub { display: block; font-size: 13px; color: #b9bcc4; margin-top: 1px; }" +
+    ".efit-earlier { display: flex; align-items: center; gap: 12px; margin: 10px 12px 14px; padding: 12px 14px; border-radius: 16px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.14); color: #fff; text-decoration: none; }" +
+    ".efit-earlier-ic { font-size: 22px; flex: none; }" +
+    ".efit-earlier-t { flex: 1; min-width: 0; } .efit-earlier-t b { display: block; font-size: 14px; } .efit-earlier-t span { display: block; font-size: 12.5px; color: #b9bcc4; margin-top: 2px; line-height: 1.35; }" +
+    ".efit-win-ov { position: fixed; left: 0; right: 0; top: 0; height: 100%; z-index: 2147483600; display: none; align-items: flex-end; justify-content: center; background: rgba(5,7,13,0.74); }" +
+    ".efit-win-ov.show { display: flex; }" +
+    ".efit-win { position: relative; width: 100%; max-width: 600px; height: calc(100% - 64px); display: flex; flex-direction: column; overflow: hidden; color: #fff; font-family: inherit;" +
+    " background: radial-gradient(ellipse 90% 260px at 92% 0%, rgba(120,160,88,0.30) 0%, rgba(30,31,35,0) 70%), #1e1f23; border: 1.5px solid rgba(255,122,61,0.75); border-bottom: 0; border-radius: 26px 26px 0 0; box-shadow: 0 -12px 40px rgba(0,0,0,0.55); }" +
+    ".efit-win-top { flex: none; padding: 10px 18px 8px; }" +
+    ".efit-win-grab { display: block; width: 44px; height: 5px; border-radius: 3px; background: rgba(255,255,255,0.28); margin: 0 auto 10px; }" +
+    ".efit-win-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }" +
+    ".efit-win-head > div:first-child { min-width: 0; flex: 1 1 auto; }" +
+    ".efit-win-title { font-size: 23px; font-weight: 800; line-height: 1.15; }" +
+    ".efit-win-sub { margin-top: 3px; font-size: 13px; color: #a3a7b0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }" +
+    ".efit-win-x { flex: none; width: 40px; height: 40px; border-radius: 50%; border: 0; background: rgba(255,255,255,0.12); color: #fff; font-size: 17px; cursor: pointer; }" +
+    ".efit-win-back { display: none; margin: 0 0 6px; padding: 0; border: 0; background: none; color: #ff8a4c; font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; }" +
+    ".efit-win-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; padding: 0 18px 18px; }" +
+    ".efit-win-chips { display: flex; gap: 8px; flex-wrap: wrap; margin: 6px 0 4px; }" +
+    ".efit-win-chips button { font: inherit; font-size: 13.5px; font-weight: 800; color: #ffd6b8; background: rgba(255,90,31,0.12); border: 1.5px solid rgba(255,122,61,0.55); border-radius: 999px; padding: 6px 13px; cursor: pointer; }" +
+    ".efit-win-chips button.on { background: rgba(255,90,31,0.45); border-color: #ff5a1f; color: #fff; }" +
+    ".efit-win-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; color: #fff; text-decoration: none; }" +
+    ".efit-win-item + .efit-win-item { border-top: 1px solid rgba(255,255,255,0.1); }" +
+    ".efit-win-item .efit-notif-av { width: 40px; height: 40px; }" +
+    ".efit-win-main { flex: 1; min-width: 0; } .efit-win-name { font-size: 15px; font-weight: 800; overflow-wrap: anywhere; }" +
+    ".efit-win-emoji { flex: none; font-size: 24px; line-height: 1; }" +
+    ".efit-win-post { cursor: pointer; } .efit-win-post .efit-chips { margin-top: 6px; }" +
+    ".efit-win-empty { padding: 26px 4px; text-align: center; color: #a3a7b0; font-size: 14.5px; }" +
+    ".efit-win-more { display: block; width: 100%; margin: 8px 0 4px; font: inherit; font-size: 15px; font-weight: 800; color: #ffb27a; background: none; border: 1.5px solid rgba(255,122,61,0.8); border-radius: 999px; padding: 12px; cursor: pointer; }" +
+    ".efit-win-note { padding: 12px 2px; font-size: 13px; color: #8d919a; }" +
     ".efit-foryou-empty { padding: 10px 16px 16px; font-size: 13px; color: rgba(255,255,255,0.6); }";
 
+  var TODAY_MS = 2 * 864e5;
+  var R_TYPES = ["muscle", "heart", "thumbs_up"];
+  var R_EMOJI = { muscle: "💪", heart: "❤️", thumbs_up: "👍" };
+  var postInfo = {};      // media_id -> { title, emoji, thumb }
+  var lastModel = null;
+  function rKey(t) { return t === "heart" ? "heart" : (t === "muscle" ? "muscle" : "thumbs_up"); }
+  function distinctCount(o) { return Object.keys(o).length; }
+
+  function buildModel(rows) {
+    var now = Date.now(), items = [], groups = {}, follows = [], per = {}, followActors = {};
+    var older = { r: { muscle: {}, heart: {}, thumbs_up: {} }, comments: 0, follows: {} };
+    rows.forEach(function (r) {
+      var recent = (now - Date.parse(r.created_at)) < TODAY_MS;
+      var mk = r.media_id || "none";
+      // per-post totals for the 7-day window (distinct person + reaction, so a toggled heart never counts twice)
+      if (r.type === "reaction" || r.type === "comment") {
+        var p = per[mk] || (per[mk] = { media_id: r.media_id, r: { muscle: {}, heart: {}, thumbs_up: {} }, comments: 0, t: r.created_at });
+        if (r.type === "reaction") p.r[rKey(r.reaction_type)][r.actor_id || r.id] = 1; else p.comments++;
+      }
+      if (r.type === "follow") followActors[r.actor_id || r.id] = 1;
+      if (!recent) {
+        if (r.type === "reaction") older.r[rKey(r.reaction_type)][(r.media_id || "") + "|" + (r.actor_id || r.id)] = 1;
+        else if (r.type === "comment") older.comments++;
+        else if (r.type === "follow") older.follows[r.actor_id || r.id] = 1;
+        return;
+      }
+      if (r.type === "reaction") {
+        var g = groups[mk] || (groups[mk] = { kind: "react", media_id: r.media_id, actors: {}, names: [], types: { muscle: {}, heart: {}, thumbs_up: {} }, t: r.created_at, unread: false });
+        if (!g.actors[r.actor_id || r.id]) { g.actors[r.actor_id || r.id] = 1; g.names.push(r.actorName); }
+        g.types[rKey(r.reaction_type)][r.actor_id || r.id] = 1;
+        if (!r.read_at) g.unread = true;
+      } else if (r.type === "follow") follows.push(r);
+      else items.push({ kind: "row", row: r, t: r.created_at, unread: !r.read_at });
+    });
+    Object.keys(groups).forEach(function (k) { items.push(groups[k]); });
+    if (follows.length) items.push({ kind: "follow", rows: follows, t: follows[0].created_at, unread: follows.some(function (f) { return !f.read_at; }) });
+    items.sort(function (a, b) { return Date.parse(b.t) - Date.parse(a.t); });
+    var ec = { muscle: distinctCount(older.r.muscle), heart: distinctCount(older.r.heart), thumbs_up: distinctCount(older.r.thumbs_up) };
+    var any = ec.muscle + ec.heart + ec.thumbs_up + older.comments + distinctCount(older.follows) > 0;
+    return { items: items, per: per, followers: distinctCount(followActors),
+             earlier: any ? { r: ec, comments: older.comments, follows: distinctCount(older.follows) } : null };
+  }
+
+  function chipRow(counts) {   // counts: {muscle,heart,thumbs_up} -> little pills, zero ones skipped
+    var h = "";
+    R_TYPES.forEach(function (t) { if (counts[t] > 0) h += "<i>" + R_EMOJI[t] + " " + counts[t] + "</i>"; });
+    return h ? '<span class="efit-chips">' + h + "</span>" : "";
+  }
+  function typeCounts(types) { return { muscle: distinctCount(types.muscle), heart: distinctCount(types.heart), thumbs_up: distinctCount(types.thumbs_up) }; }
+
+  async function fetchPostInfo(ids) {
+    var need = [], seen = {};
+    ids.forEach(function (id) { if (id && !seen[id] && !postInfo[id]) { seen[id] = true; need.push(id); } });
+    if (!need.length) return;
+    try {
+      var res = await window.sb.from("media").select("id, caption, kind, storage_path, poster_path, workout_type").in("id", need.slice(0, 40));
+      if (!res || res.error || !res.data) return;
+      var paths = [];
+      res.data.forEach(function (m) {
+        var path = m.kind === "video" ? m.poster_path : m.storage_path;
+        postInfo[m.id] = { title: snippet(m.caption || "", 34) || m.workout_type || "your post",
+                           emoji: m.workout_type === "Meal Prep" ? "🥗" : (m.kind === "video" ? "🎬" : "🏋️"), path: path, thumb: "" };
+        if (path) paths.push(path);
+      });
+      if (paths.length) {
+        var bucket = window.sb.storage.from("media");
+        var urls = {};
+        if (typeof bucket.createSignedUrls === "function") {
+          var s = await bucket.createSignedUrls(paths, 3600);
+          (s.data || []).forEach(function (u) { if (u && u.path && u.signedUrl) urls[u.path] = u.signedUrl; });
+        }
+        Object.keys(postInfo).forEach(function (id) { var p = postInfo[id]; if (p.path && urls[p.path]) p.thumb = urls[p.path]; });
+      }
+    } catch (e) { /* titles/emoji still show */ }
+  }
+  function postTitle(id) { return (postInfo[id] && postInfo[id].title) || "your post"; }
+  function thumbHtml(id, n) {
+    var p = postInfo[id] || {};
+    return '<span class="efit-th">' + (p.thumb ? '<img src="' + escapeHtml(p.thumb) + '" alt="" />' : '<span class="efit-th-e">' + (p.emoji || "🏋️") + '</span>') +
+      (n ? "<small>" + n + "</small>" : "") + "</span>";
+  }
+
   function renderList(panel, rows) {
+    var model = buildModel(rows);
+    lastModel = model;
     var hasUnread = rows.some(function (r) { return !r.read_at; }) || newTotal() > 0;
     var html = '<div class="efit-notif-panel-header"><span>Notifications</span>';
     if (hasUnread) html += '<button type="button" class="efit-notif-mark-all" id="efitNotifMarkAll">Mark all read</button>';
     html += CLOSE_BTN + "</div>";
     html += newSectionHtml();
-    html += '<div class="efit-new-lab"><span>\uD83D\uDC64 For you</span><s></s></div>';
-    if (!rows.length) {
-      html += '<div class="efit-foryou-empty">Nothing yet \u2014 when someone reacts, comments, follows, or messages you, it\u2019ll show up here.</div>';
+    html += '<div class="efit-new-lab"><span>👤 For you</span><s></s></div>';
+    if (!model.items.length && !model.earlier) {
+      html += '<div class="efit-foryou-empty">Nothing yet — when someone reacts, comments, follows, or messages you, it’ll show up here.</div>';
     }
-    rows.forEach(function (row) {
-      html +=
-        '<a href="' + destinationFor(row) + '" class="efit-notif-item' + (row.read_at ? "" : " unread") + '" data-id="' + row.id + '">' +
-          avatarHtml(row) +
-          '<span class="efit-notif-text">' + describe(row) +
-          '<span class="efit-notif-item-time">' + timeAgo(row.created_at) + "</span></span>" +
-        "</a>";
+    if (model.items.length) html += '<div class="efit-day">Today</div>';
+    model.items.forEach(function (it) {
+      if (it.kind === "react") {
+        var others = it.names.length - 1;
+        var who = escapeHtml(it.names[0] || "Someone") + (others > 0 ? " and " + others + " other" + (others > 1 ? "s" : "") : "");
+        html += '<a href="#" class="efit-notif-item efit-grp' + (it.unread ? " unread" : "") + '" data-media="' + escapeHtml(String(it.media_id || "")) + '">' +
+          thumbHtml(it.media_id, it.names.length) +
+          '<span class="efit-notif-text"><span class="efit-who">' + who + '</span> reacted to <b class="efit-q">' + escapeHtml(postTitle(it.media_id)) + "</b>" +
+          chipRow(typeCounts(it.types)) + '<span class="efit-notif-item-time">' + timeAgo(it.t) + "</span></span></a>";
+      } else if (it.kind === "follow") {
+        if (it.rows.length === 1) {
+          var fr = it.rows[0];
+          html += '<a href="' + destinationFor(fr) + '" class="efit-notif-item' + (fr.read_at ? "" : " unread") + '" data-id="' + fr.id + '">' + avatarHtml(fr) +
+            '<span class="efit-notif-text">' + describe(fr) + '<span class="efit-notif-item-time">' + timeAgo(fr.created_at) + "</span></span></a>";
+        } else {
+          var seenF = {}, names = [];
+          it.rows.forEach(function (r) { if (!seenF[r.actor_id]) { seenF[r.actor_id] = 1; names.push(r.actorName); } });
+          var rest = names.length - 2;
+          var line = names.slice(0, 2).map(escapeHtml).join(", ") + (rest > 0 ? " and " + rest + " other" + (rest > 1 ? "s" : "") : "");
+          html += '<a href="profile.html" class="efit-notif-item' + (it.unread ? " unread" : "") + '">' + avatarHtml(it.rows[0]) +
+            '<span class="efit-notif-text"><strong>' + names.length + ' new followers</strong><span class="efit-sub">' + line + "</span>" +
+            '<span class="efit-notif-item-time">' + timeAgo(it.t) + "</span></span></a>";
+        }
+      } else {
+        var r = it.row;
+        var txt = describe(r);
+        if (r.type === "comment" && r.media_id && postInfo[r.media_id]) {
+          txt = "<strong>" + escapeHtml(r.actorName || "Someone") + "</strong> commented on <b class=\"efit-q\">" + escapeHtml(postTitle(r.media_id)) + "</b>: “" + escapeHtml(r.preview || "") + "”" +
+            '<span class="efit-notif-reply">Tap to reply ›</span>';
+          if (r.actor_id) txt = txt; 
+        }
+        html += '<a href="' + destinationFor(r) + '" class="efit-notif-item' + (r.read_at ? "" : " unread") + '" data-id="' + r.id + '">' + avatarHtml(r) +
+          '<span class="efit-notif-text">' + txt + '<span class="efit-notif-item-time">' + timeAgo(r.created_at) + "</span></span></a>";
+      }
     });
+    if (model.earlier) {
+      var e = model.earlier, bits = [];
+      var rc = chipRow(e.r).replace(/<\/?span[^>]*>/g, "").replace(/<i>/g, "").replace(/<\/i>/g, " · ").replace(/ · $/, "").trim();
+      if (rc) bits.push(rc + " on your posts");
+      var second = [];
+      if (e.comments) second.push(e.comments + " comment" + (e.comments > 1 ? "s" : ""));
+      if (e.follows) second.push(e.follows + " new follower" + (e.follows > 1 ? "s" : ""));
+      html += '<a href="#" class="efit-earlier" data-week="1"><span class="efit-earlier-ic">🗓️</span><span class="efit-earlier-t"><b>Earlier this week</b>' +
+        (bits.length ? "<span>" + bits.join("") + "</span>" : "") + (second.length ? "<span>" + second.join(" · ") + "</span>" : "") +
+        '</span><span class="efit-new-chev">›</span></a>';
+    }
     panel.innerHTML = html;
+  }
+
+  // Nov 2026: "For you" = activity on MY posts, new followers, messages. Everything from the last 7 days in one query; the
+  // newest 2 days are shown in detail (reactions grouped per post), older ones fold into "Earlier this week".
+  async function fetchWeek(userId) {
+    var SEL = "id, type, media_id, reaction_type, preview, actor_id, created_at, read_at, profiles!notifications_actor_id_fkey(display_name)";
+    var since = new Date(Date.now() - 7 * 864e5).toISOString();
+    var res = await window.sb.from("notifications").select(SEL).eq("recipient_id", userId).gte("created_at", since)
+      .order("created_at", { ascending: false }).limit(400);
+    if (!res || res.error || !res.data) return fetchRows(userId);
+    return res.data.map(function (row) {
+      return { id: row.id, type: row.type, media_id: row.media_id, reaction_type: row.reaction_type, preview: row.preview,
+               actor_id: row.actor_id, created_at: row.created_at, read_at: row.read_at,
+               actorName: (row.profiles && row.profiles.display_name) || "Someone" };
+    });
+  }
+
+  // ---- totals + "who reacted" windows (Nov 2026) --------------------------------------------------------------
+  var WIN_PAGE = 20;
+  var win = { built: false, open: false, token: 0, mediaId: null, filter: "all", off: 0, total: 0, counts: null, back: null, pushed: false };
+  function wEl(sel) { return document.querySelector("#efitWinOv " + sel); }
+  function buildWin() {
+    if (win.built) return;
+    win.built = true;
+    var ov = document.createElement("div");
+    ov.className = "efit-win-ov"; ov.id = "efitWinOv";
+    ov.setAttribute("role", "dialog"); ov.setAttribute("aria-modal", "true");
+    ov.innerHTML = '<div class="efit-win"><div class="efit-win-top"><span class="efit-win-grab"></span>' +
+      '<button type="button" class="efit-win-back" data-back>‹ Back</button>' +
+      '<div class="efit-win-head"><div><div class="efit-win-title" data-title></div><div class="efit-win-sub" data-sub></div></div>' +
+      '<button type="button" class="efit-win-x" data-x aria-label="Close">✕</button></div></div>' +
+      '<div class="efit-win-body" data-body></div></div>';
+    document.body.appendChild(ov);
+    ov.addEventListener("click", function (e) { if (e.target === ov) closeWin(); e.stopPropagation(); });   // never lets a tap here reach the page-level "close the bell" listener
+    ov.querySelector("[data-x]").addEventListener("click", closeWin);
+    ov.querySelector("[data-back]").addEventListener("click", function () { if (win.back) win.back(); });
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape" && win.open) closeWin(); });
+    window.addEventListener("popstate", function () { if (win.open) { win.pushed = false; hideWin(); } });
+  }
+  function showWin(title, sub, back) {
+    buildWin();
+    win.token++;
+    win.back = back || null;
+    wEl("[data-title]").textContent = title;
+    wEl("[data-sub]").textContent = sub || "";
+    wEl("[data-back]").style.display = back ? "inline-block" : "none";
+    wEl("[data-body]").innerHTML = "";
+    wEl("[data-body]").scrollTop = 0;
+    document.getElementById("efitWinOv").classList.add("show");
+    if (!win.open) { try { history.pushState({ efitWin: 1 }, ""); win.pushed = true; } catch (e) { win.pushed = false; } }
+    win.open = true;
+  }
+  function hideWin() {
+    win.open = false; win.token++;
+    var ov = document.getElementById("efitWinOv");
+    if (ov) ov.classList.remove("show");
+  }
+  function closeWin() {
+    if (!win.open) return;
+    if (win.pushed) { win.pushed = false; try { history.back(); } catch (e) {} }
+    hideWin();
+  }
+
+  function openWeekWin() {
+    var m = lastModel || { per: {}, followers: 0 };
+    showWin("Your last 7 days", "Activity on each of your posts");
+    var body = wEl("[data-body]");
+    var posts = Object.keys(m.per).map(function (k) { return m.per[k]; });
+    function total(p) { var c = typeCounts(p.r); return c.muscle + c.heart + c.thumbs_up + p.comments; }
+    posts.sort(function (a, b) { return total(b) - total(a); });
+    var h = "";
+    posts.forEach(function (p) {
+      var c = typeCounts(p.r);
+      var chips = chipRow(c) || "";
+      if (p.comments) chips = chips.replace('</span>', "<i>💬 " + p.comments + "</i></span>") || '<span class="efit-chips"><i>💬 ' + p.comments + "</i></span>";
+      if (!chips && p.comments) chips = '<span class="efit-chips"><i>💬 ' + p.comments + "</i></span>";
+      h += '<div class="efit-win-item efit-win-post" data-m="' + escapeHtml(String(p.media_id || "")) + '">' + thumbHtml(p.media_id, 0) +
+        '<div class="efit-win-main"><div class="efit-win-name">' + escapeHtml(postTitle(p.media_id)) + "</div>" + chips + '</div><span class="efit-new-chev">›</span></div>';
+    });
+    if (!posts.length) h += '<div class="efit-win-empty">No reactions or comments on your posts in the last 7 days.</div>';
+    if (m.followers) h += '<div class="efit-win-note">👤 ' + m.followers + " new follower" + (m.followers > 1 ? "s" : "") + " this week</div>";
+    body.innerHTML = h;
+    body.querySelectorAll("[data-m]").forEach(function (el) {
+      el.addEventListener("click", function () { var id = el.getAttribute("data-m"); if (id) openReactWin(id, openWeekWin); });
+    });
+  }
+
+  async function openReactWin(mediaId, back) {
+    if (!mediaId) return;
+    await fetchPostInfo([mediaId]);
+    showWin("Reactions", postTitle(mediaId), back);
+    win.mediaId = mediaId; win.filter = "all"; win.off = 0; win.total = 0; win.counts = null;
+    var my = win.token;
+    var body = wEl("[data-body]");
+    body.innerHTML = '<div class="efit-win-chips" data-chips></div><div data-list><div class="efit-win-empty">Loading…</div></div><button type="button" class="efit-win-more" data-more style="display:none;"></button>';
+    body.querySelector("[data-more]").addEventListener("click", function () { loadReactors(false); });
+    var counts = { muscle: 0, heart: 0, thumbs_up: 0 };
+    await Promise.all(R_TYPES.map(async function (t) {
+      var r = await window.sb.from("media_reactions").select("user_id", { count: "exact", head: true }).eq("media_id", mediaId).eq("reaction_type", t);
+      counts[t] = (r && typeof r.count === "number") ? r.count : 0;
+    }));
+    if (my !== win.token) return;
+    counts.all = counts.muscle + counts.heart + counts.thumbs_up;
+    win.counts = counts;
+    renderWinChips();
+    loadReactors(true);
+  }
+  function renderWinChips() {
+    var c = win.counts || {};
+    var box = wEl("[data-chips]");
+    if (!box) return;
+    var defs = [{ k: "all", l: "All" }].concat(R_TYPES.map(function (t) { return { k: t, l: R_EMOJI[t] }; }));
+    box.innerHTML = defs.map(function (d) { return '<button type="button" data-f="' + d.k + '" class="' + (win.filter === d.k ? "on" : "") + '">' + d.l + " " + (c[d.k] === undefined ? "" : c[d.k]) + "</button>"; }).join("");
+    box.querySelectorAll("[data-f]").forEach(function (b) {
+      b.addEventListener("click", function () { win.filter = b.getAttribute("data-f"); renderWinChips(); loadReactors(true); });
+    });
+  }
+  async function loadReactors(reset) {
+    var my = win.token, list = wEl("[data-list]"), more = wEl("[data-more]");
+    if (!list) return;
+    if (reset) { win.off = 0; list.innerHTML = '<div class="efit-win-empty">Loading…</div>'; more.style.display = "none"; }
+    var from = win.off;
+    var q = window.sb.from("media_reactions").select("user_id, reaction_type", { count: "exact" }).eq("media_id", win.mediaId);
+    if (win.filter !== "all") q = q.eq("reaction_type", win.filter);
+    var res = await q.range(from, from + WIN_PAGE - 1);
+    if (my !== win.token) return;
+    if (!res || res.error) { if (reset) list.innerHTML = '<div class="efit-win-empty">Couldn’t load reactions — please try again.</div>'; return; }
+    var raw = res.data || [];
+    var ids = raw.map(function (r) { return r.user_id; });
+    var names = {};
+    if (ids.length) {
+      try { var pr = await window.sb.from("profiles").select("id, display_name").in("id", ids); (pr.data || []).forEach(function (p) { names[p.id] = p.display_name; }); } catch (e) {}
+    }
+    if (my !== win.token) return;
+    win.total = (typeof res.count === "number") ? res.count : from + raw.length;
+    win.off = from + raw.length;
+    if (reset) list.innerHTML = "";
+    if (reset && !raw.length) list.innerHTML = '<div class="efit-win-empty">No reactions yet.</div>';
+    var fake = raw.map(function (r) { return { actor_id: r.user_id, actorName: names[r.user_id] || "A member", type: "reaction" }; });
+    list.insertAdjacentHTML("beforeend", raw.map(function (r, i) {
+      return '<div class="efit-win-item">' + avatarHtml(fake[i]) + '<div class="efit-win-main"><div class="efit-win-name">' + escapeHtml(fake[i].actorName) + '</div></div>' +
+        '<span class="efit-win-emoji">' + R_EMOJI[rKey(r.reaction_type)] + "</span></div>";
+    }).join(""));
+    hydrateAvatars(wEl("[data-body]"), fake);
+    var remaining = win.total - win.off;
+    if (remaining > 0) { more.style.display = ""; more.textContent = "Show more · " + remaining + " more"; } else more.style.display = "none";
   }
 
   async function fetchRows(userId) {
@@ -460,12 +764,20 @@
   async function refreshBadge(userId) {
     var badge = document.getElementById("efitNotifBadge");
     if (!badge) return;
-    var { count } = await window.sb
-      .from("notifications")
-      .select("id", { count: "exact", head: true })
-      .eq("recipient_id", userId)
-      .is("read_at", null);
-    var n = count || 0;
+    // Nov 2026: reactions count once per POST (not once per heart), new followers count once, comments/messages one each.
+    var n = 0;
+    var ur = await window.sb.from("notifications").select("type, media_id").eq("recipient_id", userId).is("read_at", null).limit(300);
+    if (ur && !ur.error && ur.data) {
+      var seenM = {}, hasF = false;
+      ur.data.forEach(function (r) {
+        if (r.type === "reaction") { var k = r.media_id || "x"; if (!seenM[k]) { seenM[k] = 1; n++; } }
+        else if (r.type === "follow") { if (!hasF) { hasF = true; n++; } }
+        else n++;
+      });
+    } else {
+      var cr = await window.sb.from("notifications").select("id", { count: "exact", head: true }).eq("recipient_id", userId).is("read_at", null);
+      n = (cr && cr.count) || 0;
+    }
     try { await fetchNewCounts(userId, false); } catch (e) {}
     n += newTotal();
     if (n > 0) {
@@ -526,12 +838,15 @@
     }
 
     placeSheet(panel);
-    var results = await Promise.all([fetchRows(userId), fetchNewCounts(userId, true)]);
+    var results = await Promise.all([fetchWeek(userId), fetchNewCounts(userId, true)]);
     var rows = results[0];
     await fetchNewLatest(userId);
+    var recentIds = rows.filter(function (r) { return r.media_id && (Date.now() - Date.parse(r.created_at)) < TODAY_MS; }).map(function (r) { return r.media_id; });
+    var topIds = Object.keys(buildModel(rows).per).slice(0, 25);
+    await fetchPostInfo(recentIds.concat(topIds));
     renderList(panel, rows);
     placeSheet(panel); // (the list just changed height)
-    hydrateAvatars(panel, rows);
+    hydrateAvatars(panel, rows.filter(function (r) { return r.type !== "reaction"; }).slice(0, 40));
 
     var markAllBtn = document.getElementById("efitNotifMarkAll");
     if (markAllBtn) {
@@ -551,7 +866,7 @@
         setAllSeen(userId);
         renderList(panel, rows.map(function (r) { r.read_at = r.read_at || new Date().toISOString(); return r; }));
         placeSheet(panel);
-        hydrateAvatars(panel, rows);
+        hydrateAvatars(panel, rows.filter(function (r) { return r.type !== "reaction"; }).slice(0, 40));
         refreshBadge(userId);
       });
     }
@@ -590,6 +905,12 @@
       var a = e.target.closest ? e.target.closest(".efit-new-row") : null;
       if (a) setSeen(userId, a.getAttribute("data-area"));   // the link itself then takes them to that page
     });
+    if (panelEl) panelEl.addEventListener("click", function (e) {
+      var g = e.target.closest ? e.target.closest(".efit-grp") : null;
+      if (g) { e.preventDefault(); e.stopPropagation(); openReactWin(g.getAttribute("data-media"), null); return; }
+      var w = e.target.closest ? e.target.closest("[data-week]") : null;
+      if (w) { e.preventDefault(); e.stopPropagation(); openWeekWin(); }
+    });
     window.addEventListener("pagehide", flushMark);
     document.addEventListener("visibilitychange", function () { if (document.hidden) flushMark(); });
     if (panelEl) panelEl.addEventListener("click", function (e) {
@@ -603,6 +924,7 @@
 
     document.addEventListener("click", function (e) {
       var wrap = document.getElementById("efitNotifWrap");
+      if (e.target.closest && e.target.closest("#efitWinOv")) return;   // taps inside the totals/reactions window don't close the bell
       if (panelOpen && wrap && !wrap.contains(e.target)) closePanel();
     });
 
@@ -635,7 +957,6 @@
     // Being on Journeys / Meal Preps / Challenges counts as "looked". Member posts: spending a few seconds on Home counts.
     var path = window.location.pathname || "";
     NEW_AREAS.forEach(function (a) { if (a.page && a.page.test(path)) setSeen(userId, a.key); });
-    if (IS_HOME) setTimeout(function () { setSeen(userId, "posts"); refreshBadge(userId); }, 8000);
     refreshBadge(userId);
     // Live count: every 30 seconds while the page is showing, and straight away when the app/tab comes back to the front.
     setInterval(function () { if (!document.hidden) refreshBadge(userId); }, POLL_MS);
