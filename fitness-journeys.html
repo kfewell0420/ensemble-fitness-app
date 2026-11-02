@@ -626,7 +626,7 @@
     var msg = document.getElementById("fjFormMsg");
     var submitBtn = form.querySelector("button[type=submit]");
 
-    dateInput.value = new Date().toISOString().slice(0, 10);
+    dateInput.value = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
 
     form.addEventListener("submit", async function (e) {
       e.preventDefault();
@@ -680,7 +680,7 @@
         }
         if (error) throw error;
         form.reset();
-        dateInput.value = new Date().toISOString().slice(0, 10);
+        dateInput.value = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
         msg.className = "form-msg";
         msg.textContent = "";
         await loadJourneys();
