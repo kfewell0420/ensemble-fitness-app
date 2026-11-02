@@ -490,6 +490,100 @@
 }
 </style>
 
+<style>
+/* ======================================================================
+   Nov 2026, round 2 (Ken, from mock-up 3): header spacing, form pulled up, pills sized by label,
+   each card shows only the LATEST comment (+ "See all N"), and a "Responses" window (Comments / Reactions).
+   Neutral rules first (website + phone), phone-only polish inside the media query.
+   ====================================================================== */
+.fj-ccount { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; font: inherit; font-size: 13px; font-weight: 700; color: #fff;
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.18); border-radius: 999px; padding: 5px 12px; white-space: nowrap; cursor: pointer; font-style: normal; }
+.fj-ccount .fj-m-ico { display: inline-block; width: 16px; height: 16px; color: #ff5a1f; }
+span.fj-ccount { cursor: default; }
+.fj-rep-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; min-height: 26px; }
+.fj-rep-label { font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #ff7a3d; }
+.fj-seeall { font: inherit; font-size: 12px; font-weight: 800; color: #ffb27a; background: rgba(255,90,31,0.16); border: 1.5px solid #ff7a3d; border-radius: 999px; padding: 4px 11px; cursor: pointer; white-space: nowrap; }
+span.fj-seeall { cursor: default; }
+.fj-reply-text { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.fj-reply-time { flex: none; margin-left: auto; align-self: center; font-size: 11.5px; color: #8d919a; white-space: nowrap; }
+
+/* ---- the "Responses" window ---- */
+body.fj-lock { overflow: hidden; }
+.fj-sheet-ov { position: fixed; left: 0; right: 0; top: 0; height: 100%; z-index: 3000; display: none; align-items: flex-end; justify-content: center; background: rgba(5,7,13,0.74); }
+.fj-sheet-ov.show { display: flex; }
+.fj-sheet { position: relative; width: 100%; max-width: 600px; height: calc(100% - 56px); display: flex; flex-direction: column; overflow: hidden; color: #fff;
+  background: radial-gradient(ellipse 90% 260px at 92% 0%, rgba(120,160,88,0.30) 0%, rgba(30,31,35,0) 70%), #1e1f23;
+  border: 1.5px solid rgba(255,122,61,0.75); border-bottom: 0; border-radius: 26px 26px 0 0; box-shadow: 0 -12px 40px rgba(0,0,0,0.55);
+  animation: fjSheetUp .22s ease-out; }
+@keyframes fjSheetUp { from { transform: translateY(40px); opacity: .4; } to { transform: none; opacity: 1; } }
+.fj-sh-top { flex: none; padding: 8px 18px 10px; touch-action: none; }
+.fj-sh-grab { display: block; width: 44px; height: 5px; border-radius: 3px; background: rgba(255,255,255,0.28); margin: 0 auto 10px; }
+.fj-sh-headrow { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.fj-sh-title { font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 24px; line-height: 1.15; color: #fff; }
+.fj-sh-sub { margin-top: 3px; font-size: 13px; line-height: 1.3; color: #a3a7b0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.fj-sh-headrow > div:first-child { min-width: 0; flex: 1 1 auto; }
+.fj-sh-x { flex: none; width: 40px; height: 40px; border-radius: 50%; border: 0; background: rgba(255,255,255,0.12); color: #fff; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; }
+.fj-sh-x svg { width: 18px; height: 18px; }
+.fj-seg { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.fj-seg button { font: inherit; font-size: 15px; font-weight: 800; color: #fff; background: #26272b; border: 1.5px solid rgba(255,255,255,0.16); border-radius: 999px; padding: 10px 6px; cursor: pointer; }
+.fj-seg button.on { background: #ff5a1f; border-color: #ff5a1f; }
+.fj-sh-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding: 4px 18px 14px; }
+.fj-fchips { display: flex; gap: 8px; flex-wrap: wrap; margin: 6px 0 4px; }
+.fj-fchips button { font: inherit; font-size: 13.5px; font-weight: 800; color: #ffd6b8; background: rgba(255,90,31,0.12); border: 1.5px solid rgba(255,122,61,0.55); border-radius: 999px; padding: 6px 13px; cursor: pointer; }
+.fj-fchips button.on { background: rgba(255,90,31,0.45); border-color: #ff5a1f; color: #fff; }
+.fj-sh-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; }
+.fj-sh-item + .fj-sh-item { border-top: 1px solid rgba(255,255,255,0.1); }
+.fj-sh-item .fj-avatar { flex: none; border: 1.5px solid rgba(255,255,255,0.3); }
+.fj-sh-main { min-width: 0; flex: 1 1 auto; }
+.fj-sh-name { font-size: 15px; font-weight: 800; color: #fff; overflow-wrap: anywhere; }
+.fj-sh-name .fj-sh-time { margin-left: 6px; font-size: 12.5px; font-weight: 600; color: #8d919a; }
+.fj-sh-text { margin-top: 1px; font-size: 15px; line-height: 1.35; color: #eceef3; overflow-wrap: anywhere; }
+.fj-sh-emoji { flex: none; font-size: 24px; line-height: 1; }
+.fj-sh-empty { padding: 26px 4px; text-align: center; color: #a3a7b0; font-size: 14.5px; }
+.fj-sh-more { display: block; width: 100%; margin: 8px 0 4px; font: inherit; font-size: 15px; font-weight: 800; color: #ffb27a; background: none; border: 1.5px solid rgba(255,122,61,0.8); border-radius: 999px; padding: 12px; cursor: pointer; }
+.fj-sh-more:disabled { opacity: .6; }
+.fj-sh-composer { flex: none; padding: 12px 18px calc(14px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid rgba(255,255,255,0.12); background: #1e1f23; }
+.fj-sh-chips { display: flex; gap: 7px; margin-bottom: 10px; }
+.fj-sh-chips button { flex: 1 1 auto; min-width: 0; font: inherit; font-size: 12.5px; font-weight: 800; color: #ffb27a; background: #26272b; border: 1.5px solid rgba(255,122,61,0.8); border-radius: 999px; padding: 9px 3px; cursor: pointer; white-space: nowrap; }
+.fj-sh-row { display: flex; gap: 10px; }
+.fj-sh-input { flex: 1; min-width: 0; height: 46px; padding: 0 16px; font: inherit; font-size: 16px; color: #fff; background: #26272b; border: 1px solid rgba(255,255,255,0.16); border-radius: 999px; }
+.fj-sh-input::placeholder { color: rgba(255,255,255,0.46); }
+.fj-sh-send { flex: none; height: 46px; padding: 0 22px; font: inherit; font-size: 15px; font-weight: 800; color: #fff; border: 0; border-radius: 999px; background: linear-gradient(90deg, #ff5a1f, #e0480f); cursor: pointer; }
+.fj-sh-send:disabled { opacity: .6; }
+@media (min-width: 900px) {
+  .fj-sheet-ov { align-items: center; }
+  .fj-sheet { height: min(720px, calc(100% - 80px)); border-bottom: 1.5px solid rgba(255,122,61,0.75); border-radius: 24px; max-width: 560px; }
+}
+
+@media (max-width: 899px) {
+  /* header: script a little higher, left-aligned over the "E"/"F"; form card pulled up toward the tagline */
+  .fj-backdrop { height: calc(env(safe-area-inset-top, 0px) + 232px); }
+  .fj-hero { padding: 6px 4px 0; margin-bottom: 2px; }
+  .fj-hero .fj-hero-script { margin: 0 0 5px -2px; }
+  .fj-hero .fj-hero-tag { margin-top: 12px; }
+
+  /* pills sized by their label so "Building Strength" fits on one line */
+  .fj-pills { grid-template-columns: 1fr .9fr 1.2fr; gap: 5px; }
+
+  /* reactions row: slightly tighter pills + the compact comment-count button */
+  .fj-reaction-pill { font-size: 14.5px; padding: 5px 11px; }
+  .fj-ccount { margin-left: auto; gap: 6px; font-size: 14px; padding: 5px 13px; background: rgba(255,90,31,0.15); border: 1px solid rgba(255,122,61,0.6); }
+  .fj-ccount .fj-m-ico { width: 18px; height: 18px; }
+
+  /* Community support: header row (label left, "See all N" right) + ONLY the newest comment */
+  .fj-replies:not(:empty)::before { content: none; display: none; }
+  .fj-replies:not(:empty) { padding: 10px 12px 4px; }
+  .fj-rep-head { margin-bottom: 0; min-height: 30px; }
+  .fj-rep-label { display: block; padding-left: 26px; min-height: 18px; line-height: 18px; font-size: 12.5px; letter-spacing: 0.1em; color: #ff5a1f;
+    background: url("data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20viewBox=%270%200%2024%2024%27%20fill=%27none%27%20stroke=%27%23ff5a1f%27%20stroke-width=%272%27%20stroke-linecap=%27round%27%20stroke-linejoin=%27round%27%3E%3Cpath%20d=%27M16%2021v-2a4%204%200%200%200-4-4H6a4%204%200%200%200-4%204v2%27/%3E%3Ccircle%20cx=%279%27%20cy=%277%27%20r=%274%27/%3E%3Cpath%20d=%27M22%2021v-2a4%204%200%200%200-3-3.87M16%203.13a4%204%200%200%201%200%207.75%27/%3E%3C/svg%3E") no-repeat left center / 18px 18px; }
+  .fj-seeall { font-size: 12.5px; padding: 5px 12px; }
+  .fj-reply-time { font-size: 12px; }
+  .fj-sheet { height: calc(100% - 64px); }
+}
+@media (max-width: 899px) { .fj-rep-label { white-space: nowrap; } }
+@media (max-width: 385px) { .fj-rep-label { font-size: 11px; letter-spacing: 0.05em; padding-left: 24px; } .fj-seeall { font-size: 12px; padding: 5px 10px; } }
+</style>
+
 <div class="app-shell">
 
   <div class="fj-hero">
@@ -910,7 +1004,24 @@
   var ICO_BOLT = '<svg class="fj-m-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>';
   var ICO_CHAT = '<svg class="fj-m-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>';
   function commentCountHtml(n) {
-    return ICO_CHAT + n + (n === 1 ? " Comment" : " Comments");
+    return ICO_CHAT + n;
+  }
+  // "2h", "3d" ... for the newest comment and the Responses window
+  function timeAgo(iso) {
+    var t = Date.parse(iso || "");
+    if (!t) return "";
+    var s = Math.max(0, Math.round((Date.now() - t) / 1000));
+    if (s < 60) return "now";
+    var m = Math.floor(s / 60); if (m < 60) return m + "m";
+    var h = Math.floor(m / 60); if (h < 24) return h + "h";
+    var d = Math.floor(h / 24); if (d < 7) return d + "d";
+    var w = Math.floor(d / 7); if (d < 60) return w + "w";
+    return Math.floor(d / 30) + "mo";
+  }
+  function repHeadHtml(total, live) {
+    return '<div class="fj-rep-head"><span class="fj-rep-label">Community support</span>' +
+      (total > 1 ? (live ? '<button type="button" class="fj-seeall" data-seeall>See all ' + total + ' ›</button>'
+                         : '<span class="fj-seeall">See all ' + total + ' ›</span>') : '') + '</div>';
   }
   function metaLineHtml(dateLabel, mood) {
     var bits = [];
@@ -953,7 +1064,7 @@
       '<div class="fj-reactions">' + STORY_REACTIONS.map(function (r) {
         return '<span class="fj-reaction-pill" style="cursor:default;">' + r.emoji + ' <span class="fj-reaction-count">' + (item.reactions[r.type] || 0) + '</span></span>';
       }).join("") + '<span class="fj-ccount">' + commentCountHtml(item.replies.length) + '</span></div>' +
-      '<div class="fj-replies">' + item.replies.map(function (r) {
+      '<div class="fj-replies">' + repHeadHtml(item.replies.length, false) + item.replies.slice(0, 1).map(function (r) {
         return '<div class="fj-reply-item">' + '<div class="fj-avatar" style="width:26px;height:26px;font-size:11px;background:' + avatarColor(r.name) + '">' + escapeHtml(r.name.charAt(0).toUpperCase()) + '</div>' +
           '<div class="fj-reply-text"><strong>' + escapeHtml(r.name) + '</strong> ' + escapeHtml(r.body) + '</div></div>';
       }).join("") + '</div>' +
@@ -1114,7 +1225,7 @@
     var reactionsEl = card.querySelector("[data-reactions]");
     reactionsEl.innerHTML = STORY_REACTIONS.map(function (r) {
       return '<button type="button" class="fj-reaction-pill" data-reaction="' + r.type + '">' + r.emoji + ' <span class="fj-reaction-count"></span></button>';
-    }).join("") + '<span class="fj-ccount" data-ccount>' + commentCountHtml(0) + '</span>';
+    }).join("") + '<button type="button" class="fj-ccount" data-ccount aria-label="See all responses">' + commentCountHtml(0) + '</button>';
 
     var { data: reactions } = await window.sb.from("story_reactions").select("user_id, reaction").eq("question_id", item.id);
     var counts = { clap: 0, heart: 0, thumbs_up: 0 };
@@ -1139,6 +1250,13 @@
     card.querySelectorAll("[data-chip]").forEach(function (chip) {
       chip.addEventListener("click", function () { input.value = chip.getAttribute("data-chip"); postReply(item, card); });
     });
+    // Nov 2026: the comment-count button and "See all N ›" open the Responses window for this post
+    var ccBtn = card.querySelector("[data-ccount]");
+    if (ccBtn) ccBtn.addEventListener("click", function () { openSheet(item, "comments"); });
+    card.addEventListener("click", function (e) {
+      var b = e.target.closest && e.target.closest("[data-seeall]");
+      if (b) openSheet(item, "comments");
+    });
   }
 
   async function toggleStoryReaction(questionId, type, btn) {
@@ -1158,22 +1276,31 @@
     }
   }
 
+  // Nov 2026: the card shows only the NEWEST comment (with its time) plus the total; the rest live in the Responses window.
   async function loadReplies(item, card) {
     var repliesEl = card.querySelector("[data-replies]");
-    var { data: replies } = await window.sb
+    var res = await window.sb
       .from("story_replies")
-      .select("id, user_id, reply_text, created_at, profiles(display_name)")
+      .select("id, user_id, reply_text, created_at, profiles(display_name)", { count: "exact" })
       .eq("question_id", item.id)
-      .order("created_at", { ascending: true });
-    var visible = filterOutBlocked(replies || []);
+      .order("created_at", { ascending: false })
+      .limit(5);
+    if (res.error) return;
+    var replies = res.data || [];
+    var visible = filterOutBlocked(replies);
+    var total = (typeof res.count === "number") ? res.count : replies.length;
+    total = Math.max(visible.length, total - (replies.length - visible.length));
+    item.replyTotal = total;
     var ccEl = card.querySelector("[data-ccount]");
-    if (ccEl) ccEl.innerHTML = commentCountHtml(visible.length);
-    await attachAvatarUrls(visible);
-    repliesEl.innerHTML = visible.map(function (r) {
-      var name = (r.profiles && r.profiles.display_name) || "A member";
-      return '<div class="fj-reply-item">' + avatarHtml({ user_id: r.user_id, asker_name: name, avatarUrl: r.avatarUrl }, 26) +
-        '<div class="fj-reply-text' + (r.user_id === item.user_id ? ' fj-reply-author' : '') + '"><strong>' + escapeHtml(name) + '</strong> ' + escapeHtml(r.reply_text) + '</div></div>';
-    }).join("");
+    if (ccEl) ccEl.innerHTML = commentCountHtml(total);
+    if (!visible.length) { repliesEl.innerHTML = ""; return; }
+    var r = visible[0];
+    await attachAvatarUrls([r]);
+    var name = (r.profiles && r.profiles.display_name) || "A member";
+    repliesEl.innerHTML = repHeadHtml(total, true) +
+      '<div class="fj-reply-item">' + avatarHtml({ user_id: r.user_id, asker_name: name, avatarUrl: r.avatarUrl }, 26) +
+        '<div class="fj-reply-text' + (r.user_id === item.user_id ? ' fj-reply-author' : '') + '"><strong>' + escapeHtml(name) + '</strong> ' + escapeHtml(r.reply_text) + '</div>' +
+        '<span class="fj-reply-time">' + escapeHtml(timeAgo(r.created_at)) + '</span></div>';
   }
 
   async function postReply(item, card) {
@@ -1232,6 +1359,290 @@
       }
       await loadJourneys();
     });
+  }
+
+  // ---------------- Responses window (Nov 2026) ------------------------------
+  // Opens from "See all N ›" or the comment-count button on a card. Two tabs: Comments (newest first, paged, with a
+  // composer) and Reactions (filter by emoji, paged). Nothing here changes how the card's own pills/chips work.
+  var SHEET_PAGE = 15;
+  var sheet = { built: false, open: false, item: null, tab: "comments", filter: "all", token: 0,
+                cOff: 0, cTotal: 0, rOff: 0, rTotal: 0, rCounts: null, pushed: false };
+  var ICO_X = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>';
+
+  function shEl(sel) { return document.querySelector("#fjSheetOv " + sel); }
+
+  function buildSheet() {
+    if (sheet.built) return;
+    sheet.built = true;
+    var ov = document.createElement("div");
+    ov.className = "fj-sheet-ov";
+    ov.id = "fjSheetOv";
+    ov.setAttribute("role", "dialog");
+    ov.setAttribute("aria-modal", "true");
+    ov.setAttribute("aria-labelledby", "fjShTitle");
+    ov.innerHTML =
+      '<div class="fj-sheet" id="fjSheet">' +
+        '<div class="fj-sh-top" data-drag>' +
+          '<span class="fj-sh-grab"></span>' +
+          '<div class="fj-sh-headrow">' +
+            '<div><div class="fj-sh-title" id="fjShTitle">Responses</div><div class="fj-sh-sub" data-sub></div></div>' +
+            '<button type="button" class="fj-sh-x" data-close aria-label="Close">' + ICO_X + '</button>' +
+          '</div>' +
+          '<div class="fj-seg">' +
+            '<button type="button" data-tab="comments">Comments <span data-n="comments">0</span></button>' +
+            '<button type="button" data-tab="reactions">Reactions <span data-n="reactions">0</span></button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="fj-sh-body" data-scroll>' +
+          '<div class="fj-fchips" data-fchips style="display:none;"></div>' +
+          '<div data-list></div>' +
+          '<button type="button" class="fj-sh-more" data-more style="display:none;"></button>' +
+        '</div>' +
+        '<div class="fj-sh-composer" data-composer>' +
+          '<div class="fj-sh-chips">' + SUPPORT_CHIPS.map(function (t) {
+            return '<button type="button" data-shchip="' + escapeHtml(t) + '">' + escapeHtml(t) + '</button>';
+          }).join("") + '</div>' +
+          '<div class="fj-sh-row"><input type="text" class="fj-sh-input" maxlength="500" placeholder="Add a comment…" /><button type="button" class="fj-sh-send">Send</button></div>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(ov);
+
+    ov.addEventListener("click", function (e) { if (e.target === ov) closeSheet(); });
+    ov.querySelector("[data-close]").addEventListener("click", closeSheet);
+    ov.querySelectorAll("[data-tab]").forEach(function (b) {
+      b.addEventListener("click", function () { sheetSetTab(b.getAttribute("data-tab")); });
+    });
+    ov.querySelector("[data-more]").addEventListener("click", function () {
+      if (sheet.tab === "comments") sheetLoadComments(false); else sheetLoadReactions(false);
+    });
+    var input = ov.querySelector(".fj-sh-input");
+    ov.querySelector(".fj-sh-send").addEventListener("click", function () { sheetPost(input.value); });
+    input.addEventListener("keydown", function (e) { if (e.key === "Enter") sheetPost(input.value); });
+    ov.querySelectorAll("[data-shchip]").forEach(function (b) {
+      b.addEventListener("click", function () { sheetPost(b.getAttribute("data-shchip")); });
+    });
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape" && sheet.open) closeSheet(); });
+
+    // Android's back button / swipe-back closes the window instead of leaving the page
+    window.addEventListener("popstate", function () {
+      if (sheet.open) { sheet.pushed = false; hideSheet(); }
+    });
+
+    // keep the window above the on-screen keyboard (iOS keeps the page height; Android resizes it)
+    function fit() {
+      var vv = window.visualViewport;
+      if (!vv || !sheet.open) return;
+      ov.style.top = vv.offsetTop + "px";
+      ov.style.height = vv.height + "px";
+    }
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener("resize", fit);
+      window.visualViewport.addEventListener("scroll", fit);
+    }
+    sheet.fit = fit;
+
+    // drag the top part down to close
+    var drag = ov.querySelector("[data-drag]"), sheetEl = ov.querySelector("#fjSheet"), startY = null, dy = 0;
+    drag.addEventListener("touchstart", function (e) {
+      if (e.target.closest && e.target.closest("button")) return;
+      startY = e.touches[0].clientY; dy = 0; sheetEl.style.animation = "none"; sheetEl.style.transition = "none";
+    }, { passive: true });
+    drag.addEventListener("touchmove", function (e) {
+      if (startY === null) return;
+      dy = Math.max(0, e.touches[0].clientY - startY);
+      sheetEl.style.transform = "translateY(" + dy + "px)";
+    }, { passive: true });
+    function endDrag() {
+      if (startY === null) return;
+      startY = null;
+      sheetEl.style.transition = "transform .18s ease-out";
+      if (dy > 90) { closeSheet(); }
+      sheetEl.style.transform = "";
+      dy = 0;
+    }
+    drag.addEventListener("touchend", endDrag);
+    drag.addEventListener("touchcancel", endDrag);
+  }
+
+  function hideSheet() {
+    var ov = document.getElementById("fjSheetOv");
+    sheet.open = false;
+    sheet.token++;
+    if (ov) { ov.classList.remove("show"); ov.style.top = ""; ov.style.height = ""; }
+    document.body.classList.remove("fj-lock");
+  }
+
+  function closeSheet() {
+    if (!sheet.open) return;
+    if (sheet.pushed) { sheet.pushed = false; try { history.back(); } catch (e) {} }
+    hideSheet();
+  }
+
+  async function openSheet(item, tab) {
+    buildSheet();
+    var ov = document.getElementById("fjSheetOv");
+    sheet.item = item;
+    sheet.filter = "all";
+    sheet.rCounts = null;
+    sheet.cTotal = item.replyTotal || 0;
+    sheet.token++;
+    var sheetEl = ov.querySelector("#fjSheet");
+    sheetEl.style.animation = ""; sheetEl.style.transform = ""; sheetEl.style.transition = "";
+    var who = item.asker_name || "A member";
+    shEl("[data-sub]").textContent = (item.activity ? item.activity + " · " : "") + who;
+    shEl('[data-n="comments"]').textContent = sheet.cTotal;
+    shEl('[data-n="reactions"]').textContent = "…";
+    shEl("[data-scroll]").scrollTop = 0;
+    ov.classList.add("show");
+    document.body.classList.add("fj-lock");
+    if (!sheet.open) {
+      try { history.pushState({ fjSheet: 1 }, ""); sheet.pushed = true; } catch (e) { sheet.pushed = false; }
+    }
+    sheet.open = true;
+    if (sheet.fit) sheet.fit();
+    sheetSetTab(tab || "comments");
+    sheetLoadReactionCounts();   // fills in the Reactions tab number
+  }
+
+  function sheetSetTab(tab) {
+    sheet.tab = tab;
+    document.querySelectorAll("#fjSheetOv [data-tab]").forEach(function (b) { b.classList.toggle("on", b.getAttribute("data-tab") === tab); });
+    shEl("[data-composer]").style.display = tab === "comments" ? "" : "none";
+    shEl("[data-fchips]").style.display = tab === "reactions" ? "flex" : "none";
+    shEl("[data-scroll]").scrollTop = 0;
+    if (tab === "comments") sheetLoadComments(true); else { sheetRenderChips(); sheetLoadReactions(true); }
+  }
+
+  function setMore(remaining, loading) {
+    var more = shEl("[data-more]");
+    if (remaining > 0) {
+      more.style.display = "";
+      more.disabled = !!loading;
+      more.textContent = loading ? "Loading…" : "Show more · " + remaining + " more";
+    } else {
+      more.style.display = "none";
+    }
+  }
+
+  async function sheetLoadComments(reset) {
+    var my = sheet.token, item = sheet.item, list = shEl("[data-list]");
+    if (reset) { sheet.cOff = 0; list.innerHTML = '<div class="fj-sh-empty">Loading…</div>'; setMore(0); }
+    else setMore(sheet.cTotal - sheet.cOff, true);
+    var from = sheet.cOff;
+    var res = await window.sb.from("story_replies")
+      .select("id, user_id, reply_text, created_at, profiles(display_name)", { count: "exact" })
+      .eq("question_id", item.id)
+      .order("created_at", { ascending: false })
+      .range(from, from + SHEET_PAGE - 1);
+    if (my !== sheet.token || sheet.tab !== "comments") return;
+    if (res.error) {
+      if (reset) list.innerHTML = '<div class="fj-sh-empty">Couldn\'t load comments — please try again.</div>';
+      setMore(sheet.cTotal - sheet.cOff);
+      return;
+    }
+    var raw = res.data || [];
+    var rows = filterOutBlocked(raw);
+    await attachAvatarUrls(rows);
+    if (my !== sheet.token) return;
+    if (typeof res.count === "number") sheet.cTotal = res.count;
+    sheet.cOff = from + raw.length;
+    if (reset) list.innerHTML = "";
+    if (reset && !rows.length) list.innerHTML = '<div class="fj-sh-empty">No comments yet — be the first to cheer them on.</div>';
+    list.insertAdjacentHTML("beforeend", rows.map(function (r) {
+      var name = (r.profiles && r.profiles.display_name) || "A member";
+      return '<div class="fj-sh-item">' + avatarHtml({ user_id: r.user_id, asker_name: name, avatarUrl: r.avatarUrl }, 40) +
+        '<div class="fj-sh-main"><div class="fj-sh-name">' + escapeHtml(name) + '<span class="fj-sh-time">' + escapeHtml(timeAgo(r.created_at)) + '</span></div>' +
+        '<div class="fj-sh-text">' + escapeHtml(r.reply_text) + '</div></div></div>';
+    }).join(""));
+    shEl('[data-n="comments"]').textContent = sheet.cTotal;
+    setMore(sheet.cTotal - sheet.cOff);
+  }
+
+  async function sheetLoadReactionCounts() {
+    var my = sheet.token, id = sheet.item.id;
+    var counts = { clap: 0, heart: 0, thumbs_up: 0 };
+    await Promise.all(STORY_REACTIONS.map(async function (r) {
+      var res = await window.sb.from("story_reactions").select("user_id", { count: "exact", head: true }).eq("question_id", id).eq("reaction", r.type);
+      counts[r.type] = (res && typeof res.count === "number") ? res.count : (res && res.data ? res.data.length : 0);
+    }));
+    if (my !== sheet.token) return;
+    counts.all = counts.clap + counts.heart + counts.thumbs_up;
+    sheet.rCounts = counts;
+    shEl('[data-n="reactions"]').textContent = counts.all;
+    if (sheet.tab === "reactions") sheetRenderChips();
+  }
+
+  function sheetRenderChips() {
+    var c = sheet.rCounts || {};
+    var box = shEl("[data-fchips]");
+    var defs = [{ k: "all", label: "All" }].concat(STORY_REACTIONS.map(function (r) { return { k: r.type, label: r.emoji }; }));
+    box.innerHTML = defs.map(function (d) {
+      return '<button type="button" data-f="' + d.k + '" class="' + (sheet.filter === d.k ? "on" : "") + '">' + d.label + ' ' + (c[d.k] === undefined ? "" : c[d.k]) + '</button>';
+    }).join("");
+    box.querySelectorAll("[data-f]").forEach(function (b) {
+      b.addEventListener("click", function () { sheet.filter = b.getAttribute("data-f"); sheetRenderChips(); sheetLoadReactions(true); });
+    });
+  }
+
+  async function sheetLoadReactions(reset) {
+    var my = sheet.token, item = sheet.item, list = shEl("[data-list]");
+    if (reset) { sheet.rOff = 0; list.innerHTML = '<div class="fj-sh-empty">Loading…</div>'; setMore(0); }
+    else setMore(sheet.rTotal - sheet.rOff, true);
+    var from = sheet.rOff;
+    function q(withOrder) {
+      var b = window.sb.from("story_reactions").select("user_id, reaction", { count: "exact" }).eq("question_id", item.id);
+      if (sheet.filter !== "all") b = b.eq("reaction", sheet.filter);
+      if (withOrder) b = b.order("created_at", { ascending: false });
+      return b.range(from, from + SHEET_PAGE - 1);
+    }
+    var res = await q(true);
+    if (res.error) res = await q(false);   // older tables without created_at still work
+    if (my !== sheet.token || sheet.tab !== "reactions") return;
+    if (res.error) {
+      if (reset) list.innerHTML = '<div class="fj-sh-empty">Couldn\'t load reactions — please try again.</div>';
+      return;
+    }
+    var raw = res.data || [];
+    var rows = filterOutBlocked(raw);
+    var ids = rows.map(function (r) { return r.user_id; });
+    var names = {};
+    if (ids.length) {
+      try {
+        var pr = await window.sb.from("profiles").select("id, display_name").in("id", ids);
+        (pr.data || []).forEach(function (p) { names[p.id] = p.display_name; });
+      } catch (e) {}
+      await attachAvatarUrls(rows);
+    }
+    if (my !== sheet.token) return;
+    var cnt = sheet.rCounts ? sheet.rCounts[sheet.filter] : undefined;
+    sheet.rTotal = (typeof res.count === "number") ? res.count : (cnt !== undefined ? cnt : from + raw.length);
+    sheet.rOff = from + raw.length;
+    var emoji = {}; STORY_REACTIONS.forEach(function (r) { emoji[r.type] = r.emoji; });
+    if (reset) list.innerHTML = "";
+    if (reset && !rows.length) list.innerHTML = '<div class="fj-sh-empty">No reactions yet.</div>';
+    list.insertAdjacentHTML("beforeend", rows.map(function (r) {
+      var name = names[r.user_id] || "A member";
+      return '<div class="fj-sh-item">' + avatarHtml({ user_id: r.user_id, asker_name: name, avatarUrl: r.avatarUrl }, 40) +
+        '<div class="fj-sh-main"><div class="fj-sh-name">' + escapeHtml(name) + '</div></div>' +
+        '<div class="fj-sh-emoji">' + (emoji[r.reaction] || "") + '</div></div>';
+    }).join(""));
+    setMore(sheet.rTotal - sheet.rOff);
+  }
+
+  async function sheetPost(text) {
+    var body = (text || "").trim();
+    if (!body || !currentUserId || !sheet.item) return;
+    var item = sheet.item;
+    var input = shEl(".fj-sh-input"), send = shEl(".fj-sh-send");
+    send.disabled = true;
+    input.value = "";
+    await window.sb.from("story_replies").insert({ question_id: item.id, user_id: currentUserId, reply_text: body });
+    send.disabled = false;
+    if (!sheet.open || sheet.item !== item) return;
+    await sheetLoadComments(true);
+    shEl("[data-scroll]").scrollTop = 0;
+    var card = document.querySelector('.fj-card[data-id="' + item.id + '"]');
+    if (card) loadReplies(item, card);
   }
 
   (async function init() {
