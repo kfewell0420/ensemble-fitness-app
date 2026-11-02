@@ -262,6 +262,7 @@
       // phones only (Oct 29, Ken): the Home button is one size on every phone page -- a 40px circle with a 23px house (was 32px / 18px)
       "@media (max-width: 899px) { #efitHomeLink.efit-home-link { display: inline-flex !important; align-items: center; justify-content: center; width: 40px !important; height: 40px !important; min-width: 40px; padding: 0 !important; border-radius: 50% !important; flex: none; }" +
       " #efitHomeLink.efit-home-link svg { width: 23px !important; height: 23px !important; } }";
+    st.textContent += NEW_CSS;
     document.head.appendChild(st);
   }
 
@@ -269,17 +270,147 @@
   // "Notifications" line. (Hidden on a computer, where the list is a small dropdown that closes when you click elsewhere.)
   var CLOSE_BTN = '<button type="button" class="efit-notif-close" id="efitNotifClose" aria-label="Close notifications">\u2715</button>';
 
-  function renderList(panel, rows) {
-    if (!rows.length) {
-      panel.innerHTML =
-        '<div class="efit-notif-panel-header"><span>Notifications</span>' + CLOSE_BTN + '</div>' +
-        '<div class="empty-state">No notifications yet — when someone reacts, comments, follows, or messages you, it’ll show up here.</div>';
-      return;
+
+  // =====================================================================================================================
+  // Nov 2026 (Ken): "What's new" in the bell. Besides personal activity (reactions, comments, follows, messages), the bell now
+  // also counts what is NEW on the site since this member last looked: Journeys, Meal Preps, member posts and Challenges.
+  // No rows are written per member: each phone/browser remembers when it last looked at each area (localStorage) and the bell
+  // just counts what was posted after that (a count-only question per area, cached ~2 minutes). Own posts never count.
+  // =====================================================================================================================
+  var NEW_AREAS = [
+    { key: "journeys",   icon: "\uD83C\uDF05", one: "new Journey",     many: "new Journeys",     idle: "Journeys",   href: "fitness-journeys.html", page: /fitness-journeys/ },
+    { key: "mealprep",   icon: "\uD83E\uDD57", one: "new Meal Prep",   many: "new Meal Preps",   idle: "Meal Preps", href: "meal-prep.html",        page: /meal-prep/ },
+    { key: "posts",      icon: "\uD83D\uDE4C", one: "new member post", many: "new member posts", idle: "Member posts", href: "feed.html",           page: null },
+    { key: "challenges", icon: "\uD83C\uDFC6", one: "new Challenge",   many: "new Challenges",   idle: "Challenges", href: "challenges.html",       page: /challenges/ }
+  ];
+  var NEW_TTL_MS = 120000;
+  var newCounts = {};      // key -> number
+  var newLatest = {};      // key -> "Latest: ..." text (filled when the panel opens)
+  var newFetchedAt = 0;
+  var newInFlight = null;
+
+  function seenKey(uid, key) { return "efit_seen_" + uid + "_" + key; }
+  function getSeen(uid, key) {
+    var now = new Date().toISOString();
+    try {
+      var v = window.localStorage.getItem(seenKey(uid, key));
+      if (!v) { window.localStorage.setItem(seenKey(uid, key), now); return now; }   // first time: start counting from now
+      return v;
+    } catch (e) { return now; }
+  }
+  function setSeen(uid, key) {
+    try { window.localStorage.setItem(seenKey(uid, key), new Date().toISOString()); } catch (e) {}
+    newCounts[key] = 0; newLatest[key] = "";
+  }
+  function setAllSeen(uid) { NEW_AREAS.forEach(function (a) { setSeen(uid, a.key); }); }
+  function newTotal() { var n = 0; NEW_AREAS.forEach(function (a) { n += (newCounts[a.key] || 0); }); return n; }
+
+  function notMine(q, uid) {
+    q = q.neq("user_id", uid);
+    try {
+      var ids = window.blockedIds ? Array.prototype.slice.call(window.blockedIds) : [];
+      if (ids.length && ids.length <= 60) q = q.not("user_id", "in", "(" + ids.join(",") + ")");
+    } catch (e) {}
+    return q;
+  }
+  function areaQuery(key, uid, since, wantRow) {
+    var sel = wantRow ? "" : null;
+    var q;
+    if (key === "journeys") {
+      q = window.sb.from("community_questions")
+        .select(wantRow ? "activity, notes, asker_name, created_at" : "id", wantRow ? undefined : { count: "exact", head: true })
+        .eq("status", "approved");
+      q = notMine(q, uid).gt("created_at", since);
+    } else if (key === "mealprep" || key === "posts") {
+      q = window.sb.from("media")
+        .select(wantRow ? "caption, created_at, profiles!media_user_id_fkey(display_name)" : "id", wantRow ? undefined : { count: "exact", head: true })
+        .eq("status", "approved").in("kind", ["video", "photo"]);
+      q = key === "mealprep" ? q.eq("workout_type", "Meal Prep") : q.or("workout_type.neq.Meal Prep,workout_type.is.null");
+      q = notMine(q, uid).gt("created_at", since);
+    } else {
+      q = window.sb.from("community_events")
+        .select(wantRow ? "title, created_at" : "id", wantRow ? undefined : { count: "exact", head: true })
+        .gte("starts_at", new Date().toISOString());
+      q = q.neq("created_by", uid).gt("created_at", since);
     }
-    var hasUnread = rows.some(function (r) { return !r.read_at; });
+    if (wantRow) q = q.order("created_at", { ascending: false }).limit(1);
+    return q;
+  }
+
+  async function fetchNewCounts(uid, force) {
+    if (!force && Date.now() - newFetchedAt < NEW_TTL_MS) return newCounts;
+    if (newInFlight) return newInFlight;
+    newInFlight = (async function () {
+      await Promise.all(NEW_AREAS.map(async function (a) {
+        try {
+          var res = await areaQuery(a.key, uid, getSeen(uid, a.key), false);
+          newCounts[a.key] = (res && !res.error && typeof res.count === "number") ? res.count : 0;
+        } catch (e) { newCounts[a.key] = 0; }
+      }));
+      newFetchedAt = Date.now();
+      newInFlight = null;
+      return newCounts;
+    })();
+    return newInFlight;
+  }
+
+  function snippet(s, n) { s = String(s || "").replace(/\s+/g, " ").trim(); return s.length > n ? s.slice(0, n - 1) + "\u2026" : s; }
+  async function fetchNewLatest(uid) {
+    await Promise.all(NEW_AREAS.map(async function (a) {
+      if (!(newCounts[a.key] > 0)) { newLatest[a.key] = ""; return; }
+      try {
+        var res = await areaQuery(a.key, uid, getSeen(uid, a.key), true);
+        var r = res && !res.error && res.data && res.data[0];
+        if (!r) { newLatest[a.key] = ""; return; }
+        if (a.key === "journeys") newLatest[a.key] = "Latest: " + snippet(r.activity || r.notes || "", 40);
+        else if (a.key === "challenges") newLatest[a.key] = "Latest: " + snippet(r.title, 40);
+        else {
+          var who = r.profiles && r.profiles.display_name;
+          newLatest[a.key] = r.caption ? "Latest: " + snippet(r.caption, 40) : (who ? "Latest from " + who : "");
+        }
+      } catch (e) { newLatest[a.key] = ""; }
+    }));
+  }
+
+  function newSectionHtml() {
+    var h = '<div class="efit-new-lab"><span>\u2B50 What\u2019s new</span><s></s></div><div class="efit-new-wrap">';
+    NEW_AREAS.forEach(function (a) {
+      var n = newCounts[a.key] || 0;
+      h += '<a href="' + a.href + '" class="efit-new-row' + (n ? "" : " seen") + '" data-area="' + a.key + '">' +
+        '<span class="efit-new-ic">' + a.icon + '</span>' +
+        '<span class="efit-new-t"><b>' + (n ? n + " " + (n === 1 ? a.one : a.many) : a.idle) + '</b>' +
+        '<span>' + escapeHtml(n ? (newLatest[a.key] || "Tap to see") : "Nothing new since you looked") + '</span></span>' +
+        (n ? '<span class="efit-new-cnt">' + (n > 99 ? "99+" : n) + '</span>' : '') +
+        '<span class="efit-new-chev">\u203A</span></a>';
+    });
+    return h + '</div>';
+  }
+
+  var NEW_CSS =
+    ".efit-new-lab { display: flex; align-items: center; gap: 8px; padding: 12px 14px 4px; font-size: 12px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: #ff5a1f; }" +
+    ".efit-new-lab s { flex: 1; height: 1px; background: rgba(255,255,255,0.1); text-decoration: none; }" +
+    ".efit-new-wrap { padding: 0 10px 6px; }" +
+    ".efit-new-row { display: flex; align-items: center; gap: 11px; padding: 9px 10px; margin: 5px 0; border-radius: 16px; background: rgba(255,90,31,0.10); border: 1px solid rgba(255,122,61,0.45); color: #fff; text-decoration: none; }" +
+    ".efit-new-row.seen { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.1); }" +
+    ".efit-new-ic { flex: none; width: 40px; height: 40px; border-radius: 13px; background: rgba(255,90,31,0.2); display: flex; align-items: center; justify-content: center; font-size: 20px; }" +
+    ".efit-new-row.seen .efit-new-ic { background: rgba(255,255,255,0.08); }" +
+    ".efit-new-t { flex: 1; min-width: 0; }" +
+    ".efit-new-t b { display: block; font-size: 15px; font-weight: 800; color: #fff; }" +
+    ".efit-new-t span { display: block; font-size: 12.5px; color: #b9bcc4; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }" +
+    ".efit-new-cnt { flex: none; min-width: 26px; height: 26px; border-radius: 13px; background: #ff5a1f; color: #fff; font-weight: 800; font-size: 13px; display: flex; align-items: center; justify-content: center; padding: 0 7px; }" +
+    ".efit-new-chev { flex: none; color: #8d919a; font-size: 20px; line-height: 1; }" +
+    ".efit-foryou-empty { padding: 10px 16px 16px; font-size: 13px; color: rgba(255,255,255,0.6); }";
+
+  function renderList(panel, rows) {
+    var hasUnread = rows.some(function (r) { return !r.read_at; }) || newTotal() > 0;
     var html = '<div class="efit-notif-panel-header"><span>Notifications</span>';
     if (hasUnread) html += '<button type="button" class="efit-notif-mark-all" id="efitNotifMarkAll">Mark all read</button>';
     html += CLOSE_BTN + "</div>";
+    html += newSectionHtml();
+    html += '<div class="efit-new-lab"><span>\uD83D\uDC64 For you</span><s></s></div>';
+    if (!rows.length) {
+      html += '<div class="efit-foryou-empty">Nothing yet \u2014 when someone reacts, comments, follows, or messages you, it\u2019ll show up here.</div>';
+    }
     rows.forEach(function (row) {
       html +=
         '<a href="' + destinationFor(row) + '" class="efit-notif-item' + (row.read_at ? "" : " unread") + '" data-id="' + row.id + '">' +
@@ -335,6 +466,8 @@
       .eq("recipient_id", userId)
       .is("read_at", null);
     var n = count || 0;
+    try { await fetchNewCounts(userId, false); } catch (e) {}
+    n += newTotal();
     if (n > 0) {
       badge.textContent = n > 99 ? "99+" : String(n);
       badge.hidden = false;
@@ -393,7 +526,9 @@
     }
 
     placeSheet(panel);
-    var rows = await fetchRows(userId);
+    var results = await Promise.all([fetchRows(userId), fetchNewCounts(userId, true)]);
+    var rows = results[0];
+    await fetchNewLatest(userId);
     renderList(panel, rows);
     placeSheet(panel); // (the list just changed height)
     hydrateAvatars(panel, rows);
@@ -413,8 +548,11 @@
         }
         pendingMark = false;
         markAllRead(userId);
-        panel.querySelectorAll(".efit-notif-item.unread").forEach(function (el) { el.classList.remove("unread"); });
-        markAllBtn.remove();
+        setAllSeen(userId);
+        renderList(panel, rows.map(function (r) { r.read_at = r.read_at || new Date().toISOString(); return r; }));
+        placeSheet(panel);
+        hydrateAvatars(panel, rows);
+        refreshBadge(userId);
       });
     }
 
@@ -447,6 +585,10 @@
     var panelEl = document.getElementById("efitNotifPanel");
     if (panelEl) panelEl.addEventListener("click", function (e) {
       if (e.target.closest && e.target.closest("#efitNotifClose")) { e.preventDefault(); e.stopPropagation(); closePanel(); return; }
+    });
+    if (panelEl) panelEl.addEventListener("click", function (e) {
+      var a = e.target.closest ? e.target.closest(".efit-new-row") : null;
+      if (a) setSeen(userId, a.getAttribute("data-area"));   // the link itself then takes them to that page
     });
     window.addEventListener("pagehide", flushMark);
     document.addEventListener("visibilitychange", function () { if (document.hidden) flushMark(); });
@@ -490,6 +632,10 @@
       if (mq.addEventListener) mq.addEventListener("change", placeHomeBell); else if (mq.addListener) mq.addListener(placeHomeBell);
     }
     wireEvents(userId);
+    // Being on Journeys / Meal Preps / Challenges counts as "looked". Member posts: spending a few seconds on Home counts.
+    var path = window.location.pathname || "";
+    NEW_AREAS.forEach(function (a) { if (a.page && a.page.test(path)) setSeen(userId, a.key); });
+    if (IS_HOME) setTimeout(function () { setSeen(userId, "posts"); refreshBadge(userId); }, 8000);
     refreshBadge(userId);
     // Live count: every 30 seconds while the page is showing, and straight away when the app/tab comes back to the front.
     setInterval(function () { if (!document.hidden) refreshBadge(userId); }, POLL_MS);
