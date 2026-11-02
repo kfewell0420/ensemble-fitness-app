@@ -498,7 +498,7 @@
       var paths = [];
       res.data.forEach(function (m) {
         var path = m.kind === "video" ? m.poster_path : m.storage_path;
-        postInfo[m.id] = { title: snippet(m.caption || "", 34) || m.workout_type || "your post",
+        postInfo[m.id] = { title: snippet(m.caption || "", 34) || m.workout_type || (m.kind === "video" ? "your video" : "your photo"),
                            emoji: m.workout_type === "Meal Prep" ? "🥗" : (m.kind === "video" ? "🎬" : "🏋️"), path: path, thumb: "" };
         if (path) paths.push(path);
       });
