@@ -184,27 +184,44 @@
     return '<span class="efit-notif-av" ' + (uid ? (row.type !== "message" ? 'data-go="' + escapeHtml(uid) + '" ' : "") + 'data-av="' + escapeHtml(uid) + '" ' : "") +
       'style="background:' + avatarColor(uid) + '">' + escapeHtml(initial) + "</span>";
   }
-  // Same rule the feed uses: a member's picture is their newest approved profile photo.
+  // Same rule the feed uses: a member's picture is their newest approved profile photo. Remembered for the session, and every
+  // picture is signed in ONE batch call, so opening the bell with 40 faces on it is two quick questions, not 40.
+  var avatarUrlCache = {};
   async function hydrateAvatars(panel, rows) {
     try {
       var ids = [], seen = {};
       rows.forEach(function (r) { if (r.actor_id && !seen[r.actor_id]) { seen[r.actor_id] = true; ids.push(r.actor_id); } });
       if (!ids.length) return;
-      var res = await window.sb.from("media").select("user_id, storage_path, created_at")
-        .in("user_id", ids).eq("kind", "photo").eq("is_profile_photo", true).eq("status", "approved")
-        .order("created_at", { ascending: false });
-      if (!res || res.error || !res.data) return;
-      var pathBy = {};
-      res.data.forEach(function (r) { if (!pathBy[r.user_id]) pathBy[r.user_id] = r.storage_path; });
-      await Promise.all(Object.keys(pathBy).map(async function (uid) {
-        var s = await window.sb.storage.from("media").createSignedUrl(pathBy[uid], 3600);
-        var url = s && s.data ? s.data.signedUrl : "";
-        if (!url) return;
+      function paint(uid, url) {
         Array.prototype.forEach.call(panel.querySelectorAll('.efit-notif-av[data-av="' + uid + '"]'), function (el) {
           el.style.background = "";
           el.innerHTML = '<img src="' + escapeHtml(url) + '" alt="" />';
         });
-      }));
+      }
+      var need = [];
+      ids.forEach(function (uid) { if (avatarUrlCache[uid]) paint(uid, avatarUrlCache[uid]); else need.push(uid); });
+      if (!need.length) return;
+      var res = await window.sb.from("media").select("user_id, storage_path, created_at")
+        .in("user_id", need).eq("kind", "photo").eq("is_profile_photo", true).eq("status", "approved")
+        .order("created_at", { ascending: false });
+      if (!res || res.error || !res.data) return;
+      var pathBy = {};
+      res.data.forEach(function (r) { if (!pathBy[r.user_id]) pathBy[r.user_id] = r.storage_path; });
+      var uids = Object.keys(pathBy);
+      if (!uids.length) return;
+      var bucket = window.sb.storage.from("media");
+      if (typeof bucket.createSignedUrls === "function") {
+        var sg = await bucket.createSignedUrls(uids.map(function (u) { return pathBy[u]; }), 3600);
+        var urlByPath = {};
+        (sg.data || []).forEach(function (u) { if (u && u.path && u.signedUrl) urlByPath[u.path] = u.signedUrl; });
+        uids.forEach(function (uid) { var url = urlByPath[pathBy[uid]]; if (url) { avatarUrlCache[uid] = url; paint(uid, url); } });
+      } else {
+        await Promise.all(uids.map(async function (uid) {
+          var one = await bucket.createSignedUrl(pathBy[uid], 3600);
+          var url = one && one.data ? one.data.signedUrl : "";
+          if (url) { avatarUrlCache[uid] = url; paint(uid, url); }
+        }));
+      }
     } catch (e) { /* the colored initial stays */ }
   }
 
@@ -436,7 +453,33 @@
     ".efit-win-empty { padding: 26px 4px; text-align: center; color: #a3a7b0; font-size: 14.5px; }" +
     ".efit-win-more { display: block; width: 100%; margin: 8px 0 4px; font: inherit; font-size: 15px; font-weight: 800; color: #ffb27a; background: none; border: 1.5px solid rgba(255,122,61,0.8); border-radius: 999px; padding: 12px; cursor: pointer; }" +
     ".efit-win-note { padding: 12px 2px; font-size: 13px; color: #8d919a; }" +
-    ".efit-foryou-empty { padding: 10px 16px 16px; font-size: 13px; color: rgba(255,255,255,0.6); }";
+    ".efit-foryou-empty { padding: 10px 16px 16px; font-size: 13px; color: rgba(255,255,255,0.6); }" +
+    // ---- who (left, round) / what (right, square) ----
+    ".efit-notif-item.efit-rx { align-items: center; text-decoration: none; color: inherit; }" +
+    ".efit-stk { flex: none; position: relative; width: 58px; height: 58px; }" +
+    ".efit-stk .efit-sa { position: absolute; width: 36px; height: 36px; box-shadow: 0 0 0 2.5px #14161c; font-size: 14px; }" +
+    ".efit-stk .efit-sa1 { left: 0; bottom: 0; z-index: 3; } .efit-stk .efit-sa2 { left: 20px; top: 0; z-index: 2; }" +
+    ".efit-stk .efit-sa3 { left: 28px; top: 26px; width: 30px; height: 30px; font-size: 12px; z-index: 1; }" +
+    ".efit-stk.one .efit-sa1 { left: 7px; bottom: auto; top: 8px; width: 42px; height: 42px; font-size: 16px; box-shadow: none; }" +
+    ".efit-plus { position: absolute; right: -3px; bottom: -3px; z-index: 4; min-width: 22px; height: 22px; padding: 0 5px; border-radius: 11px; background: #ff5a1f; box-shadow: 0 0 0 2px #14161c; color: #fff; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; }" +
+    ".efit-ths { flex: none; position: relative; width: 58px; height: 60px; }" +
+    ".efit-thp { position: absolute; width: 44px; height: 50px; border-radius: 10px; border: 1.5px solid rgba(255,122,61,0.65); background: #2a2b2f; overflow: hidden; display: flex; align-items: center; justify-content: center; }" +
+    ".efit-thp img { width: 100%; height: 100%; object-fit: cover; display: block; }" +
+    ".efit-thp1 { left: 0; bottom: 0; z-index: 3; } .efit-thp2 { left: 7px; top: 5px; z-index: 2; opacity: 0.9; } .efit-thp3 { left: 12px; top: 0; z-index: 1; opacity: 0.75; }" +
+    ".efit-thn { position: absolute; right: -2px; top: -4px; z-index: 5; min-width: 20px; height: 20px; padding: 0 4px; border-radius: 10px; background: #26272b; border: 1.5px solid rgba(255,122,61,0.7); color: #fff; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; }" +
+    ".efit-chips i.efit-tap { cursor: pointer; }" +
+    ".efit-mini { flex: none; display: inline-flex; align-items: center; margin-right: 2px; }" +
+    ".efit-win-item .efit-mini .efit-notif-av { width: 26px; height: 26px; font-size: 11px; margin-left: -6px; box-shadow: 0 0 0 2px #1e1f23; cursor: default; } .efit-win-item .efit-mini .efit-notif-av:first-child { margin-left: 0; }" +
+    ".efit-win-time { margin-top: 2px; font-size: 12px; color: #8d919a; }" +
+    ".efit-wl { display: flex; align-items: center; gap: 11px; padding: 13px 0; color: #fff; font-size: 13.5px; line-height: 1.35; }" +
+    ".efit-wl + .efit-wl { border-top: 1px solid rgba(255,255,255,0.1); }" +
+    ".efit-wl .efit-notif-text { flex: 1; min-width: 0; overflow-wrap: anywhere; }" +
+    ".efit-wl .efit-notif-item-time { display: block; margin-top: 4px; font-size: 11.5px; color: #8d919a; }" +
+    ".efit-wl .efit-stk .efit-sa { box-shadow: 0 0 0 2.5px #1e1f23; } .efit-wl .efit-stk.one .efit-sa1 { box-shadow: none; } .efit-wl .efit-plus { box-shadow: 0 0 0 2px #1e1f23; }" +
+    ".efit-wl { cursor: pointer; }" +
+    ".efit-win-who { display: flex; align-items: center; gap: 10px; padding: 6px 0 10px; color: #a3a7b0; font-size: 13px; }" +
+    ".efit-win-who .efit-notif-av { width: 46px; height: 46px; font-size: 17px; }" +
+    ".efit-win-item .efit-notif-av { width: 44px; height: 44px; }";
 
   var TODAY_MS = 2 * 864e5;
   var R_TYPES = ["muscle", "heart", "thumbs_up"];
@@ -446,16 +489,71 @@
   function rKey(t) { return t === "heart" ? "heart" : (t === "muscle" ? "muscle" : "thumbs_up"); }
   function distinctCount(o) { return Object.keys(o).length; }
 
+  // Nov 2026 (Ken): "who" on the left, "what" on the right. Groups reaction rows (newest first) into lines.
+  function groupReacts(reacts) {
+    var items = [];
+    // Nov 2026 (Ken): "who" on the left, "what" on the right. Work out who reacted to what in the last 2 days (rows arrive newest first).
+    var byActor = {}, order = [];
+    reacts.forEach(function (r) {
+      var aid = r.actor_id || r.id, mk = String(r.media_id || "none");
+      var a = byActor[aid];
+      if (!a) { a = byActor[aid] = { id: r.actor_id, name: r.actorName, t: r.created_at, unread: false, posts: {}, plist: [] }; order.push(aid); }
+      var po = a.posts[mk];
+      if (!po) { po = a.posts[mk] = { media_id: r.media_id, t: r.created_at, types: {} }; a.plist.push(po); }
+      po.types[rKey(r.reaction_type)] = 1;
+      if (!r.read_at) a.unread = true;
+    });
+    // One person who reacted to 2+ of my posts becomes ONE line ("Kimberly reacted to 4 of your posts"); people who reacted to exactly
+    // the same posts share that line. Everyone else is grouped per post, as before.
+    var clusters = {}, singles = {};
+    order.forEach(function (aid) {
+      var a = byActor[aid];
+      if (a.plist.length >= 2) {
+        var key = a.plist.map(function (po) { return String(po.media_id || "none"); }).sort().join("|");
+        var c = clusters[key] || (clusters[key] = { kind: "person", actors: [], posts: {}, plist: [], types: { muscle: {}, heart: {}, thumbs_up: {} }, t: a.t, unread: false });
+        c.actors.push({ id: a.id, name: a.name });
+        if (a.unread) c.unread = true;
+        if (Date.parse(a.t) > Date.parse(c.t)) c.t = a.t;
+        a.plist.forEach(function (po) {
+          var mk = String(po.media_id || "none");
+          var cp = c.posts[mk];
+          if (!cp) { cp = c.posts[mk] = { media_id: po.media_id, t: po.t, types: {} }; c.plist.push(cp); }
+          if (Date.parse(po.t) > Date.parse(cp.t)) cp.t = po.t;
+          Object.keys(po.types).forEach(function (tp) { cp.types[tp] = 1; c.types[tp][aid + "|" + mk] = 1; });
+        });
+      } else {
+        var po1 = a.plist[0], mk1 = String(po1.media_id || "none");
+        var g = singles[mk1] || (singles[mk1] = { kind: "react", media_id: po1.media_id, actors: [], types: { muscle: {}, heart: {}, thumbs_up: {} }, t: po1.t, unread: false });
+        g.actors.push({ id: a.id, name: a.name });
+        Object.keys(po1.types).forEach(function (tp) { g.types[tp][aid] = 1; });
+        if (a.unread) g.unread = true;
+        if (Date.parse(po1.t) > Date.parse(g.t)) g.t = po1.t;
+      }
+    });
+    Object.keys(clusters).forEach(function (k) {
+      var c = clusters[k];
+      c.plist.sort(function (x, y) { return Date.parse(y.t) - Date.parse(x.t); });
+      items.push(c);
+    });
+    Object.keys(singles).forEach(function (k) { items.push(singles[k]); });
+    return items;
+  }
+
   function buildModel(rows) {
-    var now = Date.now(), items = [], groups = {}, follows = [], per = {}, followActors = {};
+    var now = Date.now(), items = [], reacts = [], allReacts = [], follows = [], per = {}, followActors = {};
     var older = { r: { muscle: {}, heart: {}, thumbs_up: {} }, comments: 0, follows: {} };
     rows.forEach(function (r) {
       var recent = (now - Date.parse(r.created_at)) < TODAY_MS;
       var mk = r.media_id || "none";
+      if (r.type === "reaction") allReacts.push(r);
       // per-post totals for the 7-day window (distinct person + reaction, so a toggled heart never counts twice)
       if (r.type === "reaction" || r.type === "comment") {
-        var p = per[mk] || (per[mk] = { media_id: r.media_id, r: { muscle: {}, heart: {}, thumbs_up: {} }, comments: 0, t: r.created_at });
-        if (r.type === "reaction") p.r[rKey(r.reaction_type)][r.actor_id || r.id] = 1; else p.comments++;
+        var p = per[mk] || (per[mk] = { media_id: r.media_id, r: { muscle: {}, heart: {}, thumbs_up: {} }, comments: 0, t: r.created_at, actors: [], seenA: {} });
+        if (r.type === "reaction") {
+          var aid0 = r.actor_id || r.id;
+          p.r[rKey(r.reaction_type)][aid0] = 1;
+          if (!p.seenA[aid0]) { p.seenA[aid0] = 1; p.actors.push({ id: r.actor_id, name: r.actorName }); }
+        } else p.comments++;
       }
       if (r.type === "follow") followActors[r.actor_id || r.id] = 1;
       if (!recent) {
@@ -464,27 +562,63 @@
         else if (r.type === "follow") older.follows[r.actor_id || r.id] = 1;
         return;
       }
-      if (r.type === "reaction") {
-        var g = groups[mk] || (groups[mk] = { kind: "react", media_id: r.media_id, actors: {}, names: [], types: { muscle: {}, heart: {}, thumbs_up: {} }, t: r.created_at, unread: false });
-        if (!g.actors[r.actor_id || r.id]) { g.actors[r.actor_id || r.id] = 1; g.names.push(r.actorName); }
-        g.types[rKey(r.reaction_type)][r.actor_id || r.id] = 1;
-        if (!r.read_at) g.unread = true;
-      } else if (r.type === "follow") follows.push(r);
+      if (r.type === "reaction") reacts.push(r);
+      else if (r.type === "follow") follows.push(r);
       else items.push({ kind: "row", row: r, t: r.created_at, unread: !r.read_at });
     });
-    Object.keys(groups).forEach(function (k) { items.push(groups[k]); });
+
+    groupReacts(reacts).forEach(function (g) { items.push(g); });
     if (follows.length) items.push({ kind: "follow", rows: follows, t: follows[0].created_at, unread: follows.some(function (f) { return !f.read_at; }) });
     items.sort(function (a, b) { return Date.parse(b.t) - Date.parse(a.t); });
     var ec = { muscle: distinctCount(older.r.muscle), heart: distinctCount(older.r.heart), thumbs_up: distinctCount(older.r.thumbs_up) };
     var any = ec.muscle + ec.heart + ec.thumbs_up + older.comments + distinctCount(older.follows) > 0;
-    return { items: items, per: per, followers: distinctCount(followActors),
+    return { items: items, per: per, weekItems: groupReacts(allReacts), followers: distinctCount(followActors),
              earlier: any ? { r: ec, comments: older.comments, follows: distinctCount(older.follows) } : null };
   }
 
-  function chipRow(counts) {   // counts: {muscle,heart,thumbs_up} -> little pills, zero ones skipped
+  function chipRow(counts, tap) {   // counts: {muscle,heart,thumbs_up} -> little pills, zero ones skipped; tap=true makes each one open "who reacted"
     var h = "";
-    R_TYPES.forEach(function (t) { if (counts[t] > 0) h += "<i>" + R_EMOJI[t] + " " + counts[t] + "</i>"; });
+    R_TYPES.forEach(function (t) { if (counts[t] > 0) h += "<i" + (tap ? ' class="efit-tap" data-rt="' + t + '"' : "") + ">" + R_EMOJI[t] + " " + counts[t] + "</i>"; });
     return h ? '<span class="efit-chips">' + h + "</span>" : "";
+  }
+  function initialOf(name) { return (String(name || "Someone").trim().charAt(0) || "?").toUpperCase(); }
+  // WHO (left): round photos, newest on top. Up to 3 circles; with more than 3 people it is 2 circles and a "+N".
+  function stackAvHtml(actors) {
+    var n = actors.length, shown = n > 3 ? 2 : n, h = '<span class="efit-stk' + (n === 1 ? " one" : "") + '">';
+    for (var i = shown - 1; i >= 0; i--) {
+      var a = actors[i], uid = a.id ? String(a.id) : "";
+      h += '<span class="efit-notif-av efit-sa efit-sa' + (i + 1) + '" ' + (uid ? 'data-av="' + escapeHtml(uid) + '" ' : "") +
+        'style="background:' + avatarColor(uid || a.name) + '">' + escapeHtml(initialOf(a.name)) + "</span>";
+    }
+    if (n > 3) h += '<span class="efit-plus">+' + (n - 2) + "</span>";
+    return h + "</span>";
+  }
+  function whoText(actors) {
+    var n = actors.length;
+    function nm(a) { return "<b>" + escapeHtml(a.name || "Someone") + "</b>"; }
+    if (n === 1) return nm(actors[0]);
+    if (n === 2) return nm(actors[0]) + " and " + nm(actors[1]);
+    return nm(actors[0]) + ", " + nm(actors[1]) + " and " + (n - 2) + " other" + (n - 2 > 1 ? "s" : "");
+  }
+  // WHAT (right): the post's picture; several posts stack, with a number.
+  function thumbStackHtml(ids, n) {
+    var show = ids.slice(0, 3), h = '<span class="efit-ths">';
+    for (var i = show.length - 1; i >= 0; i--) {
+      var p = postInfo[show[i]] || {};
+      h += '<span class="efit-thp efit-thp' + (i + 1) + '">' + (p.thumb ? '<img src="' + escapeHtml(p.thumb) + '" alt="" />' : '<span class="efit-th-e">' + (p.emoji || "🏋️") + "</span>") + "</span>";
+    }
+    if (n > 1) h += '<small class="efit-thn">' + n + "</small>";
+    return h + "</span>";
+  }
+  function miniStackHtml(actors) {
+    var show = (actors || []).slice(0, 3);
+    if (!show.length) return "";
+    var h = '<span class="efit-mini">';
+    show.forEach(function (a) {
+      var uid = a.id ? String(a.id) : "";
+      h += '<span class="efit-notif-av" ' + (uid ? 'data-av="' + escapeHtml(uid) + '" ' : "") + 'style="background:' + avatarColor(uid || a.name) + '">' + escapeHtml(initialOf(a.name)) + "</span>";
+    });
+    return h + "</span>";
   }
   function typeCounts(types) { return { muscle: distinctCount(types.muscle), heart: distinctCount(types.heart), thumbs_up: distinctCount(types.thumbs_up) }; }
 
@@ -520,6 +654,29 @@
       (n ? "<small>" + n + "</small>" : "") + "</span>";
   }
 
+  // Re-paints the real profile photos for everything on screen (reaction lines now show faces too).
+  function hydrateList(panel, rows) {
+    var list = rows.filter(function (r) { return r.type !== "reaction"; }).slice(0, 40);
+    ((lastModel && lastModel.items) || []).forEach(function (it) {
+      if (it.actors) it.actors.slice(0, 3).forEach(function (a) { if (a.id) list.push({ actor_id: a.id }); });
+    });
+    hydrateAvatars(panel, list);
+  }
+
+  // One reaction line: round faces on the left (WHO), our heart/clap/thumbs-up counts in the middle, the post picture(s) on the right (WHAT).
+  function reactLineHtml(it, idx, mode) {
+    var isP = it.kind === "person";
+    var ids = isP ? it.plist.map(function (po) { return po.media_id; }) : [it.media_id];
+    var what = isP ? '<b class="efit-q">' + it.plist.length + " of your posts</b>" : '<b class="efit-q">' + escapeHtml(postTitle(it.media_id)) + "</b>";
+    var open = mode === "week"
+      ? '<div class="efit-wl" data-wi="' + idx + '">'
+      : '<a href="#" class="efit-notif-item efit-grp efit-rx' + (it.unread ? " unread" : "") + '" ' + (isP ? 'data-pi="' + idx + '"' : 'data-media="' + escapeHtml(String(it.media_id || "")) + '"') + ">";
+    return open + stackAvHtml(it.actors) +
+      '<span class="efit-notif-text">' + whoText(it.actors) + " reacted to " + what +
+      chipRow(typeCounts(it.types), !isP) + '<span class="efit-notif-item-time">' + timeAgo(it.t) + "</span></span>" +
+      thumbStackHtml(ids, isP ? ids.length : 0) + (mode === "week" ? "</div>" : "</a>");
+  }
+
   function renderList(panel, rows) {
     var model = buildModel(rows);
     lastModel = model;
@@ -533,38 +690,34 @@
       html += '<div class="efit-foryou-empty">Nothing yet — when someone reacts, comments, follows, or messages you, it’ll show up here.</div>';
     }
     if (model.items.length) html += '<div class="efit-day">Today</div>';
-    model.items.forEach(function (it) {
-      if (it.kind === "react") {
-        var others = it.names.length - 1;
-        var who = escapeHtml(it.names[0] || "Someone") + (others > 0 ? " and " + others + " other" + (others > 1 ? "s" : "") : "");
-        html += '<a href="#" class="efit-notif-item efit-grp' + (it.unread ? " unread" : "") + '" data-media="' + escapeHtml(String(it.media_id || "")) + '">' +
-          thumbHtml(it.media_id, it.names.length) +
-          '<span class="efit-notif-text"><span class="efit-who">' + who + '</span> reacted to <b class="efit-q">' + escapeHtml(postTitle(it.media_id)) + "</b>" +
-          chipRow(typeCounts(it.types)) + '<span class="efit-notif-item-time">' + timeAgo(it.t) + "</span></span></a>";
+    model.items.forEach(function (it, idx) {
+      if (it.kind === "react" || it.kind === "person") {
+        html += reactLineHtml(it, idx, "bell");
       } else if (it.kind === "follow") {
         if (it.rows.length === 1) {
           var fr = it.rows[0];
           html += '<a href="' + destinationFor(fr) + '" class="efit-notif-item' + (fr.read_at ? "" : " unread") + '" data-id="' + fr.id + '">' + avatarHtml(fr) +
             '<span class="efit-notif-text">' + describe(fr) + '<span class="efit-notif-item-time">' + timeAgo(fr.created_at) + "</span></span></a>";
         } else {
-          var seenF = {}, names = [];
-          it.rows.forEach(function (r) { if (!seenF[r.actor_id]) { seenF[r.actor_id] = 1; names.push(r.actorName); } });
+          var seenF = {}, names = [], fActors = [];
+          it.rows.forEach(function (r) { if (!seenF[r.actor_id]) { seenF[r.actor_id] = 1; names.push(r.actorName); fActors.push({ id: r.actor_id, name: r.actorName }); } });
           var rest = names.length - 2;
           var line = names.slice(0, 2).map(escapeHtml).join(", ") + (rest > 0 ? " and " + rest + " other" + (rest > 1 ? "s" : "") : "");
-          html += '<a href="profile.html" class="efit-notif-item' + (it.unread ? " unread" : "") + '">' + avatarHtml(it.rows[0]) +
+          html += '<a href="profile.html" class="efit-notif-item efit-rx' + (it.unread ? " unread" : "") + '">' + stackAvHtml(fActors) +
             '<span class="efit-notif-text"><strong>' + names.length + ' new followers</strong><span class="efit-sub">' + line + "</span>" +
             '<span class="efit-notif-item-time">' + timeAgo(it.t) + "</span></span></a>";
         }
       } else {
         var r = it.row;
         var txt = describe(r);
+        var tail = "";
         if (r.type === "comment" && r.media_id && postInfo[r.media_id]) {
           txt = "<strong>" + escapeHtml(r.actorName || "Someone") + "</strong> commented on <b class=\"efit-q\">" + escapeHtml(postTitle(r.media_id)) + "</b>: “" + escapeHtml(r.preview || "") + "”" +
             '<span class="efit-notif-reply">Tap to reply ›</span>';
-          if (r.actor_id) txt = txt; 
+          tail = thumbStackHtml([r.media_id], 0);
         }
-        html += '<a href="' + destinationFor(r) + '" class="efit-notif-item' + (r.read_at ? "" : " unread") + '" data-id="' + r.id + '">' + avatarHtml(r) +
-          '<span class="efit-notif-text">' + txt + '<span class="efit-notif-item-time">' + timeAgo(r.created_at) + "</span></span></a>";
+        html += '<a href="' + destinationFor(r) + '" class="efit-notif-item efit-rx' + (r.read_at ? "" : " unread") + '" data-id="' + r.id + '">' + avatarHtml(r) +
+          '<span class="efit-notif-text">' + txt + '<span class="efit-notif-item-time">' + timeAgo(r.created_at) + "</span></span>" + tail + "</a>";
       }
     });
     if (model.earlier) {
@@ -613,6 +766,12 @@
       '<div class="efit-win-body" data-body></div></div>';
     document.body.appendChild(ov);
     ov.addEventListener("click", function (e) { if (e.target === ov) closeWin(); e.stopPropagation(); });   // never lets a tap here reach the page-level "close the bell" listener
+    ov.addEventListener("click", function (e) {   // a member's round photo or name opens their profile
+      var t = e.target.closest ? e.target.closest("[data-go]") : null;
+      if (!t) return;
+      var uid = t.getAttribute("data-go");
+      if (uid) { e.preventDefault(); window.location.href = (uid === currentUserId) ? "profile.html" : "member.html?id=" + encodeURIComponent(uid); }
+    });
     ov.querySelector("[data-x]").addEventListener("click", closeWin);
     ov.querySelector("[data-back]").addEventListener("click", function () { if (win.back) win.back(); });
     document.addEventListener("keydown", function (e) { if (e.key === "Escape" && win.open) closeWin(); });
@@ -643,33 +802,56 @@
   }
 
   function openWeekWin() {
-    var m = lastModel || { per: {}, followers: 0 };
-    showWin("Your last 7 days", "Activity on each of your posts");
-    var body = wEl("[data-body]");
-    var posts = Object.keys(m.per).map(function (k) { return m.per[k]; });
-    function total(p) { var c = typeCounts(p.r); return c.muscle + c.heart + c.thumbs_up + p.comments; }
-    posts.sort(function (a, b) { return total(b) - total(a); });
-    var h = "";
-    posts.forEach(function (p) {
-      var c = typeCounts(p.r);
-      var chips = chipRow(c) || "";
-      if (p.comments) chips = chips.replace('</span>', "<i>💬 " + p.comments + "</i></span>") || '<span class="efit-chips"><i>💬 ' + p.comments + "</i></span>";
-      if (!chips && p.comments) chips = '<span class="efit-chips"><i>💬 ' + p.comments + "</i></span>";
-      h += '<div class="efit-win-item efit-win-post" data-m="' + escapeHtml(String(p.media_id || "")) + '">' + thumbHtml(p.media_id, 0) +
-        '<div class="efit-win-main"><div class="efit-win-name">' + escapeHtml(postTitle(p.media_id)) + "</div>" + chips + '</div><span class="efit-new-chev">›</span></div>';
-    });
-    if (!posts.length) h += '<div class="efit-win-empty">No reactions or comments on your posts in the last 7 days.</div>';
+    var m = lastModel || { per: {}, followers: 0, weekItems: [] };
+    var wi = m.weekItems || [];
+    showWin("Your last 7 days", "Who reacted to your posts");
+    var body = wEl("[data-body]"), h = "";
+    wi.forEach(function (it, i) { h += reactLineHtml(it, i, "week"); });
+    if (!wi.length) h += '<div class="efit-win-empty">No reactions on your posts in the last 7 days.</div>';
+    var cm = 0;
+    Object.keys(m.per).forEach(function (k) { cm += m.per[k].comments; });
+    if (cm) h += '<div class="efit-win-note">💬 ' + cm + " comment" + (cm > 1 ? "s" : "") + " on your posts this week</div>";
     if (m.followers) h += '<div class="efit-win-note">👤 ' + m.followers + " new follower" + (m.followers > 1 ? "s" : "") + " this week</div>";
     body.innerHTML = h;
-    body.querySelectorAll("[data-m]").forEach(function (el) {
-      el.addEventListener("click", function () { var id = el.getAttribute("data-m"); if (id) openReactWin(id, openWeekWin); });
+    body.querySelectorAll(".efit-wl").forEach(function (el) {
+      el.addEventListener("click", function (e) {
+        var it = wi[+el.getAttribute("data-wi")];
+        if (!it) return;
+        e.preventDefault();
+        if (it.kind === "person") { openPersonWin(it, openWeekWin); return; }
+        var rt = e.target.closest ? e.target.closest("[data-rt]") : null;
+        openReactWin(String(it.media_id || ""), openWeekWin, rt ? rt.getAttribute("data-rt") : null);
+      });
     });
+    var wk = [];
+    wi.forEach(function (it) { it.actors.slice(0, 3).forEach(function (a) { if (a.id) wk.push({ actor_id: a.id }); }); });
+    hydrateAvatars(body, wk);
   }
 
-  async function openReactWin(mediaId, back) {
+  // One person (or a few who reacted to the same posts): every post they reacted to and what they gave it.
+  function openPersonWin(g, back) {
+    var n = g.plist.length, names = g.actors.map(function (a) { return a.name || "Someone"; });
+    showWin(names.length === 1 ? names[0] : names.slice(0, 2).join(" and ") + (names.length > 2 ? " +" + (names.length - 2) : ""),
+            "Reacted to " + n + " of your posts", back);
+    var body = wEl("[data-body]");
+    var h = '<div class="efit-win-who">' + g.actors.slice(0, 3).map(function (a) { return avatarHtml({ actor_id: a.id, actorName: a.name, type: "reaction" }); }).join("") + "<span>Newest first</span></div>";
+    g.plist.forEach(function (po) {
+      var em = R_TYPES.map(function (t) { return po.types[t] ? R_EMOJI[t] : ""; }).join("");
+      h += '<div class="efit-win-item efit-win-post" data-m="' + escapeHtml(String(po.media_id || "")) + '">' + thumbHtml(po.media_id, 0) +
+        '<div class="efit-win-main"><div class="efit-win-name">' + escapeHtml(postTitle(po.media_id)) + '</div><div class="efit-win-time">' + timeAgo(po.t) + "</div></div>" +
+        '<span class="efit-win-emoji">' + em + "</span></div>";
+    });
+    body.innerHTML = h;
+    body.querySelectorAll("[data-m]").forEach(function (el) {
+      el.addEventListener("click", function () { var id = el.getAttribute("data-m"); if (id) openReactWin(id, function () { openPersonWin(g, back); }); });
+    });
+    hydrateAvatars(body, g.actors.slice(0, 3).map(function (a) { return { actor_id: a.id }; }));
+  }
+
+  async function openReactWin(mediaId, back, filter) {
     if (!mediaId) return;
     await fetchPostInfo([mediaId]);
-    showWin("Reactions", postTitle(mediaId), back);
+    showWin("Who reacted", postTitle(mediaId), back);
     win.mediaId = mediaId; win.filter = "all"; win.off = 0; win.total = 0; win.counts = null;
     var my = win.token;
     var body = wEl("[data-body]");
@@ -683,6 +865,7 @@
     if (my !== win.token) return;
     counts.all = counts.muscle + counts.heart + counts.thumbs_up;
     win.counts = counts;
+    win.filter = (filter && counts[filter] > 0) ? filter : "all";   // tapping the heart opens straight onto the hearts
     renderWinChips();
     loadReactors(true);
   }
@@ -690,8 +873,12 @@
     var c = win.counts || {};
     var box = wEl("[data-chips]");
     if (!box) return;
-    var defs = [{ k: "all", l: "All" }].concat(R_TYPES.map(function (t) { return { k: t, l: R_EMOJI[t] }; }));
-    box.innerHTML = defs.map(function (d) { return '<button type="button" data-f="' + d.k + '" class="' + (win.filter === d.k ? "on" : "") + '">' + d.l + " " + (c[d.k] === undefined ? "" : c[d.k]) + "</button>"; }).join("");
+    var types = R_TYPES.filter(function (t) { return c[t] > 0; });
+    var defs = (types.length > 1 ? [{ k: "all", l: "All" }] : []).concat(types.map(function (t) { return { k: t, l: R_EMOJI[t] }; }));
+    box.innerHTML = defs.map(function (d) {
+      var on = win.filter === d.k || (win.filter === "all" && defs.length === 1);
+      return '<button type="button" data-f="' + d.k + '" class="' + (on ? "on" : "") + '">' + d.l + " " + (c[d.k] === undefined ? "" : c[d.k]) + "</button>";
+    }).join("");
     box.querySelectorAll("[data-f]").forEach(function (b) {
       b.addEventListener("click", function () { win.filter = b.getAttribute("data-f"); renderWinChips(); loadReactors(true); });
     });
@@ -701,10 +888,13 @@
     if (!list) return;
     if (reset) { win.off = 0; list.innerHTML = '<div class="efit-win-empty">Loading…</div>'; more.style.display = "none"; }
     var from = win.off;
-    var q = window.sb.from("media_reactions").select("user_id, reaction_type", { count: "exact" }).eq("media_id", win.mediaId);
+    // newest first, with the time (if the table has no time column, falls back to the plain list without one)
+    var q = window.sb.from("media_reactions").select(win.noTime ? "user_id, reaction_type" : "user_id, reaction_type, created_at", { count: "exact" }).eq("media_id", win.mediaId);
     if (win.filter !== "all") q = q.eq("reaction_type", win.filter);
+    if (!win.noTime) q = q.order("created_at", { ascending: false });
     var res = await q.range(from, from + WIN_PAGE - 1);
     if (my !== win.token) return;
+    if (res && res.error && !win.noTime) { win.noTime = true; return loadReactors(reset); }
     if (!res || res.error) { if (reset) list.innerHTML = '<div class="efit-win-empty">Couldn’t load reactions — please try again.</div>'; return; }
     var raw = res.data || [];
     var ids = raw.map(function (r) { return r.user_id; });
@@ -719,7 +909,8 @@
     if (reset && !raw.length) list.innerHTML = '<div class="efit-win-empty">No reactions yet.</div>';
     var fake = raw.map(function (r) { return { actor_id: r.user_id, actorName: names[r.user_id] || "A member", type: "reaction" }; });
     list.insertAdjacentHTML("beforeend", raw.map(function (r, i) {
-      return '<div class="efit-win-item">' + avatarHtml(fake[i]) + '<div class="efit-win-main"><div class="efit-win-name">' + escapeHtml(fake[i].actorName) + '</div></div>' +
+      return '<div class="efit-win-item">' + avatarHtml(fake[i]) + '<div class="efit-win-main"><div class="efit-win-name" data-go="' + escapeHtml(String(r.user_id)) + '" style="cursor:pointer;">' + escapeHtml(fake[i].actorName) + "</div>" +
+        (r.created_at ? '<div class="efit-win-time">' + timeAgo(r.created_at) + "</div>" : "") + "</div>" +
         '<span class="efit-win-emoji">' + R_EMOJI[rKey(r.reaction_type)] + "</span></div>";
     }).join(""));
     hydrateAvatars(wEl("[data-body]"), fake);
@@ -847,7 +1038,7 @@
     await fetchPostInfo(recentIds.concat(topIds));
     renderList(panel, rows);
     placeSheet(panel); // (the list just changed height)
-    hydrateAvatars(panel, rows.filter(function (r) { return r.type !== "reaction"; }).slice(0, 40));
+    hydrateList(panel, rows);
 
     var markAllBtn = document.getElementById("efitNotifMarkAll");
     if (markAllBtn) {
@@ -867,7 +1058,7 @@
         setAllSeen(userId);
         renderList(panel, rows.map(function (r) { r.read_at = r.read_at || new Date().toISOString(); return r; }));
         placeSheet(panel);
-        hydrateAvatars(panel, rows.filter(function (r) { return r.type !== "reaction"; }).slice(0, 40));
+        hydrateList(panel, rows);
         refreshBadge(userId);
       });
     }
@@ -908,7 +1099,14 @@
     });
     if (panelEl) panelEl.addEventListener("click", function (e) {
       var g = e.target.closest ? e.target.closest(".efit-grp") : null;
-      if (g) { e.preventDefault(); e.stopPropagation(); openReactWin(g.getAttribute("data-media"), null); return; }
+      if (g) {
+        e.preventDefault(); e.stopPropagation();
+        var pi = g.getAttribute("data-pi");
+        if (pi !== null && lastModel && lastModel.items[+pi]) { openPersonWin(lastModel.items[+pi], null); return; }
+        var rt = e.target.closest("[data-rt]");
+        openReactWin(g.getAttribute("data-media"), null, rt ? rt.getAttribute("data-rt") : null);
+        return;
+      }
       var w = e.target.closest ? e.target.closest("[data-week]") : null;
       if (w) { e.preventDefault(); e.stopPropagation(); openWeekWin(); }
     });
