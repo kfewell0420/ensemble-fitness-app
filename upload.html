@@ -607,6 +607,8 @@
   /* extra rows that can sit under the picture: iPhone's own play row (no song yet); the clip chips while a song is on and there are several clips */
   body.ef-video:not(.ef-song):has(.pv-row:not(.native)) { --efx: 44px; }
   body.ef-video.ef-song.ef-multi { --efx: 56px; }
+  /* a tall (portrait) video fills the screen from left to right; the preview crops a little off the top and bottom to do it (the video itself is never changed). Wide videos keep their whole picture. */
+  body.ef-video #trimPreviewVideo.portrait { object-fit: cover; object-position: 50% 32%; }
   body.ef-video .vl-open { visibility: hidden !important; pointer-events: none !important; }
   body.ef-video #previewSoundNote { display: none !important; }
   body.ef-video #musicSection { margin: 0 !important; }
