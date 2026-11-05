@@ -585,6 +585,112 @@
   /* the plain caption box is retired; only the Healthy Meal Prep write-up still uses it */
   #captionField { display: none !important; }
   body.ef-meal #captionField { display: block !important; }
+
+  /* ===== Ken's ask (Nov 2026): VIDEO POST SCREEN, new layout (video mode only; every rule below starts with body.ef-video) =====
+     Big picture, edge to edge. Two stacked tracks (picture / song, touching). One slim row of five tools. Slim share row.
+     Nothing here changes what the controls DO: the tools below are proxies that press the real controls. */
+  body.ef-video .app-nav { display: none !important; }
+  body.ef-video #uploadShell { padding: 0 0 calc(96px + env(safe-area-inset-bottom, 0px)) !important; }
+  body.ef-video #uploadCard { padding: 0 !important; border: 0 !important; border-radius: 0 !important; background: transparent !important; box-shadow: none !important; }
+  body.ef-video #flowBackBtn { display: flex !important; align-items: center; margin: 0 !important; padding: calc(6px + env(safe-area-inset-top, 0px)) 14px 6px 14px !important; min-height: 44px !important; }
+  body.ef-video #uploadCard #trimSection { position: relative; padding: 0 !important; margin: 0 !important; background: none !important; border: 0 !important; border-radius: 0 !important; }
+  body.ef-video #trimSection .field-label-row { display: block !important; height: 0 !important; margin: 0 !important; padding: 0 !important; overflow: visible; }
+  body.ef-video #yourVideosLabel { display: none !important; }
+  body.ef-video #trimSection #changeVideoBtn { position: absolute; right: 12px; top: -38px; z-index: 6; padding: 5px 12px !important; font-size: 12.5px !important; border: 1px solid rgba(255,255,255,0.4); border-radius: 999px; color: #fff; background: transparent; }
+  body.ef-video .trim-layout { display: block !important; }
+  body.ef-video .trim-media { margin: 0 !important; }
+  body.ef-video #trimPreviewVideo, body.ef-video #trimPreviewVideo.portrait { display: block; width: 100% !important; max-width: none !important; height: clamp(230px, calc(100svh - 372px - var(--efx, 0px)), 620px) !important; max-height: none !important; aspect-ratio: auto !important; margin: 0 !important; border-radius: 0 !important; object-fit: contain; background: #000; }
+  /* extra rows that can sit under the picture: iPhone's own play row (no song yet); the clip chips while a song is on and there are several clips */
+  body.ef-video:not(.ef-song):has(.pv-row:not(.native)) { --efx: 44px; }
+  body.ef-video.ef-song.ef-multi { --efx: 56px; }
+  body.ef-video .vl-open { visibility: hidden !important; pointer-events: none !important; }
+  body.ef-video #previewSoundNote { display: none !important; }
+  body.ef-video #musicSection { margin: 0 !important; }
+  /* clip squares: small chips under the picture (hidden once a song is on, when there is only one clip) */
+  body.ef-video .clip-tray { margin: 0; padding: 8px 12px 6px; }
+  body.ef-video .clip-tray-row { gap: 8px; padding: 0; }
+  body.ef-video .clip-thumb, body.ef-video .clip-add { width: 40px; height: 40px; border-radius: 8px; border-width: 1.5px; }
+  body.ef-video .clip-add { font-size: 0; }
+  body.ef-video .clip-add b { font-size: 20px; }
+  body.ef-video .clip-thumb .clip-n { min-width: 14px; height: 14px; line-height: 14px; font-size: 9px; left: 2px; top: 2px; }
+  body.ef-video .clip-thumb .clip-d { font-size: 8px; padding: 0 3px; right: 1px; bottom: 1px; }
+  body.ef-video.ef-song:not(.ef-multi) #clipTray { display: none !important; }
+  body.ef-video .pv-row { margin: 0; padding: 6px 12px; }
+  /* tracks */
+  body.ef-video #mixTimeline { margin: 0 !important; }
+  body.ef-video .mix-tracks, body.ef-video .mix-tracks.nosong { padding-bottom: 0; margin-bottom: 24px; }
+  /* the round grab dot hangs just BELOW the bars (not over them), so a thumb on the left song-grip never lands on it */
+  body.ef-video .mix-dot { bottom: -30px; height: 34px; }
+  body.ef-video .mix-track { border-radius: 0; margin-bottom: 2px; }
+  body.ef-video .mix-track.mix-video { height: 44px !important; margin-bottom: 2px; }
+  body.ef-video .mix-track.mix-music { height: 44px !important; margin-bottom: 0; background: rgba(255,255,255,0.07); }
+  body.ef-video .mix-tracks.nosong .mix-track.mix-video { margin-bottom: 0; }
+  body.ef-video .mix-clip { border-radius: 0; background: linear-gradient(90deg, #8b3fd9, #6a2bb8); box-shadow: inset 0 2.5px 0 #c79bff, inset 0 -2.5px 0 #c79bff; }
+  body.ef-video .mix-handle { position: relative !important; top: auto !important; flex: 0 0 26px !important; width: 26px !important; max-width: none !important; height: 100% !important; clip-path: none !important; background: #c79bff; border-radius: 9px 0 0 9px; }
+  body.ef-video .mix-handle::after { content: ""; width: 10px !important; height: 20px !important; margin: 0 !important; transform: none !important; border-radius: 0 !important; background: linear-gradient(90deg, #3d1b73 0 2px, transparent 2px 4px, #3d1b73 4px 6px, transparent 6px 8px, #3d1b73 8px 10px) !important; }
+  body.ef-video .mix-clip-body { align-items: center !important; padding: 0 8px !important; }
+  body.ef-video .mix-wave { opacity: 0.95; }
+  body.ef-video .mix-clip-label, body.ef-video #mixClipLabel { display: block !important; position: relative; z-index: 2; max-width: calc(100% - 44px); font-size: 11.5px; padding: 0 9px; line-height: 20px; height: 20px; background: rgba(30,10,60,0.72); }
+  body.ef-video .mix-video.solid .mix-video-label { display: none; }
+  .ef-dur, .ef-xrm, .ef-addclip { display: none; }
+  body.ef-video .ef-dur { display: block; position: absolute; right: 8px; top: 12px; z-index: 3; height: 20px; line-height: 20px; padding: 0 8px; border-radius: 10px; background: rgba(0,0,0,0.62); color: #fff; font-size: 11.5px; font-weight: 700; pointer-events: none; }
+  body.ef-video .ef-xrm { display: flex; position: absolute; right: 6px; top: 12px; z-index: 5; width: 20px; height: 20px; border-radius: 50%; border: 0; padding: 0; background: rgba(0,0,0,0.7); color: #fff; font-size: 10px; align-items: center; justify-content: center; cursor: pointer; }
+  body.ef-video:not(.ef-song) .ef-xrm { display: none; }
+  body.ef-video.ef-song:not(.ef-multi) .ef-addclip { display: flex; }
+  .ef-addclip { position: absolute; left: 12px; top: 10px; z-index: 5; height: 30px; padding: 0 12px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.5); background: rgba(0,0,0,0.6); color: #fff; font: inherit; font-size: 12px; font-weight: 700; align-items: center; cursor: pointer; }
+  /* cover: a small chip on the picture's top-right corner; its picker opens as a panel over the picture */
+  body.ef-video #coverPicker { position: absolute; right: 12px; top: 10px; z-index: 6; margin: 0 !important; }
+  body.ef-video #coverPicker > summary { list-style: none; font-size: 0 !important; height: 30px; padding: 0 12px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.5) !important; background: rgba(0,0,0,0.6) !important; display: flex; align-items: center; cursor: pointer; }
+  body.ef-video #coverPicker > summary::-webkit-details-marker { display: none; }
+  body.ef-video #coverPicker > summary::before { content: "🖼️ Cover"; font-size: 12px; font-weight: 700; color: #fff; }
+  body.ef-video #coverPicker > summary > * { display: none; }
+  body.ef-video #coverPicker[open] #coverPickerRow { position: absolute; right: 0; top: 38px; width: min(330px, calc(100vw - 24px)); margin: 0 !important; padding: 8px; border-radius: 12px; background: rgba(12,12,16,0.94); overflow-x: auto; }
+  body.ef-video #coverPickerRow { display: flex; gap: 6px; }
+  body.ef-video #coverPickerRow .cover-thumb { flex: 0 0 auto; width: 64px; height: 92px; padding: 0; border: 2px solid rgba(255,255,255,0.25); border-radius: 8px; overflow: hidden; background: #000; cursor: pointer; }
+  body.ef-video #coverPickerRow .cover-thumb.selected { border-color: #ff7a2f; }
+  body.ef-video #coverPickerRow .cover-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  body.ef-video #coverPickerRow .cover-picker-status { font-size: 12px; color: #b9bccb; padding: 6px; }
+  /* the five tools */
+  body.ef-video #efTiles { display: none !important; }
+  body.ef-video #narrationPreview { display: none !important; }
+  #efTools { display: none; }
+  body.ef-video #efTools { display: flex; gap: 2px; margin: 0; }
+  #efTools .ef-t { position: relative; flex: 1 1 0; min-width: 0; height: 56px; padding: 2px 1px 0; border: 0; border-radius: 0; background: #fff; color: #5b5e69; font: inherit; font-size: 10.5px; font-weight: 700; line-height: 1.1; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; cursor: pointer; -webkit-tap-highlight-color: transparent; overflow: hidden; }
+  #efTools .ef-t:active { background: #f1f1f3; }
+  #efTools .ef-t .ef-ic { display: block; height: 22px; line-height: 0; }
+  #efTools .ef-t .ef-tx { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  #efTools .ef-t.val { color: #c4501a; }
+  #efTools .ef-t.song { background: #f2e8ff; color: #6a2bb8; }
+  #efTools .ef-t.rec { color: #d11a2a; }
+  #efTools .ef-t.off { background: #dcdde2; cursor: default; }
+  #efTools .ef-t.off > * { opacity: 0.45; }
+  #efTools .ef-t .ef-bd { position: absolute; right: 6px; top: 4px; min-width: 15px; height: 15px; padding: 0 4px; border-radius: 8px; background: #ff5a1f; color: #fff; font-size: 9.5px; font-style: normal; line-height: 15px; display: none; }
+  #efTools .ef-t.has .ef-bd { display: block; }
+  /* share row */
+  .ss-state, .ss-short { display: none; }
+  body.ef-video #socialShareRow { margin: 2px 0 0 !important; padding: 0 12px !important; height: 46px; gap: 10px !important; border-radius: 0 !important; border-left: 0 !important; border-right: 0 !important; cursor: pointer; }
+  body.ef-video #socialShareRow .ss-hit { width: 24px; height: 24px; }
+  body.ef-video #socialShareRow .ss-ck { border-radius: 6px; box-shadow: inset 0 0 0 2px #000; }
+  body.ef-video #socialShareRow .ss-ck svg { width: 34px; height: 34px; left: -1px; top: -9px; }
+  body.ef-video #socialShareRow .ss-text { flex: 1 1 auto; min-width: 0; }
+  body.ef-video #socialShareRow .ss-sub, body.ef-video #socialShareRow .ss-long { display: none; }
+  body.ef-video #socialShareRow .ss-short { display: inline; }
+  body.ef-video #socialShareRow .ss-title { font-size: 13.5px !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  body.ef-video #socialShareRow .ss-state { display: block; font-size: 11.5px; font-weight: 800; color: #ffc58a; }
+  /* the sheets (workout list, location, voiceover) */
+  .ef-sheet { position: fixed; inset: 0; z-index: 200; display: none; }
+  .ef-sheet.open { display: block; }
+  .ef-sheet .ef-bk { position: absolute; inset: 0; background: rgba(0,0,0,0.55); }
+  .ef-sheet .ef-pn { position: absolute; left: 0; right: 0; bottom: 0; max-height: 78vh; overflow-y: auto; background: #1b1c20; color: #fff; border-radius: 18px 18px 0 0; padding: 14px 14px calc(16px + env(safe-area-inset-bottom, 0px)); box-shadow: 0 -8px 30px rgba(0,0,0,0.5); }
+  .ef-sheet .ef-hd { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; font-size: 16px; font-weight: 800; }
+  .ef-sheet .ef-hd button { border: 0; background: #2a2c33; color: #fff; width: 30px; height: 30px; border-radius: 50%; font-size: 14px; cursor: pointer; }
+  .ef-sheet .ef-opt { display: flex; width: 100%; align-items: center; justify-content: space-between; padding: 13px 12px; margin: 0 0 6px; border: 0; border-radius: 12px; background: #26272b; color: #fff; font: inherit; font-size: 15px; font-weight: 700; text-align: left; cursor: pointer; }
+  .ef-sheet .ef-opt.on { background: #3a2410; color: #ffb27a; box-shadow: inset 0 0 0 1.5px #ff7a2f; }
+  .ef-sheet .ef-inp { width: 100%; box-sizing: border-box; padding: 13px 14px; border-radius: 12px; border: 1.5px solid rgba(255,255,255,0.25); background: #141517; color: #fff; font: inherit; font-size: 16px; }
+  .ef-sheet .ef-go { display: block; width: 100%; margin-top: 10px; padding: 13px; border: 0; border-radius: 999px; background: linear-gradient(90deg, #ff5a1f, #d9440d); color: #fff; font: inherit; font-size: 15px; font-weight: 800; cursor: pointer; }
+  .ef-sheet .ef-go.ghost { background: #2a2c33; }
+  .ef-sheet .ef-go.red { background: #3a1216; color: #ff9a9a; }
+  .ef-sheet audio { width: 100%; margin-top: 4px; }
 </style>
 
 <div class="app-shell narrow" id="uploadShell">
@@ -806,6 +912,7 @@
               <div class="clip-tray-row" id="clipTrayRow"></div>
               <div class="clip-tray-ctl" id="clipTrayCtl" style="display:none;"></div>
             </div>
+            <button type="button" class="ef-addclip" id="efAddClip">+ clip</button>
             <input type="file" id="addClipsInput" accept="video/*" multiple style="display:none;" />
             <div id="previewSoundNote" style="font-size:12px; color:var(--faint-invert); margin-top:6px; line-height:1.4;">🔊 Press play to hear your video with its own sound. Adding music or a voice narration replaces it.</div>
           </div>
@@ -839,12 +946,13 @@
         </div>
         <div id="mixTimeline" style="display:none; margin-top:8px;">
           <div class="mix-tracks" id="mixTracks">
-            <div class="mix-track mix-video" id="mixVideoTrack"><div class="mix-filmstrip" id="mixFilmstrip"></div><span class="mix-video-label">Your video</span></div>
+            <div class="mix-track mix-video" id="mixVideoTrack"><div class="mix-filmstrip" id="mixFilmstrip"></div><span class="mix-video-label">Your video</span><span class="ef-dur" id="efDur"></span></div>
             <div class="mix-track mix-music" id="mixMusicTrack">
               <div class="mix-clip" id="mixClip">
                 <div class="mix-handle mix-handle-l" id="mixHandleL" title="Drag to trim the front of the song"></div>
                 <div class="mix-clip-body" id="mixClipBody" title="Drag to slide the song along your video"><canvas class="mix-wave" id="mixWave"></canvas><span class="mix-clip-label" id="mixClipLabel"></span></div>
               </div>
+              <button type="button" class="ef-xrm" id="efXrm" aria-label="Remove music" title="Remove music">&#10005;</button>
             </div>
             <div class="mix-playhead" id="mixPlayhead"><div class="mix-dot" id="mixDot" role="slider" aria-label="Drag to move through your video"></div></div>
           </div>
@@ -900,6 +1008,8 @@
         </div>
         <div id="narrationSection" style="display:none;" aria-hidden="true"></div>
       </div>
+      <!-- Video post screen (Nov 2026): five tools in Ken's order. Each presses the real control (workout drop-down, location box, recorder, music picker, floating message). -->
+      <div id="efTools" role="group" aria-label="Video tools"><button type="button" class="ef-t" id="efT_work" data-k="work"><span class="ef-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="#ff7a2f"><rect x="1" y="9" width="3" height="6" rx="1"/><rect x="4" y="6" width="3" height="12" rx="1"/><rect x="7" y="11" width="10" height="2"/><rect x="17" y="6" width="3" height="12" rx="1"/><rect x="20" y="9" width="3" height="6" rx="1"/></svg></span><span class="ef-tx">Workout type</span><i class="ef-bd"></i></button><button type="button" class="ef-t" id="efT_loc" data-k="loc"><span class="ef-ic"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M12 22s7-6.5 7-12a7 7 0 10-14 0c0 5.5 7 12 7 12z" fill="#e53935"/><circle cx="12" cy="10" r="2.6" fill="#fff"/></svg></span><span class="ef-tx">Location</span><i class="ef-bd"></i></button><button type="button" class="ef-t" id="efT_voice" data-k="voice"><span class="ef-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2"><rect x="9" y="3" width="6" height="11" rx="3" fill="#6b7280"/><path d="M5 11a7 7 0 0014 0M12 18v3"/></svg></span><span class="ef-tx">Voiceover</span><i class="ef-bd"></i></button><button type="button" class="ef-t" id="efT_music" data-k="music"><span class="ef-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M9 17V5l10-2v12" stroke="#8b3fd9" stroke-width="2"/><circle cx="6.5" cy="17.5" r="2.5" fill="#8b3fd9"/><circle cx="16.5" cy="15.5" r="2.5" fill="#8b3fd9"/></svg></span><span class="ef-tx">Music track</span><i class="ef-bd"></i></button><button type="button" class="ef-t" id="efT_msg" data-k="msg"><span class="ef-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="#2b6bff"><path d="M3 4h18v12H10l-5 4v-4H3z"/></svg></span><span class="ef-tx">Floating message</span><i class="ef-bd"></i></button></div>
       <div id="narrationPreview" class="ef-narr-preview" style="display:none;">
         <audio id="narrationAudioPreview" controls></audio>
       </div>
@@ -957,9 +1067,10 @@
           <span class="ss-ck" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#1d6ff2" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 13.5 C5.5 12.5 7.5 15 9 19 C11.5 11 16 6 21.5 3.5"/></svg></span>
         </label>
         <div class="ss-text">
-          <label for="socialShare" class="ss-title">Share this on Ensemble Fitness social media pages</label>
+          <label for="socialShare" class="ss-title"><span class="ss-long">Share this on Ensemble Fitness social media pages</span><span class="ss-short">Share on Ensemble Fitness social pages</span></label>
           <div class="ss-sub">Uncheck if you would like to keep this on the app only.</div>
         </div>
+        <span class="ss-state" id="ssState" aria-hidden="true">ON</span>
       </div>
 
       <button type="button" class="btn btn-primary btn-block" id="uploadBtn" disabled>↑ Select a file above</button>
@@ -4776,6 +4887,123 @@
   setInterval(syncCat, 300);
   loc.addEventListener("click", function (e) { if (e.target !== $("location")) $("location").focus(); });
   layout(); syncCat();
+})();
+</script>
+
+<div class="ef-sheet" id="efSheet" aria-hidden="true"><div class="ef-bk" id="efShBk"></div><div class="ef-pn" role="dialog" aria-modal="true"><div class="ef-hd"><span id="efShT"></span><button type="button" id="efShX" aria-label="Close">&#10005;</button></div><div id="efShB"></div></div></div>
+<script>
+/* Video post screen (Nov 2026): switches the new layout on for video posts only, and keeps the five tools in step with the real controls. */
+(function () {
+  function $(id) { return document.getElementById(id); }
+  var body = document.body, ts = $("trimSection");
+  if (!ts || !$("efTools")) return;
+  var sel = $("workoutType"), loc = $("location");
+  function setCls(el, c, on) { if (el.classList.contains(c) !== !!on) el.classList.toggle(c, !!on); }
+  function setTx(el, t) { if (el.textContent !== t) el.textContent = t; }
+  function tile(k) { return $("efT_" + k); }
+  function put(k, text, o) {
+    var t = tile(k); o = o || {};
+    setTx(t.querySelector(".ef-tx"), text);
+    setCls(t, "val", o.val); setCls(t, "song", o.song); setCls(t, "rec", o.rec); setCls(t, "off", o.off);
+    t.setAttribute("aria-disabled", o.off ? "true" : "false");
+    var bd = t.querySelector(".ef-bd");
+    setTx(bd, o.badge || ""); setCls(t, "has", !!o.badge);
+  }
+  function update() {
+    var vid = ts.classList.contains("show");
+    setCls(body, "ef-video", vid);
+    if (!vid) { setCls(body, "ef-song", false); setCls(body, "ef-multi", false); return; }
+    var ms = $("musicTrackSelect");
+    setCls(body, "ef-song", !!(ms && ms.value && !ms.disabled));
+    setCls(body, "ef-multi", document.querySelectorAll("#clipTrayRow .clip-thumb").length > 1);
+    // workout type
+    var wt = sel.value ? sel.options[sel.selectedIndex].text : "";
+    put("work", wt || "Workout type", { val: !!wt });
+    // location
+    var lv = (loc.value || "").trim();
+    put("loc", lv || "Location", { val: !!lv });
+    // voiceover
+    var tn = $("tileNarr"), rb = $("recordNarrationBtn");
+    var narrOk = tn.style.display !== "none", recording = rb.classList.contains("recording"), done = tn.classList.contains("rec-done");
+    if (recording) put("voice", "Stop " + ($("narrationTimer").textContent || ""), { rec: true });
+    else if (done) put("voice", "Voiceover added", { val: true });
+    else put("voice", "Voiceover", { off: !narrOk || rb.disabled });
+    // music
+    var row = $("trackPickerRow"), picked = row.querySelector(".mt-sel-text b"), choose = row.querySelector(".mt-choose");
+    var musicOk = row.style.display !== "none" && !row.classList.contains("disabled") && !!(picked || choose);
+    if (picked && musicOk) put("music", picked.textContent, { song: true });
+    else put("music", "Music track", { off: !musicOk });
+    // floating message
+    var vb = $("vlOpenBtn"), cnt = $("vlCount").textContent;
+    put("msg", "Floating message", { off: !vb.classList.contains("show"), badge: cnt });
+    // little chips on the picture / tracks
+    var d = $("pvDur") ? $("pvDur").textContent : "";
+    var chip = $("efDur"); setTx(chip, d); chip.style.visibility = (d && d !== "0:00") ? "visible" : "hidden";
+    var ss = $("socialShare"), st = $("ssState"); if (ss && st) setTx(st, ss.checked ? "ON" : "OFF");
+  }
+  new MutationObserver(update).observe(ts, { attributes: true, attributeFilter: ["class"] });
+  setInterval(update, 250);
+
+  // ---- sheets ----
+  var sh = $("efSheet"), shT = $("efShT"), shB = $("efShB");
+  function openSheet(title, node) { shT.textContent = title; shB.innerHTML = ""; shB.appendChild(node); sh.classList.add("open"); sh.setAttribute("aria-hidden", "false"); }
+  function closeSheet() { sh.classList.remove("open"); sh.setAttribute("aria-hidden", "true"); shB.innerHTML = ""; }
+  $("efShBk").addEventListener("click", closeSheet);
+  $("efShX").addEventListener("click", closeSheet);
+  function btn(cls, text, fn) { var b = document.createElement("button"); b.type = "button"; b.className = cls; b.textContent = text; b.addEventListener("click", fn); return b; }
+
+  function workoutSheet() {
+    var w = document.createElement("div");
+    Array.prototype.forEach.call(sel.options, function (o) {
+      if (!o.value) return;
+      var b = btn("ef-opt" + (o.value === sel.value ? " on" : ""), o.text, function () {
+        sel.value = o.value; sel.dispatchEvent(new Event("change", { bubbles: true })); update(); closeSheet();
+      });
+      if (o.value === sel.value) { var c = document.createElement("span"); c.textContent = "✓"; b.appendChild(c); }
+      w.appendChild(b);
+    });
+    openSheet("Workout type", w);
+  }
+  function locationSheet() {
+    var w = document.createElement("div");
+    var inp = document.createElement("input"); inp.type = "text"; inp.className = "ef-inp"; inp.maxLength = 80; inp.placeholder = "Where was this?"; inp.value = loc.value || ""; inp.setAttribute("autocomplete", "off");
+    function push() { loc.value = inp.value; loc.dispatchEvent(new Event("input", { bubbles: true })); update(); }
+    inp.addEventListener("input", push);
+    inp.addEventListener("keydown", function (e) { if (e.key === "Enter") { push(); closeSheet(); } });
+    w.appendChild(inp);
+    w.appendChild(btn("ef-go", "Done", function () { push(); closeSheet(); }));
+    if (loc.value) w.appendChild(btn("ef-go ghost", "Clear location", function () { inp.value = ""; push(); closeSheet(); }));
+    openSheet("Location", w);
+    setTimeout(function () { try { inp.focus(); } catch (e) {} }, 60);
+  }
+  function voiceSheet() {
+    var w = document.createElement("div");
+    var src = $("narrationAudioPreview") && $("narrationAudioPreview").src;
+    if (src) { var a = document.createElement("audio"); a.controls = true; a.src = src; w.appendChild(a); }
+    w.appendChild(btn("ef-go ghost", "Re-record", function () { closeSheet(); $("reRecordBtn").click(); }));
+    w.appendChild(btn("ef-go red", "Remove voiceover", function () { closeSheet(); $("removeNarrationBtn").click(); }));
+    w.appendChild(btn("ef-go", "Done", closeSheet));
+    openSheet("Your voiceover", w);
+  }
+
+  $("efTools").addEventListener("click", function (e) {
+    var t = e.target.closest(".ef-t"); if (!t || t.classList.contains("off")) return;
+    var k = t.getAttribute("data-k");
+    if (k === "work") workoutSheet();
+    else if (k === "loc") locationSheet();
+    else if (k === "voice") { if ($("tileNarr").classList.contains("rec-done")) voiceSheet(); else $("recordNarrationBtn").click(); }
+    else if (k === "music") { var r = $("trackPickerRow"); var el = r.querySelector(".mt-selected") || r.querySelector(".mt-choose"); if (el) el.click(); }
+    else if (k === "msg") $("vlOpenBtn").click();
+  });
+  $("efXrm").addEventListener("click", function (e) { e.stopPropagation(); var r = $("trackPickerRow").querySelector(".mt-remove"); if (r) r.click(); });
+  $("efAddClip").addEventListener("click", function () { var b = $("clipAddBtn"); if (b) b.click(); else $("addClipsInput").click(); });
+  // share row: the whole row is the tap target
+  $("socialShareRow").addEventListener("click", function (e) {
+    if (!body.classList.contains("ef-video")) return;
+    if (e.target.closest("label, input")) return;
+    $("socialShare").click();
+  });
+  update();
 })();
 </script>
 </body>
