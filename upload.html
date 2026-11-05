@@ -639,6 +639,8 @@
   body.ef-video .mix-clip-label, body.ef-video #mixClipLabel { display: block !important; position: relative; z-index: 2; max-width: calc(100% - 44px); font-size: 11.5px; padding: 0 9px; line-height: 20px; height: 20px; background: rgba(30,10,60,0.72); }
   body.ef-video .mix-video.solid .mix-video-label { display: none; }
   .ef-dur, .ef-xrm, .ef-addclip, .ef-recchip { display: none; }
+  body.ef-video #uploadMsg.show { position: fixed; left: 12px; right: 12px; bottom: 150px; z-index: 60; margin: 0 !important; padding: 12px 14px; border-radius: 12px; background: #3a0d12; border: 1px solid #ff6b5b; color: #ffd9d4 !important; font-size: 14px; font-weight: 700; line-height: 1.35; box-shadow: 0 6px 22px rgba(0,0,0,0.55); }
+  body.ef-video #uploadMsg.show.success { background: #0e2e1b; border-color: #3ecf7a; color: #d6ffe6 !important; }
   body.ef-video .ef-recchip.on { display: flex; position: absolute; left: 50%; top: 12px; transform: translateX(-50%); z-index: 6; height: 28px; padding: 0 12px; border-radius: 14px; background: rgba(209,26,42,0.92); color: #fff; font-size: 12.5px; font-weight: 800; align-items: center; gap: 6px; pointer-events: none; white-space: nowrap; }
   body.ef-video .ef-dur { display: block; position: absolute; right: 8px; top: 12px; z-index: 3; height: 20px; line-height: 20px; padding: 0 8px; border-radius: 10px; background: rgba(0,0,0,0.62); color: #fff; font-size: 11.5px; font-weight: 700; pointer-events: none; }
   body.ef-video .ef-xrm { display: flex; position: absolute; right: 6px; top: 12px; z-index: 5; width: 20px; height: 20px; border-radius: 50%; border: 0; padding: 0; background: rgba(0,0,0,0.7); color: #fff; font-size: 10px; align-items: center; justify-content: center; cursor: pointer; }
@@ -1171,6 +1173,15 @@
   function showMsg(el, text, kind) {
     el.textContent = text;
     el.className = "form-msg show " + kind;
+    // Video screen: the message floats just above the Post button (never under the phone's status bar) and clears itself.
+    if (el.id === "uploadMsg" && document.body.classList.contains("ef-video")) {
+      try {
+        var pb = document.getElementById("uploadBtn");
+        if (pb) el.style.bottom = Math.max(70, window.innerHeight - pb.getBoundingClientRect().top + 10) + "px";
+        clearTimeout(el._efT);
+        if (kind === "error") el._efT = setTimeout(function () { if (el.classList.contains("error")) hideMsg(el); }, 8000);
+      } catch (e) {}
+    }
   }
   function hideMsg(el) { el.className = "form-msg"; }
 
@@ -3749,7 +3760,7 @@
 
   // Nov 2026 (Ken): the voiceover only worked the first time. Every take now checks the microphone itself (permission, a live
   // stream, real sound heard, a real recording at the end) and says plainly what is wrong instead of silently posting nothing.
-  var voiceCtx = null, voiceMeter = null, voiceLoud = 0, voiceRan = 0, voiceHeardAt = 0, voiceSawPlaying = false, voiceStarting = false;
+  var voiceFinalizing = false, voiceCtx = null, voiceMeter = null, voiceLoud = 0, voiceRan = 0, voiceHeardAt = 0, voiceSawPlaying = false, voiceStarting = false;
   function stopVoiceMeter() {
     if (!voiceMeter) return;
     try { clearInterval(voiceMeter.iv); } catch (e) {}
@@ -3809,6 +3820,7 @@
         if (mediaRecorder && mediaRecorder.state === "recording") { stopRecording(); }
       };
       mediaRecorder.onstop = function () {
+        voiceFinalizing = false;
         var tookMs = Date.now() - startedAt, loud = voiceLoud, metered = !!voiceMeter && voiceRan >= 30;
         stopVoiceMeter();
         stream.getTracks().forEach(function (t) { t.stop(); });
@@ -3888,7 +3900,7 @@
   });
   ["pause", "ended"].forEach(function (ev) { trimPreviewVideo.addEventListener(ev, function () { setTimeout(maybeAutoStopVoice, 0); }); });
   function stopRecording() {
-    if (mediaRecorder && mediaRecorder.state === "recording") { mediaRecorder.stop(); videoBehindVoice(false); }
+    if (mediaRecorder && mediaRecorder.state === "recording") { voiceFinalizing = true; mediaRecorder.stop(); videoBehindVoice(false); }
     clearInterval(recordingTimerInterval);
     narrationTimer.style.display = "none";
   }
@@ -4521,8 +4533,13 @@
     }
 
     if (precheckKind === "video" && mediaRecorder && mediaRecorder.state === "recording") {
-      showMsg(msg, "Your voiceover is still recording. Tap Stop first, then tap Post.", "error");
-      return;
+      // Nov 2026 (Ken): people finish talking and tap Post. That now ends the voiceover for them, saves it, and carries on posting.
+      var origPostTxt = uploadBtn.textContent;
+      uploadBtn.disabled = true; uploadBtn.textContent = "Saving your voiceover…";
+      stopRecording();
+      for (var vw = 0; voiceFinalizing && vw < 3000; vw += 60) await new Promise(function (r) { setTimeout(r, 60); });
+      uploadBtn.disabled = false; uploadBtn.textContent = origPostTxt;
+      if (!narrationBlob) return;   // (the page has already said why: too short / nothing heard)
     }
     if (precheckKind === "video" && narrationBlob && narrationBlob.size < 1500) {
       resetNarrationUI();
