@@ -682,6 +682,9 @@
   #efTools .ef-t.val { color: #c4501a; }
   #efTools .ef-t.song { background: #f2e8ff; color: #6a2bb8; }
   #efTools .ef-t.rec { color: #d11a2a; }
+  #efTools .ef-t.rec .ef-ic svg { animation: efMicPulse 1s ease-in-out infinite; transform-origin: 50% 50%; }
+  @keyframes efMicPulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.22); opacity: 0.7; } }
+  body.ef-video .ef-recchip.warn { background: rgba(214,126,0,0.95) !important; }
   #efTools .ef-t.off { background: #dcdde2; cursor: default; }
   #efTools .ef-t.off > * { opacity: 0.45; }
   #efTools .ef-t .ef-bd { position: absolute; right: 6px; top: 4px; min-width: 15px; height: 15px; padding: 0 4px; border-radius: 8px; background: #ff5a1f; color: #fff; font-size: 9.5px; font-style: normal; line-height: 15px; display: none; }
@@ -1030,7 +1033,7 @@
         <div id="narrationSection" style="display:none;" aria-hidden="true"></div>
       </div>
       <!-- Video post screen (Nov 2026): five tools in Ken's order. Each presses the real control (workout drop-down, location box, recorder, music picker, floating message). -->
-      <div id="efTools" role="group" aria-label="Video tools"><button type="button" class="ef-t" id="efT_work" data-k="work"><span class="ef-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="#ff7a2f"><rect x="1" y="9" width="3" height="6" rx="1"/><rect x="4" y="6" width="3" height="12" rx="1"/><rect x="7" y="11" width="10" height="2"/><rect x="17" y="6" width="3" height="12" rx="1"/><rect x="20" y="9" width="3" height="6" rx="1"/></svg></span><span class="ef-tx">Activity</span><i class="ef-bd"></i></button><button type="button" class="ef-t" id="efT_loc" data-k="loc"><span class="ef-ic"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M12 22s7-6.5 7-12a7 7 0 10-14 0c0 5.5 7 12 7 12z" fill="#e53935"/><circle cx="12" cy="10" r="2.6" fill="#fff"/></svg></span><span class="ef-tx">Location</span><i class="ef-bd"></i></button><button type="button" class="ef-t" id="efT_music" data-k="music"><span class="ef-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M9 17V5l10-2v12" stroke="#8b3fd9" stroke-width="2"/><circle cx="6.5" cy="17.5" r="2.5" fill="#8b3fd9"/><circle cx="16.5" cy="15.5" r="2.5" fill="#8b3fd9"/></svg></span><span class="ef-tx">Music track</span><i class="ef-bd"></i></button><button type="button" class="ef-t" id="efT_voice" data-k="voice"><span class="ef-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2"><rect x="9" y="3" width="6" height="11" rx="3" fill="#6b7280"/><path d="M5 11a7 7 0 0014 0M12 18v3"/></svg></span><span class="ef-tx">Voiceover</span><i class="ef-bd"></i></button><button type="button" class="ef-t" id="efT_msg" data-k="msg"><span class="ef-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="#2b6bff"><path d="M3 4h18v12H10l-5 4v-4H3z"/></svg></span><span class="ef-tx">Floating message</span><i class="ef-bd"></i></button></div>
+      <div id="efTools" role="group" aria-label="Video tools"><button type="button" class="ef-t" id="efT_work" data-k="work"><span class="ef-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="#ff7a2f"><rect x="1" y="9" width="3" height="6" rx="1"/><rect x="4" y="6" width="3" height="12" rx="1"/><rect x="7" y="11" width="10" height="2"/><rect x="17" y="6" width="3" height="12" rx="1"/><rect x="20" y="9" width="3" height="6" rx="1"/></svg></span><span class="ef-tx">Activity</span><i class="ef-bd"></i></button><button type="button" class="ef-t" id="efT_loc" data-k="loc"><span class="ef-ic"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M12 22s7-6.5 7-12a7 7 0 10-14 0c0 5.5 7 12 7 12z" fill="#e53935"/><circle cx="12" cy="10" r="2.6" fill="#fff"/></svg></span><span class="ef-tx">Location</span><i class="ef-bd"></i></button><button type="button" class="ef-t" id="efT_music" data-k="music"><span class="ef-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M9 17V5l10-2v12" stroke="#8b3fd9" stroke-width="2"/><circle cx="6.5" cy="17.5" r="2.5" fill="#8b3fd9"/><circle cx="16.5" cy="15.5" r="2.5" fill="#8b3fd9"/></svg></span><span class="ef-tx">Music track</span><i class="ef-bd"></i></button><button type="button" class="ef-t" id="efT_voice" data-k="voice"><span class="ef-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#e53935" stroke-width="2"><rect x="9" y="3" width="6" height="11" rx="3" fill="#e53935"/><path d="M5 11a7 7 0 0014 0M12 18v3"/></svg></span><span class="ef-tx">Voiceover</span><i class="ef-bd"></i></button><button type="button" class="ef-t" id="efT_msg" data-k="msg"><span class="ef-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="#2b6bff"><path d="M3 4h18v12H10l-5 4v-4H3z"/></svg></span><span class="ef-tx">Floating message</span><i class="ef-bd"></i></button></div>
       <div id="narrationPreview" class="ef-narr-preview" style="display:none;">
         <audio id="narrationAudioPreview" controls></audio>
       </div>
@@ -3744,38 +3747,115 @@
   mixVideoTrack.addEventListener("pointerup", endScrub);
   mixVideoTrack.addEventListener("pointercancel", endScrub);
 
-  async function startRecording() {
+  // Nov 2026 (Ken): the voiceover only worked the first time. Every take now checks the microphone itself (permission, a live
+  // stream, real sound heard, a real recording at the end) and says plainly what is wrong instead of silently posting nothing.
+  var voiceCtx = null, voiceMeter = null, voiceLoud = 0, voiceRan = 0, voiceHeardAt = 0, voiceSawPlaying = false, voiceStarting = false;
+  function stopVoiceMeter() {
+    if (!voiceMeter) return;
+    try { clearInterval(voiceMeter.iv); } catch (e) {}
+    try { voiceMeter.src.disconnect(); } catch (e) {}
+    voiceMeter = null;
+  }
+  function startVoiceMeter(stream) {
+    stopVoiceMeter(); voiceLoud = 0; voiceRan = 0; voiceHeardAt = Date.now();
     try {
-      var stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      var ctx = voiceCtx; if (!ctx) return;
+      if (ctx.state === "suspended" && ctx.resume) ctx.resume();
+      var src = ctx.createMediaStreamSource(stream), an = ctx.createAnalyser(); an.fftSize = 2048; src.connect(an);
+      var buf = new Uint8Array(an.fftSize);
+      voiceMeter = { ctx: ctx, src: src, iv: setInterval(function () {
+        if (ctx.state !== "running") return;   // (a meter that isn't running reads zeros -- never treat that as "silence")
+        voiceRan++;
+        an.getByteTimeDomainData(buf);
+        var mx = 0; for (var i = 0; i < buf.length; i++) { var d = Math.abs(buf[i] - 128); if (d > mx) mx = d; }
+        if (mx > voiceLoud) voiceLoud = mx;
+        if (mx > 5) voiceHeardAt = Date.now();
+      }, 40) };
+    } catch (e) { voiceMeter = null; }
+  }
+  window.efVoiceQuiet = function () { return !!(voiceMeter && voiceRan >= 30 && recordingStartedAt && Date.now() - recordingStartedAt > 2500 && Date.now() - voiceHeardAt > 2500); };
+  function voiceFail(text) {
+    stopVoiceMeter();
+    showMsg(document.getElementById("uploadMsg"), text, "error");
+    try { document.getElementById("uploadMsg").scrollIntoView({ block: "nearest", behavior: "smooth" }); } catch (e) {}
+  }
+  async function startRecording() {
+    if (voiceStarting) return;
+    voiceStarting = true;
+    var stream = null;
+    try {   // (made right at the tap, while the phone still counts it as the member's own action, so it is allowed to run)
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (AC && !voiceCtx) voiceCtx = new AC();
+      if (voiceCtx && voiceCtx.state === "suspended" && voiceCtx.resume) voiceCtx.resume();
+    } catch (e) { voiceCtx = null; }
+    try {
+      hideMsg(document.getElementById("uploadMsg"));
+      if (navigator.permissions && navigator.permissions.query) {
+        try {
+          var ps = await navigator.permissions.query({ name: "microphone" });
+          if (ps && ps.state === "denied") { voiceFail("The microphone is turned off for Ensemble Fitness. Open your phone's Settings, find Ensemble Fitness, turn Microphone on, then tap Voiceover again."); return; }
+        } catch (e) {}
+      }
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      var track = stream.getAudioTracks()[0];
+      if (!track || track.readyState !== "live") { stream.getTracks().forEach(function (t) { t.stop(); }); voiceFail("Your microphone isn't responding. Close other apps that may be using it and try again."); return; }
       recordedChunks = [];
       mediaRecorder = new MediaRecorder(stream);
+      var startedAt = Date.now();
       mediaRecorder.ondataavailable = function (e) {
         if (e.data.size > 0) recordedChunks.push(e.data);
       };
+      track.onended = function () {
+        if (mediaRecorder && mediaRecorder.state === "recording") { stopRecording(); }
+      };
       mediaRecorder.onstop = function () {
-        narrationBlob = new Blob(recordedChunks, { type: "audio/webm" });
+        var tookMs = Date.now() - startedAt, loud = voiceLoud, metered = !!voiceMeter && voiceRan >= 30;
+        stopVoiceMeter();
+        stream.getTracks().forEach(function (t) { t.stop(); });
+        var blob = new Blob(recordedChunks, { type: "audio/webm" });
+        if (blob.size < 1500 || tookMs < 700) {
+          resetNarrationUI();
+          voiceFail("That voiceover was too short to save. Tap Voiceover and try again.");
+          return;
+        }
+        if (metered && loud < 3) {
+          resetNarrationUI();
+          voiceFail("We didn't hear any sound on that recording. Check that your microphone isn't blocked or covered, then record again.");
+          return;
+        }
+        narrationBlob = blob;
         narrationAudioPreview.src = URL.createObjectURL(narrationBlob);
         narrationPreview.style.display = "block";
         reRecordBtn.style.display = "inline-flex";
         removeNarrationBtn.style.display = "inline-flex";
         recordNarrationBtn.style.display = "none";
         var tn1 = document.getElementById("tileNarr"); if (tn1) tn1.classList.add("rec-done");
-        stream.getTracks().forEach(function (t) { t.stop(); });
         syncMusicNarrationExclusivity();
       };
       mediaRecorder.start();
-      videoBehindVoice(true);
+      startVoiceMeter(stream);
       recordingStartedAt = Date.now();
+      videoBehindVoice(true);
       narrationTimer.style.display = "inline";
       narrationTimer.textContent = "0:00";
+      clearInterval(recordingTimerInterval);
       recordingTimerInterval = setInterval(function () {
         narrationTimer.textContent = formatTimer(Date.now() - recordingStartedAt);
+        // safety: never record much longer than the video itself
+        var ti = window.efTrimInfo ? window.efTrimInfo() : null;
+        if (ti && ti.vd && (Date.now() - recordingStartedAt) / 1000 > (ti.e - ti.s) + 2) stopRecording();
       }, 250);
       setNarrBtn("⏹", "Stop recording", "Tap when you're done");
       recordNarrationBtn.classList.add("recording");
       syncMusicNarrationExclusivity();
     } catch (err) {
-      showMsg(document.getElementById("uploadMsg"), "Couldn't access your microphone — check your browser's permission settings and try again.", "error");
+      if (stream) { try { stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {} }
+      var nm = err && err.name;
+      if (nm === "NotAllowedError" || nm === "SecurityError" || nm === "PermissionDeniedError") voiceFail("Ensemble Fitness needs your OK to use the microphone. Tap Voiceover again and choose Allow. If it doesn't ask, open your phone's Settings, find Ensemble Fitness and turn Microphone on.");
+      else if (nm === "NotFoundError" || nm === "OverconstrainedError") voiceFail("No microphone was found on this device.");
+      else voiceFail("Couldn't start the microphone. Close other apps that may be using it, then tap Voiceover and try again.");
+    } finally {
+      voiceStarting = false;
     }
   }
 
@@ -3787,6 +3867,7 @@
     var v = trimPreviewVideo;
     if (on) {
       if (voiceMutedBefore === null) voiceMutedBefore = v.muted;
+      voiceSawPlaying = false;
       v.muted = true;
       try { v.pause(); } catch (e) {}
       Promise.resolve(reelSeek(effStart())).then(function () { var pr = v.play(); if (pr && pr.catch) pr.catch(function () {}); });
@@ -3798,9 +3879,13 @@
   }
   function maybeAutoStopVoice() {
     if (!(mediaRecorder && mediaRecorder.state === "recording")) return;
+    if (!voiceSawPlaying) return;   // (a take must first really start playing from the cut start, or an old stop point would end it at once)
     var vd = vidDur();
     if (vd && reelNow() >= effEnd() - 0.2) stopRecording();
   }
+  trimPreviewVideo.addEventListener("playing", function () {
+    if (mediaRecorder && mediaRecorder.state === "recording" && reelNow() < effEnd() - Math.min(0.5, (effEnd() - effStart()) / 2)) voiceSawPlaying = true;
+  });
   ["pause", "ended"].forEach(function (ev) { trimPreviewVideo.addEventListener(ev, function () { setTimeout(maybeAutoStopVoice, 0); }); });
   function stopRecording() {
     if (mediaRecorder && mediaRecorder.state === "recording") { mediaRecorder.stop(); videoBehindVoice(false); }
@@ -4432,6 +4517,16 @@
     if (precheckKind === "audio" && !messageMode && !document.getElementById("songGenre").value) {
       showMsg(msg, "Please choose a category for your song so members can find it.", "error");
       document.getElementById("songGenre").focus();
+      return;
+    }
+
+    if (precheckKind === "video" && mediaRecorder && mediaRecorder.state === "recording") {
+      showMsg(msg, "Your voiceover is still recording. Tap Stop first, then tap Post.", "error");
+      return;
+    }
+    if (precheckKind === "video" && narrationBlob && narrationBlob.size < 1500) {
+      resetNarrationUI();
+      showMsg(msg, "Your voiceover didn't save properly. Tap Voiceover and record it again, then tap Post.", "error");
       return;
     }
 
@@ -5085,7 +5180,7 @@
     else if (recording) put("voice", "Stop " + ($("narrationTimer").textContent || ""), { rec: true });
     else put("voice", "Voiceover", { off: !narrOk });
     var recEl = $("efRec"), recOn = !done && recording;
-    if (recEl) { setCls(recEl, "on", recOn); setTx(recEl, recOn ? "\u25CF Recording  " + ($("narrationTimer").textContent || "") : ""); }
+    if (recEl) { var quiet = recOn && window.efVoiceQuiet && window.efVoiceQuiet(); setCls(recEl, "on", recOn); setCls(recEl, "warn", !!quiet); setTx(recEl, recOn ? (quiet ? "\u25CF No sound heard \u2014 check your mic" : "\u25CF Recording  " + ($("narrationTimer").textContent || "")) : ""); }
     // music
     var row = $("trackPickerRow"), picked = row.querySelector(".mt-sel-text b"), choose = row.querySelector(".mt-choose");
     var musicOk = row.style.display !== "none" && !!(picked || choose);
