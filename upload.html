@@ -91,6 +91,10 @@
     box-shadow: 0 0 0 10px rgba(12,12,16,0.72), 0 8px 24px rgba(0,0,0,0.55);
   }
   body.post-fixed.kbd-open #uploadBtn { position: static; transform: none; width: 100%; box-shadow: none; }
+  /* Android app: lift the Post pill above the phone's own navigation bar (set by the little script near the end of the page) */
+  body.ef-androidnav.post-fixed:not(.kbd-open) #uploadBtn { bottom: calc(62px + env(safe-area-inset-bottom, 0px)); }
+  body.ef-androidnav .app-shell { padding-bottom: calc(180px + env(safe-area-inset-bottom, 0px)) !important; }
+  body.ef-androidnav.ef-video #uploadShell { padding-bottom: calc(150px + env(safe-area-inset-bottom, 0px)) !important; }
 
   /* Extra clips list (Ken's ask, Nov 2026 — "copies one through ten"): a
      plain up/down/remove list is all this needs, no drag-and-drop library,
@@ -632,7 +636,8 @@
   body.ef-video .mix-wave { opacity: 0.95; }
   body.ef-video .mix-clip-label, body.ef-video #mixClipLabel { display: block !important; position: relative; z-index: 2; max-width: calc(100% - 44px); font-size: 11.5px; padding: 0 9px; line-height: 20px; height: 20px; background: rgba(30,10,60,0.72); }
   body.ef-video .mix-video.solid .mix-video-label { display: none; }
-  .ef-dur, .ef-xrm, .ef-addclip { display: none; }
+  .ef-dur, .ef-xrm, .ef-addclip, .ef-recchip { display: none; }
+  body.ef-video .ef-recchip.on { display: flex; position: absolute; left: 50%; top: 12px; transform: translateX(-50%); z-index: 6; height: 28px; padding: 0 12px; border-radius: 14px; background: rgba(209,26,42,0.92); color: #fff; font-size: 12.5px; font-weight: 800; align-items: center; gap: 6px; pointer-events: none; white-space: nowrap; }
   body.ef-video .ef-dur { display: block; position: absolute; right: 8px; top: 12px; z-index: 3; height: 20px; line-height: 20px; padding: 0 8px; border-radius: 10px; background: rgba(0,0,0,0.62); color: #fff; font-size: 11.5px; font-weight: 700; pointer-events: none; }
   body.ef-video .ef-xrm { display: flex; position: absolute; right: 6px; top: 12px; z-index: 5; width: 20px; height: 20px; border-radius: 50%; border: 0; padding: 0; background: rgba(0,0,0,0.7); color: #fff; font-size: 10px; align-items: center; justify-content: center; cursor: pointer; }
   body.ef-video:not(.ef-song) .ef-xrm { display: none; }
@@ -926,6 +931,7 @@
               <div class="clip-tray-ctl" id="clipTrayCtl" style="display:none;"></div>
             </div>
             <button type="button" class="ef-addclip" id="efAddClip">+ clip</button>
+            <div class="ef-recchip" id="efRec" aria-live="polite"></div>
             <input type="file" id="addClipsInput" accept="video/*" multiple style="display:none;" />
             <div id="previewSoundNote" style="font-size:12px; color:var(--faint-invert); margin-top:6px; line-height:1.4;">🔊 Press play to hear your video with its own sound. Adding music or a voice narration replaces it.</div>
           </div>
@@ -3161,7 +3167,7 @@
     // The video's own sound is kept on upload; it plays here unless the member
     // picked music or recorded a narration, which replace it.
     musicPreviewAudio.volume = (hasMusic && keepOriginalAudio.checked) ? MIX_MUSIC_VOLUME : 1;
-    trimPreviewVideo.muted = (hasMusic && !keepOriginalAudio.checked) || !!narrationBlob;
+    trimPreviewVideo.muted = (hasMusic && !keepOriginalAudio.checked) || !!narrationBlob || !!(mediaRecorder && mediaRecorder.state === "recording");   // (muted while recording a voiceover: the picture plays silently behind it)
     updatePreviewSoundNote();
   }
   function updatePlayTogetherBtn() {
@@ -3756,6 +3762,7 @@
         syncMusicNarrationExclusivity();
       };
       mediaRecorder.start();
+      videoBehindVoice(true);
       recordingStartedAt = Date.now();
       narrationTimer.style.display = "inline";
       narrationTimer.textContent = "0:00";
@@ -3770,8 +3777,31 @@
     }
   }
 
+  // Nov 2026 (Ken): while you record your voice the video plays silently behind it, from the start of your cut, so you can narrate what
+  // you are watching and the voice lines up. It stops by itself when the video ends (or when you tap Stop). The video's own sound is
+  // muted while recording so it never leaks into the recording.
+  var voiceMutedBefore = null;
+  function videoBehindVoice(on) {
+    var v = trimPreviewVideo;
+    if (on) {
+      if (voiceMutedBefore === null) voiceMutedBefore = v.muted;
+      v.muted = true;
+      try { v.pause(); } catch (e) {}
+      Promise.resolve(reelSeek(effStart())).then(function () { var pr = v.play(); if (pr && pr.catch) pr.catch(function () {}); });
+    } else {
+      try { v.pause(); } catch (e) {}
+      if (voiceMutedBefore !== null) { v.muted = voiceMutedBefore; voiceMutedBefore = null; }
+      if (typeof applyPreviewMix === "function") applyPreviewMix();
+    }
+  }
+  function maybeAutoStopVoice() {
+    if (!(mediaRecorder && mediaRecorder.state === "recording")) return;
+    var vd = vidDur();
+    if (vd && reelNow() >= effEnd() - 0.2) stopRecording();
+  }
+  ["pause", "ended"].forEach(function (ev) { trimPreviewVideo.addEventListener(ev, function () { setTimeout(maybeAutoStopVoice, 0); }); });
   function stopRecording() {
-    if (mediaRecorder && mediaRecorder.state === "recording") mediaRecorder.stop();
+    if (mediaRecorder && mediaRecorder.state === "recording") { mediaRecorder.stop(); videoBehindVoice(false); }
     clearInterval(recordingTimerInterval);
     narrationTimer.style.display = "none";
   }
@@ -4993,6 +5023,20 @@
   var body = document.body, ts = $("trimSection");
   if (!ts || !$("efTools")) return;
   var sel = $("workoutType"), loc = $("location"), wtTouched = false;
+  // The Android app draws the page right to the bottom edge, under the phone's own back / home / recents bar. If the phone does not
+  // report that bar's height (env inset is 0), lift the Post pill clear of it. (Phone browsers already stop above that bar.)
+  (function () {
+    try {
+      var ua = navigator.userAgent || "", cap = window.Capacitor && typeof window.Capacitor.getPlatform === "function" ? window.Capacitor.getPlatform() : "";
+      var isAndroidApp = cap === "android" || (/Android/.test(ua) && /; wv\)/.test(ua));
+      if (!isAndroidApp) return;
+      var probe = document.createElement("div"); probe.style.cssText = "position:fixed;left:0;bottom:0;width:1px;height:0;padding-bottom:env(safe-area-inset-bottom,0px);visibility:hidden;pointer-events:none;";
+      document.body.appendChild(probe);
+      var inset = parseFloat(getComputedStyle(probe).paddingBottom) || 0;
+      document.body.removeChild(probe);
+      if (inset < 20) document.body.classList.add("ef-androidnav");
+    } catch (e) {}
+  })();
   function setCls(el, c, on) { if (el.classList.contains(c) !== !!on) el.classList.toggle(c, !!on); }
   function setTx(el, t) { if (el.textContent !== t) el.textContent = t; }
   function tile(k) { return $("efT_" + k); }
@@ -5011,7 +5055,8 @@
     var share = $("socialShareRow"), lastRow = (share && share.style.display !== "none") ? share : $("efTools");
     var vr = v.getBoundingClientRect(), lr = lastRow.getBoundingClientRect();
     var below = lr.bottom - vr.bottom;
-    var postZone = 92;
+    var pb = $("uploadBtn"), pbr = pb ? pb.getBoundingClientRect() : null;
+    var postZone = (pbr && pbr.height > 0 && getComputedStyle(pb).position === "fixed") ? Math.max(0, (window.innerHeight || 700) - pbr.top) + 16 : 92;
     var vh = window.innerHeight || document.documentElement.clientHeight || 700;
     var h = Math.round(vh - (vr.top + (window.scrollY || 0)) - below - postZone);
     h = Math.max(220, Math.min(640, h));
@@ -5034,12 +5079,14 @@
     // voiceover
     var tn = $("tileNarr"), rb = $("recordNarrationBtn");
     var narrOk = tn.style.display !== "none", recording = rb.classList.contains("recording"), done = tn.classList.contains("rec-done");
-    if (recording) put("voice", "Stop " + ($("narrationTimer").textContent || ""), { rec: true });
-    else if (done) put("voice", "Voiceover added", { val: true });
-    else put("voice", "Voiceover", { off: !narrOk || rb.disabled });
+    if (done) put("voice", "Voiceover added", { val: true });   // (the page leaves the old 'recording' mark on its hidden button once a take is saved, so 'done' is checked first)
+    else if (recording) put("voice", "Stop " + ($("narrationTimer").textContent || ""), { rec: true });
+    else put("voice", "Voiceover", { off: !narrOk });
+    var recEl = $("efRec"), recOn = !done && recording;
+    if (recEl) { setCls(recEl, "on", recOn); setTx(recEl, recOn ? "\u25CF Recording  " + ($("narrationTimer").textContent || "") : ""); }
     // music
     var row = $("trackPickerRow"), picked = row.querySelector(".mt-sel-text b"), choose = row.querySelector(".mt-choose");
-    var musicOk = row.style.display !== "none" && !row.classList.contains("disabled") && !!(picked || choose);
+    var musicOk = row.style.display !== "none" && !!(picked || choose);
     if (picked && musicOk) put("music", picked.textContent, { song: true });
     else put("music", "Music track", { off: !musicOk });
     // floating message
@@ -5088,10 +5135,30 @@
     openSheet("Location", w);
     setTimeout(function () { try { inp.focus(); } catch (e) {} }, 60);
   }
+  function choiceSheet(title, text, goLabel, goFn, keepLabel) {
+    var w = document.createElement("div");
+    var pEl = document.createElement("p"); pEl.style.cssText = "margin:0 0 6px;font-size:14.5px;line-height:1.45;color:#d6d9e0;"; pEl.textContent = text; w.appendChild(pEl);
+    w.appendChild(btn("ef-go", goLabel, function () { closeSheet(); if (goFn) goFn(); }));
+    if (keepLabel) w.appendChild(btn("ef-go ghost", keepLabel, closeSheet));
+    openSheet(title, w);
+  }
   function voiceSheet() {
     var w = document.createElement("div");
     var src = $("narrationAudioPreview") && $("narrationAudioPreview").src;
     if (src) { var a = document.createElement("audio"); a.controls = true; a.src = src; w.appendChild(a); }
+    w.appendChild(btn("ef-go", "\u25B6  Watch with my voiceover", function () {
+      closeSheet();
+      var v = $("trimPreviewVideo"), au = $("narrationAudioPreview"), ti = window.efTrimInfo ? window.efTrimInfo() : { s: 0 };
+      try { v.pause(); au.pause(); } catch (e) {}
+      v.muted = true;
+      Promise.resolve(reelSeek(ti.s)).then(function () {
+        try { au.currentTime = 0; } catch (e) {}
+        var pr = v.play(); if (pr && pr.catch) pr.catch(function () {});
+        var ap = au.play(); if (ap && ap.catch) ap.catch(function () {});
+        var stopAu = function () { v.removeEventListener("pause", stopAu); try { au.pause(); } catch (e) {} };
+        v.addEventListener("pause", stopAu);
+      });
+    }));
     w.appendChild(btn("ef-go ghost", "Re-record", function () { closeSheet(); $("reRecordBtn").click(); }));
     w.appendChild(btn("ef-go red", "Remove voiceover", function () { closeSheet(); $("removeNarrationBtn").click(); }));
     w.appendChild(btn("ef-go", "Done", closeSheet));
@@ -5103,8 +5170,28 @@
     var k = t.getAttribute("data-k");
     if (k === "work") workoutSheet();
     else if (k === "loc") locationSheet();
-    else if (k === "voice") { if ($("tileNarr").classList.contains("rec-done")) voiceSheet(); else $("recordNarrationBtn").click(); }
-    else if (k === "music") { var r = $("trackPickerRow"); var el = r.querySelector(".mt-selected") || r.querySelector(".mt-choose"); if (el) el.click(); }
+    else if (k === "voice") {
+      var rbn = $("recordNarrationBtn"), isDone = $("tileNarr").classList.contains("rec-done"), isRec = rbn.classList.contains("recording");
+      if (isDone) voiceSheet();
+      else if (rbn.disabled && !isRec) {       // a song is on: a voiceover would replace it, so ask first
+        choiceSheet("Voiceover replaces your song", "A voiceover and a song can't play together. Take the song off and record your voice?", "Remove song and record", function () {
+          var rm = $("trackPickerRow").querySelector(".mt-remove"); if (rm) rm.click();
+          var tries = 0; (function go() { if (!rbn.disabled) { rbn.click(); return; } if (++tries < 8) setTimeout(go, 150); })();
+        }, "Keep my song");
+      } else rbn.click();
+    }
+    else if (k === "music") {
+      var r = $("trackPickerRow"), el = r.querySelector(".mt-selected") || r.querySelector(".mt-choose");
+      var narrOn = r.classList.contains("disabled");
+      if (narrOn && !$("tileNarr").classList.contains("rec-done") && $("recordNarrationBtn").classList.contains("recording")) {
+        choiceSheet("Finish your voiceover first", "Tap Stop on the Voiceover tile, then you can choose a song instead.", "Got it", null, "");
+      } else if (narrOn) {
+        choiceSheet("A song replaces your voiceover", "A song and a voiceover can't play together. Take the voiceover off and choose a song?", "Remove voiceover, choose a song", function () {
+          $("removeNarrationBtn").click();
+          var tries = 0; (function go() { var c = $("trackPickerRow").querySelector(".mt-choose"); if (c && !$("trackPickerRow").classList.contains("disabled")) { c.click(); return; } if (++tries < 8) setTimeout(go, 150); })();
+        }, "Keep my voiceover");
+      } else if (el) el.click();
+    }
     else if (k === "msg") $("vlOpenBtn").click();
   });
   $("efXrm").addEventListener("click", function (e) { e.stopPropagation(); var r = $("trackPickerRow").querySelector(".mt-remove"); if (r) r.click(); });
