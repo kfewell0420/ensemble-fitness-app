@@ -3772,7 +3772,7 @@
     try {
       var ctx = voiceCtx; if (!ctx) return;
       if (ctx.state === "suspended" && ctx.resume) ctx.resume();
-      var src = ctx.createMediaStreamSource(stream), an = ctx.createAnalyser(); an.fftSize = 2048; src.connect(an);
+      var src = ctx.createMediaStreamSource(stream), an = ctx.createAnalyser(); an.fftSize = 4096; src.connect(an);
       var buf = new Uint8Array(an.fftSize);
       voiceMeter = { ctx: ctx, src: src, iv: setInterval(function () {
         if (ctx.state !== "running") return;   // (a meter that isn't running reads zeros -- never treat that as "silence")
@@ -3781,10 +3781,11 @@
         var mx = 0; for (var i = 0; i < buf.length; i++) { var d = Math.abs(buf[i] - 128); if (d > mx) mx = d; }
         if (mx > voiceLoud) voiceLoud = mx;
         if (mx > 5) voiceHeardAt = Date.now();
-      }, 40) };
+      }, 80) };
     } catch (e) { voiceMeter = null; }
   }
-  window.efVoiceQuiet = function () { return !!(voiceMeter && voiceRan >= 30 && recordingStartedAt && Date.now() - recordingStartedAt > 2500 && Date.now() - voiceHeardAt > 2500); };
+  window.efIsRecording = function () { return !!(mediaRecorder && mediaRecorder.state === "recording"); };
+  window.efVoiceQuiet = function () { return !!(voiceMeter && voiceRan >= 15 && recordingStartedAt && Date.now() - recordingStartedAt > 2500 && Date.now() - voiceHeardAt > 2500); };
   function voiceFail(text) {
     stopVoiceMeter();
     showMsg(document.getElementById("uploadMsg"), text, "error");
@@ -3821,7 +3822,7 @@
       };
       mediaRecorder.onstop = function () {
         voiceFinalizing = false;
-        var tookMs = Date.now() - startedAt, loud = voiceLoud, metered = !!voiceMeter && voiceRan >= 30;
+        var tookMs = Date.now() - startedAt, loud = voiceLoud, metered = !!voiceMeter && voiceRan >= 15;
         stopVoiceMeter();
         stream.getTracks().forEach(function (t) { t.stop(); });
         var blob = new Blob(recordedChunks, { type: "audio/webm" });
@@ -4494,6 +4495,11 @@
     }
   });
 
+  // Nov 2026 (Ken): the recording picked up a run of finger taps on the glass while Post was being tapped. The voiceover now ends the
+  // instant a finger touches Post (not after the tap completes), so the taps after that are never recorded.
+  uploadBtn.addEventListener("pointerdown", function () {
+    if (mediaRecorder && mediaRecorder.state === "recording") stopRecording();
+  }, true);
   uploadBtn.addEventListener("click", async function () {
     if (!selectedFile) return;
     var msg = document.getElementById("uploadMsg");
@@ -4532,7 +4538,7 @@
       return;
     }
 
-    if (precheckKind === "video" && mediaRecorder && mediaRecorder.state === "recording") {
+    if (precheckKind === "video" && ((mediaRecorder && mediaRecorder.state === "recording") || voiceFinalizing)) {
       // Nov 2026 (Ken): people finish talking and tap Post. That now ends the voiceover for them, saves it, and carries on posting.
       var origPostTxt = uploadBtn.textContent;
       uploadBtn.disabled = true; uploadBtn.textContent = "Saving your voiceover…";
@@ -5211,7 +5217,7 @@
     var secs = ti && ti.vd ? (ti.e - ti.s) : 0, d = secs ? (Math.floor(secs / 60) + ":" + ("0" + Math.round(secs % 60)).slice(-2)) : "";
     if (secs && Math.round(secs % 60) === 60) d = (Math.floor(secs / 60) + 1) + ":00";
     var chip = $("efDur"); setTx(chip, d); chip.style.visibility = (d && d !== "0:00") ? "visible" : "hidden";
-    fit();
+    if (!(window.efIsRecording && window.efIsRecording())) fit();
     var ss = $("socialShare"), st = $("ssState"); if (ss && st) setTx(st, ss.checked ? "ON" : "OFF");
   }
   new MutationObserver(update).observe(ts, { attributes: true, attributeFilter: ["class"] });
