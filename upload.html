@@ -599,7 +599,7 @@
   body.ef-video #trimSection #changeVideoBtn { position: absolute; right: 12px; top: -38px; z-index: 6; padding: 5px 12px !important; font-size: 12.5px !important; border: 1px solid rgba(255,255,255,0.4); border-radius: 999px; color: #fff; background: transparent; }
   body.ef-video .trim-layout { display: block !important; }
   body.ef-video .trim-media { margin: 0 !important; }
-  body.ef-video #trimPreviewVideo, body.ef-video #trimPreviewVideo.portrait { display: block; width: 100% !important; max-width: none !important; height: clamp(230px, calc(100svh - 372px - var(--efx, 0px)), 620px) !important; max-height: none !important; aspect-ratio: auto !important; margin: 0 !important; border-radius: 0 !important; object-fit: contain; background: #000; }
+  body.ef-video #trimPreviewVideo, body.ef-video #trimPreviewVideo.portrait { display: block; width: 100% !important; max-width: none !important; height: var(--efvh, clamp(230px, calc(100svh - 372px - var(--efx, 0px)), 620px)) !important; max-height: none !important; aspect-ratio: auto !important; margin: 0 !important; border-radius: 0 !important; object-fit: contain; background: #000; }
   /* extra rows that can sit under the picture: iPhone's own play row (no song yet); the clip chips while a song is on and there are several clips */
   body.ef-video:not(.ef-song):has(.pv-row:not(.native)) { --efx: 44px; }
   body.ef-video.ef-song.ef-multi { --efx: 56px; }
@@ -638,6 +638,19 @@
   body.ef-video:not(.ef-song) .ef-xrm { display: none; }
   body.ef-video.ef-song:not(.ef-multi) .ef-addclip { display: flex; }
   .ef-addclip { position: absolute; left: 12px; top: 10px; z-index: 5; height: 30px; padding: 0 12px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.5); background: rgba(0,0,0,0.6); color: #fff; font: inherit; font-size: 12px; font-weight: 700; align-items: center; cursor: pointer; }
+
+  /* trim handles on the picture track: orange, two bars (the song's grips are purple, three bars) */
+  .ef-trim { display: none; }
+  body.ef-video .ef-trim.on { display: block; position: absolute; inset: 0; z-index: 3; pointer-events: none; --tl: 0%; --tr: 0%; }
+  body.ef-video .ef-tdim { position: absolute; top: 0; bottom: 0; background: rgba(8,8,10,0.72); }
+  body.ef-video .ef-tdim.l { left: 0; width: var(--tl); }
+  body.ef-video .ef-tdim.r { right: 0; width: var(--tr); }
+  body.ef-video .ef-tfr { position: absolute; top: 0; bottom: 0; left: var(--tl); right: var(--tr); border-top: 2.5px solid #ff7a2f; border-bottom: 2.5px solid #ff7a2f; }
+  body.ef-video .ef-th { position: absolute; top: 0; bottom: 0; width: 26px; background: #ff7a2f; display: flex; align-items: center; justify-content: center; gap: 3px; pointer-events: auto; touch-action: none; cursor: ew-resize; -webkit-tap-highlight-color: transparent; }
+  body.ef-video .ef-th i { display: block; width: 2.5px; height: 18px; border-radius: 2px; background: #fff; }
+  body.ef-video .ef-th.l { left: var(--tl); border-radius: 9px 0 0 9px; }
+  body.ef-video .ef-th.r { right: var(--tr); border-radius: 0 9px 9px 0; }
+  body.ef-video .ef-dur { right: 40px; }
   /* cover: a small chip on the picture's top-right corner; its picker opens as a panel over the picture */
   body.ef-video #coverPicker { position: absolute; right: 12px; top: 10px; z-index: 6; margin: 0 !important; }
   body.ef-video #coverPicker > summary { list-style: none; font-size: 0 !important; height: 30px; padding: 0 12px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.5) !important; background: rgba(0,0,0,0.6) !important; display: flex; align-items: center; cursor: pointer; }
@@ -655,10 +668,10 @@
   body.ef-video #narrationPreview { display: none !important; }
   #efTools { display: none; }
   body.ef-video #efTools { display: flex; gap: 2px; margin: 0; }
-  #efTools .ef-t { position: relative; flex: 1 1 0; min-width: 0; height: 56px; padding: 2px 1px 0; border: 0; border-radius: 0; background: #fff; color: #5b5e69; font: inherit; font-size: 10.5px; font-weight: 700; line-height: 1.1; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; cursor: pointer; -webkit-tap-highlight-color: transparent; overflow: hidden; }
+  #efTools .ef-t { position: relative; flex: 1 1 0; min-width: 0; height: 60px; padding: 7px 2px 0; border: 0; border-radius: 0; background: #fff; color: #5b5e69; font: inherit; font-size: 10.5px; font-weight: 700; line-height: 12px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 4px; cursor: pointer; -webkit-tap-highlight-color: transparent; overflow: hidden; }
   #efTools .ef-t:active { background: #f1f1f3; }
   #efTools .ef-t .ef-ic { display: block; height: 22px; line-height: 0; }
-  #efTools .ef-t .ef-tx { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  #efTools .ef-t .ef-tx { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; width: 100%; height: 24px; overflow: hidden; text-overflow: ellipsis; word-break: break-word; font-size: 10.5px; line-height: 12px; }
   #efTools .ef-t.val { color: #c4501a; }
   #efTools .ef-t.song { background: #f2e8ff; color: #6a2bb8; }
   #efTools .ef-t.rec { color: #d11a2a; }
@@ -946,7 +959,7 @@
         </div>
         <div id="mixTimeline" style="display:none; margin-top:8px;">
           <div class="mix-tracks" id="mixTracks">
-            <div class="mix-track mix-video" id="mixVideoTrack"><div class="mix-filmstrip" id="mixFilmstrip"></div><span class="mix-video-label">Your video</span><span class="ef-dur" id="efDur"></span></div>
+            <div class="mix-track mix-video" id="mixVideoTrack"><div class="mix-filmstrip" id="mixFilmstrip"></div><span class="mix-video-label">Your video</span><span class="ef-dur" id="efDur"></span><div class="ef-trim" id="efTrim"><div class="ef-tdim l"></div><div class="ef-tdim r"></div><div class="ef-tfr"></div><div class="ef-th l" id="efTHL" title="Drag to cut the front of your video"><i></i><i></i></div><div class="ef-th r" id="efTHR" title="Drag to cut the end of your video"><i></i><i></i></div></div></div>
             <div class="mix-track mix-music" id="mixMusicTrack">
               <div class="mix-clip" id="mixClip">
                 <div class="mix-handle mix-handle-l" id="mixHandleL" title="Drag to trim the front of the song"></div>
@@ -1009,7 +1022,7 @@
         <div id="narrationSection" style="display:none;" aria-hidden="true"></div>
       </div>
       <!-- Video post screen (Nov 2026): five tools in Ken's order. Each presses the real control (workout drop-down, location box, recorder, music picker, floating message). -->
-      <div id="efTools" role="group" aria-label="Video tools"><button type="button" class="ef-t" id="efT_work" data-k="work"><span class="ef-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="#ff7a2f"><rect x="1" y="9" width="3" height="6" rx="1"/><rect x="4" y="6" width="3" height="12" rx="1"/><rect x="7" y="11" width="10" height="2"/><rect x="17" y="6" width="3" height="12" rx="1"/><rect x="20" y="9" width="3" height="6" rx="1"/></svg></span><span class="ef-tx">Workout type</span><i class="ef-bd"></i></button><button type="button" class="ef-t" id="efT_loc" data-k="loc"><span class="ef-ic"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M12 22s7-6.5 7-12a7 7 0 10-14 0c0 5.5 7 12 7 12z" fill="#e53935"/><circle cx="12" cy="10" r="2.6" fill="#fff"/></svg></span><span class="ef-tx">Location</span><i class="ef-bd"></i></button><button type="button" class="ef-t" id="efT_voice" data-k="voice"><span class="ef-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2"><rect x="9" y="3" width="6" height="11" rx="3" fill="#6b7280"/><path d="M5 11a7 7 0 0014 0M12 18v3"/></svg></span><span class="ef-tx">Voiceover</span><i class="ef-bd"></i></button><button type="button" class="ef-t" id="efT_music" data-k="music"><span class="ef-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M9 17V5l10-2v12" stroke="#8b3fd9" stroke-width="2"/><circle cx="6.5" cy="17.5" r="2.5" fill="#8b3fd9"/><circle cx="16.5" cy="15.5" r="2.5" fill="#8b3fd9"/></svg></span><span class="ef-tx">Music track</span><i class="ef-bd"></i></button><button type="button" class="ef-t" id="efT_msg" data-k="msg"><span class="ef-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="#2b6bff"><path d="M3 4h18v12H10l-5 4v-4H3z"/></svg></span><span class="ef-tx">Floating message</span><i class="ef-bd"></i></button></div>
+      <div id="efTools" role="group" aria-label="Video tools"><button type="button" class="ef-t" id="efT_work" data-k="work"><span class="ef-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="#ff7a2f"><rect x="1" y="9" width="3" height="6" rx="1"/><rect x="4" y="6" width="3" height="12" rx="1"/><rect x="7" y="11" width="10" height="2"/><rect x="17" y="6" width="3" height="12" rx="1"/><rect x="20" y="9" width="3" height="6" rx="1"/></svg></span><span class="ef-tx">Activity</span><i class="ef-bd"></i></button><button type="button" class="ef-t" id="efT_loc" data-k="loc"><span class="ef-ic"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M12 22s7-6.5 7-12a7 7 0 10-14 0c0 5.5 7 12 7 12z" fill="#e53935"/><circle cx="12" cy="10" r="2.6" fill="#fff"/></svg></span><span class="ef-tx">Location</span><i class="ef-bd"></i></button><button type="button" class="ef-t" id="efT_music" data-k="music"><span class="ef-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M9 17V5l10-2v12" stroke="#8b3fd9" stroke-width="2"/><circle cx="6.5" cy="17.5" r="2.5" fill="#8b3fd9"/><circle cx="16.5" cy="15.5" r="2.5" fill="#8b3fd9"/></svg></span><span class="ef-tx">Music track</span><i class="ef-bd"></i></button><button type="button" class="ef-t" id="efT_voice" data-k="voice"><span class="ef-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2"><rect x="9" y="3" width="6" height="11" rx="3" fill="#6b7280"/><path d="M5 11a7 7 0 0014 0M12 18v3"/></svg></span><span class="ef-tx">Voiceover</span><i class="ef-bd"></i></button><button type="button" class="ef-t" id="efT_msg" data-k="msg"><span class="ef-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="#2b6bff"><path d="M3 4h18v12H10l-5 4v-4H3z"/></svg></span><span class="ef-tx">Floating message</span><i class="ef-bd"></i></button></div>
       <div id="narrationPreview" class="ef-narr-preview" style="display:none;">
         <audio id="narrationAudioPreview" controls></audio>
       </div>
@@ -2135,6 +2148,7 @@
     trimPreviewVideo.removeAttribute("poster");
     trimPreviewVideo.load();
     selectedCoverTime = null;
+    if (typeof window.efTrimReset === "function") window.efTrimReset();
     coverPicker.style.display = "none";
     coverPickerRow.innerHTML = "";
     document.getElementById("mixFilmstrip").innerHTML = "";
@@ -2892,6 +2906,15 @@
   // the left end trims the front (mStart and mDelay move together, so the sound
   // under the playhead doesn't change). The video itself is never edited.
   var mDelay = 0, mLen = 0, mLenWanted = Infinity;
+  // Trim (Nov 2026): the member can cut the front and the back of a single video with the two orange handles on the picture
+  // track. trimE = 0 means "not trimmed" (the whole video). The song stays locked to the cut: it comes in at the cut's start and
+  // ends at the cut's end. Saved as media.trim_start / trim_end; the song delay and the labels are saved RELATIVE to trim_start
+  // (that is how the feed reads them).
+  var trimS = 0, trimE = 0;
+  function trimActive() { return clips.length === 1 && vidDur() > 0 && trimE > 0; }
+  function effStart() { return trimActive() ? trimS : 0; }
+  function effEnd() { var vd = vidDur(); return trimActive() ? Math.min(trimE, vd) : vd; }
+  window.efTrimInfo = function () { return { on: trimActive(), s: effStart(), e: effEnd(), vd: vidDur(), single: clips.length === 1 }; };
   var mixTimeline = document.getElementById("mixTimeline");
   var mixTracks = document.getElementById("mixTracks");
   var mixClip = document.getElementById("mixClip");
@@ -2924,7 +2947,7 @@
   }
   // Longest the song piece can be from where it sits right now.
   function maxLenNow() {
-    var vd = vidDur(), sd = songDurNow();
+    var vd = effEnd(), sd = songDurNow();
     var m = vd ? vd - mDelay : Infinity;
     if (sd) m = Math.min(m, sd - musicStartPicker.getValue());
     return Math.max(0, m);
@@ -2932,7 +2955,7 @@
   // Keep delay/length inside the video and the song, then repaint.
   function clampWindow() {
     var vd = vidDur();
-    if (vd) mDelay = Math.min(Math.max(0, mDelay), Math.max(0, vd - 1));
+    if (vd) mDelay = Math.min(Math.max(effStart(), mDelay), Math.max(effStart(), effEnd() - 1));
     var m = maxLenNow();
     mLen = Math.min(mLenWanted, m);
     if (isFinite(mLen)) mLen = Math.max(Math.min(1, m), mLen);
@@ -3092,7 +3115,7 @@
     // The old "Song 0:19–0:24 plays from video…" line is gone (Oct 2026): the bar itself
     // and the bubble over the video say it. Only a warning shows here, and only when needed.
     var sd = songDurNow();
-    if (sd && sd - s < vd - mDelay - 0.05) {
+    if (sd && sd - s < effEnd() - mDelay - 0.05) {
       syncReadout.style.display = "block";
       syncReadout.textContent = "⚠️ The song runs out before your video ends.";
     } else {
@@ -3332,6 +3355,13 @@
       var leftInClip = trimPreviewVideo.duration - trimPreviewVideo.currentTime;
       if (isFinite(leftInClip) && trimPreviewVideo.currentTime > 0.3 && leftInClip < 0.09) { autoAdvancing = true; loadClipAt(reelIdx + 1, 0, true); }
     }
+    if (trimActive() && !trimPreviewVideo.paused && reelNow() >= effEnd() - 0.04) {   // the cut's end: stop here (the song is paused by the pause handler)
+      var teNow = effEnd();
+      trimPreviewVideo.pause();
+      try { trimPreviewVideo.currentTime = teNow; } catch (e) {}
+      updatePlayhead(); renderTimeline();
+      return;
+    }
     updatePlayhead();
     // iPhone 17 fix (Oct 2026): the video is the clock. On some newer iPhones the preview picture freezes
     // while the song is running (the video says "playing" but its time stops). The tick used to keep yanking
@@ -3402,6 +3432,11 @@
     return previewTailObj || (previewTailObj = createSongTail(trimPreviewVideo, musicPreviewAudio, function () { return (keepOriginalAudio.checked ? MIX_MUSIC_VOLUME : 1); }));
   }
   function songRunsToVideoEnd() { return hasMusicSelected() && mDelay + mLen >= vidDur() - 0.25; }
+  trimPreviewVideo.addEventListener("play", function () {
+    if (!trimActive()) return;
+    var c = trimPreviewVideo.currentTime || 0;
+    if (c >= effEnd() - 0.05 || c < effStart() - 0.05) { try { trimPreviewVideo.currentTime = effStart(); } catch (e) {} }
+  });
   trimPreviewVideo.addEventListener("play", async function () {
     if (pvResetting) return; // our own re-load is in progress; it plays again when done
     if (IS_IOS_DEVICE && pvDirty && clips.length <= 1) {
@@ -3455,7 +3490,7 @@
     applyPreviewMix();
     // Pause first so the play event always fires and (re)loads the chosen song.
     if (!trimPreviewVideo.paused) trimPreviewVideo.pause();
-    await reelSeek(Math.max(0, mDelay - 1));
+    await reelSeek(Math.max(effStart(), mDelay - 1));
     trimPreviewVideo.play().catch(function () {});
   }
   function toggleVideoWithMusic() {
@@ -3478,6 +3513,62 @@
     if (committed) scheduleReplay();
   }
 
+  // ---- trim handles on the picture track (Nov 2026) ----------------------------
+  var efTrimEl = document.getElementById("efTrim"), trimDrag = null;
+  function trimMinLen() { var w = mixTracks.getBoundingClientRect().width || 360; return Math.max(1, 56 / w * (vidDur() || 1)); }
+  function paintTrim() {
+    var vd = vidDur(), on = clips.length === 1 && vd > 0;
+    if (!efTrimEl) return;
+    efTrimEl.classList.toggle("on", on);
+    if (!on) return;
+    var s = effStart(), e = effEnd();
+    var l = s / vd * 100, r = e / vd * 100;
+    efTrimEl.style.setProperty("--tl", l + "%"); efTrimEl.style.setProperty("--tr", (100 - r) + "%");
+  }
+  function setTrim(ns, ne) {
+    var vd = vidDur(), oldS = effStart();
+    var locked = hasMusicSelected() ? Math.abs(mDelay - oldS) < 0.06 : true;
+    ns = Math.round(ns * 10) / 10; ne = Math.round(ne * 10) / 10;
+    if (ns <= 0.04 && ne >= vd - 0.04) { trimS = 0; trimE = 0; } else { trimS = Math.max(0, ns); trimE = Math.min(vd, ne); }
+    if (locked) mDelay = effStart();
+    clampWindow(); paintTrim();
+  }
+  function trimBubble(txt) {
+    if (bubbleTimer) { clearTimeout(bubbleTimer); bubbleTimer = null; }
+    dragBubble.textContent = txt; dragBubble.classList.add("show");
+  }
+  function trimDown(side, e) {
+    if (clips.length !== 1 || !vidDur()) return;
+    e.preventDefault(); e.stopPropagation();
+    if (!trimPreviewVideo.paused) trimPreviewVideo.pause();
+    if (replayTimer) { clearTimeout(replayTimer); replayTimer = null; }
+    trimDrag = { side: side, x0: e.clientX, s0: effStart(), e0: effEnd(), w: mixTracks.getBoundingClientRect().width, pid: e.pointerId };
+    try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {}
+  }
+  function trimMove(e) {
+    if (!trimDrag || e.pointerId !== trimDrag.pid) return;
+    var vd = vidDur(), D = trimDrag, d = (e.clientX - D.x0) / D.w * vd, minL = trimMinLen(), at;
+    if (D.side === "l") { var ns = Math.min(Math.max(0, D.s0 + d), D.e0 - minL); setTrim(ns, D.e0); at = ns; trimBubble("start " + fmtClock(effStart())); }
+    else { var ne = Math.max(Math.min(vd, D.e0 + d), D.s0 + minL); setTrim(D.s0, ne); at = Math.max(effStart(), effEnd() - 0.1); trimBubble("end " + fmtClock(effEnd())); }
+    if (!trimPreviewVideo.seeking) { try { trimPreviewVideo.currentTime = at; } catch (err) {} }   // the picture follows the handle
+  }
+  function trimUp(e) {
+    if (!trimDrag || e.pointerId !== trimDrag.pid) return;
+    trimDrag = null;
+    hideBubbleSoon();
+    scheduleReplay();                                          // let go: it plays the cut, with the song, from the top
+  }
+  ["l", "r"].forEach(function (side) {
+    var el = document.getElementById(side === "l" ? "efTHL" : "efTHR");
+    if (!el) return;
+    el.addEventListener("pointerdown", function (e) { trimDown(side, e); });
+    el.addEventListener("pointermove", trimMove);
+    el.addEventListener("pointerup", trimUp);
+    el.addEventListener("pointercancel", trimUp);
+  });
+  window.efTrimReset = function () { trimS = 0; trimE = 0; if (typeof paintTrim === "function") paintTrim(); };
+  setInterval(paintTrim, 400);
+
   // ---- dragging the song bar -----------------------------------------------
   var mixDrag = null;
   function mixPointerDown(mode, e) {
@@ -3498,9 +3589,10 @@
       // Oct 27 (artist: "I move the bar with my thumb and sometimes nothing happens"): a bar that already fills the whole video
       // had no room to slide, so a drag on its middle did nothing. Now, with no room, sliding it right starts the song later
       // (it still runs to the end of the video) and sliding it left brings it back. Whatever is chosen stays where it was put.
-      var slack = Math.max(0, vd - D.l0);
-      var cap = slack < 0.3 ? Math.max(0, vd - 1) : slack;
-      mDelay = Math.min(Math.max(0, D.p0 + d), cap);
+      var ts0 = effStart(), te0 = effEnd();
+      var slack = Math.max(0, (te0 - ts0) - D.l0);
+      var cap = slack < 0.3 ? Math.max(ts0, te0 - 1) : te0 - D.l0;
+      mDelay = Math.min(Math.max(ts0, D.p0 + d), cap);
     } else if (D.mode === "left") {
       // trim the front: the bar's left edge follows the finger and the bar shrinks; the song's
       // start moves the same amount. On release the bar slides back to where it started (the
@@ -3514,7 +3606,7 @@
       dpos = Math.min(dpos, D.l0 - Math.min(1, D.l0));
       if (sd) dpos = Math.min(dpos, Math.max(0, (sd - 1 - D.s0) / K));
       dneg = Math.max(dneg, -D.s0 / K);          // swiping back: the song can't go before its beginning
-      var bar = dpos + Math.max(dneg, -D.p0);    // the bar's left edge follows the finger (it can't leave the video's start)
+      var bar = dpos + Math.max(dneg, -(D.p0 - effStart()));    // the bar's left edge follows the finger (it can't leave the video's start)
       mDelay = D.p0 + bar;
       musicStartPicker.setValue(round1(D.s0 + (dpos + dneg) * K));
       mLenWanted = (D.full && bar <= 0) ? Infinity : D.l0 - bar;
@@ -4453,6 +4545,7 @@
       if (kind === "video") {
         try {
           var posterSeekTime = selectedCoverTime != null ? selectedCoverTime : 0;
+          if (trimActive() && (posterSeekTime < trimS || posterSeekTime > effEnd())) posterSeekTime = trimS;   // the cover comes from inside the cut
           if (clips.length > 1 && reelIdx !== 0) await loadClipAt(0, 0, false); // the cover always comes from clip 1
           var posterBlob = await captureVideoPosterBlob(trimPreviewVideo, posterSeekTime);
           if (posterBlob) {
@@ -4515,8 +4608,8 @@
       delete insertRow.music_delay_seconds;
       delete insertRow.music_length_seconds;
       if (kind === "video" && !!musicTrackValue) {
-        var fullNatural = Math.min(vidDur() ? vidDur() - mDelay : Infinity, songDurNow() ? songDurNow() - musicStartValue : Infinity);
-        if (mDelay > 0.04) insertRow.music_delay_seconds = round1(mDelay);
+        var fullNatural = Math.min(vidDur() ? effEnd() - mDelay : Infinity, songDurNow() ? songDurNow() - musicStartValue : Infinity);
+        if (mDelay - effStart() > 0.04) insertRow.music_delay_seconds = round1(mDelay - effStart());   // relative to the cut's start
         if (isFinite(fullNatural) && mLen > 0 && mLen < fullNatural - 0.05) insertRow.music_length_seconds = round1(mLen);
       }
       // How long each clip is (only for several clips, and only when every length is known) — lets the
@@ -4524,6 +4617,8 @@
       delete insertRow.text_labels;
       var labelsToSave = (kind === "video" && typeof vlLabelsForSave === "function") ? vlLabelsForSave() : [];
       if (labelsToSave.length) insertRow.text_labels = labelsToSave;
+      delete insertRow.trim_start; delete insertRow.trim_end;
+      if (kind === "video" && trimActive()) { insertRow.trim_start = Math.round(trimS * 100) / 100; insertRow.trim_end = Math.round(effEnd() * 100) / 100; }
       delete insertRow.clip_durations;
       if (kind === "video" && clips.length > 1 && clips.every(function (c) { return c.dur > 0; })) {
         insertRow.clip_durations = clips.map(function (c) { return Math.round(c.dur * 100) / 100; });
@@ -4531,7 +4626,7 @@
       var { data: insertedRow, error: insertError } = await window.sb.from("media").insert(insertRow).select().single();
       // Either optional column may not exist yet (its SQL not run) — drop whichever one the
       // error names and retry so the post still goes through.
-      var optionalCols = ["share_to_social", "keep_original_audio", "music_start_seconds", "music_delay_seconds", "music_length_seconds", "clip_durations", "text_labels", "title"];
+      var optionalCols = ["trim_start", "trim_end", "share_to_social", "keep_original_audio", "music_start_seconds", "music_delay_seconds", "music_length_seconds", "clip_durations", "text_labels", "title"];
       for (var oi = 0; insertError && oi < optionalCols.length; oi++) {
         var col = optionalCols[oi];
         if (col in insertRow && (insertError.message || "").indexOf(col) !== -1) {
@@ -4800,8 +4895,8 @@
   function vlClose() { vlSheet.classList.remove("open"); vlText.blur(); vlDetail.blur(); vlSyncSheet(); if (vlLayerApi) vlLayerApi.refresh(); }
   function vlResetAll() { textLabels = []; if (vlSheet) { vlSheet.classList.remove("open"); vlText.value = ""; vlDetail.value = ""; vlRefreshUi(); if (vlLayerApi) vlLayerApi.refresh(); } }
   function vlLabelsForSave() {
-    var max = vidDur() ? vidDur() - 0.3 : Infinity;
-    return sanitizeTextLabels(textLabels.filter(function (l) { return l.s < max; }));
+    var max = vidDur() ? effEnd() - 0.3 : Infinity, ts = effStart();
+    return sanitizeTextLabels(textLabels.filter(function (l) { return l.s < max && l.s >= ts - 0.01; }).map(function (l) { var c = {}; for (var k in l) c[k] = l[k]; c.s = Math.max(0, Math.round((l.s - ts) * 10) / 10); return c; }));
   }
   vlLayerApi = attachTextLabels(trimPreviewVideo, trimPreviewVideo.parentNode, vlPreviewLabels, 0, function () { return reelNow(); });
   vlOpenBtn.addEventListener("click", vlOpen);
@@ -4897,7 +4992,7 @@
   function $(id) { return document.getElementById(id); }
   var body = document.body, ts = $("trimSection");
   if (!ts || !$("efTools")) return;
-  var sel = $("workoutType"), loc = $("location");
+  var sel = $("workoutType"), loc = $("location"), wtTouched = false;
   function setCls(el, c, on) { if (el.classList.contains(c) !== !!on) el.classList.toggle(c, !!on); }
   function setTx(el, t) { if (el.textContent !== t) el.textContent = t; }
   function tile(k) { return $("efT_" + k); }
@@ -4909,16 +5004,30 @@
     var bd = t.querySelector(".ef-bd");
     setTx(bd, o.badge || ""); setCls(t, "has", !!o.badge);
   }
+  // Fit the picture to the screen: take the space the rows under it need, keep the Post button's zone free, give the rest to the picture.
+  var fitLast = -1;
+  function fit() {
+    var v = $("trimPreviewVideo"); if (!v) return;
+    var share = $("socialShareRow"), lastRow = (share && share.style.display !== "none") ? share : $("efTools");
+    var vr = v.getBoundingClientRect(), lr = lastRow.getBoundingClientRect();
+    var below = lr.bottom - vr.bottom;
+    var postZone = 92;
+    var vh = window.innerHeight || document.documentElement.clientHeight || 700;
+    var h = Math.round(vh - (vr.top + (window.scrollY || 0)) - below - postZone);
+    h = Math.max(220, Math.min(640, h));
+    if (Math.abs(h - fitLast) > 1) { fitLast = h; v.style.setProperty("--efvh", h + "px"); }
+  }
+  window.addEventListener("resize", function () { fitLast = -1; });
   function update() {
     var vid = ts.classList.contains("show");
     setCls(body, "ef-video", vid);
-    if (!vid) { setCls(body, "ef-song", false); setCls(body, "ef-multi", false); return; }
+    if (!vid) { setCls(body, "ef-song", false); setCls(body, "ef-multi", false); wtTouched = false; return; }
     var ms = $("musicTrackSelect");
     setCls(body, "ef-song", !!(ms && ms.value && !ms.disabled));
     setCls(body, "ef-multi", document.querySelectorAll("#clipTrayRow .clip-thumb").length > 1);
     // workout type
-    var wt = sel.value ? sel.options[sel.selectedIndex].text : "";
-    put("work", wt || "Workout type", { val: !!wt });
+    var wt = (wtTouched && sel.value) ? sel.options[sel.selectedIndex].text : "";
+    put("work", wt || "Activity", { val: !!wt });
     // location
     var lv = (loc.value || "").trim();
     put("loc", lv || "Location", { val: !!lv });
@@ -4937,8 +5046,11 @@
     var vb = $("vlOpenBtn"), cnt = $("vlCount").textContent;
     put("msg", "Floating message", { off: !vb.classList.contains("show"), badge: cnt });
     // little chips on the picture / tracks
-    var d = $("pvDur") ? $("pvDur").textContent : "";
+    var ti = window.efTrimInfo ? window.efTrimInfo() : null;
+    var secs = ti && ti.vd ? (ti.e - ti.s) : 0, d = secs ? (Math.floor(secs / 60) + ":" + ("0" + Math.round(secs % 60)).slice(-2)) : "";
+    if (secs && Math.round(secs % 60) === 60) d = (Math.floor(secs / 60) + 1) + ":00";
     var chip = $("efDur"); setTx(chip, d); chip.style.visibility = (d && d !== "0:00") ? "visible" : "hidden";
+    fit();
     var ss = $("socialShare"), st = $("ssState"); if (ss && st) setTx(st, ss.checked ? "ON" : "OFF");
   }
   new MutationObserver(update).observe(ts, { attributes: true, attributeFilter: ["class"] });
@@ -4957,12 +5069,12 @@
     Array.prototype.forEach.call(sel.options, function (o) {
       if (!o.value) return;
       var b = btn("ef-opt" + (o.value === sel.value ? " on" : ""), o.text, function () {
-        sel.value = o.value; sel.dispatchEvent(new Event("change", { bubbles: true })); update(); closeSheet();
+        wtTouched = true; sel.value = o.value; sel.dispatchEvent(new Event("change", { bubbles: true })); update(); closeSheet();
       });
       if (o.value === sel.value) { var c = document.createElement("span"); c.textContent = "✓"; b.appendChild(c); }
       w.appendChild(b);
     });
-    openSheet("Workout type", w);
+    openSheet("Activity", w);
   }
   function locationSheet() {
     var w = document.createElement("div");
