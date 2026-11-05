@@ -4655,20 +4655,21 @@
 
       var uploadOpts = { cacheControl: "3600", upsert: false };
       if (kind === "photo") uploadOpts.contentType = "image/jpeg";
-      var { error: uploadError } = await window.sb.storage.from("media").upload(path, fileToUpload, uploadOpts);
-      if (uploadError) throw uploadError;
+      // Nov 2026 (speed): the video, the voiceover and the cover picture used to go up one after another. They are independent,
+      // so all three now travel at the same time and the post is saved once the last one lands.
+      var mainUpP = window.sb.storage.from("media").upload(path, fileToUpload, uploadOpts).catch(function (e) { return { error: e }; });
 
       // If this is a video and the member recorded a voiceover for it, upload
       // that as its own file in the same private bucket and link it below.
       var narrationPath = null;
+      var narrUpP = Promise.resolve({ error: null });
       if (kind === "video" && narrationBlob) {
         narrationPath = currentUser.id + "/" + crypto.randomUUID() + "-narration.webm";
-        var { error: narrationError } = await window.sb.storage.from("media").upload(narrationPath, narrationBlob, {
+        narrUpP = window.sb.storage.from("media").upload(narrationPath, narrationBlob, {
           cacheControl: "3600",
           upsert: false,
           contentType: "audio/webm"
-        });
-        if (narrationError) throw narrationError;
+        }).catch(function (e) { return { error: e }; });
       }
 
       // Voice updates publish immediately — no review queue — same as a photo
@@ -4692,7 +4693,8 @@
       // the start of the video if that picker never
       // finished generating (e.g. a very short video, or a slow decode).
       var posterPath = null;
-      if (kind === "video") {
+      var posterUpP = Promise.resolve();
+      if (kind === "video") posterUpP = (async function () {
         try {
           var posterSeekTime = selectedCoverTime != null ? selectedCoverTime : 0;
           if (trimActive() && (posterSeekTime < trimS || posterSeekTime > effEnd())) posterSeekTime = trimS;   // the cover comes from inside the cut
@@ -4708,7 +4710,11 @@
             if (!posterError) posterPath = candidatePosterPath;
           }
         } catch (e) { /* no poster — the video itself still uploads fine */ }
-      }
+      })();
+
+      var upRes = await Promise.all([mainUpP, narrUpP, posterUpP]);
+      if (upRes[0] && upRes[0].error) throw upRes[0].error;
+      if (upRes[1] && upRes[1].error) throw upRes[1].error;
 
       var mixFlagNotSaved = false;
       var labelsNotSaved = false;
@@ -4796,25 +4802,36 @@
       var failedExtraClips = 0;
       if (kind === "video" && clips.length > 1) {
         var attached = [clips[0]];
+        uploadBtn.textContent = "Uploading clips…";
+        var clipUps = [];
         for (var clipIndex = 1; clipIndex < clips.length; clipIndex++) {
-          uploadBtn.textContent = "Uploading clip " + (clipIndex + 1) + " of " + clips.length + "…";
+          clipUps.push((async function (ci) {   // (all extra clips travel together; they are attached below in their original order)
+            try {
+              var clipFile = clips[ci].file;
+              var clipPath = currentUser.id + "/" + crypto.randomUUID() + "." + getExt(clipFile.name);
+              var { error: clipUploadError } = await window.sb.storage.from("media").upload(clipPath, await makeStreamable(clipFile), { cacheControl: "3600", upsert: false });
+              if (clipUploadError) return { ci: ci, path: null, orphan: clipPath };
+              return { ci: ci, path: clipPath };
+            } catch (clipErr) { return { ci: ci, path: null }; }
+          })(clipIndex));
+        }
+        var clipRes = await Promise.all(clipUps);
+        for (var cr = 0; cr < clipRes.length; cr++) {
+          var cu = clipRes[cr];
+          if (!cu.path) { failedExtraClips++; continue; }
           try {
-            var clipFile = clips[clipIndex].file;
-            var clipPath = currentUser.id + "/" + crypto.randomUUID() + "." + getExt(clipFile.name);
-            var { error: clipUploadError } = await window.sb.storage.from("media").upload(clipPath, await makeStreamable(clipFile), { cacheControl: "3600", upsert: false });
-            if (clipUploadError) throw clipUploadError;
             var { error: clipInsertError } = await window.sb.from("media_clips").insert({
               media_id: insertedRow.id,
               order_index: attached.length + 1, // 2, 3, 4… with no gaps even if one clip fails
-              storage_path: clipPath,
+              storage_path: cu.path,
               trim_start: null,
               trim_end: null
             });
             if (clipInsertError) {
-              try { await window.sb.storage.from("media").remove([clipPath]); } catch (rmErr) {}
+              try { await window.sb.storage.from("media").remove([cu.path]); } catch (rmErr) {}
               throw clipInsertError;
             }
-            attached.push(clips[clipIndex]);
+            attached.push(clips[cu.ci]);
           } catch (clipErr) {
             failedExtraClips++;
           }
@@ -4855,7 +4872,7 @@
       // message, then on to the feed. Change POST_UPLOAD_PAGE (or set it to "") to change/turn this off.
       uploadFlow.style.display = "none";
       try { window.scrollTo(0, 0); } catch (e) {}
-      if (POST_UPLOAD_PAGE) setTimeout(function () { window.location.href = POST_UPLOAD_PAGE; }, 2200);
+      if (POST_UPLOAD_PAGE) setTimeout(function () { window.location.href = POST_UPLOAD_PAGE; }, 1200);
     } catch (err) {
       // Ken's ask (Oct 2026): clean up whatever already made it to storage
       // before the failure — the main file, and/or the narration/poster
