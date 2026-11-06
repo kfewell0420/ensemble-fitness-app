@@ -3037,11 +3037,23 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     t.textContent = msg; t.classList.add("show");
     clearTimeout(t._h); t._h = setTimeout(function () { t.classList.remove("show"); }, 2400);
   }
+  // The sender's own name goes in the message ("Ken sent you a video link from Ensemble Fitness."), so whoever receives it knows who it is
+  // from. It is looked up once, a few seconds after the page opens, so tapping the arrow never has to wait for it.
+  var myShareName = "";
+  function loadMyShareName() {
+    try {
+      if (myShareName || !currentUserId || !window.sb) return;
+      window.sb.from("profiles").select("display_name").eq("id", currentUserId).maybeSingle().then(function (r) {
+        if (r && r.data && r.data.display_name) myShareName = r.data.display_name;
+      }, function () {});
+    } catch (e) {}
+  }
+  setTimeout(loadMyShareName, 4000);
   async function shareItem(item) {
-    var who = (item && item.name) ? item.name : "A member";
-    var what = item && item.kind === "video" ? "a video" : "a post";
+    if (!myShareName) loadMyShareName();
+    var what = item && item.kind === "video" ? "video" : "photo";
     var title = "Ensemble Fitness";
-    var text = who + " shared " + what + " on Ensemble Fitness. Take a look!";
+    var text = (myShareName ? myShareName + " sent you a " + what + " link from Ensemble Fitness." : "A " + what + " link from Ensemble Fitness.");
     try {
       var S = getNativeShare();
       if (S && S.share) { await S.share({ title: title, text: text, url: SHARE_URL, dialogTitle: "Share" }); return; }
@@ -3049,7 +3061,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     } catch (e) {
       if (e && (e.name === "AbortError" || /cancel|abort|dismiss/i.test((e.message || "") + " " + (e.name || "")))) return;   // they closed the menu: nothing to do
     }
-    try { await navigator.clipboard.writeText(text + " " + SHARE_URL); shareToast("Link copied. Paste it anywhere to share."); }
+    try { await navigator.clipboard.writeText(text + " " + SHARE_URL); shareToast("Link copied"); }
     catch (e) { shareToast("Sharing isn't available on this device."); }
   }
 
