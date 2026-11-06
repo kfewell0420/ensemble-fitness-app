@@ -1798,8 +1798,20 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
   /* While a member is typing on a phone the photo folds down, so the whole card (comment box included) fits above the keyboard
      with nothing to scroll or hunt for; when they post (or close the keyboard) it opens back to the full card. */
   @media (max-width: 899px) {
-    .rp-mp-modal.rp-mp-typing .rp-mp-modal-media { aspect-ratio: auto; height: 21vh; max-height: 21vh; }
+    /* --mp-vh is the real visible height (set in JS from the area the keyboard leaves free); 100vh does not shrink with the keyboard on Android */
+    .rp-mp-modal-scroll { max-height: calc(var(--mp-vh, 100vh) * 0.94); }
+    .rp-mp-modal-media { max-height: calc(var(--mp-vh, 100vh) * 0.46); }
+    .rp-mp-modal.rp-mp-typing .rp-mp-modal-media { aspect-ratio: auto; height: calc(var(--mp-vh, 100vh) * 0.2); max-height: calc(var(--mp-vh, 100vh) * 0.2); }
+    /* simplified while typing: small photo, who it is, the quick emoji, the box and Post. Everything else comes back after Post. */
+    .rp-mp-modal.rp-mp-typing .rp-mp-eyebrow,
+    .rp-mp-modal.rp-mp-typing .rp-mp-title,
+    .rp-mp-modal.rp-mp-typing .rp-mp-sub,
+    .rp-mp-modal.rp-mp-typing .rp-mp-caption-para,
+    .rp-mp-modal.rp-mp-typing .rp-mp-signature,
+    .rp-mp-modal.rp-mp-typing .rp-mp-reactions,
+    .rp-mp-modal.rp-mp-typing .rp-mp-comments .rp-comments-list,
     .rp-mp-modal.rp-mp-typing .rp-mp-next { display: none; }
+    .rp-mp-modal.rp-mp-typing .rp-mp-comments { border-top: none; }
   }
   /* Oct/Nov 2026: the quick-emoji row (full width) was added to this box without letting the row wrap, so on the Meal Prep
      card it pushed the typing box and Post button off the right edge: the emoji only landed in a box nobody could see.
@@ -3999,9 +4011,12 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     var modal = document.getElementById("rpMpModal");
     if (!modal) return;
     var vv = window.visualViewport;
-    if (modal.hidden || !vv || !window.matchMedia("(max-width: 899px)").matches) { modal.style.top = ""; modal.style.height = ""; modal.style.bottom = ""; return; }
-    modal.style.top = vv.offsetTop + "px"; modal.style.height = vv.height + "px"; modal.style.bottom = "auto";
+    if (modal.hidden || !window.matchMedia("(max-width: 899px)").matches) { modal.style.top = ""; modal.style.height = ""; modal.style.bottom = ""; modal.style.removeProperty("--mp-vh"); return; }
+    var h = vv ? vv.height : window.innerHeight;
+    modal.style.top = (vv ? vv.offsetTop : 0) + "px"; modal.style.height = h + "px"; modal.style.bottom = "auto";
+    modal.style.setProperty("--mp-vh", h + "px");
   }
+  window.addEventListener("resize", syncMealPrepViewport);
   if (window.visualViewport) {
     window.visualViewport.addEventListener("resize", syncMealPrepViewport);
     window.visualViewport.addEventListener("scroll", syncMealPrepViewport);
