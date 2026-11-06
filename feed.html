@@ -1794,6 +1794,13 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
   .rp-mp-comments .rp-comment-body { color: #33343a; font-size: 11px; margin-top: 0; }
   .rp-mp-comments .rp-comment-empty { color: #9a9ba3; font-size: 11px; padding: 2px 0; }
   .rp-mp-comments .rp-comment-empty b { display: block; }
+  .rp-mp-modal-scroll { overflow-x: hidden; }
+  /* While a member is typing on a phone the photo folds down, so the whole card (comment box included) fits above the keyboard
+     with nothing to scroll or hunt for; when they post (or close the keyboard) it opens back to the full card. */
+  @media (max-width: 899px) {
+    .rp-mp-modal.rp-mp-typing .rp-mp-modal-media { aspect-ratio: auto; height: 21vh; max-height: 21vh; }
+    .rp-mp-modal.rp-mp-typing .rp-mp-next { display: none; }
+  }
   /* Oct/Nov 2026: the quick-emoji row (full width) was added to this box without letting the row wrap, so on the Meal Prep
      card it pushed the typing box and Post button off the right edge: the emoji only landed in a box nobody could see.
      Wrap like the other comments sheet, and drop the round "close" button (it closes a different sheet, not this card). */
@@ -3979,20 +3986,34 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
     var input = panel.querySelector(".rp-comment-input");
     if (input) input.focus();
-    keepMealPrepBoxVisible();
   }
-  // With the phone keyboard up, scroll the card so the typing box + Post sit just above the keys.
-  function keepMealPrepBoxVisible() {
-    [150, 400, 800].forEach(function (ms) {
-      setTimeout(function () {
-        var row = document.querySelector("#rpMpComments .rp-comment-input-row");
-        var modal = document.getElementById("rpMpModal");
-        if (row && modal && !modal.hidden) { try { row.scrollIntoView({ block: "end", behavior: "smooth" }); } catch (e) { row.scrollIntoView(false); } }
-      }, ms);
-    });
+  // Typing mode for the Meal Prep card (see the CSS note above): on while the comment box has the cursor, off when it lets go.
+  function setMealPrepTyping(on) {
+    var modal = document.getElementById("rpMpModal");
+    if (!modal) return;
+    modal.classList.toggle("rp-mp-typing", !!on);
+  }
+  // iPhones keep the page full height and just draw the keyboard over it; this keeps the Meal Prep card inside the area the keyboard
+  // leaves free (same method the main comments sheet uses), so the box and Post are never hidden under the keys.
+  function syncMealPrepViewport() {
+    var modal = document.getElementById("rpMpModal");
+    if (!modal) return;
+    var vv = window.visualViewport;
+    if (modal.hidden || !vv || !window.matchMedia("(max-width: 899px)").matches) { modal.style.top = ""; modal.style.height = ""; modal.style.bottom = ""; return; }
+    modal.style.top = vv.offsetTop + "px"; modal.style.height = vv.height + "px"; modal.style.bottom = "auto";
+  }
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", syncMealPrepViewport);
+    window.visualViewport.addEventListener("scroll", syncMealPrepViewport);
   }
   document.addEventListener("focusin", function (e) {
-    if (e.target && e.target.classList && e.target.classList.contains("rp-comment-input") && e.target.closest && e.target.closest("#rpMpComments")) keepMealPrepBoxVisible();
+    if (e.target && e.target.classList && e.target.classList.contains("rp-comment-input") && e.target.closest && e.target.closest("#rpMpComments")) setMealPrepTyping(true);
+  });
+  document.addEventListener("focusout", function (e) {
+    if (e.target && e.target.classList && e.target.classList.contains("rp-comment-input") && e.target.closest && e.target.closest("#rpMpComments")) {
+      // a tap on an emoji/Post keeps the cursor in the box (mousedown is prevented), so a real blur means the keyboard went away
+      setTimeout(function () { var a = document.activeElement; if (!(a && a.classList && a.classList.contains("rp-comment-input") && a.closest("#rpMpComments"))) setMealPrepTyping(false); }, 120);
+    }
   });
 
   // Real reactions + comment count for a real member's Meal Prep post —
@@ -4194,6 +4215,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     if (nextBtn) nextBtn.style.display = mealPrepItems.length > 1 ? "flex" : "none";
     if (scroll) scroll.scrollTop = 0;
     modal.hidden = false;
+    syncMealPrepViewport();
   }
 
   async function openMealPrepFromLink(id) {
@@ -4216,6 +4238,8 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     var modal = document.getElementById("rpMpModal");
     modal.querySelectorAll("video").forEach(function (v) { v.pause(); });
     modal.hidden = true;
+    modal.classList.remove("rp-mp-typing");
+    syncMealPrepViewport();
     releaseFeedHold();
     // Arrived from the Healthy Meal Prep page? Closing the popup takes you back to that list.
     if (/[?&]mp=/.test(location.search) && history.length > 1) history.back();
@@ -5266,10 +5290,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     if (h) h.textContent = label + (n ? " " + n : "");
   }
   var QUICK_EMOJI = ["💪", "🔥", "👏", "❤️", "😍", "🙌", "😂"];
-  // Nov 2026 (Ken): one tap on an emoji SENDS it as the comment/reply when the box is empty (quick reaction); if the member has
-  // already started typing, the emoji is added to their words instead and they press Post as usual.
-  function addEmojiStrip(inputRow, inputEl, sendFn) {
-    var lastSend = 0;
+  function addEmojiStrip(inputRow, inputEl) {
     var strip = document.createElement("div");
     strip.className = "rp-emoji-strip";
     QUICK_EMOJI.forEach(function (em) {
@@ -5277,14 +5298,6 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
       b.type = "button"; b.textContent = em; b.setAttribute("aria-label", "Add " + em);
       b.addEventListener("mousedown", function (e) { e.preventDefault(); }); // keep the keyboard up
       b.addEventListener("click", function () {
-        if (sendFn && !inputEl.value.trim()) {
-          var now = Date.now();
-          if (now - lastSend < 700) return; // a double-tap sends once
-          lastSend = now;
-          inputEl.value = em;
-          sendFn();
-          return;
-        }
         var v = inputEl.value, a = inputEl.selectionStart, z = inputEl.selectionEnd;
         if (typeof a !== "number") { a = z = v.length; }
         if ((v.length + em.length) > (inputEl.maxLength > 0 ? inputEl.maxLength : 1e9)) return;
@@ -5365,7 +5378,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     panel.appendChild(inputRow);
     panel.dataset.inputFor = String(item.id);
     inputRow.querySelector(".rp-comment-cancel").addEventListener("click", closeCommentsModal);
-    addEmojiStrip(inputRow, inputRow.querySelector(".rp-comment-input"), function () { postComment(item, panel); });
+    addEmojiStrip(inputRow, inputRow.querySelector(".rp-comment-input"));
     var sendBtn = inputRow.querySelector(".rp-comment-send");
     sendBtn.addEventListener("click", function () { postComment(item, panel); });
     // keep the cursor (and the phone keyboard) in the box while tapping Post, so they can keep typing
@@ -5478,8 +5491,22 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     if (!body) return;
     input.value = "";
     var wasCompose = composeOnly;
-    await window.sb.from("media_comments").insert({ media_id: item.id, user_id: currentUserId, body: body });
-    if (wasCompose) {
+    var ins = await window.sb.from("media_comments").insert({ media_id: item.id, user_id: currentUserId, body: body });
+    if (ins && ins.error) { input.value = body; showCommentToast("Couldn't post. Try again."); return; }
+    var inMealPrep = panel && panel.id === "rpMpComments";
+    if (inMealPrep) {
+      // Meal Prep card: keyboard down, card opens back to full size, and the new comment is right there in the list
+      try { input.blur(); } catch (e) { /* fine */ }
+      setMealPrepTyping(false);
+      await loadComments(item, panel);
+      var pill = document.querySelector('#rpMpReactions [data-action="comments"]');
+      if (pill) {
+        var pc = pill.querySelector(".rp-action-count");
+        pc.textContent = panel.querySelectorAll(".rp-comment-item").length || ((parseInt(pc.textContent || "0", 10) || 0) + 1);
+        pill.querySelector(".rp-action-icon").innerHTML = COMMENT_ICON_FILLED;
+      }
+      setTimeout(function () { var last = panel.querySelector(".rp-comment-item:last-child"); if (last) { try { last.scrollIntoView({ block: "nearest" }); } catch (e) { /* fine */ } } }, 150);
+    } else if (wasCompose) {
       closeCommentsModal();           // slim bar: done -> keyboard down, page back where it was
       showCommentToast("Comment posted ✓");
     } else {
@@ -5531,7 +5558,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
       '<button type="button" class="rp-comment-send">Post</button>';
     panel.appendChild(inputRow);
     panel.dataset.inputFor = "j" + String(item.id);
-    addEmojiStrip(inputRow, inputRow.querySelector(".rp-comment-input"), function () { postJourneyReply(item, panel); });
+    addEmojiStrip(inputRow, inputRow.querySelector(".rp-comment-input"));
     var sendBtn = inputRow.querySelector(".rp-comment-send");
     sendBtn.addEventListener("click", function () { postJourneyReply(item, panel); });
     sendBtn.addEventListener("mousedown", function (e) { e.preventDefault(); });
