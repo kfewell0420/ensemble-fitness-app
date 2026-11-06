@@ -92,6 +92,17 @@ if(C){n=C.isNativePlatform?!!C.isNativePlatform():!!(C.getPlatform&&C.getPlatfor
 if(location.protocol==="capacitor:"||location.hostname==="localhost")n=true;
 if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();document.addEventListener("DOMContentLoaded",m);window.addEventListener("load",m);})();
 </script>
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Ensemble Fitness" />
+<meta property="og:title" content="Ensemble Fitness" />
+<meta property="og:description" content="Where active people meet." />
+<meta property="og:image" content="https://app.ensemblefitness.com/assets/share-preview.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Ensemble Fitness" />
+<meta name="twitter:description" content="Where active people meet." />
+<meta name="twitter:image" content="https://app.ensemblefitness.com/assets/share-preview.png" />
 <link rel="stylesheet" href="css/fonts.css" onerror="this.onerror=null;this.href='https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&family=Caveat:wght@600;700&family=Dancing+Script:wght@600;700&display=swap'">
 <link rel="stylesheet" href="css/app.css?v=5" />
 <style>
@@ -3068,6 +3079,11 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
   // It sends a short message and a link to Ensemble Fitness, never the video or photo file itself.
   var SHARE_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14l5-5-5-5"/><path d="M4 20v-7a4 4 0 0 1 4-4h12"/></svg>';
   var SHARE_URL = "https://app.ensemblefitness.com/";
+  // Nov 2026 (Ken): a share must open THAT photo or video, not the app's front door. The link carries the post's id; the feed reads it
+  // on arrival (showSharedPost) and puts that post right at the top.
+  function shareUrlFor(item) {
+    return item && item.id && item.kind !== "journal" ? "https://app.ensemblefitness.com/feed.html?post=" + encodeURIComponent(item.id) : SHARE_URL;
+  }
   var nativeShare = null;
   function getNativeShare() {
     if (nativeShare !== null) return nativeShare;
@@ -3199,7 +3215,8 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     var item = shareSheetItem;
     if (!item) return;
     var text = shareMessageFor(item);
-    var full = text + " " + SHARE_URL;
+    var postUrl = shareUrlFor(item);
+    var full = text + " " + postUrl;
     var enc = encodeURIComponent(full);
     closeShareSheet();
     recordShare(item, channel);
@@ -3229,8 +3246,8 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     // More: the phone's own full share menu (Instagram, TikTok, Facebook, Messenger and anything else installed)
     try {
       var S = getNativeShare();
-      if (S && S.share) { await S.share({ title: "Ensemble Fitness", text: text, url: SHARE_URL, dialogTitle: "Share" }); return; }
-      if (navigator.share) { await navigator.share({ title: "Ensemble Fitness", text: text, url: SHARE_URL }); return; }
+      if (S && S.share) { await S.share({ title: "Ensemble Fitness", text: text, url: postUrl, dialogTitle: "Share" }); return; }
+      if (navigator.share) { await navigator.share({ title: "Ensemble Fitness", text: text, url: postUrl }); return; }
     } catch (e) {
       if (e && (e.name === "AbortError" || /cancel|abort|dismiss/i.test((e.message || "") + " " + (e.name || "")))) return;
     }
@@ -5667,7 +5684,10 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
   // Appends one item to the bottom of the reel (used for normal
   // page-by-page loading, at the sentinel — and, with renderingCacheFlash
   // set, for painting the instant cache flash too, see above).
+  // The post a share link pointed at (?post=...): it is already pinned at the top, so the normal paging must not show it a second time.
+  var pinnedSharedId = null;
   function appendItem(item) {
+    if (pinnedSharedId && item && item.kind !== "journal" && String(item.id) === pinnedSharedId) return;
     clearReelSkeleton();
     // Don't wipe the flash we're in the middle of building — only clear it
     // once something OTHER than the flash itself is about to render.
@@ -5680,6 +5700,37 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     reelObserver.observe(slideEl);
     videoSrcObserver.observe(slideEl);
     if (renderingCacheFlash) cacheFlashNodes.push(slideEl);
+  }
+
+  async function showSharedPost(id) {
+    id = String(id || "").trim();
+    if (!/^[0-9a-fA-F-]{8,64}$/.test(id) && !/^\d{1,18}$/.test(id)) return;
+    var reel = document.getElementById("rpReel");
+    var onScreen = document.getElementById("rpActions-" + id);
+    var slideEl = onScreen && onScreen.closest ? onScreen.closest(".rp-slide") : null;
+    if (!slideEl) {
+      var res = await window.sb.from("media")
+        .select("*, profiles!media_user_id_fkey(display_name)")
+        .eq("id", id).eq("status", "approved").maybeSingle();
+      if (res.error || !res.data || isBlocked(res.data.user_id)) { shareToast("That post isn't available anymore."); return; }
+      var built = await buildItems([res.data]);
+      if (!built || !built[0]) { shareToast("That post isn't available anymore."); return; }
+      var item = built[0];
+      pinnedSharedId = String(item.id);
+      var emptyMsg = reel.querySelector(".rp-empty-reel");
+      if (emptyMsg) emptyMsg.remove();
+      loadedItems.unshift(item);
+      slideEl = buildAnySlide(item);
+      slideEl.classList.add("rp-slide-new");
+      reel.insertBefore(slideEl, reel.querySelector(".rp-slide") || document.getElementById("rpSentinel"));
+      reelObserver.observe(slideEl);
+      videoSrcObserver.observe(slideEl);
+    }
+    // bring that post to the top of the screen (after layout has settled)
+    var goToIt = function () { try { slideEl.scrollIntoView({ block: "start" }); } catch (e) { reel.scrollTop = 0; } };
+    goToIt(); setTimeout(goToIt, 120); setTimeout(goToIt, 600);
+    // the link has done its job; a refresh or the next share should not reopen it
+    try { if (history.replaceState) history.replaceState(null, "", location.pathname); } catch (e) { /* fine */ }
   }
 
   function trackNewest(items) {
@@ -6049,6 +6100,12 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     wireNewPill();
     subscribeToLiveFeed();
     refreshJourneysBadge();
+    // A share link (?post=<id>) lands on that exact photo/video. Runs after the first screenful is saved above, so the cached
+    // "last visit" screen never contains it.
+    try {
+      var postLink = location.search.match(/[?&]post=([^&]+)/);
+      if (postLink) showSharedPost(decodeURIComponent(postLink[1])).catch(function () { shareToast("Couldn't open that post."); });
+    } catch (e) { /* the link is a convenience only */ }
 
     // Desktop-dashboard-only content — skipped entirely on the phone
     // layout so the mobile app makes no extra network calls for panels
