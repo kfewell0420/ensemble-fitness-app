@@ -2043,6 +2043,38 @@
     }
   });
 
+  // Nov 2026 (speed): a profile photo shows up as a small circle on every post, notification and member list, but it used to be
+  // saved exactly as chosen, so one 7 MB screenshot-size picture was downloaded again and again. It is now saved at a sensible
+  // size (longest side 800 px, JPEG): still sharp in a circle, a fraction of the weight. A small, already-light JPEG is left as is,
+  // and anything the phone cannot decode here is saved exactly as chosen, the way it always was.
+  async function shrinkAvatar(file) {
+    var bmp = null;
+    try {
+      if (!window.createImageBitmap) return null;
+      try { bmp = await createImageBitmap(file, { imageOrientation: "from-image" }); } catch (e1) { return null; }
+      var w = bmp.width, h = bmp.height;
+      if (!w || !h) return null;
+      var scale = Math.min(1, 800 / Math.max(w, h));
+      if (scale === 1 && file.size <= 300 * 1024 && /jpe?g/i.test(file.type || "")) return null;
+      var tw = Math.max(1, Math.round(w * scale)), th = Math.max(1, Math.round(h * scale));
+      var cur = bmp, cw = w, ch = h;
+      while (cw / 2 >= tw && ch / 2 >= th) {   // step down by halves: keeps fine detail clean
+        var nw = Math.floor(cw / 2), nh = Math.floor(ch / 2);
+        var step = document.createElement("canvas"); step.width = nw; step.height = nh;
+        var sg = step.getContext("2d"); sg.imageSmoothingQuality = "high"; sg.drawImage(cur, 0, 0, cw, ch, 0, 0, nw, nh);
+        cur = step; cw = nw; ch = nh;
+      }
+      var canvas = document.createElement("canvas"); canvas.width = tw; canvas.height = th;
+      var g = canvas.getContext("2d");
+      g.fillStyle = "#fff"; g.fillRect(0, 0, tw, th);   // a see-through PNG becomes white, not black
+      g.imageSmoothingQuality = "high"; g.drawImage(cur, 0, 0, cw, ch, 0, 0, tw, th);
+      var blob = await new Promise(function (done) { canvas.toBlob(function (b) { done(b); }, "image/jpeg", 0.86); });
+      if (!blob || !blob.size || blob.size >= file.size) return null;   // never make it bigger
+      return blob;
+    } catch (e) { return null; }
+    finally { try { if (bmp && bmp.close) bmp.close(); } catch (e2) {} }
+  }
+
   var avatarUploadInFlight = false;
   avatarFileInput.addEventListener("change", async function () {
     var file = avatarFileInput.files[0];
@@ -2065,12 +2097,12 @@
     var uploadedPath = null;
     try {
       var ext = getExt(file.name);
+      var upFile = file, upOpts = { cacheControl: "3600", upsert: false };
+      var smallAvatar = await shrinkAvatar(file);
+      if (smallAvatar) { upFile = smallAvatar; ext = "jpg"; upOpts.contentType = "image/jpeg"; }
       var path = currentUser.id + "/" + crypto.randomUUID() + "." + ext;
 
-      var { error: uploadError } = await window.sb.storage.from("media").upload(path, file, {
-        cacheControl: "3600",
-        upsert: false
-      });
+      var { error: uploadError } = await window.sb.storage.from("media").upload(path, upFile, upOpts);
       if (uploadError) throw uploadError;
       uploadedPath = path;
 
