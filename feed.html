@@ -1114,6 +1114,10 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
   }
   @media (max-width: 899px) {
     .rp-actions { padding: 2px 12px; }
+    /* Ken (Nov 2026): the five icons were spread edge to edge, so each sat exactly above a bottom-menu button. On phones they now
+       form one centered, slightly tighter group (muscle stays in the middle), same tap size, off the menu's columns. */
+    .rp-slide:not(.rp-slide-compact) .rp-actions { justify-content: center; }
+    .rp-slide:not(.rp-slide-compact) .rp-actions .rp-action-btn { flex: 0 0 64px; }
   }
   .rp-action-btn {
     flex: 1 1 0;
