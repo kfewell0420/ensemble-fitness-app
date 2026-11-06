@@ -1270,6 +1270,21 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
   .rp-slide:not(.rp-slide-compact) .rp-actions .rp-share-btn .rp-action-icon { color: #4aa8ff; }
   #rpShareToast { position: fixed; left: 50%; bottom: calc(110px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%) translateY(8px); z-index: 5000; padding: 10px 16px; border-radius: 22px; background: rgba(20,24,36,0.96); color: #fff; font-size: 14px; font-weight: 700; border: 1px solid rgba(255,255,255,0.18); box-shadow: 0 6px 22px rgba(0,0,0,0.5); opacity: 0; pointer-events: none; transition: opacity 0.18s ease, transform 0.18s ease; }
   #rpShareToast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  /* Share sheet (Ken, Nov 2026): Messages, WhatsApp, Email, Copy link, More: one tap each, member stays on the same post. */
+  #rpShareSheet { position: fixed; inset: 0; z-index: 6000; display: none; }
+  #rpShareSheet.open { display: block; }
+  #rpShareSheet .rpss-scrim { position: absolute; inset: 0; background: rgba(0,0,0,0.55); opacity: 0; transition: opacity 0.18s ease; }
+  #rpShareSheet.show .rpss-scrim { opacity: 1; }
+  #rpShareSheet .rpss-sheet { position: absolute; left: 0; right: 0; bottom: 0; max-width: 560px; margin: 0 auto; background: #141826; border-radius: 20px 20px 0 0; border-top: 1px solid rgba(255,255,255,0.12); padding: 10px 16px calc(22px + env(safe-area-inset-bottom, 0px)); transform: translateY(100%); transition: transform 0.2s ease; color: #fff; }
+  #rpShareSheet.show .rpss-sheet { transform: translateY(0); }
+  #rpShareSheet .rpss-grab { width: 40px; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.3); margin: 0 auto 12px; }
+  #rpShareSheet .rpss-title { margin: 0 0 16px; text-align: center; font-size: 16px; font-weight: 800; }
+  #rpShareSheet .rpss-opts { display: flex; justify-content: space-around; align-items: flex-start; gap: 4px; }
+  #rpShareSheet .rpss-o { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 8px; background: none; border: 0; color: #fff; font: inherit; font-size: 12px; font-weight: 700; padding: 4px 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  #rpShareSheet .rpss-c { width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+  #rpShareSheet .rpss-o:active .rpss-c { transform: scale(0.94); }
+  #rpShareSheet .rpss-c svg { width: 28px; height: 28px; fill: none; stroke: #fff; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+  #rpShareSheet .rpss-cancel { display: block; width: 100%; margin-top: 14px; background: none; border: 0; color: #9aa0b4; font: inherit; font-size: 14px; font-weight: 700; padding: 8px; cursor: pointer; }
 
   /* Comments modal — fixed over the whole viewport, completely decoupled
      from any card's box, so opening it (on any post, with any number of
@@ -1778,7 +1793,16 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
   .rp-mp-comments .rp-comment-time { color: #9a9ba3; font-size: 9.5px; }
   .rp-mp-comments .rp-comment-body { color: #33343a; font-size: 11px; margin-top: 0; }
   .rp-mp-comments .rp-comment-empty { color: #9a9ba3; font-size: 11px; padding: 2px 0; }
-  .rp-mp-comments .rp-comment-input-row { border-top: none; padding: 4px 0 0; }
+  .rp-mp-comments .rp-comment-empty b { display: block; }
+  /* Oct/Nov 2026: the quick-emoji row (full width) was added to this box without letting the row wrap, so on the Meal Prep
+     card it pushed the typing box and Post button off the right edge: the emoji only landed in a box nobody could see.
+     Wrap like the other comments sheet, and drop the round "close" button (it closes a different sheet, not this card). */
+  .rp-mp-comments .rp-comment-input-row { border-top: none; padding: 4px 0 0; flex-wrap: wrap; align-items: center; }
+  .rp-mp-comments .rp-comment-cancel { display: none; }
+  .rp-mp-comments .rp-emoji-strip { padding: 0 0 4px; }
+  .rp-mp-comments .rp-emoji-strip button { font-size: 20px; }
+  .rp-mp-comments .rp-comment-input { flex: 1 1 0; min-width: 0; font-size: 16px; padding: 7px 12px; }
+  .rp-mp-comments .rp-comment-send { font-size: 13px; padding: 7px 16px; }
   .rp-mp-comments .rp-comment-input { background: #f2f2f4; color: #17181c; border: 1px solid #e2e2e6; font-size: 11px; padding: 5px 10px; }
   .rp-mp-comments .rp-comment-input::placeholder { color: #9a9ba3; }
   .rp-mp-comments .rp-comment-send { font-size: 11px; padding: 0 12px; }
@@ -3049,19 +3073,145 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     } catch (e) {}
   }
   setTimeout(loadMyShareName, 4000);
-  async function shareItem(item) {
-    if (!myShareName) loadMyShareName();
+  // ---- Share sheet ---------------------------------------------------------------------------------------------------
+  var SS_ICONS = {
+    sms: '<svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-8.4 8.4c-1.28 0-2.5-.28-3.6-.79L3 21l1.9-5.7a8.3 8.3 0 0 1-.8-3.6A8.4 8.4 0 0 1 12.5 3.2a8.4 8.4 0 0 1 8.5 8.3Z"/></svg>',
+    whatsapp: '<svg viewBox="0 0 24 24"><path d="M3 21l1.6-4.8A8.5 8.5 0 1 1 8 19.5z"/><path d="M9 8.5c0 3.5 3 6.5 6.5 6.5l1.3-1.6-2.3-1.2-.9.8a4.7 4.7 0 0 1-2.2-2.2l.8-.9-1.2-2.3z" fill="#fff" stroke="none"/></svg>',
+    email: '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3.5 7l8.5 6.5L20.5 7"/></svg>',
+    copy: '<svg viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3A4 4 0 0 0 11 18.7l1-1"/></svg>',
+    more: '<svg viewBox="0 0 24 24"><circle cx="5.5" cy="12" r="1.2" fill="#fff"/><circle cx="12" cy="12" r="1.2" fill="#fff"/><circle cx="18.5" cy="12" r="1.2" fill="#fff"/></svg>'
+  };
+  var shareSheetItem = null;
+  function isPhoneDevice() {
+    try {
+      var C = window.Capacitor;
+      if (C && C.isNativePlatform && C.isNativePlatform()) return true;
+    } catch (e) {}
+    return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
+  }
+  function isIOSDevice() { return /iPhone|iPad|iPod/i.test(navigator.userAgent || ""); }
+  function shareMessageFor(item) {
     var what = item && item.kind === "video" ? "video" : "photo";
-    var title = "Ensemble Fitness";
-    var text = (myShareName ? myShareName + " sent you a " + what + " link from Ensemble Fitness." : "A " + what + " link from Ensemble Fitness.");
+    return myShareName ? myShareName + " sent you a " + what + " link from Ensemble Fitness." : "A " + what + " link from Ensemble Fitness.";
+  }
+  var nativeApp = null;
+  function getNativeApp() {
+    if (nativeApp !== null) return nativeApp;
+    nativeApp = false;
+    try {
+      var C = window.Capacitor;
+      if (C && C.isNativePlatform && C.isNativePlatform() && C.registerPlugin) nativeApp = (C.Plugins && C.Plugins.App) || C.registerPlugin("App");
+    } catch (e) { nativeApp = false; }
+    return nativeApp;
+  }
+  // Opens another app (Messages, WhatsApp, Mail). Inside the phone app the native opener is used; returns false if nothing could open it.
+  async function openOutside(url) {
+    try {
+      var A = getNativeApp();
+      if (A && A.openUrl) { var r = await A.openUrl({ url: url }); return !(r && r.completed === false); }
+    } catch (e) { return false; }
+    try { window.location.href = url; return true; } catch (e2) { return false; }
+  }
+  function closeShareSheet() {
+    var el = document.getElementById("rpShareSheet");
+    if (!el) return;
+    el.classList.remove("show");
+    setTimeout(function () { el.classList.remove("open"); }, 200);
+  }
+  function buildShareSheet() {
+    var el = document.getElementById("rpShareSheet");
+    if (el) return el;
+    el = document.createElement("div");
+    el.id = "rpShareSheet";
+    el.setAttribute("role", "dialog");
+    el.setAttribute("aria-label", "Share");
+    var opts = [
+      { ch: "sms", label: "Messages", bg: "#2fbf5b", phoneOnly: true },
+      { ch: "whatsapp", label: "WhatsApp", bg: "#25a244" },
+      { ch: "email", label: "Email", bg: "#3d7dff" },
+      { ch: "copy", label: "Copy link", bg: "#4a5068" },
+      { ch: "more", label: "More", bg: "#2a2f44; border: 1.5px solid rgba(255,255,255,0.25)" }
+    ];
+    var phone = isPhoneDevice();
+    el.innerHTML = '<div class="rpss-scrim"></div><div class="rpss-sheet"><div class="rpss-grab"></div><div class="rpss-title">Share</div><div class="rpss-opts">' +
+      opts.filter(function (o) { return phone || !o.phoneOnly; }).map(function (o) {
+        return '<button type="button" class="rpss-o" data-ch="' + o.ch + '"><span class="rpss-c" style="background:' + o.bg + '">' + SS_ICONS[o.ch] + '</span>' + o.label + '</button>';
+      }).join("") + '</div><button type="button" class="rpss-cancel">Cancel</button></div>';
+    document.body.appendChild(el);
+    el.querySelector(".rpss-scrim").addEventListener("click", closeShareSheet);
+    el.querySelector(".rpss-cancel").addEventListener("click", closeShareSheet);
+    el.addEventListener("click", function (e) {
+      var b = e.target.closest ? e.target.closest(".rpss-o") : null;
+      if (b) shareVia(b.getAttribute("data-ch"));
+    });
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeShareSheet(); });
+    return el;
+  }
+  function shareItem(item) {
+    if (!myShareName) loadMyShareName();
+    shareSheetItem = item;
+    var el = buildShareSheet();
+    el.classList.add("open");
+    requestAnimationFrame(function () { requestAnimationFrame(function () { el.classList.add("show"); }); });
+  }
+  function shareCountEl(itemId) {
+    return document.querySelector("#rpActions-" + itemId + " .rp-share-btn .rp-action-count");
+  }
+  function showShareCount(itemId, n) {
+    var c = shareCountEl(itemId);
+    if (c) c.textContent = n > 0 ? String(n) : "";
+    if (actionCountsCache[itemId]) actionCountsCache[itemId].shareCount = n;
+  }
+  // One count per member per post per channel (a repeat tap changes nothing), so the number means real members, never taps.
+  // Best-effort: if the table is not there yet, sharing still works, it just is not counted.
+  async function recordShare(item, channel) {
+    try {
+      if (!currentUserId || !item || !item.id || !window.sb) return;
+      await window.sb.from("media_shares").upsert({ media_id: item.id, user_id: currentUserId, channel: channel }, { onConflict: "media_id,user_id,channel", ignoreDuplicates: true });
+      var r = await window.sb.rpc("share_counts", { ids: [item.id] });
+      if (r && r.data && r.data.length) showShareCount(item.id, Number(r.data[0].n) || 0);
+    } catch (e) {}
+  }
+  async function shareVia(channel) {
+    var item = shareSheetItem;
+    if (!item) return;
+    var text = shareMessageFor(item);
+    var full = text + " " + SHARE_URL;
+    var enc = encodeURIComponent(full);
+    closeShareSheet();
+    recordShare(item, channel);
+    if (channel === "copy") {
+      try { await navigator.clipboard.writeText(full); shareToast("Link copied"); }
+      catch (e) { shareToast("Couldn't copy. Try More."); }
+      return;
+    }
+    if (channel === "sms") {
+      await openOutside(isIOSDevice() ? "sms:&body=" + enc : "sms:?body=" + enc);
+      return;
+    }
+    if (channel === "email") {
+      await openOutside("mailto:?subject=" + encodeURIComponent("Ensemble Fitness") + "&body=" + enc);
+      return;
+    }
+    if (channel === "whatsapp") {
+      var native = !!getNativeApp();
+      var ok = false;
+      if (native) ok = await openOutside("whatsapp://send?text=" + enc);
+      if (!ok) {
+        if (native) await openOutside("https://wa.me/?text=" + enc);
+        else window.open("https://wa.me/?text=" + enc, "_blank", "noopener");
+      }
+      return;
+    }
+    // More: the phone's own full share menu (Instagram, TikTok, Facebook, Messenger and anything else installed)
     try {
       var S = getNativeShare();
-      if (S && S.share) { await S.share({ title: title, text: text, url: SHARE_URL, dialogTitle: "Share" }); return; }
-      if (navigator.share) { await navigator.share({ title: title, text: text, url: SHARE_URL }); return; }
+      if (S && S.share) { await S.share({ title: "Ensemble Fitness", text: text, url: SHARE_URL, dialogTitle: "Share" }); return; }
+      if (navigator.share) { await navigator.share({ title: "Ensemble Fitness", text: text, url: SHARE_URL }); return; }
     } catch (e) {
-      if (e && (e.name === "AbortError" || /cancel|abort|dismiss/i.test((e.message || "") + " " + (e.name || "")))) return;   // they closed the menu: nothing to do
+      if (e && (e.name === "AbortError" || /cancel|abort|dismiss/i.test((e.message || "") + " " + (e.name || "")))) return;
     }
-    try { await navigator.clipboard.writeText(text + " " + SHARE_URL); shareToast("Link copied"); }
+    try { await navigator.clipboard.writeText(full); shareToast("Link copied"); }
     catch (e) { shareToast("Sharing isn't available on this device."); }
   }
 
@@ -3561,11 +3711,16 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
   async function preloadActionCounts(mediaIds) {
     mediaIds = mediaIds.filter(function (id) { return !(id in actionCountsCache); });
     if (!mediaIds.length) return;
-    mediaIds.forEach(function (id) { actionCountsCache[id] = { reactions: [], commentCount: 0 }; });
-    var [{ data: reactions }, { data: comments }] = await Promise.all([
+    mediaIds.forEach(function (id) { actionCountsCache[id] = { reactions: [], commentCount: 0, shareCount: 0 }; });
+    var [{ data: reactions }, { data: comments }, shareRes] = await Promise.all([
       window.sb.from("media_reactions").select("media_id, user_id, reaction_type").in("media_id", mediaIds),
-      window.sb.from("media_comments").select("media_id").in("media_id", mediaIds)
+      window.sb.from("media_comments").select("media_id").in("media_id", mediaIds),
+      // share counts (never lets a missing table/function break the feed)
+      Promise.resolve(window.sb.rpc("share_counts", { ids: mediaIds })).then(function (r) { return r; }, function () { return { data: null }; })
     ]);
+    ((shareRes && shareRes.data) || []).forEach(function (r) {
+      if (actionCountsCache[r.media_id]) actionCountsCache[r.media_id].shareCount = Number(r.n) || 0;
+    });
     (reactions || []).forEach(function (r) {
       if (actionCountsCache[r.media_id]) actionCountsCache[r.media_id].reactions.push(r);
     });
@@ -3824,7 +3979,21 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
     var input = panel.querySelector(".rp-comment-input");
     if (input) input.focus();
+    keepMealPrepBoxVisible();
   }
+  // With the phone keyboard up, scroll the card so the typing box + Post sit just above the keys.
+  function keepMealPrepBoxVisible() {
+    [150, 400, 800].forEach(function (ms) {
+      setTimeout(function () {
+        var row = document.querySelector("#rpMpComments .rp-comment-input-row");
+        var modal = document.getElementById("rpMpModal");
+        if (row && modal && !modal.hidden) { try { row.scrollIntoView({ block: "end", behavior: "smooth" }); } catch (e) { row.scrollIntoView(false); } }
+      }, ms);
+    });
+  }
+  document.addEventListener("focusin", function (e) {
+    if (e.target && e.target.classList && e.target.classList.contains("rp-comment-input") && e.target.closest && e.target.closest("#rpMpComments")) keepMealPrepBoxVisible();
+  });
 
   // Real reactions + comment count for a real member's Meal Prep post —
   // same media_reactions/media_comments tables and toggle logic as
@@ -4951,7 +5120,16 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     });
 
     commentBtn.querySelector(".rp-action-count").textContent = commentCount || "";
-    commentBtn.querySelector(".rp-action-icon").innerHTML = COMMENT_ICON;   // Ken (Nov 2026): always a plain outline, like the thumb and heart (no tint when a post has comments)
+    commentBtn.querySelector(".rp-action-icon").innerHTML = COMMENT_ICON;
+    var shareN = cached && cached.shareCount ? cached.shareCount : 0;
+    if (!cached) {
+      try {
+        var sr = await window.sb.rpc("share_counts", { ids: [item.id] });
+        if (sr && sr.data && sr.data.length) shareN = Number(sr.data[0].n) || 0;
+      } catch (e) {}
+    }
+    var shareCountSpan = container.querySelector(".rp-share-btn .rp-action-count");
+    if (shareCountSpan) shareCountSpan.textContent = shareN > 0 ? String(shareN) : "";
   }
 
   async function toggleReaction(mediaId, type, btn) {
@@ -5088,7 +5266,10 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     if (h) h.textContent = label + (n ? " " + n : "");
   }
   var QUICK_EMOJI = ["💪", "🔥", "👏", "❤️", "😍", "🙌", "😂"];
-  function addEmojiStrip(inputRow, inputEl) {
+  // Nov 2026 (Ken): one tap on an emoji SENDS it as the comment/reply when the box is empty (quick reaction); if the member has
+  // already started typing, the emoji is added to their words instead and they press Post as usual.
+  function addEmojiStrip(inputRow, inputEl, sendFn) {
+    var lastSend = 0;
     var strip = document.createElement("div");
     strip.className = "rp-emoji-strip";
     QUICK_EMOJI.forEach(function (em) {
@@ -5096,6 +5277,14 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
       b.type = "button"; b.textContent = em; b.setAttribute("aria-label", "Add " + em);
       b.addEventListener("mousedown", function (e) { e.preventDefault(); }); // keep the keyboard up
       b.addEventListener("click", function () {
+        if (sendFn && !inputEl.value.trim()) {
+          var now = Date.now();
+          if (now - lastSend < 700) return; // a double-tap sends once
+          lastSend = now;
+          inputEl.value = em;
+          sendFn();
+          return;
+        }
         var v = inputEl.value, a = inputEl.selectionStart, z = inputEl.selectionEnd;
         if (typeof a !== "number") { a = z = v.length; }
         if ((v.length + em.length) > (inputEl.maxLength > 0 ? inputEl.maxLength : 1e9)) return;
@@ -5176,7 +5365,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     panel.appendChild(inputRow);
     panel.dataset.inputFor = String(item.id);
     inputRow.querySelector(".rp-comment-cancel").addEventListener("click", closeCommentsModal);
-    addEmojiStrip(inputRow, inputRow.querySelector(".rp-comment-input"));
+    addEmojiStrip(inputRow, inputRow.querySelector(".rp-comment-input"), function () { postComment(item, panel); });
     var sendBtn = inputRow.querySelector(".rp-comment-send");
     sendBtn.addEventListener("click", function () { postComment(item, panel); });
     // keep the cursor (and the phone keyboard) in the box while tapping Post, so they can keep typing
@@ -5342,7 +5531,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
       '<button type="button" class="rp-comment-send">Post</button>';
     panel.appendChild(inputRow);
     panel.dataset.inputFor = "j" + String(item.id);
-    addEmojiStrip(inputRow, inputRow.querySelector(".rp-comment-input"));
+    addEmojiStrip(inputRow, inputRow.querySelector(".rp-comment-input"), function () { postJourneyReply(item, panel); });
     var sendBtn = inputRow.querySelector(".rp-comment-send");
     sendBtn.addEventListener("click", function () { postJourneyReply(item, panel); });
     sendBtn.addEventListener("mousedown", function (e) { e.preventDefault(); });
