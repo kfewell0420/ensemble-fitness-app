@@ -1260,6 +1260,16 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
   .rp-slide:not(.rp-slide-compact) .rp-actions .rp-action-btn[data-reaction="thumbs_up"] .rp-action-icon svg { width: 19px; height: 19px; flex-shrink: 0; }
   .rp-slide:not(.rp-slide-compact) .rp-actions .rp-action-btn[data-reaction="heart"] .rp-action-icon svg { width: 21px; height: 21px; flex-shrink: 0; }
   .rp-slide:not(.rp-slide-compact) .rp-actions .rp-comment-btn .rp-action-icon svg { width: 21px; height: 21px; flex-shrink: 0; }
+  /* Ken (Nov 2026): every icon in the row the same size; the comment bubble a touch larger since it always reads smallest.
+     The muscle stays the plain emoji (no ring, no glow). New SHARE arrow in sky blue at the end of the row. */
+  .rp-slide:not(.rp-slide-compact) .rp-actions .rp-action-btn[data-reaction="thumbs_up"] .rp-action-icon svg,
+  .rp-slide:not(.rp-slide-compact) .rp-actions .rp-action-btn[data-reaction="heart"] .rp-action-icon svg,
+  .rp-slide:not(.rp-slide-compact) .rp-actions .rp-share-btn .rp-action-icon svg { width: 23px; height: 23px; flex-shrink: 0; }
+  .rp-slide:not(.rp-slide-compact) .rp-actions .rp-comment-btn .rp-action-icon svg { width: 26px; height: 26px; flex-shrink: 0; }
+  .rp-slide:not(.rp-slide-compact) .rp-actions .rp-action-btn[data-reaction="muscle"] .rp-action-icon { font-size: 22px; }
+  .rp-slide:not(.rp-slide-compact) .rp-actions .rp-share-btn .rp-action-icon { color: #4aa8ff; }
+  #rpShareToast { position: fixed; left: 50%; bottom: calc(110px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%) translateY(8px); z-index: 5000; padding: 10px 16px; border-radius: 22px; background: rgba(20,24,36,0.96); color: #fff; font-size: 14px; font-weight: 700; border: 1px solid rgba(255,255,255,0.18); box-shadow: 0 6px 22px rgba(0,0,0,0.5); opacity: 0; pointer-events: none; transition: opacity 0.18s ease, transform 0.18s ease; }
+  #rpShareToast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
   /* Comments modal — fixed over the whole viewport, completely decoupled
      from any card's box, so opening it (on any post, with any number of
@@ -3005,6 +3015,44 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
   // Labels are only used by the main feed's below-video action bar (see
   // renderActions) — Journeys/meal-prep keep their existing plain
   // icon+count treatment, so this doesn't touch STORY_REACTIONS below.
+  // ---- Share arrow (Ken, Nov 2026) -----------------------------------------------------------------------------------
+  // Opens the phone's own share menu (Messages, Email, WhatsApp, and whatever else is on the phone). Inside the phone app it uses the
+  // native Share add-on; on the website, the browser's share menu; on a computer without one, the message is copied instead.
+  // It sends a short message and a link to Ensemble Fitness, never the video or photo file itself.
+  var SHARE_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14l5-5-5-5"/><path d="M4 20v-7a4 4 0 0 1 4-4h12"/></svg>';
+  var SHARE_URL = "https://app.ensemblefitness.com/";
+  var nativeShare = null;
+  function getNativeShare() {
+    if (nativeShare !== null) return nativeShare;
+    nativeShare = false;
+    try {
+      var C = window.Capacitor;
+      if (C && C.isNativePlatform && C.isNativePlatform() && C.registerPlugin) nativeShare = (C.Plugins && C.Plugins.Share) || C.registerPlugin("Share");
+    } catch (e) { nativeShare = false; }
+    return nativeShare;
+  }
+  function shareToast(msg) {
+    var t = document.getElementById("rpShareToast");
+    if (!t) { t = document.createElement("div"); t.id = "rpShareToast"; t.setAttribute("role", "status"); document.body.appendChild(t); }
+    t.textContent = msg; t.classList.add("show");
+    clearTimeout(t._h); t._h = setTimeout(function () { t.classList.remove("show"); }, 2400);
+  }
+  async function shareItem(item) {
+    var who = (item && item.name) ? item.name : "A member";
+    var what = item && item.kind === "video" ? "a video" : "a post";
+    var title = "Ensemble Fitness";
+    var text = who + " shared " + what + " on Ensemble Fitness. Take a look!";
+    try {
+      var S = getNativeShare();
+      if (S && S.share) { await S.share({ title: title, text: text, url: SHARE_URL, dialogTitle: "Share" }); return; }
+      if (navigator.share) { await navigator.share({ title: title, text: text, url: SHARE_URL }); return; }
+    } catch (e) {
+      if (e && (e.name === "AbortError" || /cancel|abort|dismiss/i.test((e.message || "") + " " + (e.name || "")))) return;   // they closed the menu: nothing to do
+    }
+    try { await navigator.clipboard.writeText(text + " " + SHARE_URL); shareToast("Link copied. Paste it anywhere to share."); }
+    catch (e) { shareToast("Sharing isn't available on this device."); }
+  }
+
   var REACTIONS = [
     // Order (Ken, Oct 2026): Like, Love, Strong — so the colors alternate
     // gold / red / gold instead of two golds side by side. Everything keys
@@ -4847,10 +4895,15 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
       '<button type="button" class="rp-action-btn rp-comment-btn" data-action="comments">' +
       '<span class="rp-action-icon">' + COMMENT_ICON + '</span>' +
       '<span class="rp-action-count"></span>' +
-      '<span class="rp-action-label">Comment</span></button>';
+      '<span class="rp-action-label">Comment</span></button>' +
+      '<button type="button" class="rp-action-btn rp-share-btn" data-action="share" aria-label="Share">' +
+      '<span class="rp-action-icon">' + SHARE_ICON + '</span>' +
+      '<span class="rp-action-count"></span>' +
+      '<span class="rp-action-label">Share</span></button>';
 
     var commentBtn = container.querySelector(".rp-comment-btn");
     commentBtn.addEventListener("click", function () { openCommentsModal(item); });
+    container.querySelector(".rp-share-btn").addEventListener("click", function () { shareItem(item); });
 
     var reactions, commentCount;
     var cached = actionCountsCache[item.id];
@@ -4886,7 +4939,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     });
 
     commentBtn.querySelector(".rp-action-count").textContent = commentCount || "";
-    commentBtn.querySelector(".rp-action-icon").innerHTML = commentCount > 0 ? COMMENT_ICON_FILLED : COMMENT_ICON;
+    commentBtn.querySelector(".rp-action-icon").innerHTML = COMMENT_ICON;   // Ken (Nov 2026): always a plain outline, like the thumb and heart (no tint when a post has comments)
   }
 
   async function toggleReaction(mediaId, type, btn) {
@@ -5236,7 +5289,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     if (commentBtn) {
       var countEl = commentBtn.querySelector(".rp-action-count");
       countEl.textContent = (parseInt(countEl.textContent || "0", 10) || 0) + 1;
-      commentBtn.querySelector(".rp-action-icon").innerHTML = COMMENT_ICON_FILLED;
+      commentBtn.querySelector(".rp-action-icon").innerHTML = COMMENT_ICON;
     }
   }
 
