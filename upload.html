@@ -53,7 +53,7 @@
 
   /* Ken (Nov 2026): the blank area above the tiles now tells artists the Song tile is for them. Shown only while the tile grid is
      showing (see the small observer next to categoryGrid in the script). Decoration only: no taps, no pills. */
-  .ab-hero { position: relative; overflow: hidden; border-radius: 16px; margin: 6px 0 14px; border: 1px solid rgba(255,122,61,0.8); color: #fff;
+  .ab-hero { position: relative; overflow: hidden; border-radius: 16px; margin: -6px 0 14px; border: 1px solid rgba(255,122,61,0.8); color: #fff;
     background: radial-gradient(circle at 85% 12%, rgba(255,70,140,.85), transparent 45%), radial-gradient(circle at 10% 95%, rgba(255,140,40,.75), transparent 50%),
                 radial-gradient(circle at 95% 90%, rgba(90,60,255,.8), transparent 50%), linear-gradient(160deg,#2a0f4d 0%,#12082b 55%,#1c0a1f 100%); }
   .ab-vinyl { position: absolute; right: -60px; top: -48px; width: 208px; height: 208px; border-radius: 50%; opacity: .55; pointer-events: none;
@@ -61,24 +61,26 @@
   .ab-vinyl:after { content: ""; position: absolute; left: 76px; top: 76px; width: 56px; height: 56px; border-radius: 50%; background: radial-gradient(circle,#111 0 3px,#ff7a3d 3.5px); }
   .ab-eq { position: absolute; left: 0; right: 0; bottom: 0; height: 117px; display: flex; align-items: flex-end; gap: 4px; padding: 0 10px; opacity: .5; pointer-events: none; }
   .ab-eq i { flex: 1; border-radius: 3px 3px 0 0; background: linear-gradient(#ff7a3d,#ff3d8a 60%,#6a4dff); }
-  .ab-in { position: relative; display: flex; flex-direction: column; min-height: 400px; padding: 20px 19px 14px; box-sizing: border-box; }
+  .ab-in { position: relative; display: flex; flex-direction: column; height: 100%; min-height: 0; padding: 20px 19px 14px; box-sizing: border-box; }
   .ab-eye { color: #ffb07a; font-weight: 700; letter-spacing: 1.6px; font-size: 10.5px; text-transform: uppercase; }
   .ab-title { font-size: 23px; line-height: 1.1; margin: 6px 0 10px; font-weight: 800; color: #fff; max-width: 300px; }
   .ab-sub { font-size: 12px; line-height: 1.35; color: #f1e9ff; max-width: 290px; margin: 0; }
   .ab-row { display: flex; align-items: baseline; gap: 9px; margin-top: 16px; }
-  .ab-big { font-size: 39px; font-weight: 800; line-height: 1; min-width: 102px; background: linear-gradient(90deg,#ffb07a,#ff4d94); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; }
+  .ab-big { font-size: 34px; font-weight: 800; line-height: 1; flex: 0 0 96px; background: linear-gradient(90deg,#ffb07a,#ff4d94); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; }
   .ab-txt { font-size: 13.5px; line-height: 1.25; font-weight: 700; color: #fff; }
-  .ab-txt span { display: block; margin-top: 2px; font-weight: 400; font-size: 11.5px; color: #e8dcff; }
+  .ab-txt span { display: block; margin-top: 2px; font-weight: 400; font-size: 11px; color: #e8dcff; }
   .ab-txt b.ab-tip { color: #ffb07a; font-weight: 800; font-size: 12.5px; text-shadow: 0 0 8px rgba(255,122,61,.8); }
   .ab-go { margin-top: auto; padding-top: 12px; font-size: 11.5px; font-weight: 700; color: #ffd0b0; text-shadow: 0 1px 4px #000; }
   @media (max-width: 559px) {
     #uploadCard .upload-category-grid .upload-category-tile[data-category="song"] { border-color: rgba(255,122,61,0.95) !important; box-shadow: 0 0 0 1px rgba(255,122,61,0.55), 0 0 16px rgba(255,122,61,0.28); }
   }
   #uploadCard .upload-category-grid .upload-category-tile[data-category="song"] { border-color: rgba(255,122,61,0.95); box-shadow: 0 0 0 1px rgba(255,122,61,0.55), 0 0 16px rgba(255,122,61,0.28); }
-  /* shorter phones: keep it from running under the tiles that sit low on the screen */
-  @media (max-width: 559px) and (max-height: 800px) { .ab-in { min-height: 0; } .ab-sub { display: none; } .ab-big { font-size: 32px; min-width: 86px; } .ab-eq { height: 70px; } .ab-vinyl { opacity: .4; } .ab-row { margin-top: 12px; } }
-  @media (max-width: 559px) and (max-height: 740px) { .ab-title { font-size: 17px; margin: 3px 0 2px; } .ab-big { font-size: 24px; min-width: 68px; } .ab-txt { font-size: 12px; } .ab-txt span { display: none; } .ab-go { display: none; } .ab-row { margin-top: 5px; } .ab-in { padding: 12px 16px 12px; } .ab-eq { height: 46px; } .ab-vinyl { width: 140px; height: 140px; right: -40px; top: -40px; } .ab-vinyl:after { left: 50px; top: 50px; width: 38px; height: 38px; } }
-  @media (min-width: 560px) { .ab-hero { max-width: 760px; } }
+  /* The banner is sized by script (fitArtistBanner) to fill exactly the space between the intro line and the tiles, and steps down through these
+     levels only if its text would not otherwise fit - so it never runs under the tiles on any phone. */
+  .ab-c1 .ab-in { padding: 16px 17px 10px; } .ab-c1 .ab-title { font-size: 20px; margin: 4px 0 6px; } .ab-c1 .ab-sub { font-size: 11.5px; } .ab-c1 .ab-big { font-size: 30px; flex-basis: 84px; } .ab-c1 .ab-row { margin-top: 10px; } .ab-c1 .ab-eq { height: 80px; }
+  .ab-c2 .ab-sub { display: none; } .ab-c2 .ab-row { margin-top: 9px; } .ab-c2 .ab-eq { height: 60px; }
+  .ab-c3 .ab-txt span { display: none; } .ab-c3 .ab-go { display: none; } .ab-c3 .ab-title { font-size: 18px; } .ab-c3 .ab-big { font-size: 26px; flex-basis: 72px; } .ab-c3 .ab-row { margin-top: 6px; } .ab-c3 .ab-in { padding: 12px 15px 8px; } .ab-c3 .ab-vinyl { opacity: .35; }
+  @media (min-width: 560px) { .ab-hero { max-width: 760px; } .ab-in { height: auto; min-height: 400px; } }
   .msg-rec-card { background: #0b0f1a; border: 1.5px solid rgba(255,255,255,0.14); border-radius: 18px; padding: 16px; margin-bottom: 14px; text-align: center; color: #fff; }
   .msg-rec-title { font-size: 17px; font-weight: 800; margin-bottom: 4px; }
   .msg-rec-sub { font-size: 13px; color: rgba(255,255,255,0.75); line-height: 1.4; margin-bottom: 12px; }
@@ -1560,13 +1562,43 @@
 
   // ---- Category picker ----------------------------------------------------
   var categoryGrid = document.getElementById("categoryGrid");
-  // The artist banner above the tiles only shows while the tile grid itself is showing.
+  // The artist banner above the tiles only shows while the tile grid itself is showing, and on phones (where the tiles ride low on the
+  // screen) it is sized to fill exactly the space above them, never running underneath.
+  var fitArtistBanner = function () {};
   (function () {
     var banner = document.getElementById("artistBanner");
     if (!banner) return;
-    function syncArtistBanner() { banner.style.display = (categoryGrid.style.display === "none") ? "none" : ""; }
+    var levels = ["ab-c1", "ab-c2", "ab-c3"];
+    fitArtistBanner = function () {
+      try {
+        if (banner.style.display === "none") return;
+        banner.classList.remove("ab-c1", "ab-c2", "ab-c3");
+        banner.style.height = "";
+        if (getComputedStyle(categoryGrid).position !== "fixed") return; // desktop/tablet: tiles sit below it in the normal flow
+        var avail = categoryGrid.getBoundingClientRect().top - banner.getBoundingClientRect().top - 12;
+        if (avail < 60) return;
+        var inner = banner.querySelector(".ab-in");
+        var n = 0;
+        banner.style.height = "auto";
+        inner.style.height = "auto";
+        while (banner.offsetHeight > avail && n < levels.length) { banner.classList.add(levels[n]); n++; }
+        inner.style.height = "";
+        banner.style.height = Math.max(avail, 0) + "px";
+      } catch (e) {}
+    };
+    function syncArtistBanner() {
+      var show = categoryGrid.style.display !== "none";
+      banner.style.display = show ? "" : "none";
+      if (show) fitArtistBanner();
+    }
     try { new MutationObserver(syncArtistBanner).observe(categoryGrid, { attributes: true, attributeFilter: ["style"] }); } catch (e) {}
     syncArtistBanner();
+    window.addEventListener("resize", fitArtistBanner);
+    window.addEventListener("orientationchange", function () { setTimeout(fitArtistBanner, 250); });
+    window.addEventListener("load", fitArtistBanner);
+    window.addEventListener("pageshow", fitArtistBanner);
+    setTimeout(fitArtistBanner, 300); setTimeout(fitArtistBanner, 1200);
+    try { if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitArtistBanner); } catch (e) {}
   })();
   var uploadFlow = document.getElementById("uploadFlow");
   var changeCategoryBtn = document.getElementById("changeCategoryBtn");
