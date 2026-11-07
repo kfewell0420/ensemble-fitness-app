@@ -161,6 +161,26 @@
   }
 </style>
 
+<style>
+  /* Nov 2026 (Ken): another member's profile is just the photo, the name, the follower count and the Follow / Message / Report / Block pills.
+     The bio is held back for Plus. The page is pulled up and tightened so the photos & videos start higher on the screen. */
+  #profileCard .mp-bio-desktop, #profileCard .mp-bio-phone, #profileCard .mp-bio-more, #profileCard .mp-bio-more.show { display: none !important; }
+  @media (max-width: 720px) {
+    .app-shell { padding-top: 2px; }
+    #mpBackLink { margin-bottom: 4px !important; padding: 4px 0; }
+    #profileCard { padding: 10px 14px 12px; }
+    #profileCard #memberActions { margin-top: 10px !important; }
+    #mpHeadRow #mediaEyebrow { display: none !important; }
+    #mpHeadRow #mediaHeading { font-size: 17px; margin: 12px 0 6px 2px !important; }
+    body.mp-post-open #mpHeadRow #mediaHeading { margin: 8px 0 8px 2px !important; }
+  }
+  /* Nov 2026 (Ken): on another member's profile the notification bell is not needed. Just the Home button, sitting right beside the hearts. */
+  .efit-notif-wrap { display: none !important; }
+  @media (max-width: 899px) {
+    header.app-nav { justify-content: flex-start !important; }
+    header.app-nav #efitNavUtility { margin-left: auto !important; margin-right: 6px !important; }
+  }
+</style>
 <div class="app-shell">
 
   <a href="members.html" id="mpBackLink" style="display:inline-block; margin-bottom:18px; font-size:13.5px; color:var(--faint-invert); font-weight:700;">&larr; Back to Find Members</a>
@@ -618,11 +638,21 @@
     // Oct 27 (Ken + the artist): the phone's own Back used to leave the page; opening a post now adds one history step so Back
     // closes the post and shows the grid again. The "← Back" button above the post does the same.
     var pushedState = false;
+    // Nov 2026 (Ken + the artists, iPhone: "I play a video, press back, and it is still the vertical layout"): closing a post no
+    // longer depends on the phone's history stepping back first. The grid comes back instantly, and only THEN is the extra history
+    // step (added when the post opened) tidied up, and only if it is really still there, so Back can never throw a member off the page.
+    var closingOut = false;
     function closeByUser(wrap) {
-      if (pushedState) { pushedState = false; try { window.history.back(); return; } catch (e) {} }
       closeWrap(wrap);
+      if (pushedState) {
+        pushedState = false;
+        var ours = false;
+        try { ours = !!(window.history.state && window.history.state.mpPost); } catch (e) {}
+        if (ours) { closingOut = true; setTimeout(function () { closingOut = false; }, 700); try { window.history.back(); } catch (e) {} }
+      }
     }
     window.addEventListener("popstate", function () {
+      if (closingOut) return;   // that was our own tidy-up step
       if (!grid.querySelector(".mp-open")) { pushedState = false; return; }
       pushedState = false;
       Array.prototype.forEach.call(grid.querySelectorAll(".mp-open"), closeWrap);
@@ -651,7 +681,7 @@
     }
     function openWrap(wrap) {
       if (savedScrollY === null) savedScrollY = window.pageYOffset || 0;
-      if (!pushedState) { try { window.history.pushState({ mpPost: 1 }, ""); pushedState = true; } catch (e) {} }
+      if (!pushedState) { try { if (!(window.history.state && window.history.state.mpPost)) window.history.pushState({ mpPost: 1 }, ""); pushedState = true; } catch (e) {} }
       wrap.classList.add("mp-open");
       grid.classList.add("mp-single");
       setPostOpen(true);

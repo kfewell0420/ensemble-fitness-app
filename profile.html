@@ -2516,15 +2516,43 @@
     // own Back (swipe or button) used to leave the page. Opening a post now adds one history step, so Back closes the post and
     // shows the grid again; the "← Back" button above the post does the same thing.
     var pushedState = false;
+    // Nov 2026 (Ken + the artists, iPhone: "I play a video, press back, and it is still the vertical layout"): closing a post no
+    // longer depends on the phone's history stepping back first. The grid comes back instantly, and only THEN is the extra history
+    // step (added when the post opened) tidied up, and only if it is really still there, so Back can never throw a member off the page.
+    var closingOut = false;
     function closeByUser(wrap) {
-      if (pushedState) { pushedState = false; try { window.history.back(); return; } catch (e) {} }
       closeWrap(wrap);
+      if (pushedState) {
+        pushedState = false;
+        var ours = false;
+        try { ours = !!(window.history.state && window.history.state.pfPost); } catch (e) {}
+        if (ours) { closingOut = true; setTimeout(function () { closingOut = false; }, 700); try { window.history.back(); } catch (e) {} }
+      }
     }
     window.addEventListener("popstate", function () {
+      if (closingOut) return;   // that was our own tidy-up step
       if (!grid.querySelector(".pf-open")) { pushedState = false; return; }
       pushedState = false;
       Array.prototype.forEach.call(grid.querySelectorAll(".pf-open"), closeWrap);
     });
+    // Nov 2026 (Ken): the grid is ALWAYS the grid. If anything ever leaves it stacked or half-open (coming back from another member's
+    // profile, the app returning from the background, a page restored from memory), it is put straight back. Same safety net the
+    // other members' profile page already has.
+    function normalizeGrid() {
+      var opened = grid.querySelectorAll(".pf-open");
+      if (opened.length > 1 || (opened.length === 0 && grid.classList.contains("pf-single"))) {
+        Array.prototype.forEach.call(opened, function (w) {
+          w.classList.remove("pf-open");
+          Array.prototype.forEach.call(w.querySelectorAll("video, audio"), function (m) { try { m.pause(); } catch (e) {} });
+          if (isPhone()) setCtl(w, false);
+        });
+        grid.classList.remove("pf-single");
+      }
+    }
+    window.addEventListener("pageshow", function () { normalizeGrid(); });
+    document.addEventListener("visibilitychange", function () { if (!document.hidden) normalizeGrid(); });
+    window.addEventListener("orientationchange", function () { setTimeout(normalizeGrid, 250); });
+    setInterval(normalizeGrid, 2000);
     function closeWrap(wrap) {
       wrap.classList.remove("pf-open");
       Array.prototype.forEach.call(wrap.querySelectorAll("video, audio"), function (m) { try { m.pause(); } catch (e) {} });
@@ -2536,7 +2564,7 @@
     }
     function openWrap(wrap) {
       if (savedScrollY === null) savedScrollY = window.pageYOffset || 0;
-      if (!pushedState) { try { window.history.pushState({ pfPost: 1 }, ""); pushedState = true; } catch (e) {} }
+      if (!pushedState) { try { if (!(window.history.state && window.history.state.pfPost)) window.history.pushState({ pfPost: 1 }, ""); pushedState = true; } catch (e) {} }
       wrap.classList.add("pf-open");
       grid.classList.add("pf-single");
       setCtl(wrap, true);
