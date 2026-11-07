@@ -515,6 +515,14 @@ body.fj-lock { overflow: hidden; }
   background: radial-gradient(ellipse 90% 260px at 92% 0%, rgba(120,160,88,0.30) 0%, rgba(30,31,35,0) 70%), #1e1f23;
   border: 1.5px solid rgba(255,122,61,0.75); border-bottom: 0; border-radius: 26px 26px 0 0; box-shadow: 0 -12px 40px rgba(0,0,0,0.55);
   animation: fjSheetUp .22s ease-out; }
+/* Nov 2026 (Ken): the comments window is a small popup over the same page, not a full screen. Comments only (the reaction pills are live on the card). */
+#fjSheetOv .fj-sheet { height: min(58vh, 520px); max-height: calc(100% - 110px); }
+#fjSheetOv .fj-seg, #fjSheetOv .fj-sh-chips { display: none; }
+#fjSheetOv .fj-sh-sub { display: none; }
+#fjSheetOv .fj-sh-headrow { margin-bottom: 2px; }
+#fjSheetOv .fj-sh-title { font-size: 22px; }
+.fj-reaction-pill.fj-pop { animation: fjPop .22s ease-out; }
+@keyframes fjPop { 0% { transform: scale(1); } 45% { transform: scale(1.14); } 100% { transform: scale(1); } }
 @keyframes fjSheetUp { from { transform: translateY(40px); opacity: .4; } to { transform: none; opacity: 1; } }
 .fj-sh-top { flex: none; padding: 8px 18px 10px; touch-action: none; }
 .fj-sh-grab { display: block; width: 44px; height: 5px; border-radius: 3px; background: rgba(255,255,255,0.28); margin: 0 auto 10px; }
@@ -1304,7 +1312,7 @@ body.fj-lock { overflow: hidden; }
       var btn = reactionsEl.querySelector('[data-reaction="' + r.type + '"]');
       btn.classList.toggle("active", !!mine[r.type]);
       btn.querySelector(".fj-reaction-count").textContent = counts[r.type] || 0;
-      btn.addEventListener("click", function () { openSheet(item, "reactions", r.type); });
+      btn.addEventListener("click", function () { toggleStoryReaction(item.id, r.type, btn); });   // Nov 2026: live, no window
     });
 
     // ---- replies ----
@@ -1325,21 +1333,32 @@ body.fj-lock { overflow: hidden; }
     });
   }
 
+  // Nov 2026 (Ken): the pills are LIVE. A tap changes the number and the highlight right away and the member stays on the page;
+  // a second tap undoes it. If saving fails the pill goes back to how it was.
   async function toggleStoryReaction(questionId, type, btn) {
-    if (!currentUserId) return;
+    if (!currentUserId || btn._fjBusy) return;
+    btn._fjBusy = true;
     var isActive = btn.classList.contains("active");
     var countEl = btn.querySelector(".fj-reaction-count");
     var current = parseInt(countEl.textContent || "0", 10) || 0;
-    if (isActive) {
-      btn.classList.remove("active");
-      countEl.textContent = Math.max(0, current - 1);
-      await window.sb.from("story_reactions").delete()
-        .eq("question_id", questionId).eq("user_id", currentUserId).eq("reaction", type);
-    } else {
-      btn.classList.add("active");
-      countEl.textContent = current + 1;
-      await window.sb.from("story_reactions").insert({ question_id: questionId, user_id: currentUserId, reaction: type });
+    btn.classList.toggle("active", !isActive);
+    countEl.textContent = isActive ? Math.max(0, current - 1) : current + 1;
+    btn.classList.remove("fj-pop"); void btn.offsetWidth; btn.classList.add("fj-pop");
+    var res = null;
+    try {
+      if (isActive) {
+        res = await window.sb.from("story_reactions").delete()
+          .eq("question_id", questionId).eq("user_id", currentUserId).eq("reaction", type);
+      } else {
+        res = await window.sb.from("story_reactions").insert({ question_id: questionId, user_id: currentUserId, reaction: type });
+        if (res && res.error && String(res.error.code) === "23505") res = null;   // already saved: fine
+      }
+    } catch (e) { res = { error: e }; }
+    if (res && res.error) {
+      btn.classList.toggle("active", isActive);
+      countEl.textContent = current;
     }
+    btn._fjBusy = false;
   }
 
   // Nov 2026: the card shows only the NEWEST comment (with its time) plus the total; the rest live in the Responses window.
@@ -1454,7 +1473,7 @@ body.fj-lock { overflow: hidden; }
         '<div class="fj-sh-top" data-drag>' +
           '<span class="fj-sh-grab"></span>' +
           '<div class="fj-sh-headrow">' +
-            '<div><div class="fj-sh-title" id="fjShTitle">Responses</div><div class="fj-sh-sub" data-sub></div></div>' +
+            '<div><div class="fj-sh-title" id="fjShTitle">Comments <span data-tn></span></div><div class="fj-sh-sub" data-sub></div></div>' +
             '<button type="button" class="fj-sh-x" data-close aria-label="Close">' + ICO_X + '</button>' +
           '</div>' +
           '<div class="fj-seg">' +
@@ -1568,7 +1587,7 @@ body.fj-lock { overflow: hidden; }
     var who = item.asker_name || "A member";
     shEl("[data-sub]").textContent = (item.activity ? item.activity + " · " : "") + who;
     shEl('[data-n="comments"]').textContent = sheet.cTotal;
-    shEl('[data-n="reactions"]').textContent = "…";
+    shEl("[data-tn]").textContent = sheet.cTotal;
     shEl("[data-scroll]").scrollTop = 0;
     ov.classList.add("show");
     document.body.classList.add("fj-lock");
@@ -1578,8 +1597,6 @@ body.fj-lock { overflow: hidden; }
     sheet.open = true;
     if (sheet.fit) sheet.fit();
     sheetSetTab(tab || "comments");
-    sheetLoadReactionCounts();   // fills in the Reactions tab number
-    sheetLoadMine();
   }
 
   function sheetSetTab(tab) {
@@ -1634,6 +1651,7 @@ body.fj-lock { overflow: hidden; }
         '<div class="fj-sh-text">' + escapeHtml(r.reply_text) + '</div></div></div>';
     }).join(""));
     shEl('[data-n="comments"]').textContent = sheet.cTotal;
+    shEl("[data-tn]").textContent = sheet.cTotal;
     setMore(sheet.cTotal - sheet.cOff);
   }
 
