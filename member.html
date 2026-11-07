@@ -642,8 +642,22 @@
     // longer depends on the phone's history stepping back first. The grid comes back instantly, and only THEN is the extra history
     // step (added when the post opened) tidied up, and only if it is really still there, so Back can never throw a member off the page.
     var closingOut = false;
+    // Nov 2026 (iPhone: "I close the video and it goes back to that same video"): an iPhone can send a second, stray tap to whatever
+    // box ends up under the finger once Close disappears. For a moment after a Close, taps on the boxes are ignored, and if a post
+    // somehow shows again in that moment it is closed again. A person cannot tap a new box that fast, so nothing real is lost.
+    var closedAt = 0;
+    function justClosed() { return Date.now() - closedAt < 900; }
+    function forceGrid() {
+      var open = grid.querySelectorAll(".mp-open");
+      Array.prototype.forEach.call(open, closeWrap);
+      grid.classList.remove("mp-single");
+      setPostOpen(false);
+    }
+    function settleClosed() { if (justClosed() || Date.now() - closedAt < 1300) forceGrid(); }
     function closeByUser(wrap) {
+      closedAt = Date.now();
       closeWrap(wrap);
+      setTimeout(settleClosed, 80); setTimeout(settleClosed, 400); setTimeout(settleClosed, 1000);
       if (pushedState) {
         pushedState = false;
         var ours = false;
@@ -717,7 +731,12 @@
       } catch (e) {} }, 40);
     }
     var topClose = document.getElementById("mpCloseTop");
-    if (topClose) topClose.addEventListener("click", function () { var w = grid.querySelector(".mp-open"); if (w) closeByUser(w); });
+    if (topClose) {
+      var pillClose = function () { var w = grid.querySelector(".mp-open"); if (w) closeByUser(w); };
+      // on a phone the finger lifting IS the close (and it stops the phone sending a second tap to the box underneath)
+      topClose.addEventListener("touchend", function (e) { try { e.preventDefault(); } catch (er) {} pillClose(); }, { passive: false });
+      topClose.addEventListener("click", pillClose);
+    }
     // the slim comment bar under an opened post (same media_comments table the Home feed uses)
     grid.addEventListener("submit", async function (e) {
       var f = e.target && e.target.closest ? e.target.closest(".mp-cmt") : null;
@@ -742,6 +761,7 @@
       var wrap = e.target.closest ? e.target.closest(".media-tile-wrap") : null;
       if (!wrap) return;
       if (e.target.closest(".mp-back") || e.target.closest(".mp-close")) { closeByUser(wrap); return; }
+      if (justClosed()) return;   // a stray second tap right after Close: ignore it
       if (!wrap.classList.contains("mp-open")) {
         Array.prototype.forEach.call(grid.querySelectorAll(".mp-open"), closeWrap);
         openWrap(wrap);
