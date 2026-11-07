@@ -50,6 +50,35 @@
   .upload-category-tile .upload-category-icon { font-size: 46px; line-height: 1; margin-bottom: 6px; }
   .upload-category-tile strong { color: #fff; font-size: 14.5px; }
   .upload-category-tile span { font-size: 12px; color: var(--muted-invert); line-height: 1.4; }
+
+  /* Ken (Nov 2026): the blank area above the tiles now tells artists the Song tile is for them. Shown only while the tile grid is
+     showing (see the small observer next to categoryGrid in the script). Decoration only: no taps, no pills. */
+  .ab-hero { position: relative; overflow: hidden; border-radius: 16px; margin: 6px 0 14px; border: 1px solid rgba(255,122,61,0.8); color: #fff;
+    background: radial-gradient(circle at 85% 12%, rgba(255,70,140,.85), transparent 45%), radial-gradient(circle at 10% 95%, rgba(255,140,40,.75), transparent 50%),
+                radial-gradient(circle at 95% 90%, rgba(90,60,255,.8), transparent 50%), linear-gradient(160deg,#2a0f4d 0%,#12082b 55%,#1c0a1f 100%); }
+  .ab-vinyl { position: absolute; right: -60px; top: -48px; width: 208px; height: 208px; border-radius: 50%; opacity: .55; pointer-events: none;
+    background: repeating-radial-gradient(circle,#111 0 1.2px,#1c1c26 1.2px 2.4px); box-shadow: 0 0 32px rgba(255,80,160,.5); }
+  .ab-vinyl:after { content: ""; position: absolute; left: 76px; top: 76px; width: 56px; height: 56px; border-radius: 50%; background: radial-gradient(circle,#111 0 3px,#ff7a3d 3.5px); }
+  .ab-eq { position: absolute; left: 0; right: 0; bottom: 0; height: 117px; display: flex; align-items: flex-end; gap: 4px; padding: 0 10px; opacity: .5; pointer-events: none; }
+  .ab-eq i { flex: 1; border-radius: 3px 3px 0 0; background: linear-gradient(#ff7a3d,#ff3d8a 60%,#6a4dff); }
+  .ab-in { position: relative; display: flex; flex-direction: column; min-height: 400px; padding: 20px 19px 14px; box-sizing: border-box; }
+  .ab-eye { color: #ffb07a; font-weight: 700; letter-spacing: 1.6px; font-size: 10.5px; text-transform: uppercase; }
+  .ab-title { font-size: 23px; line-height: 1.1; margin: 6px 0 10px; font-weight: 800; color: #fff; max-width: 300px; }
+  .ab-sub { font-size: 12px; line-height: 1.35; color: #f1e9ff; max-width: 290px; margin: 0; }
+  .ab-row { display: flex; align-items: baseline; gap: 9px; margin-top: 16px; }
+  .ab-big { font-size: 39px; font-weight: 800; line-height: 1; min-width: 102px; background: linear-gradient(90deg,#ffb07a,#ff4d94); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; }
+  .ab-txt { font-size: 13.5px; line-height: 1.25; font-weight: 700; color: #fff; }
+  .ab-txt span { display: block; margin-top: 2px; font-weight: 400; font-size: 11.5px; color: #e8dcff; }
+  .ab-txt b.ab-tip { color: #ffb07a; font-weight: 800; font-size: 12.5px; text-shadow: 0 0 8px rgba(255,122,61,.8); }
+  .ab-go { margin-top: auto; padding-top: 12px; font-size: 11.5px; font-weight: 700; color: #ffd0b0; text-shadow: 0 1px 4px #000; }
+  @media (max-width: 559px) {
+    #uploadCard .upload-category-grid .upload-category-tile[data-category="song"] { border-color: rgba(255,122,61,0.95) !important; box-shadow: 0 0 0 1px rgba(255,122,61,0.55), 0 0 16px rgba(255,122,61,0.28); }
+  }
+  #uploadCard .upload-category-grid .upload-category-tile[data-category="song"] { border-color: rgba(255,122,61,0.95); box-shadow: 0 0 0 1px rgba(255,122,61,0.55), 0 0 16px rgba(255,122,61,0.28); }
+  /* shorter phones: keep it from running under the tiles that sit low on the screen */
+  @media (max-width: 559px) and (max-height: 800px) { .ab-in { min-height: 0; } .ab-sub { display: none; } .ab-big { font-size: 32px; min-width: 86px; } .ab-eq { height: 70px; } .ab-vinyl { opacity: .4; } .ab-row { margin-top: 12px; } }
+  @media (max-width: 559px) and (max-height: 740px) { .ab-title { font-size: 17px; margin: 3px 0 2px; } .ab-big { font-size: 24px; min-width: 68px; } .ab-txt { font-size: 12px; } .ab-txt span { display: none; } .ab-go { display: none; } .ab-row { margin-top: 5px; } .ab-in { padding: 12px 16px 12px; } .ab-eq { height: 46px; } .ab-vinyl { width: 140px; height: 140px; right: -40px; top: -40px; } .ab-vinyl:after { left: 50px; top: 50px; width: 38px; height: 38px; } }
+  @media (min-width: 560px) { .ab-hero { max-width: 760px; } }
   .msg-rec-card { background: #0b0f1a; border: 1.5px solid rgba(255,255,255,0.14); border-radius: 18px; padding: 16px; margin-bottom: 14px; text-align: center; color: #fff; }
   .msg-rec-title { font-size: 17px; font-weight: 800; margin-bottom: 4px; }
   .msg-rec-sub { font-size: 13px; color: rgba(255,255,255,0.75); line-height: 1.4; margin-bottom: 12px; }
@@ -731,7 +760,7 @@
          this screen. -->
     <div class="eyebrow" id="uploadEyebrow">Upload</div>
     <h2 id="uploadHeading">What would you like to upload?</h2>
-    <p class="card-sub" id="uploadSub">Pick a type to get started — you'll only see what's relevant to it.</p>
+    <p class="card-sub" id="uploadSub">Pick a type to get started —</p>
 
     <div class="form-msg" id="uploadMsg"></div>
 
@@ -739,6 +768,19 @@
          is chosen — this is the whole fix for members landing on one long,
          confusing form with unrelated fields (photo fields, video fields,
          song fields, "Delete your account" nearby, etc.) all at once. -->
+    <div class="ab-hero" id="artistBanner">
+      <div class="ab-vinyl" aria-hidden="true"></div>
+      <div class="ab-eq" aria-hidden="true"><i style="height:31%"></i><i style="height:57%"></i><i style="height:40%"></i><i style="height:77%"></i><i style="height:50%"></i><i style="height:87%"></i><i style="height:37%"></i><i style="height:67%"></i><i style="height:47%"></i><i style="height:80%"></i><i style="height:33%"></i><i style="height:63%"></i><i style="height:43%"></i><i style="height:73%"></i><i style="height:32%"></i><i style="height:58%"></i></div>
+      <div class="ab-in">
+        <div class="ab-eye">For artists</div>
+        <div class="ab-title">Real tracks from<br>independent artists.</div>
+        <p class="ab-sub">Share your music with the community. Members can upload it to their posts.</p>
+        <div class="ab-row"><div class="ab-big">100%</div><div class="ab-txt">Your music is yours<span>You keep full ownership.</span></div></div>
+        <div class="ab-row"><div class="ab-big">100%</div><div class="ab-txt">Of every tip is yours<span>Members can <b class="ab-tip">&ldquo;tip&rdquo;</b> you directly.</span></div></div>
+        <div class="ab-go">&darr;&nbsp; Tap Song to start</div>
+      </div>
+    </div>
+
     <div class="upload-category-grid" id="categoryGrid">
       <!-- Ken's ask (Oct 2026): these three descriptions used to each follow
            a different sentence shape (what it is / what it includes / what
@@ -762,8 +804,8 @@
       </button>
       <button type="button" class="upload-category-tile" data-category="message">
         <span class="upload-category-icon">🎙️</span>
-        <strong>Recording</strong>
-        <span>Voiceover or a quote</span>
+        <strong>Voiceover</strong>
+        <span>A video voiceover or a quote</span>
       </button>
     </div>
 
@@ -1513,11 +1555,19 @@
     uploadHeading.style.display = "";
     uploadSub.style.display = "";
     uploadHeading.textContent = "What would you like to upload?";
-    uploadSub.textContent = "Pick a type to get started — you'll only see what's relevant to it.";
+    uploadSub.textContent = "Pick a type to get started —";
   });
 
   // ---- Category picker ----------------------------------------------------
   var categoryGrid = document.getElementById("categoryGrid");
+  // The artist banner above the tiles only shows while the tile grid itself is showing.
+  (function () {
+    var banner = document.getElementById("artistBanner");
+    if (!banner) return;
+    function syncArtistBanner() { banner.style.display = (categoryGrid.style.display === "none") ? "none" : ""; }
+    try { new MutationObserver(syncArtistBanner).observe(categoryGrid, { attributes: true, attributeFilter: ["style"] }); } catch (e) {}
+    syncArtistBanner();
+  })();
   var uploadFlow = document.getElementById("uploadFlow");
   var changeCategoryBtn = document.getElementById("changeCategoryBtn");
   var uploadEyebrow = document.getElementById("uploadEyebrow");
@@ -1789,7 +1839,7 @@
     uploadHeading.style.display = "";
     uploadSub.style.display = "";
     uploadHeading.textContent = "What would you like to upload?";
-    uploadSub.textContent = "Pick a type to get started — you'll only see what's relevant to it.";
+    uploadSub.textContent = "Pick a type to get started —";
     // Clear out anything already picked so switching types doesn't carry a
     // mismatched file or leftover field values into the new type.
     fileInput.value = "";
