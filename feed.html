@@ -4049,9 +4049,11 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     if (input) input.focus();
   }
   // Typing mode for the Meal Prep card (see the CSS note above): on while the comment box has the cursor, off when it lets go.
+  var mpTypingAt = 0;
   function setMealPrepTyping(on) {
     var modal = document.getElementById("rpMpModal");
     if (!modal) return;
+    mpTypingAt = Date.now();
     modal.classList.toggle("rp-mp-typing", !!on);
   }
   // iPhones keep the page full height and just draw the keyboard over it; this keeps the Meal Prep card inside the area the keyboard
@@ -4317,8 +4319,29 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
   // the backdrop itself (not the card) closes it. Checking
   // target===currentTarget is what tells the two apart: a click inside
   // the card lands on one of its descendants instead.
+  // Nov 2026 (Ken: "when I try to add a comment, it closes"): when the phone keyboard opens, the card shrinks and moves, and the tap
+  // that went down on the comment box could land on the dark area instead and close the card. Now the dark area only closes it
+  // when the finger went DOWN on the dark area too, never in the moment right after the keyboard opens, and while the keyboard is up
+  // a tap outside just puts the keyboard away.
+  var mpDownOnBackdrop = false;
+  (function () {
+    var mpModalEl = document.getElementById("rpMpModal");
+    var markDown = function (e) { mpDownOnBackdrop = (e.target === mpModalEl); };
+    mpModalEl.addEventListener("touchstart", markDown, { capture: true, passive: true });
+    mpModalEl.addEventListener("mousedown", markDown, true);
+    mpModalEl.addEventListener("pointerdown", markDown, true);
+  })();
   document.getElementById("rpMpModal").addEventListener("click", function (e) {
-    if (e.target === e.currentTarget) closeMealPrepModal();
+    if (e.target !== e.currentTarget) return;
+    if (!mpDownOnBackdrop) return;                       // the finger did not start on the dark area
+    if (Date.now() - mpTypingAt < 900) return;           // the keyboard has only just opened or closed
+    var modal = e.currentTarget;
+    if (modal.classList.contains("rp-mp-typing")) {      // keyboard is up: first tap outside just puts it away
+      try { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); } catch (er) { /* fine */ }
+      setMealPrepTyping(false);
+      return;
+    }
+    closeMealPrepModal();
   });
 
   // "Swipe up for the next meal" — advances through the same strip
