@@ -255,6 +255,10 @@
   .pf-avatar-btn.pf-avatar-btn-add { background: #e8541f; padding: 10px 16px; font-size: 13px; }
   .pf-cam { display: block; width: 36px; height: 36px; color: #fff; }
   .pf-ident { flex: 1; min-width: 0; }
+  /* Nov 2026 (Ken): calm colours and wording when an admin removes a post */
+  .status-badge.rejected { background: rgba(46,54,76,0.92) !important; color: #cdd4e8 !important; border: 0 !important; }
+  .media-tile-reason.pf-removed { background: rgba(30,36,54,0.92) !important; color: #d7dcec !important; border: 0 !important; }
+  .media-tile-reason.pf-removed-note { background: none !important; color: #9aa3bd !important; border: 0 !important; font-size: 12.5px; padding: 2px 4px; }
   .pf-name { display: block; font-family: "Poppins", "Inter", sans-serif; font-weight: 800; font-size: 18px; line-height: 1.2; letter-spacing: -0.01em; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .pf-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
   .pf-chips:empty { display: none; }
@@ -622,7 +626,7 @@
   <div class="card pf-panel pf-uploads" data-pf="uploads">
     <div class="eyebrow">Your Content</div>
     <h2>My uploads</h2>
-    <p class="card-sub">Only you can see items marked "Pending" or "Rejected."</p>
+    <p class="card-sub">Only you can see items marked "Pending" or "Removed by admin."</p>
     <div class="media-grid" id="mediaGrid">
       <div class="empty-state">Loading…</div>
     </div>
@@ -2258,11 +2262,21 @@
 
   async function loadMyMedia() {
     var grid = document.getElementById("mediaGrid");
+    var mediaCols = "id, kind, storage_path, poster_path, status, narration_path, trim_start, trim_end, reject_reason, music_track_id, is_profile_photo, workout_type, tracks(storage_path, title, artist_name)";
     var { data, error } = await window.sb
       .from("media")
-      .select("id, kind, storage_path, poster_path, status, narration_path, trim_start, trim_end, reject_reason, music_track_id, is_profile_photo, workout_type, tracks(storage_path, title, artist_name)")
+      .select(mediaCols + ", rejected_at")
       .eq("user_id", currentUser.id)
       .order("created_at", { ascending: false });
+    if (error) {
+      // (the rejected_at column may not exist yet in some environment: load without it rather than lose the whole grid)
+      var retryRes = await window.sb
+        .from("media")
+        .select(mediaCols)
+        .eq("user_id", currentUser.id)
+        .order("created_at", { ascending: false });
+      data = retryRes.data; error = retryRes.error;
+    }
 
     if (error) {
       grid.innerHTML = '<div class="empty-state">Couldn\'t load your uploads.</div>';
@@ -2273,6 +2287,12 @@
     // real post counts -- including a categorized profile-picture post and any video, even if an old row
     // was wrongly flagged is_profile_photo. Done here (not in the query) so NULL flags can never hide a post.
     data = (data || []).filter(function (r) { return !(r.kind === "photo" && r.is_profile_photo === true && !r.workout_type); });
+    // Nov 2026 (Ken): a post an admin has removed leaves the member's profile 24 hours after it was removed.
+    data = data.filter(function (r) {
+      if (r.status !== "rejected" || !r.rejected_at) return true;
+      var t = Date.parse(r.rejected_at);
+      return !(t && Date.now() - t > 24 * 3600 * 1000);
+    });
     if (data.length === 0) {
       grid.innerHTML = '<div class="empty-state pf-empty-art" data-art="📸">Nothing here yet — tap Post below to add your first photo, video, or voice update.</div>';
       return;
@@ -2394,7 +2414,7 @@
         mediaEl +
         '<span class="kind-badge">' + item.kind + (narrationUrl ? ' 🎙️' : musicUrl ? ' 🎵' : '') + '</span>' +
         '<button class="media-tile-delete" data-id="' + item.id + '" data-path="' + item.storage_path + '" data-narration-path="' + (item.narration_path || "") + '" data-poster-path="' + (item.poster_path || "") + '" title="Delete">&times;</button>' +
-        '<span class="status-badge ' + item.status + '">' + item.status + '</span>';
+        '<span class="status-badge ' + item.status + '">' + (item.status === "rejected" ? "removed by admin" : item.status) + '</span>';
 
       wrap.appendChild(tile);
 
@@ -2407,11 +2427,19 @@
         wrap.appendChild(creditEl);
       }
 
-      if (item.status === "rejected" && item.reject_reason) {
-        var reasonEl = document.createElement("div");
-        reasonEl.className = "media-tile-reason";
-        reasonEl.textContent = "Not approved: " + item.reject_reason;
-        wrap.appendChild(reasonEl);
+      if (item.status === "rejected") {
+        // Nov 2026 (Ken): softer wording. "Removed by admin" on the tile, the admin's own note on its own line, and one quiet line
+        // saying when it leaves the profile. (The words "Rejected" and "Not approved" are no longer shown to members.)
+        if (item.reject_reason) {
+          var reasonEl = document.createElement("div");
+          reasonEl.className = "media-tile-reason pf-removed";
+          reasonEl.textContent = item.reject_reason;
+          wrap.appendChild(reasonEl);
+        }
+        var goneEl = document.createElement("div");
+        goneEl.className = "media-tile-reason pf-removed-note";
+        goneEl.textContent = "This " + (item.kind === "video" ? "video" : item.kind === "audio" ? "recording" : "photo") + " will be removed from your profile in 24 hours.";
+        wrap.appendChild(goneEl);
       }
 
       grid.appendChild(wrap);
