@@ -87,15 +87,20 @@
   .mp-headrow { position: relative; }
   .mp-close-top { display: none; position: absolute; right: 0; bottom: 2px; z-index: 6; padding: 9px 15px; border: 0; border-radius: 999px;
     background: rgba(40,44,62,0.94); color: #fff; font: 800 14px/1 inherit; font-family: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; box-shadow: 0 2px 10px rgba(0,0,0,0.45); }
-  body.mp-post-open .mp-close-top { display: inline-block; }
+  /* Nov 2026 (Ken): Close used to sit up beside Block and got tapped by accident. It now lives in the comment bar, down by the thumb. */
+  body.mp-post-open .mp-close-top { display: none !important; }
   body.mp-post-open #mediaEyebrow { margin-top: 8px !important; }
   body.mp-post-open #mediaHeading { margin-bottom: 8px !important; }
   body.mp-post-open #profileCard { margin-bottom: 0; }
   .mp-cmt { display: none; align-items: center; gap: 8px; margin: 2px 0 0; }
   .mp-grid .media-tile-wrap.mp-open .mp-cmt { display: flex; }
-  .mp-cmt input { flex: 1 1 auto; min-width: 0; height: 40px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.18); background: #1b1f33; color: #fff; padding: 0 14px; font-family: inherit; font-size: 15px; }
+  /* Nov 2026 (Ken): the comment box, Post and Close are one clean row: identical 42px height (box-sizing set the same on all three, so the
+     input's border can't make it taller), straight across the top and bottom; Post and Close are the same size. */
+  .mp-cmt input, .mp-cmt button { box-sizing: border-box; height: 42px; margin: 0; }
+  .mp-cmt input { flex: 1 1 auto; min-width: 0; border-radius: 21px; border: 1px solid rgba(255,255,255,0.18); background: #1b1f33; color: #fff; padding: 0 14px; font-family: inherit; font-size: 15px; }
   .mp-cmt input::placeholder { color: #8b91a8; }
-  .mp-cmt button { flex: none; width: 40px; height: 40px; border-radius: 50%; border: 0; background: #ff6a1a; color: #fff; font-size: 17px; font-weight: 800; line-height: 1; cursor: pointer; padding: 0; }
+  .mp-cmt button { flex: 0 0 84px; width: 84px; border-radius: 21px; border: 1px solid transparent; background: #ff6a1a; color: #fff; font-family: inherit; font-size: 14px; font-weight: 700; line-height: 1; cursor: pointer; padding: 0; -webkit-tap-highlight-color: transparent; }
+  .mp-cmt button.mp-cmt-close { background: rgba(40,44,62,0.94); border-color: rgba(255,255,255,0.16); font-weight: 800; }
   .mp-cmt button:disabled { opacity: 0.55; }
   @media (min-width: 721px) {
     #mediaGrid.mp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
@@ -217,6 +222,28 @@
      have felt slower since that change went in, not the CDN itself. Loading
      directly from the CDN, plainly, is both simpler and faster than the
      broken fallback dance was. -->
+<script>
+/* Nov 2026 (Ken): "default should always be sound on, Android and Apple". A post with a song / voiceover plays that track through a hidden
+   audio element beside the (silenced) video. iPhone only lets an audio element start if a real tap has already "unlocked" it, so the first
+   tap on the video now unlocks its track, and if the phone still refuses, the video's own sound is switched on so a post is never silent. */
+window.efEnsureSound = function (video, audio) {
+  if (!video || !audio) return;
+  var primed = false;
+  function prime() {
+    if (primed) return; primed = true;
+    try { var p = audio.play(); if (p && p.then) p.then(function () { if (video.paused) { try { audio.pause(); } catch (e) {} } }).catch(function () {}); } catch (e) {}
+  }
+  try { video.addEventListener("touchend", prime, { passive: true }); video.addEventListener("click", prime); } catch (e) {}
+  try {
+    var orig = audio.play;
+    audio.play = function () {
+      var pr = orig.apply(audio, arguments);
+      if (pr && pr.catch) pr.catch(function (err) { if (err && err.name === "NotAllowedError") { try { video.muted = false; } catch (e) {} } });
+      return pr;
+    };
+  } catch (e) {}
+};
+</script>
 <script src="js/vendor/supabase.js"></script>
 <script>window.supabase||document.write('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"><\/script>')</script>
 <script src="js/config.js"></script>
@@ -573,7 +600,7 @@
           '<div class="mp-card-sub">' + subParts.join(" · ") + (narrationUrl ? ' · 🎙️ narrated' : musicUrl ? ' · 🎵 ' + escapeHtml(item.tracks.title) + ' — ' + escapeHtml(item.tracks.artist_name) : '') + '</div>' +
           (item.caption ? '<p class="mp-card-caption">' + escapeHtml(item.caption) + '</p>' : "") +
         '</div>' +
-        '<form class="mp-cmt" data-mid="' + escapeHtml(String(item.id)) + '" autocomplete="off"><input type="text" maxlength="500" placeholder="Add a comment\u2026" aria-label="Add a comment" enterkeyhint="send"><button type="submit" aria-label="Send comment">\u27A4</button></form>';
+        '<form class="mp-cmt" data-mid="' + escapeHtml(String(item.id)) + '" autocomplete="off"><input type="text" maxlength="500" placeholder="Add a comment\u2026" aria-label="Add a comment" enterkeyhint="send"><button type="submit" aria-label="Post comment">Post</button><button type="button" class="mp-cmt-close" aria-label="Close and go back to the grid">\u2715 Close</button></form>';
 
       grid.appendChild(card);
       // Oct 29 (Ken): a video box with no saved picture used to show Android's own big grey play-button placeholder until its first
@@ -590,6 +617,7 @@
         cardReel = wireReelPlayback(card.querySelector("video"), [{ url: url, start: item.trim_start, end: item.trim_end }].concat(clipsById[item.id]), clipDursById[item.id]);
       }
       if (soundUrl) {
+        if (window.efEnsureSound) efEnsureSound(card.querySelector("video"), card.querySelector("audio." + soundClass));
         wireNarrationSync(card.querySelector("video"), card.querySelector("audio." + soundClass), keepOriginal, musicUrl ? musicStartById[item.id] : 0, musicUrl ? item.trim_start : 0, musicUrl ? musicWinById[item.id] : null, cardReel && cardReel.hasTimes && musicUrl ? cardReel : null, !!musicUrl);
       }
       if (item.kind === "video" && !cardReel) {
@@ -749,6 +777,18 @@
       topClose.addEventListener("touchend", function (e) { try { e.preventDefault(); } catch (er) {} pillClose(); }, { passive: false });
       topClose.addEventListener("click", pillClose);
     }
+    // Nov 2026 (Ken): the Close button in the comment bar. A finger lifting IS the close (and it stops the phone sending a second tap to
+    // the box underneath); the same stray-tap guard as the other Close buttons applies.
+    var cmtClose = function (e) {
+      var b = e.target && e.target.closest ? e.target.closest(".mp-cmt-close") : null;
+      if (!b) return false;
+      var w = b.closest(".media-tile-wrap");
+      try { e.preventDefault(); e.stopPropagation(); if (e.stopImmediatePropagation) e.stopImmediatePropagation(); } catch (er) {}
+      if (w) closeByUser(w);
+      return true;
+    };
+    grid.addEventListener("touchend", cmtClose, { passive: false });
+    grid.addEventListener("click", cmtClose);
     // the slim comment bar under an opened post (same media_comments table the Home feed uses)
     grid.addEventListener("submit", async function (e) {
       var f = e.target && e.target.closest ? e.target.closest(".mp-cmt") : null;
