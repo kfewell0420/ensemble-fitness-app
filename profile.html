@@ -702,6 +702,28 @@
     } catch (e) {}
   })();
 </script>
+<script>
+/* Nov 2026 (Ken): "default should always be sound on, Android and Apple". A post with a song / voiceover plays that track through a hidden
+   audio element beside the (silenced) video. iPhone only lets an audio element start if a real tap has already "unlocked" it, so the first
+   tap on the video now unlocks its track, and if the phone still refuses, the video's own sound is switched on so a post is never silent. */
+window.efEnsureSound = function (video, audio) {
+  if (!video || !audio) return;
+  var primed = false;
+  function prime() {
+    if (primed) return; primed = true;
+    try { var p = audio.play(); if (p && p.then) p.then(function () { if (video.paused) { try { audio.pause(); } catch (e) {} } }).catch(function () {}); } catch (e) {}
+  }
+  try { video.addEventListener("touchend", prime, { passive: true }); video.addEventListener("click", prime); } catch (e) {}
+  try {
+    var orig = audio.play;
+    audio.play = function () {
+      var pr = orig.apply(audio, arguments);
+      if (pr && pr.catch) pr.catch(function (err) { if (err && err.name === "NotAllowedError") { try { video.muted = false; } catch (e) {} } });
+      return pr;
+    };
+  } catch (e) {}
+};
+</script>
 <script src="js/vendor/supabase.js"></script>
 <script>window.supabase||document.write('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"><\/script>')</script>
 <script src="js/config.js"></script>
@@ -2453,6 +2475,7 @@
         tileReel = wireReelPlayback(tile.querySelector("video"), reelClips0, clipDursById[item.id]);
       }
       if (soundUrl) {
+        if (window.efEnsureSound) efEnsureSound(tile.querySelector("video"), tile.querySelector("audio." + soundClass));
         wireNarrationSync(tile.querySelector("video"), tile.querySelector("audio." + soundClass), keepOriginal, musicUrl ? musicStartById[item.id] : 0, musicUrl ? item.trim_start : 0, musicUrl ? musicWinById[item.id] : null, tileReel && tileReel.hasTimes && musicUrl ? tileReel : null, !!musicUrl);
       }
       if (item.kind === "video") {
