@@ -1809,7 +1809,35 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
   .rp-mp-comments .rp-comment-body { color: #33343a; font-size: 11px; margin-top: 0; }
   .rp-mp-comments .rp-comment-empty { color: #9a9ba3; font-size: 11px; padding: 2px 0; }
   .rp-mp-comments .rp-comment-empty b { display: block; }
-  .rp-mp-modal-scroll { overflow-x: hidden; }
+  .rp-mp-modal-scroll { overflow-x: hidden; overscroll-behavior: contain; }
+  /* Nov 2026 (Ken: "this section doesn't scroll"): the shared comment list is its own little scroller (overscroll-behavior: contain),
+     and on a phone a swipe that starts on it was stopped there instead of moving the card. Inside the Meal Prep card the list is just
+     part of the card, so the CARD does the scrolling. */
+  .rp-mp-comments .rp-comments-list { overflow: visible; overscroll-behavior: auto; flex: none; }
+
+  /* Nov 2026 (Ken): comments stacked by member. One person = one block (photo + name once, their comments listed under it);
+     a reply sits right under the comment it answers; a busy post shows a few blocks and then "View more". */
+  .rp-mp-comments .mpc-grp { display: flex; gap: 9px; padding: 9px 0; border-bottom: 1px solid #f0f0f3; }
+  .rp-mp-comments .mpc-grp:last-child { border-bottom: none; }
+  .rp-mp-comments .mpc-gm { flex: 1; min-width: 0; }
+  .rp-mp-comments .mpc-av { width: 30px; height: 30px; font-size: 12px; }
+  .rp-mp-comments .mpc-av.mpc-av-s { width: 22px; height: 22px; font-size: 9.5px; }
+  .rp-mp-comments .mpc-hd { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; line-height: 1.25; }
+  .rp-mp-comments .mpc-nm { color: #14151a; font-weight: 800; font-size: 13px; cursor: pointer; }
+  .rp-mp-comments .mpc-hd i { font-style: normal; color: #9a9ba3; font-size: 11px; }
+  .rp-mp-comments .mpc-cr { background: #7c5cff; color: #fff; font-size: 9px; font-weight: 800; border-radius: 9px; padding: 2px 6px; }
+  .rp-mp-comments .mpc-ln { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; font-size: 13.5px; line-height: 1.35; padding: 3px 0; color: #26272d; }
+  .rp-mp-comments .mpc-tx { min-width: 0; overflow-wrap: anywhere; }
+  .rp-mp-comments .mpc-reply { flex: none; border: 0; background: none; color: #9a9ba3; font: 700 11.5px/1.35 inherit; font-family: inherit; padding: 0 0 0 6px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .rp-mp-comments .mpc-rep { margin: 4px 0 4px 6px; padding-left: 10px; border-left: 2px solid #ece7e2; }
+  .rp-mp-comments .mpc-rep .mpc-ln { padding: 1px 0; }
+  .rp-mp-comments .mpc-rep .mpc-hd { margin-top: 2px; }
+  .rp-mp-comments .mpc-viewrep { border: 0; background: none; color: #8d8e97; font: 700 12.5px/1.2 inherit; font-family: inherit; padding: 5px 0; cursor: pointer; }
+  .rp-mp-comments .mpc-more { display: block; width: 100%; border: 0; background: none; color: #ef7a2c; font: 800 13.5px/1.2 inherit; font-family: inherit; padding: 12px 0; text-align: center; cursor: pointer; }
+  /* the comment box (with the quick emoji) stays pinned to the bottom of the card while the comments scroll behind it */
+  .rp-mp-comments .rp-comment-input-row { position: sticky; bottom: 0; z-index: 4; background: #fff; }
+  .rp-mp-comments .mpc-chip { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 6px 0 0; padding: 6px 12px; border-radius: 12px; background: #fff4ed; color: #6b3a14; font-size: 12.5px; }
+  .rp-mp-comments .mpc-chip-x { border: 0; background: none; color: #6b3a14; font-size: 14px; font-weight: 800; padding: 2px 4px; cursor: pointer; }
   /* While a member is typing on a phone the photo folds down, so the whole card (comment box included) fits above the keyboard
      with nothing to scroll or hunt for; when they post (or close the keyboard) it opens back to the full card. */
   @media (max-width: 899px) {
@@ -4245,6 +4273,8 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
       renderMealPrepReactions(item, reactionsWrap);
       var oldNote = commentsWrap.querySelector(".rp-mp-preview-note");
       if (oldNote) oldNote.remove();
+      commentsWrap._mpShown = 0; commentsWrap._mpOpen = {}; commentsWrap._mpEnsureUid = null;
+      setMpReply(null, commentsWrap);
       loadComments(item, commentsWrap);
     }
 
@@ -4275,6 +4305,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     modal.querySelectorAll("video").forEach(function (v) { v.pause(); });
     modal.hidden = true;
     modal.classList.remove("rp-mp-typing");
+    try { setMpReply(null, document.getElementById("rpMpComments")); } catch (e) { /* fine */ }
     syncMealPrepViewport();
     releaseFeedHold();
     // Arrived from the Healthy Meal Prep page? Closing the popup takes you back to that list.
@@ -5466,6 +5497,8 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     // the comments list itself may scroll; everything else (the video, the page behind) may not
     var lst = t && t.closest ? t.closest(".rp-comments-list") : null;
     if (lst && lst.scrollHeight > lst.clientHeight + 1) return; // only a list that really overflows may scroll
+    var mpCard = t && t.closest ? t.closest(".rp-mp-modal-scroll") : null;
+    if (mpCard && mpCard.scrollHeight > mpCard.clientHeight + 1) return; // the Meal Prep card scrolls too
     if (e.cancelable) e.preventDefault();
   }
   document.addEventListener("touchmove", blockFeedScroll, { passive: false });
@@ -5494,6 +5527,121 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     if (e.key === "Escape" && !document.getElementById("rpCommentsModal").hidden) closeCommentsModal();
   });
 
+  // ---- Meal Prep card comments (Nov 2026, Ken): stacked by member, replies under the comment they answer ----
+  var MPC_FIRST_BLOCKS = 3, MPC_PAGE = 10;
+  var mpReply = null;   // { root: <top-level comment id>, name } while the member is answering a specific comment
+  function mpcName(c) { return (c.profiles && c.profiles.display_name) || "A member"; }
+  function mpcAvatar(uid, name, small) {
+    var initial = (String(name || "").trim().charAt(0) || "?").toUpperCase();
+    return '<span class="rp-comment-avatar rp-avatar-pending mpc-av' + (small ? ' mpc-av-s' : '') + '" data-go-profile="' + escapeHtml(uid) + '" data-avatar-user="' + escapeHtml(uid) + '" style="background:' + avatarColor(uid) + '">' + escapeHtml(initial) + '</span>';
+  }
+  function mpcHead(c, ownerId, small) {
+    var uid = c.user_id || "", name = mpcName(c);
+    return '<div class="mpc-hd">' + (small ? mpcAvatar(uid, name, true) : "") +
+      '<b class="mpc-nm" data-go-profile="' + escapeHtml(uid) + '">' + escapeHtml(name) + '</b>' +
+      ((ownerId && uid === ownerId) ? '<span class="mpc-cr">Creator</span>' : '') +
+      '<i>' + timeAgo(c.created_at) + '</i></div>';
+  }
+  function mpcLine(c, rootId) {
+    return '<div class="mpc-ln" data-cid="' + escapeHtml(String(c.id)) + '" data-uid="' + escapeHtml(c.user_id || "") + '" data-ts="' + (Date.parse(c.created_at) || 0) + '">' +
+      '<span class="mpc-tx">' + escapeHtml(c.body) + '</span>' +
+      '<button type="button" class="mpc-reply" data-reply-root="' + escapeHtml(String(rootId)) + '" data-reply-name="' + escapeHtml(mpcName(c)) + '">Reply</button></div>';
+  }
+  function renderMealPrepComments(item, panel, rows) {
+    var listEl = panel.querySelector(".rp-comments-list");
+    panel._mpRows = rows;
+    panel._mpItem = item;
+    if (!rows.length) { listEl.innerHTML = '<div class="rp-comment-empty"><b>No comments yet</b>Be the first to say something nice.</div>'; return; }
+    var byId = {};
+    rows.forEach(function (c) { byId[String(c.id)] = c; });
+    function rootOf(c) {
+      var cur = c, guard = 0;
+      while (cur && cur.parent_id != null && byId[String(cur.parent_id)] && guard++ < 12) cur = byId[String(cur.parent_id)];
+      return cur;
+    }
+    var top = [], reps = {};
+    rows.forEach(function (c) {
+      var r = (c.parent_id != null && byId[String(c.parent_id)]) ? rootOf(c) : c;
+      if (r === c) top.push(c); else (reps[String(r.id)] = reps[String(r.id)] || []).push(c);
+    });
+    var blocks = [], bmap = {};
+    top.forEach(function (c) {
+      var k = c.user_id || ("x" + c.id), b = bmap[k];
+      if (!b) { b = bmap[k] = { uid: c.user_id || "", head: c, items: [] }; blocks.push(b); }
+      b.items.push(c);
+    });
+    var shown = panel._mpShown || MPC_FIRST_BLOCKS;
+    if (panel._mpEnsureUid) {   // a member who just posted always sees their own block
+      for (var i = 0; i < blocks.length; i++) if (blocks[i].uid === panel._mpEnsureUid && i >= shown) shown = i + 1;
+      panel._mpEnsureUid = null;
+    }
+    panel._mpShown = shown;
+    var open = panel._mpOpen || (panel._mpOpen = {});
+    var html = "", hidden = 0;
+    blocks.forEach(function (b, bi) {
+      var count = b.items.reduce(function (s, c) { return s + 1 + (reps[String(c.id)] || []).length; }, 0);
+      if (bi >= shown) { hidden += count; return; }
+      html += '<div class="mpc-grp">' + mpcAvatar(b.uid, mpcName(b.head), false) + '<div class="mpc-gm">' + mpcHead(b.head, item.user_id, false) +
+        b.items.map(function (c) {
+          var r = reps[String(c.id)] || [], out = mpcLine(c, c.id);
+          if (r.length) {
+            var inner = r.map(function (x) { return '<div class="mpc-rep">' + mpcHead(x, item.user_id, true) + mpcLine(x, c.id) + '</div>'; }).join("");
+            if (r.length === 1 || open[String(c.id)]) out += '<div class="mpc-reps" data-reps="' + escapeHtml(String(c.id)) + '">' + inner + '</div>';
+            else out += '<button type="button" class="mpc-viewrep" data-viewrep="' + escapeHtml(String(c.id)) + '">▸ View ' + r.length + ' replies</button><div class="mpc-reps" data-reps="' + escapeHtml(String(c.id)) + '" hidden>' + inner + '</div>';
+          }
+          return out;
+        }).join("") + '</div></div>';
+    });
+    if (hidden) html += '<button type="button" class="mpc-more" data-mpc-more>View ' + hidden + ' more comment' + (hidden === 1 ? '' : 's') + ' ⌄</button>';
+    listEl.innerHTML = html;
+  }
+  function setMpReply(r, panel) {
+    mpReply = r || null;
+    if (!panel) panel = document.getElementById("rpMpComments");
+    if (!panel) return;
+    var chip = panel.querySelector(".mpc-chip");
+    var input = panel.querySelector(".rp-comment-input");
+    if (!mpReply) { if (chip) chip.remove(); if (input) input.placeholder = "Add a comment…"; return; }
+    if (!chip) {
+      chip = document.createElement("div"); chip.className = "mpc-chip";
+      var row = panel.querySelector(".rp-comment-input-row");
+      panel.insertBefore(chip, row || null);
+    }
+    chip.innerHTML = '<span>Replying to <b>' + escapeHtml(mpReply.name) + '</b></span><button type="button" class="mpc-chip-x" aria-label="Cancel reply">✕</button>';
+    if (input) { input.placeholder = "Reply to " + mpReply.name + "…"; try { input.focus(); } catch (e) { /* fine */ } }
+  }
+  (function () {
+    var panel = document.getElementById("rpMpComments");
+    if (!panel) return;
+    panel.addEventListener("click", function (e) {
+      var t = e.target;
+      if (!t || !t.closest) return;
+      var go = t.closest("[data-go-profile]");
+      if (go) {
+        var uid = go.getAttribute("data-go-profile");
+        if (uid) window.location.href = (currentUserId && uid === currentUserId) ? "profile.html" : "member.html?id=" + encodeURIComponent(uid);
+        return;
+      }
+      var rb = t.closest(".mpc-reply");
+      if (rb) { setMpReply({ root: rb.getAttribute("data-reply-root"), name: rb.getAttribute("data-reply-name") || "this member" }, panel); return; }
+      if (t.closest(".mpc-chip-x")) { setMpReply(null, panel); return; }
+      var vr = t.closest(".mpc-viewrep");
+      if (vr) {
+        var id = vr.getAttribute("data-viewrep");
+        (panel._mpOpen || (panel._mpOpen = {}))[id] = true;
+        var box = panel.querySelector('.mpc-reps[data-reps="' + id + '"]');
+        if (box) box.hidden = false;
+        vr.remove();
+        return;
+      }
+      if (t.closest("[data-mpc-more]")) {
+        panel._mpShown = (panel._mpShown || MPC_FIRST_BLOCKS) + MPC_PAGE;
+        renderMealPrepComments(panel._mpItem, panel, panel._mpRows || []);
+        hydrateCommentAvatars(panel._mpRows || []);
+      }
+    });
+  })();
+
   async function loadComments(item, panel) {
     var listEl = panel.querySelector(".rp-comments-list");
     listEl.innerHTML = "Loading…";
@@ -5502,19 +5650,29 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     var oldInputRow = panel.querySelector(".rp-comment-input-row");
     if (oldInputRow && panel.dataset.inputFor !== String(item.id)) { oldInputRow.remove(); oldInputRow = null; }
 
-    var { data: comments } = await window.sb
-      .from("media_comments")
-      .select("id, user_id, body, created_at, profiles(display_name)")
-      .eq("media_id", item.id)
-      .order("created_at", { ascending: true });
+    var isMp = panel.id === "rpMpComments";
+    // The Meal Prep card also asks for parent_id (which comment a reply answers). If that column is not there yet, it quietly
+    // falls back to the plain list so comments never disappear.
+    var fetchRows = function (withParent) {
+      return window.sb
+        .from("media_comments")
+        .select("id, user_id, body, created_at," + (withParent ? " parent_id," : "") + " profiles(display_name)")
+        .eq("media_id", item.id)
+        .order("created_at", { ascending: true });
+    };
+    var res = await fetchRows(isMp);
+    if (isMp && res && res.error) res = await fetchRows(false);
+    var comments = res && res.data;
     var visible = filterOutBlocked(comments || []);
 
-    var listHtml = visible.length
-      ? visible.map(function (c) { return commentRowHtml(c, c.body, item.user_id); }).join("")
-      : '<div class="rp-comment-empty"><b>No comments yet</b>Be the first to say something nice.</div>';
-
     var listEl = panel.querySelector(".rp-comments-list");
-    listEl.innerHTML = listHtml;
+    if (isMp) {
+      renderMealPrepComments(item, panel, visible);
+    } else {
+      listEl.innerHTML = visible.length
+        ? visible.map(function (c) { return commentRowHtml(c, c.body, item.user_id); }).join("")
+        : '<div class="rp-comment-empty"><b>No comments yet</b>Be the first to say something nice.</div>';
+    }
     setCommentsHeader("Comments", visible.length);
     hydrateCommentAvatars(visible);
 
@@ -5527,21 +5685,32 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     if (!body) return;
     input.value = "";
     var wasCompose = composeOnly;
-    var ins = await window.sb.from("media_comments").insert({ media_id: item.id, user_id: currentUserId, body: body });
-    if (ins && ins.error) { input.value = body; showCommentToast("Couldn't post. Try again."); return; }
     var inMealPrep = panel && panel.id === "rpMpComments";
+    var newRow = { media_id: item.id, user_id: currentUserId, body: body };
+    var replyingTo = (inMealPrep && mpReply) ? mpReply : null;
+    if (replyingTo) newRow.parent_id = replyingTo.root;
+    var ins = await window.sb.from("media_comments").insert(newRow);
+    if (ins && ins.error && replyingTo) { delete newRow.parent_id; ins = await window.sb.from("media_comments").insert(newRow); }   // (column not added yet: posts as a normal comment)
+    if (ins && ins.error) { input.value = body; showCommentToast("Couldn't post. Try again."); return; }
     if (inMealPrep) {
       // Meal Prep card: keyboard down, card opens back to full size, and the new comment is right there in the list
       try { input.blur(); } catch (e) { /* fine */ }
       setMealPrepTyping(false);
+      if (replyingTo) { (panel._mpOpen || (panel._mpOpen = {}))[String(replyingTo.root)] = true; }
+      setMpReply(null, panel);
+      panel._mpEnsureUid = currentUserId;
       await loadComments(item, panel);
       var pill = document.querySelector('#rpMpReactions [data-action="comments"]');
       if (pill) {
         var pc = pill.querySelector(".rp-action-count");
-        pc.textContent = panel.querySelectorAll(".rp-comment-item").length || ((parseInt(pc.textContent || "0", 10) || 0) + 1);
+        pc.textContent = panel.querySelectorAll("[data-cid]").length || ((parseInt(pc.textContent || "0", 10) || 0) + 1);
         pill.querySelector(".rp-action-icon").innerHTML = COMMENT_ICON_FILLED;
       }
-      setTimeout(function () { var last = panel.querySelector(".rp-comment-item:last-child"); if (last) { try { last.scrollIntoView({ block: "nearest" }); } catch (e) { /* fine */ } } }, 150);
+      setTimeout(function () {
+        var mine = null, best = -1;
+        panel.querySelectorAll('[data-cid][data-uid="' + currentUserId + '"]').forEach(function (el) { var ts = parseInt(el.getAttribute("data-ts") || "0", 10); if (ts >= best) { best = ts; mine = el; } });
+        if (mine) { try { mine.scrollIntoView({ block: "nearest" }); } catch (e) { /* fine */ } }
+      }, 150);
     } else if (wasCompose) {
       closeCommentsModal();           // slim bar: done -> keyboard down, page back where it was
       showCommentToast("Comment posted ✓");
