@@ -180,7 +180,9 @@
     .pf-uploads .media-tile-wrap.pf-open .media-tile audio { pointer-events: auto; }
     .pf-uploads .media-tile-wrap.pf-open .media-tile video::-webkit-media-controls { display: flex !important; }
     .pf-uploads .media-tile-wrap.pf-open .media-tile .audio-card audio { display: block; }
-    .pf-uploads .media-tile-wrap.pf-open .media-tile-delete { display: flex; }
+    /* Nov 2026 (Ken): the little ✕ in the corner of an opened photo was really Delete, which looks like "close". It is gone from the
+       opened photo (deleting a post stays on Home). Closing is the Back button under the photo. */
+    .pf-uploads .media-tile-wrap.pf-open .media-tile-delete { display: none; }
     .pf-uploads .media-tile-wrap.pf-open .media-tile-reason { display: block; }
     .pf-uploads .media-tile-wrap.pf-open .media-tile .kind-badge { top: 8px; left: 8px; font-size: 10px; padding: 3px 7px; }
     .pf-uploads .media-tile-wrap.pf-open .media-tile .status-badge { bottom: 8px; left: 8px; right: 8px; font-size: 10.5px; padding: 4px 8px; }
@@ -192,8 +194,9 @@
     .pf-uploads .media-tile-wrap.pf-open .pf-close { display: none; }
     /* Ken (Oct 27, artist): opening a post shows ONLY that post, with a Back bar above it; every other post is hidden until you go back. */
     .pf-uploads #mediaGrid.pf-single .media-tile-wrap:not(.pf-open) { display: none; }
-    .pf-back { display: none; align-self: flex-start; margin: 2px 0 8px 4px; padding: 8px 14px; border: 0; border-radius: 999px;
-      background: rgba(255,255,255,0.12); color: #fff; font: 700 14px/1 inherit; font-family: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    /* Nov 2026 (Ken): Back sits UNDER the opened photo, at the right, where a right thumb lands; the photo moves up a little. */
+    .pf-back { display: none; align-self: flex-end; margin: 6px 4px 8px 0; padding: 13px 22px; border: 0; border-radius: 999px;
+      background: rgba(255,255,255,0.16); color: #fff; font: 700 15px/1 inherit; font-family: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
     .pf-uploads .media-tile-wrap.pf-open .pf-back { display: inline-block; }
   }
 </style>
@@ -2581,7 +2584,7 @@
       if (!wrap.querySelector(".pf-back")) {
         var bk = document.createElement("button");
         bk.type = "button"; bk.className = "pf-back"; bk.setAttribute("aria-label", "Back to all posts"); bk.textContent = "\u2190 Back";
-        wrap.insertBefore(bk, wrap.firstChild);
+        wrap.appendChild(bk);   // under the photo (after its music credit line, if it has one)
       }
       var tile = wrap.querySelector(".media-tile");
       if (tile && !tile.querySelector(".pf-close")) {
