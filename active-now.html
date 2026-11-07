@@ -139,6 +139,44 @@
     color: #fff;
   }
   .find-intro p { margin: 0; font-size: 13.5px; color: var(--muted-invert); }
+
+  /* Active Now hero (Nov 2026, Ken): a photo montage of members outdoors across the top, the title laid over its lower edge, a glowing
+     Check In button, a map-style card for "Find people near me", and sunset hills at the foot of the page. All live text, only the
+     five photos (assets/an-1..5.jpg) are pictures. Slanted panels: each is clipped to a parallelogram, an orange line sits on every seam. */
+  .find-shell { display: flex; flex-direction: column; min-height: 100%; box-sizing: border-box; }
+  .an-hero { margin: -6px -14px 0; }
+  .an-strip { position: relative; height: 300px; overflow: hidden; background: #000; --s: 16px; }
+  .an-strip .pn { position: absolute; top: 0; bottom: 0; }
+  .an-strip .pn img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .an-strip .p1 { left: 0; width: calc(20% + var(--s)); clip-path: polygon(0 0, 100% 0, calc(100% - 2 * var(--s)) 100%, 0 100%); }
+  .an-strip .p2 { left: calc(20% - var(--s)); width: calc(20% + 2 * var(--s)); clip-path: polygon(calc(2 * var(--s)) 0, 100% 0, calc(100% - 2 * var(--s)) 100%, 0 100%); }
+  .an-strip .p3 { left: calc(40% - var(--s)); width: calc(20% + 2 * var(--s)); clip-path: polygon(calc(2 * var(--s)) 0, 100% 0, calc(100% - 2 * var(--s)) 100%, 0 100%); }
+  .an-strip .p4 { left: calc(60% - var(--s)); width: calc(20% + 2 * var(--s)); clip-path: polygon(calc(2 * var(--s)) 0, 100% 0, calc(100% - 2 * var(--s)) 100%, 0 100%); }
+  .an-strip .p5 { left: calc(80% - var(--s)); width: calc(20% + var(--s)); clip-path: polygon(calc(2 * var(--s)) 0, 100% 0, 100% 100%, 0 100%); }
+  .an-strip .dv { position: absolute; top: -4px; bottom: -4px; width: 3px; margin-left: -1.5px; background: #ff7a1f; transform: skewX(-6.1deg); box-shadow: 0 0 8px rgba(255,122,31,.7); }
+  .an-strip:after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 62%; background: linear-gradient(to bottom, rgba(0,0,0,0), rgba(0,0,0,.78) 62%, #000); pointer-events: none; }
+  .an-title { position: relative; z-index: 2; margin-top: -96px; text-align: center; padding: 0 14px; }
+  .an-title h1 { margin: 0; font-family: 'Poppins','Inter',sans-serif; font-style: italic; font-weight: 800; font-size: 42px; line-height: 1.05; letter-spacing: -.01em; color: #fff; text-shadow: 0 3px 14px rgba(0,0,0,.7); }
+  .an-title h1 span { color: #ff7a1f; }
+  .an-title svg { display: block; margin: 0 auto; width: 210px; height: 12px; }
+  .an-title p { margin: 4px 0 0; font-size: 14.5px; color: #fff; text-shadow: 0 2px 8px rgba(0,0,0,.8); }
+  /* thumb layout: info card, then two full-width pills, each 52px tall with the same 14px of black between them */
+  .an-body { padding-top: 16px; }
+  #anLocCard { display: block; }
+  #anLocCard .an-loccard { position: relative; overflow: hidden; padding: 14px 16px; margin: 0 0 14px; border-color: rgba(255,255,255,.14); background: linear-gradient(135deg, #10161f, #0b0f17); }
+  #anLocCard .an-mapbg { position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(circle at 12% 80%, rgba(255,122,31,.22), transparent 42%),
+      repeating-linear-gradient(115deg, rgba(255,255,255,.05) 0 1px, transparent 1px 26px), repeating-linear-gradient(25deg, rgba(255,255,255,.045) 0 1px, transparent 1px 30px); }
+  #anLocCard .an-loc-txt { position: relative; display: flex; gap: 10px; align-items: flex-start; font-size: 13px; line-height: 1.4; color: #e4e8f1; }
+  #anLocCard .an-loc-txt svg { flex: 0 0 auto; margin-top: 1px; }
+  #anLocBtn { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 52px; box-sizing: border-box; margin: 0 0 14px; background: transparent; border: 1.5px solid #ff7a1f; color: #ffb07a; padding: 0 16px; font: 700 15px/1.25 'Inter',sans-serif; }
+  #anLocCard .an-msg:empty { min-height: 0; margin: 0; }
+  a.an-checkin { display: flex; align-items: center; justify-content: center; gap: 12px; text-decoration: none; color: #fff; min-height: 52px; box-sizing: border-box; padding: 6px 18px; margin: 0 0 14px; border-radius: 999px; border: 1px solid rgba(255,190,130,.45);
+    background: linear-gradient(180deg, #ff8a2b, #ff5f12); box-shadow: 0 6px 20px rgba(255,106,31,.35), inset 0 1px 0 rgba(255,255,255,.3); font: 700 15px/1.2 'Inter',sans-serif; text-align: center; }
+  a.an-checkin span { text-wrap: balance; }
+  a.an-checkin svg { flex: 0 0 auto; }
+  .an-hills { margin: auto -14px -24px; height: 120px; pointer-events: none; flex: 0 0 auto; }
+  .an-hills svg { display: block; width: 100%; height: 100%; }
   .find-section { margin-bottom: 26px; }
   .find-section-title {
     font-family: 'Poppins', 'Inter', sans-serif;
@@ -272,20 +310,35 @@
 
 <div class="find-scroll">
 <div class="find-shell" id="anPage" hidden>
-  <div class="find-intro">
-    <h1>Active Now</h1>
-    <p>Members working out near you, right now.</p>
+  <div class="an-hero">
+    <div class="an-strip" aria-hidden="true">
+      <div class="pn p1"><img src="assets/an-1.jpg" alt="" decoding="async" /></div>
+      <div class="pn p2"><img src="assets/an-2.jpg" alt="" decoding="async" /></div>
+      <div class="pn p3"><img src="assets/an-3.jpg" alt="" decoding="async" /></div>
+      <div class="pn p4"><img src="assets/an-4.jpg" alt="" decoding="async" /></div>
+      <div class="pn p5"><img src="assets/an-5.jpg" alt="" decoding="async" /></div>
+      <i class="dv" style="left:20%"></i><i class="dv" style="left:40%"></i><i class="dv" style="left:60%"></i><i class="dv" style="left:80%"></i>
+    </div>
+    <div class="an-title">
+      <h1>Active <span>Now</span></h1>
+      <svg viewBox="0 0 210 12" aria-hidden="true"><path d="M2 9 Q105 -1 208 7" fill="none" stroke="#ff7a1f" stroke-width="2.4" stroke-linecap="round"/></svg>
+      <p>Members working out near you, right now.</p>
+    </div>
   </div>
-
-  <div id="anMine"></div>
+  <div class="an-body">
   <div id="anPlans"></div>
   <div id="anWaves"></div>
 
-  <div class="an-card" id="anLocCard">
-    <div style="font-size:14px;color:#e4e8f1;margin-bottom:10px;">See who's live near you. Your location is used only to work out a rounded distance. It is never shown to other members.</div>
-    <button class="an-btn" id="anLocBtn" type="button">Find people near me</button>
+  <div id="anLocCard">
+    <div class="an-card an-loccard">
+      <div class="an-mapbg" aria-hidden="true"></div>
+      <div class="an-loc-txt"><svg width="18" height="22" viewBox="0 0 18 22" aria-hidden="true"><path d="M9 1C4.9 1 1.8 4.1 1.8 8.1c0 5.2 7.2 12.9 7.2 12.9s7.2-7.7 7.2-12.9C16.2 4.1 13.1 1 9 1z" fill="#ff7a1f"/><circle cx="9" cy="8" r="2.8" fill="#0b0f17"/></svg><span>See who's live near you. Your location is used only to work out a rounded distance. It is never shown to other members.</span></div>
+    </div>
+    <button class="an-btn" id="anLocBtn" type="button"><svg width="22" height="16" viewBox="0 0 22 16" aria-hidden="true" fill="#ff7a1f"><circle cx="11" cy="4" r="3.2"/><path d="M4.5 14c0-3 2.9-4.8 6.5-4.8s6.5 1.8 6.5 4.8z"/><circle cx="3.8" cy="6" r="2.2"/><circle cx="18.2" cy="6" r="2.2"/></svg>Find People Near Me</button>
     <div class="an-msg" id="anMsg" role="status" aria-live="polite"></div>
   </div>
+
+  <div id="anMine"></div>
 
   <div id="anResults" hidden>
     <div style="font-size:13px;color:#cbd3e3;margin:2px 2px 10px;"><span class="an-live-dot"></span><span id="anCount"></span></div>
@@ -299,6 +352,10 @@
     <div style="text-align:center;margin-top:4px;"><button class="an-btn ghost" id="anWider" type="button">Look wider (15 miles)</button></div>
     <div class="an-note">Distances are rounded, never exact. Check-ins switch off on their own.</div>
   </div>
+  </div>
+  <div class="an-hills" aria-hidden="true"><svg viewBox="0 0 400 120" preserveAspectRatio="none"><defs><linearGradient id="anSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity="0"/><stop offset=".55" stop-color="#7a2a10" stop-opacity=".55"/><stop offset="1" stop-color="#ff8a2b" stop-opacity=".85"/></linearGradient></defs>
+    <rect width="400" height="120" fill="url(#anSky)"/><circle cx="214" cy="84" r="5" fill="#ffd79a"/><circle cx="214" cy="84" r="16" fill="#ffb25a" opacity=".35"/>
+    <path d="M0 96 L60 70 L120 88 L200 82 L290 66 L350 84 L400 72 V120 H0Z" fill="#20120f"/><path d="M0 110 L80 94 L170 104 L260 92 L400 108 V120 H0Z" fill="#0b0605"/></svg></div>
 </div>
 </div>
 
@@ -370,7 +427,7 @@
           loadMine();
         });
       } else {
-        box.innerHTML = '<a class="an-btn" href="check-in.html" style="display:block;text-align:center;text-decoration:none;padding:14px;margin-bottom:12px;">Check in — let others know you are working out</a>';
+        box.innerHTML = '<a class="an-checkin" href="check-in.html"><svg width="34" height="28" viewBox="0 0 34 28" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M7 5C3 9 3 19 7 23M27 5c4 4 4 14 0 18M12 9c-2 3-2 7 0 10M22 9c2 3 2 7 0 10"/><circle cx="17" cy="14" r="2.6" fill="#fff" stroke="none"/></svg><span>Check In — Let Others Know You Are Working Out</span></a>';
       }
     }
 
