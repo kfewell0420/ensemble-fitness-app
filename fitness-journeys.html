@@ -1286,8 +1286,15 @@ body.fj-lock { overflow: hidden; }
     if (editBtn) editBtn.addEventListener("click", function () { menu.classList.remove("show"); openEditForm(item, card); });
     if (deleteBtn) deleteBtn.addEventListener("click", async function () {
       menu.classList.remove("show");
-      if (!confirm("Delete this post? This removes it for everyone and can't be undone.")) return;
-      await window.sb.from("community_questions").delete().eq("id", item.id);
+      if (!confirm("Delete this journey? This removes it for everyone and can't be undone.")) return;
+      // Nov 2026 (Ken): a member's delete used to fail silently (the database refused it and nothing said so). Now the result is
+      // checked, and the member is told if it did not go through.
+      var delRes = null;
+      try { delRes = await window.sb.from("community_questions").delete().eq("id", item.id).select("id"); } catch (e) { delRes = { error: e }; }
+      if (!delRes || delRes.error || !delRes.data || !delRes.data.length) {
+        alert("Sorry, that journey could not be deleted. Please try again in a moment.");
+        return;
+      }
       await loadJourneys();
     });
     if (reportBtn) reportBtn.addEventListener("click", function () {
