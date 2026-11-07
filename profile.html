@@ -2520,8 +2520,18 @@
     // longer depends on the phone's history stepping back first. The grid comes back instantly, and only THEN is the extra history
     // step (added when the post opened) tidied up, and only if it is really still there, so Back can never throw a member off the page.
     var closingOut = false;
+    // Nov 2026: same stray-second-tap protection as the other members' profile page (see there).
+    var closedAt = 0;
+    function justClosed() { return Date.now() - closedAt < 900; }
+    function forceGrid() {
+      Array.prototype.forEach.call(grid.querySelectorAll(".pf-open"), closeWrap);
+      grid.classList.remove("pf-single");
+    }
+    function settleClosed() { if (Date.now() - closedAt < 1300) forceGrid(); }
     function closeByUser(wrap) {
+      closedAt = Date.now();
       closeWrap(wrap);
+      setTimeout(settleClosed, 80); setTimeout(settleClosed, 400); setTimeout(settleClosed, 1000);
       if (pushedState) {
         pushedState = false;
         var ours = false;
@@ -2587,6 +2597,7 @@
       var wrap = e.target.closest(".media-tile-wrap");
       if (!wrap) return;
       if (e.target.closest(".pf-back") || e.target.closest(".pf-close")) { closeByUser(wrap); return; }
+      if (justClosed()) return;   // a stray second tap right after Close: ignore it
       if (!wrap.classList.contains("pf-open")) {
         Array.prototype.forEach.call(grid.querySelectorAll(".pf-open"), closeWrap);
         openWrap(wrap);
