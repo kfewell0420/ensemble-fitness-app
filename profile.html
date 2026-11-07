@@ -2689,5 +2689,54 @@
   })();
 </script>
 
+
+<script>
+/* Nov 2026: hidden diagnostic. Only runs when the address ends in ?dbg=1 (never for members). Shows a small green log at the top of the
+   screen of what the page does when a photo is opened and closed, so an iPhone problem can be seen from a screenshot. */
+(function () {
+  if (!/[?&]dbg=1/.test(location.search)) return;
+  var box = document.createElement("div");
+  box.style.cssText = "position:fixed;left:0;right:0;top:0;z-index:2147483647;background:rgba(0,0,0,.9);color:#7CFC9A;font:9.5px/1.25 ui-monospace,Menlo,monospace;padding:3px 5px;max-height:46vh;overflow:hidden;white-space:pre-wrap;word-break:break-all;pointer-events:none";
+  var lines = [];
+  function put(t) { lines.push(t); if (lines.length > 22) lines.shift(); box.textContent = lines.join("\n"); }
+  function now() { return (Math.round(performance.now() / 100) / 10) + "s"; }
+  function desc(el) { if (!el || !el.tagName) return "?"; return el.tagName.toLowerCase() + (el.className && typeof el.className === "string" ? "." + el.className.split(" ").slice(0, 2).join(".") : ""); }
+  function snap(tag) {
+    try {
+      var g = document.getElementById("mediaGrid"); if (!g) { put(now() + " " + tag + " no grid"); return; }
+      var wr = g.querySelectorAll(".media-tile-wrap"), vis = 0, open = 0, first = -1, fw = 0, bf = "";
+      for (var i = 0; i < wr.length; i++) {
+        var r = wr[i].getBoundingClientRect();
+        if (r.height > 0) { vis++; if (first < 0) { first = i; fw = Math.round(r.width); var kb = wr[i].querySelector(".kind-badge"); bf = kb ? getComputedStyle(kb).fontSize : ""; } }
+        if (wr[i].classList.contains("pf-open")) open++;
+      }
+      var cs = getComputedStyle(g);
+      put(now() + " " + tag + " | cls=[" + g.className + "] cols=" + cs.gridTemplateColumns.split(" ").length + " wraps=" + wr.length + " vis=" + vis + " open=" + open + " firstVis=#" + first + " w=" + fw + " badge=" + bf + " y=" + Math.round(window.pageYOffset) + " vw=" + innerWidth + " mq720=" + matchMedia("(max-width:720px)").matches + " hist=" + history.length + " st=" + JSON.stringify(history.state));
+    } catch (e) { put(now() + " " + tag + " ERR " + e.message); }
+  }
+  function later(tag) { [0, 60, 300, 900, 2300].forEach(function (ms) { setTimeout(function () { snap(tag + "+" + ms); }, ms); }); }
+  function start() {
+    document.body.appendChild(box);
+    put("DIAGNOSTIC ON. Tap a photo, then tap Back. Screenshot this.");
+    snap("start");
+  }
+  if (document.body) start(); else document.addEventListener("DOMContentLoaded", start);
+  document.addEventListener("click", function (e) {
+    var t = e.target, isBack = t && t.closest && (t.closest(".pf-back") || t.closest(".pf-close"));
+    put(now() + " CLICK " + desc(t) + (isBack ? " <BACK>" : ""));
+    if (isBack) later("afterBack"); else if (t && t.closest && t.closest(".media-tile-wrap")) later("afterTap");
+  }, true);
+  window.addEventListener("popstate", function () { put(now() + " POPSTATE st=" + JSON.stringify(history.state)); snap("popstate"); });
+  window.addEventListener("pageshow", function (e) { put(now() + " PAGESHOW persisted=" + e.persisted); });
+  document.addEventListener("visibilitychange", function () { put(now() + " VISIBILITY hidden=" + document.hidden); });
+  window.addEventListener("hashchange", function () { put(now() + " HASHCHANGE " + location.hash); });
+  window.addEventListener("resize", function () { put(now() + " RESIZE " + innerWidth + "x" + innerHeight); });
+  window.addEventListener("orientationchange", function () { put(now() + " ORIENTATION"); });
+  window.addEventListener("error", function (e) { put(now() + " JSERROR " + e.message); });
+  var _push = history.pushState, _back = history.back;
+  history.pushState = function () { put(now() + " history.pushState"); return _push.apply(this, arguments); };
+  history.back = function () { put(now() + " history.back()"); return _back.apply(this, arguments); };
+})();
+</script>
 </body>
 </html>
