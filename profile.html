@@ -247,6 +247,13 @@
     display: flex; align-items: center; justify-content: center; font-size: 19px; font-weight: 800; line-height: 1;
     border: 3px solid #0b0f1a; text-shadow: none; box-sizing: content-box; margin: 0;
   }
+  /* Nov 2026 (Ken): the profile photo has its own clear control, separate from posting. A small button under the circle:
+     "Add profile photo" (orange) until one is set, then "Change photo". Posting a photo or video never changes it. */
+  .pf-avatar-col { display: flex; flex-direction: column; align-items: center; gap: 8px; flex: 0 0 auto; }
+  .pf-avatar-btn { border: 0; border-radius: 999px; padding: 8px 14px; font: 700 12.5px/1 inherit; font-family: inherit; color: #fff; background: rgba(255,255,255,0.12);
+    cursor: pointer; white-space: nowrap; -webkit-tap-highlight-color: transparent; }
+  .pf-avatar-btn.pf-avatar-btn-add { background: #e8541f; padding: 10px 16px; font-size: 13px; }
+  .pf-cam { display: block; width: 36px; height: 36px; color: #fff; }
   .pf-ident { flex: 1; min-width: 0; }
   .pf-name { display: block; font-family: "Poppins", "Inter", sans-serif; font-weight: 800; font-size: 18px; line-height: 1.2; letter-spacing: -0.01em; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .pf-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
@@ -401,9 +408,10 @@
            set. The upload itself already worked this way (avatarFileInput's
            change handler below always runs and always publishes a fresh
            photo over whatever was there), this just makes that visible. -->
+      <div class="pf-avatar-col">
       <div class="avatar-wrap">
         <div class="avatar-circle avatar-circle-uploadable" id="avatarCircle" role="button" tabindex="0" aria-label="Change profile photo">
-          <span id="avatarInitialText">?</span>
+          <span id="avatarInitialText"><svg class="pf-cam" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l1.6-2.2h6.8L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.6"/></svg></span>
         </div>
         <!-- Ken's ask (Oct 2026, round 2): the badge used to live INSIDE
              avatarCircle, which has overflow:hidden (so a photo fills the
@@ -414,6 +422,8 @@
              simplified per Ken's ask to a plain green "+" with no circle
              behind it, rather than a filled badge. -->
         <span class="avatar-upload-badge" id="avatarUploadBadge" aria-hidden="true">+</span>
+      </div>
+      <button type="button" class="pf-avatar-btn pf-avatar-btn-add" id="avatarChangeBtn">Add profile photo</button>
       </div>
       <input type="file" id="avatarFileInput" accept="image/*" style="display:none;" />
       <div class="pf-ident">
@@ -1994,6 +2004,7 @@
     // circle's contents for a photo here no longer needs to also rebuild
     // the badge; it was never touched.
     circle.innerHTML = '<img src="' + url + '" alt="Profile photo" />';
+    try { var cb = document.getElementById("avatarChangeBtn"); if (cb) { cb.textContent = "Change photo"; cb.classList.remove("pf-avatar-btn-add"); } } catch (e) {}
     document.getElementById("avatarStatusLabel").textContent = statusLabel;
     if (statusSub) document.getElementById("avatarStatusSub").textContent = statusSub;
   }
@@ -2044,6 +2055,7 @@
   document.getElementById("avatarCircle").addEventListener("click", function () {
     avatarFileInput.click();
   });
+  document.getElementById("avatarChangeBtn").addEventListener("click", function () { avatarFileInput.click(); });
   document.getElementById("avatarCircle").addEventListener("keydown", function (e) {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
@@ -2229,9 +2241,7 @@
       // no-photo state — setAvatarPreview() replaces it entirely once a
       // real photo is set, so there's nothing to update at that point.
       var avatarInitialText = document.getElementById("avatarInitialText");
-      if (avatarInitialText) {
-        avatarInitialText.textContent = document.getElementById("displayName").value.trim().charAt(0).toUpperCase() || "?";
-      }
+      // (the empty circle now shows a camera icon, not a letter, so there is nothing to update here)
 
       // Refresh the at-a-glance readout immediately so a changed wake-up time, ZIP, or
       // relationship preference shows right away, without needing a page reload.
