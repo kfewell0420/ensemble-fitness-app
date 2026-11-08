@@ -163,13 +163,13 @@
   /* thumb layout: info card, then two full-width pills, each 52px tall with the same 14px of black between them */
   .an-body { padding-top: 16px; }
   #anLocCard { display: block; }
-  #anLocCard .an-loccard { position: relative; overflow: hidden; padding: 14px 16px; margin: 0 0 14px; border-color: rgba(255,255,255,.14); background: linear-gradient(135deg, #10161f, #0b0f17); }
+  #anLocCard .an-loccard { position: relative; overflow: hidden; padding: 14px 16px; margin: 0 0 28px; border-color: rgba(255,255,255,.14); background: linear-gradient(135deg, #10161f, #0b0f17); }
   #anLocCard .an-mapbg { position: absolute; inset: 0; pointer-events: none;
     background: radial-gradient(circle at 12% 80%, rgba(255,122,31,.22), transparent 42%),
       repeating-linear-gradient(115deg, rgba(255,255,255,.05) 0 1px, transparent 1px 26px), repeating-linear-gradient(25deg, rgba(255,255,255,.045) 0 1px, transparent 1px 30px); }
   #anLocCard .an-loc-txt { position: relative; display: flex; gap: 10px; align-items: flex-start; font-size: 13px; line-height: 1.4; color: #e4e8f1; }
   #anLocCard .an-loc-txt svg { flex: 0 0 auto; margin-top: 1px; }
-  #anLocBtn { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 52px; box-sizing: border-box; margin: 0 0 14px; background: transparent; border: 1.5px solid #ff7a1f; color: #ffb07a; padding: 0 16px; font: 700 15px/1.25 'Inter',sans-serif; }
+  #anLocBtn { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 52px; box-sizing: border-box; margin: 0 0 28px; background: transparent; border: 2px solid #3ddc84; color: #d8f8e4; box-shadow: 0 0 14px rgba(61,220,132,.28); padding: 0 16px; font: 700 15px/1.25 'Inter',sans-serif; }
   #anLocCard .an-msg:empty { min-height: 0; margin: 0; }
   a.an-checkin { display: flex; align-items: center; justify-content: center; gap: 12px; text-decoration: none; color: #fff; min-height: 52px; box-sizing: border-box; padding: 6px 18px; margin: 0 0 14px; border-radius: 999px; border: 1px solid rgba(255,190,130,.45);
     background: linear-gradient(180deg, #ff8a2b, #ff5f12); box-shadow: 0 6px 20px rgba(255,106,31,.35), inset 0 1px 0 rgba(255,255,255,.3); font: 700 15px/1.2 'Inter',sans-serif; text-align: center; }
@@ -334,7 +334,7 @@
       <div class="an-mapbg" aria-hidden="true"></div>
       <div class="an-loc-txt"><svg width="18" height="22" viewBox="0 0 18 22" aria-hidden="true"><path d="M9 1C4.9 1 1.8 4.1 1.8 8.1c0 5.2 7.2 12.9 7.2 12.9s7.2-7.7 7.2-12.9C16.2 4.1 13.1 1 9 1z" fill="#ff7a1f"/><circle cx="9" cy="8" r="2.8" fill="#0b0f17"/></svg><span>See who's live near you. Your location is used only to work out a rounded distance. It is never shown to other members.</span></div>
     </div>
-    <button class="an-btn" id="anLocBtn" type="button"><svg width="22" height="16" viewBox="0 0 22 16" aria-hidden="true" fill="#ff7a1f"><circle cx="11" cy="4" r="3.2"/><path d="M4.5 14c0-3 2.9-4.8 6.5-4.8s6.5 1.8 6.5 4.8z"/><circle cx="3.8" cy="6" r="2.2"/><circle cx="18.2" cy="6" r="2.2"/></svg>Find People Near Me</button>
+    <button class="an-btn" id="anLocBtn" type="button"><svg width="22" height="16" viewBox="0 0 22 16" aria-hidden="true" fill="#3ddc84"><circle cx="11" cy="4" r="3.2"/><path d="M4.5 14c0-3 2.9-4.8 6.5-4.8s6.5 1.8 6.5 4.8z"/><circle cx="3.8" cy="6" r="2.2"/><circle cx="18.2" cy="6" r="2.2"/></svg>Find People Near Me</button>
     <div class="an-msg" id="anMsg" role="status" aria-live="polite"></div>
   </div>
 
