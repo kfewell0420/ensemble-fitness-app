@@ -143,10 +143,12 @@
     .mp-grid .media-tile-wrap.mp-open { grid-column: 1 / -1; gap: 6px; cursor: default; }
     .mp-grid .media-tile-wrap.mp-open .media-tile { border-radius: var(--radius-sm); aspect-ratio: auto; }
     /* Ken (Oct 28): an opened post shows the WHOLE photo / video (full frame, nothing cropped).
-       Nov 2026 (Ken, iPhone): the height cap was only 100vh - 255px, which on an iPhone in Safari (browser bars take space) is short enough that a tall phone video got
-       black bars down both sides. The cap now never goes below 1.8x the screen width, so a normal tall video always fills the full width, same as on Android. */
-    .mp-grid .media-tile-wrap.mp-open .media-tile img,
-    .mp-grid .media-tile-wrap.mp-open .media-tile video { width: 100%; height: auto; max-height: max(calc(100vh - 255px), 180vw); object-fit: contain; background: #000; }
+       Photos keep the whole frame. */
+    .mp-grid .media-tile-wrap.mp-open .media-tile img { width: 100%; height: auto; max-height: calc(100vh - 255px); object-fit: contain; background: #000; }
+    /* Nov 2026 (Ken, iPhone): a video fills the full width, like on Android. The height stays capped so the comment bar is always on screen
+       (an iPhone screen is shorter than an Android one); on a very tall video that cap trims a little off the top and bottom instead of
+       leaving black bars at the sides. When the video fits, nothing is trimmed. */
+    .mp-grid .media-tile-wrap.mp-open .media-tile video { width: 100%; height: auto; max-height: calc(100vh - 255px); object-fit: cover; background: #000; }
     .mp-grid .media-tile-wrap.mp-open .media-tile video,
     .mp-grid .media-tile-wrap.mp-open .media-tile audio { pointer-events: auto; }
     .mp-grid .media-tile-wrap.mp-open .media-tile video::-webkit-media-controls { display: flex !important; }
