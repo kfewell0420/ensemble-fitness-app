@@ -226,8 +226,22 @@
 /* Nov 2026 (Ken): "default should always be sound on, Android and Apple". A post with a song / voiceover plays that track through a hidden
    audio element beside the (silenced) video. iPhone only lets an audio element start if a real tap has already "unlocked" it, so the first
    tap on the video now unlocks its track, and if the phone still refuses, the video's own sound is switched on so a post is never silent. */
-window.efEnsureSound = function (video, audio) {
+window.efEnsureSound = function (video, audio, keepOriginal) {
   if (!video || !audio) return;
+  // The video's own sound is off on purpose (the song plays on its own track), so its crossed-out speaker only confuses people:
+  // hide the speaker / volume control on those videos. (A post that keeps its original sound keeps the normal control.)
+  var isApple = false;
+  try { isApple = /iPhone|iPad|iPod/.test(navigator.userAgent || "") || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1); } catch (e) {}
+  if (!keepOriginal && isApple) {   // Apple phones only (Android is left exactly as it was)
+    try {
+      video.classList.add("ef-track-video");
+      if (!document.getElementById("efTrackVideoCss")) {
+        var st = document.createElement("style"); st.id = "efTrackVideoCss";
+        st.textContent = "video.ef-track-video::-webkit-media-controls-mute-button, video.ef-track-video::-webkit-media-controls-volume-slider, video.ef-track-video::-webkit-media-controls-volume-control-container, video.ef-track-video::-webkit-media-controls-volume-control-hover-background { display: none !important; }";
+        document.head.appendChild(st);
+      }
+    } catch (e) {}
+  }
   var primed = false;
   function prime() {
     if (primed) return; primed = true;
@@ -238,7 +252,7 @@ window.efEnsureSound = function (video, audio) {
     var orig = audio.play;
     audio.play = function () {
       var pr = orig.apply(audio, arguments);
-      if (pr && pr.catch) pr.catch(function (err) { if (err && err.name === "NotAllowedError") { try { video.muted = false; } catch (e) {} } });
+      if (pr && pr.catch) pr.catch(function (err) { if (err && err.name === "NotAllowedError") { try { video.muted = false; video.classList.remove("ef-track-video"); } catch (e) {} } });
       return pr;
     };
   } catch (e) {}
@@ -617,7 +631,7 @@ window.efEnsureSound = function (video, audio) {
         cardReel = wireReelPlayback(card.querySelector("video"), [{ url: url, start: item.trim_start, end: item.trim_end }].concat(clipsById[item.id]), clipDursById[item.id]);
       }
       if (soundUrl) {
-        if (window.efEnsureSound) efEnsureSound(card.querySelector("video"), card.querySelector("audio." + soundClass));
+        if (window.efEnsureSound) efEnsureSound(card.querySelector("video"), card.querySelector("audio." + soundClass), keepOriginal);
         wireNarrationSync(card.querySelector("video"), card.querySelector("audio." + soundClass), keepOriginal, musicUrl ? musicStartById[item.id] : 0, musicUrl ? item.trim_start : 0, musicUrl ? musicWinById[item.id] : null, cardReel && cardReel.hasTimes && musicUrl ? cardReel : null, !!musicUrl);
       }
       if (item.kind === "video" && !cardReel) {
