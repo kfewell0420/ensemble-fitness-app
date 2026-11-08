@@ -225,23 +225,11 @@
 <script>
 /* Nov 2026 (Ken): "default should always be sound on, Android and Apple". A post with a song / voiceover plays that track through a hidden
    audio element beside the (silenced) video. iPhone only lets an audio element start if a real tap has already "unlocked" it, so the first
-   tap on the video now unlocks its track, and if the phone still refuses, the video's own sound is switched on so a post is never silent. */
+   tap on the video unlocks its track, and if the phone still refuses, the video's own sound is switched on so a post is never silent.
+   Apple phones only: such a video also gets its own simple control bar (play, time, slider, full screen) with NO speaker button, because the
+   phone's built-in player shows a crossed-out speaker there (the video's own sound is off on purpose; the song is what you hear). */
 window.efEnsureSound = function (video, audio, keepOriginal) {
   if (!video || !audio) return;
-  // The video's own sound is off on purpose (the song plays on its own track), so its crossed-out speaker only confuses people:
-  // hide the speaker / volume control on those videos. (A post that keeps its original sound keeps the normal control.)
-  var isApple = false;
-  try { isApple = /iPhone|iPad|iPod/.test(navigator.userAgent || "") || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1); } catch (e) {}
-  if (!keepOriginal && isApple) {   // Apple phones only (Android is left exactly as it was)
-    try {
-      video.classList.add("ef-track-video");
-      if (!document.getElementById("efTrackVideoCss")) {
-        var st = document.createElement("style"); st.id = "efTrackVideoCss";
-        st.textContent = "video.ef-track-video::-webkit-media-controls-mute-button, video.ef-track-video::-webkit-media-controls-volume-slider, video.ef-track-video::-webkit-media-controls-volume-control-container, video.ef-track-video::-webkit-media-controls-volume-control-hover-background { display: none !important; }";
-        document.head.appendChild(st);
-      }
-    } catch (e) {}
-  }
   var primed = false;
   function prime() {
     if (primed) return; primed = true;
@@ -252,9 +240,60 @@ window.efEnsureSound = function (video, audio, keepOriginal) {
     var orig = audio.play;
     audio.play = function () {
       var pr = orig.apply(audio, arguments);
-      if (pr && pr.catch) pr.catch(function (err) { if (err && err.name === "NotAllowedError") { try { video.muted = false; video.classList.remove("ef-track-video"); } catch (e) {} } });
+      if (pr && pr.catch) pr.catch(function (err) { if (err && err.name === "NotAllowedError") { try { video.muted = false; video.classList.remove("ef-own-ctl"); var b = video.parentNode && video.parentNode.querySelector(".ef-ctl"); if (b) b.style.display = "none"; video.setAttribute("controls", ""); } catch (e) {} } });
       return pr;
     };
+  } catch (e) {}
+
+  var isApple = false;
+  try { isApple = /iPhone|iPad|iPod/.test(navigator.userAgent || "") || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1); } catch (e) {}
+  if (keepOriginal || !isApple) return;   // Android (and a post that keeps its own sound) is left exactly as it was
+  try {
+    var tile = video.parentNode; if (!tile) return;
+    if (!document.getElementById("efOwnCtlCss")) {
+      var st = document.createElement("style"); st.id = "efOwnCtlCss";
+      st.textContent =
+        ".ef-ctl, .ef-bigplay { display: none; }" +
+        ".mp-open .ef-ctl, .pf-open .ef-ctl { display: flex; }" +
+        ".ef-ctl { position: absolute; left: 0; right: 0; bottom: 0; z-index: 4; align-items: center; gap: 8px; padding: 22px 10px 9px; color: #fff; font: 600 13px/1 Inter, sans-serif; background: linear-gradient(to top, rgba(0,0,0,.72), rgba(0,0,0,0)); }" +
+        ".ef-ctl button { flex: none; width: 36px; height: 36px; border: 0; border-radius: 18px; background: transparent; color: #fff; font-size: 17px; line-height: 1; padding: 0; -webkit-tap-highlight-color: transparent; }" +
+        ".ef-ctl .ef-time { flex: none; font-variant-numeric: tabular-nums; opacity: .95; }" +
+        ".ef-ctl input[type=range] { flex: 1 1 auto; min-width: 0; height: 28px; margin: 0; accent-color: #ff6a1a; background: transparent; }" +
+        ".mp-open .ef-bigplay.show, .pf-open .ef-bigplay.show { display: block; }" +
+        ".ef-bigplay { position: absolute; left: 50%; top: 50%; width: 64px; height: 64px; margin: -32px 0 0 -32px; z-index: 4; border: 0; border-radius: 50%; background: rgba(255,255,255,.92); color: #111; font-size: 26px; padding: 0 0 0 5px; -webkit-tap-highlight-color: transparent; }";
+      document.head.appendChild(st);
+    }
+    video.classList.add("ef-own-ctl");
+    video.removeAttribute("controls");
+    var bar = document.createElement("div"); bar.className = "ef-ctl";
+    bar.innerHTML = '<button type="button" class="ef-pp" aria-label="Play or pause">▶</button><span class="ef-time">0:00 / 0:00</span><input type="range" class="ef-seek" min="0" max="1000" value="0" aria-label="Seek"><button type="button" class="ef-fs" aria-label="Full screen">⛶</button>';
+    var big = document.createElement("button"); big.type = "button"; big.className = "ef-bigplay show"; big.setAttribute("aria-label", "Play"); big.textContent = "▶";
+    tile.appendChild(big); tile.appendChild(bar);
+    var pp = bar.querySelector(".ef-pp"), tm = bar.querySelector(".ef-time"), sk = bar.querySelector(".ef-seek"), fs = bar.querySelector(".ef-fs");
+    var dragging = false;
+    function fmt(t) { t = isFinite(t) && t > 0 ? Math.floor(t) : 0; return Math.floor(t / 60) + ":" + ("0" + (t % 60)).slice(-2); }
+    function paint() {
+      var d = isFinite(video.duration) ? video.duration : 0;
+      tm.textContent = fmt(video.currentTime) + " / " + fmt(d);
+      if (!dragging) sk.value = d ? Math.round(1000 * video.currentTime / d) : 0;
+      pp.textContent = video.paused ? "▶" : "❚❚";
+      if (video.paused) big.classList.add("show"); else big.classList.remove("show");
+    }
+    function toggle(e) {
+      if (e) { try { e.preventDefault(); e.stopPropagation(); } catch (er) {} }
+      if (video.paused) { prime(); try { var pr = video.play(); if (pr && pr.catch) pr.catch(function () {}); } catch (er) {} }
+      else { try { video.pause(); } catch (er) {} }
+    }
+    ["timeupdate", "play", "pause", "ended", "loadedmetadata", "durationchange", "seeked"].forEach(function (ev) { video.addEventListener(ev, paint); });
+    pp.addEventListener("click", toggle); big.addEventListener("click", toggle);
+    video.addEventListener("click", function (e) { if (video.closest && video.closest(".mp-open, .pf-open")) toggle(e); });
+    sk.addEventListener("input", function () { dragging = true; var d = isFinite(video.duration) ? video.duration : 0; if (d) { try { video.currentTime = d * sk.value / 1000; } catch (er) {} } paint(); });
+    sk.addEventListener("change", function () { dragging = false; paint(); });
+    sk.addEventListener("touchend", function () { dragging = false; });
+    fs.addEventListener("click", function (e) { try { e.stopPropagation(); } catch (er) {} try { if (video.webkitEnterFullscreen) video.webkitEnterFullscreen(); else if (video.requestFullscreen) video.requestFullscreen(); } catch (er) {} });
+    // a tap inside the bar must never reach the page's own tap handlers (they open / close posts)
+    bar.addEventListener("click", function (e) { try { e.stopPropagation(); } catch (er) {} });
+    paint();
   } catch (e) {}
 };
 </script>
@@ -648,7 +687,7 @@ window.efEnsureSound = function (video, audio, keepOriginal) {
     function isPhone() { return true; } // (name kept: the grid now behaves the same on every screen size)
     function setCtl(wrap, on) {
       Array.prototype.forEach.call(wrap.querySelectorAll("video"), function (v) {
-        if (on) v.setAttribute("controls", ""); else v.removeAttribute("controls");
+        if (on && !v.classList.contains("ef-own-ctl")) v.setAttribute("controls", ""); else v.removeAttribute("controls");
       });
     }
     function tidyClosedTiles() {
