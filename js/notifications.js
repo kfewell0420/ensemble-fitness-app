@@ -1132,6 +1132,46 @@
     });
   }
 
+  // =====================================================================================================================
+  // Nov 2026 (Ken): phone banners. On the iPhone app, ask once ("Allow notifications?"), remember this phone's address in Supabase
+  // (register_device_token), and open the right screen when a banner is tapped. The banners themselves are sent by the
+  // "send-push" function the moment a row lands in the notifications table. Does nothing in a web browser or on Android (yet).
+  // =====================================================================================================================
+  function initPush() {
+    try {
+      var C = window.Capacitor;
+      if (!C || !C.isNativePlatform || !C.isNativePlatform()) return;
+      if (C.getPlatform && C.getPlatform() !== "ios") return;
+      var P = C.Plugins && C.Plugins.PushNotifications;
+      if (!P || window.__efitPushStarted) return;
+      window.__efitPushStarted = true;
+
+      P.addListener("registration", function (t) {
+        if (!t || !t.value) return;
+        var stamp = (currentUserId || "") + "|" + t.value;
+        try { if (window.localStorage.getItem("efit_push_reg") === stamp) return; } catch (e) {}
+        window.sb.rpc("register_device_token", { p_token: t.value, p_platform: "ios" }).then(function (res) {
+          if (res && !res.error) { try { window.localStorage.setItem("efit_push_reg", stamp); } catch (e) {} }
+        }, function () {});
+      });
+      P.addListener("pushNotificationActionPerformed", function (a) {
+        var u = a && a.notification && a.notification.data && a.notification.data.url;
+        if (u && /^[a-z0-9_\-]+\.html([?#][^\s]*)?$/i.test(String(u))) window.location.href = String(u);
+      });
+
+      var already = false;
+      try { already = window.sessionStorage.getItem("efit_push_asked") === "1"; } catch (e) {}
+      if (already) return;
+      try { window.sessionStorage.setItem("efit_push_asked", "1"); } catch (e) {}
+      P.checkPermissions().then(function (p) {
+        if (p && p.receive === "granted") return P.register();
+        if (p && (p.receive === "prompt" || p.receive === "prompt-with-rationale")) {
+          return P.requestPermissions().then(function (r) { if (r && r.receive === "granted") return P.register(); });
+        }
+      }).catch(function () {});
+    } catch (e) { /* never let banners get in the way of the page */ }
+  }
+
   document.addEventListener("DOMContentLoaded", async function () {
     if (!window.sb) return;
     var { data } = await window.sb.auth.getSession();
@@ -1139,6 +1179,7 @@
     if (!userId) return; // signed out — nothing to show yet
 
     currentUserId = userId;
+    initPush();
     IS_HOME = !!document.getElementById("rpDashBellSlot");
     injectStyles();
     buildHomeLink();
