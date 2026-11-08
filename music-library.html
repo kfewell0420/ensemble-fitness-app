@@ -827,17 +827,14 @@
       margin-left: 0;
       margin-top: 0;
     }
-    /* Round 4 (Ken, Nov 2026): on the phone the Home + bell were still
-       sitting well to the right of "MUSIC LIBRARY". Two causes: the page
-       content starts 16px from the edge on phones (app.css) while this bar
-       was set to 24px, and the shared styles (app.css 14px, notifications.js
-       8px) still add their own left margin to the icon group. Fixed here,
-       for this page only: bar padding matches the 16px content edge, the
-       icon group has no left margin and is always the first thing in the
-       bar, so its left edge lines up exactly with the heading text. */
-    .app-nav { padding-left: 16px !important; padding-right: 16px !important; }
+    /* Round 4 (Ken, Nov 2026): the Home + bell group still sat to the right of
+       "MUSIC LIBRARY" on the phone, and the margin/padding rules alone did not
+       move it. So on a phone the group is now pinned to the page's left edge
+       (16px, the same edge the heading text starts at) instead of flowing with
+       the rest of the bar. The bar keeps its old height with a minimum height. Same status-bar clearance as before. */
+    .app-nav { position: relative; padding-left: 16px !important; padding-right: 16px !important; min-height: calc(44px + env(safe-area-inset-top, 0px)); }
     .app-nav .efit-nav-utility,
-    #rpAppNav .efit-nav-utility { margin-left: 0 !important; order: -1; }
+    #rpAppNav .efit-nav-utility { position: absolute !important; left: 16px !important; top: calc(2px + env(safe-area-inset-top, 0px)) !important; margin: 0 !important; }
     /* Round 3 (Ken's follow-up): the "dead space" wasn't actually empty —
        app.css's own 720px breakpoint turns .app-nav-links (Community, My
        Journey, Members, Fitness+, Gear, Music, Quotes, My Profile, Sign
@@ -1582,5 +1579,33 @@
   init();
 </script>
 <script src="js/back-button.js"></script>
+<script>
+/* Nov 2026 (Ken): on a phone the Home + bell icons must start exactly where the "MUSIC LIBRARY" heading starts. The CSS above pins them
+   to the left edge; this measures the real positions on the phone and nudges the icon group the last few pixels if anything in the
+   shared header styles still leaves them off. Does nothing on a computer (wide screens keep the normal header). */
+(function () {
+  var busy = false;
+  function align() {
+    busy = false;
+    var g = document.getElementById("efitNavUtility");
+    var h = document.getElementById("efitHomeLink") || (g && g.firstElementChild);
+    var e = document.querySelector(".app-shell .eyebrow");
+    if (!g || !h || !e) return;
+    if (!(window.matchMedia && window.matchMedia("(max-width: 899px)").matches)) { g.style.transform = ""; return; }
+    g.style.transform = "";
+    var d = e.getBoundingClientRect().left - h.getBoundingClientRect().left;
+    if (Math.abs(d) > 0.5) g.style.transform = "translateX(" + d + "px)";
+  }
+  function soon() { if (busy) return; busy = true; (window.requestAnimationFrame || setTimeout)(align); }
+  window.addEventListener("resize", soon);
+  window.addEventListener("orientationchange", soon);
+  window.addEventListener("load", soon);
+  document.addEventListener("DOMContentLoaded", soon);
+  [150, 500, 1200, 2500].forEach(function (t) { setTimeout(soon, t); });
+  var nav = document.querySelector(".app-nav");
+  if (nav && window.MutationObserver) new MutationObserver(soon).observe(nav, { childList: true, subtree: true });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(soon);
+})();
+</script>
 </body>
 </html>
