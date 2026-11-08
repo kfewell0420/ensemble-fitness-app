@@ -404,7 +404,7 @@
 
     var $ = function (id) { return document.getElementById(id); };
     var COLORS = ["#c2410c", "#1d4ed8", "#7e22ce", "#0f766e", "#be185d", "#a16207"];
-    var GROUPS = { "Working Out": "Gym", "Yoga": "Gym", "Running": "Outdoor", "Walking": "Outdoor", "Hiking": "Outdoor", "Swimming": "Outdoor", "Pickleball": "Sports", "Basketball": "Sports", "Tennis": "Sports", "Other": "Sports" };
+    var GROUPS = { "Working Out": "Gym", "Yoga": "Gym", "Running": "Outdoor", "Walking": "Outdoor", "Hiking": "Outdoor", "Swimming": "Outdoor", "Cycling": "Outdoor", "Pickleball": "Sports", "Basketball": "Sports", "Tennis": "Sports", "Other": "Sports" };
     var coords = null, radius = 5, rows = [], group = "All", timer = null;
 
     function setMsg(t, err) { $("anMsg").textContent = t || ""; $("anMsg").className = "an-msg" + (err ? " err" : ""); }
