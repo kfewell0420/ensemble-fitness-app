@@ -827,6 +827,17 @@
       margin-left: 0;
       margin-top: 0;
     }
+    /* Round 4 (Ken, Nov 2026): on the phone the Home + bell were still
+       sitting well to the right of "MUSIC LIBRARY". Two causes: the page
+       content starts 16px from the edge on phones (app.css) while this bar
+       was set to 24px, and the shared styles (app.css 14px, notifications.js
+       8px) still add their own left margin to the icon group. Fixed here,
+       for this page only: bar padding matches the 16px content edge, the
+       icon group has no left margin and is always the first thing in the
+       bar, so its left edge lines up exactly with the heading text. */
+    .app-nav { padding-left: 16px !important; padding-right: 16px !important; }
+    .app-nav .efit-nav-utility,
+    #rpAppNav .efit-nav-utility { margin-left: 0 !important; order: -1; }
     /* Round 3 (Ken's follow-up): the "dead space" wasn't actually empty —
        app.css's own 720px breakpoint turns .app-nav-links (Community, My
        Journey, Members, Fitness+, Gear, Music, Quotes, My Profile, Sign
