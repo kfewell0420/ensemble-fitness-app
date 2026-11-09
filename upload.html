@@ -748,98 +748,76 @@
   .ef-sheet .ef-go.red { background: #3a1216; color: #ff9a9a; }
   .ef-sheet audio { width: 100%; margin-top: 4px; }
 
-  /* ===== Nov 2026: tap a clip, then drag its two orange handles to shorten it ===== */
-  .clip-thumb .ct-fr, .clip-thumb .ct-dim, .clip-thumb .ct-box, .clip-thumb .ct-h, .clip-thumb .ct-tag { display: none; }
-  body.ef-video .clip-tray { margin: 0; padding: 4px 12px 8px; }
-  body.ef-video .clip-tray-row.multi { padding-top: 28px; gap: 6px; align-items: stretch; }
-  body.ef-video .clip-tray-row.multi .clip-thumb, body.ef-video .clip-tray-row.multi .clip-add { width: 62px; height: 56px; border-radius: 9px; border-width: 1.5px; }
-  body.ef-video .clip-tray-row.multi .clip-add { font-size: 0; }
-  body.ef-video .clip-tray-row.multi .clip-thumb .clip-n { min-width: 16px; height: 16px; line-height: 16px; font-size: 10px; left: 3px; top: 3px; }
-  body.ef-video .clip-tray-row.multi .clip-thumb .clip-d { font-size: 10px; padding: 0 4px; right: 3px; bottom: 3px; }
-  body.ef-video .clip-tray-row.multi .clip-thumb.sel { flex: 0 0 min(64vw, 270px); width: min(64vw, 270px); border: 0; box-shadow: none; overflow: visible; background: none !important; border-radius: 0; }
-  body.ef-video .clip-tray-row.multi .clip-thumb.sel .clip-n, body.ef-video .clip-tray-row.multi .clip-thumb.sel .clip-d { display: none; }
-  .clip-thumb.sel .ct-fr { display: flex; position: absolute; inset: 0; overflow: hidden; border-radius: 9px; background: #000; pointer-events: none; }
-  .clip-thumb .ct-fr img { flex: 1 1 0; min-width: 0; height: 100%; object-fit: cover; display: block; }
-  .clip-thumb.sel .ct-dim { display: block; position: absolute; top: 0; bottom: 0; background: rgba(8,8,10,0.74); pointer-events: none; z-index: 1; }
-  .clip-thumb.sel .ct-dim.l { left: 0; width: var(--tl, 0%); border-radius: 9px 0 0 9px; }
-  .clip-thumb.sel .ct-dim.r { right: 0; width: var(--tr, 0%); border-radius: 0 9px 9px 0; }
-  .clip-thumb.sel .ct-box { display: block; position: absolute; top: 0; bottom: 0; left: var(--tl, 0%); right: var(--tr, 0%); border-top: 2.5px solid #ff7a3d; border-bottom: 2.5px solid #ff7a3d; pointer-events: none; z-index: 2; }
-  .clip-thumb.sel .ct-h { display: flex; align-items: center; justify-content: center; position: absolute; top: -1px; bottom: -1px; width: 15px; background: #ff7a3d; touch-action: none; cursor: ew-resize; z-index: 3; -webkit-tap-highlight-color: transparent; }
-  .clip-thumb.sel .ct-h.l { left: var(--tl, 0%); border-radius: 8px 0 0 8px; }
-  .clip-thumb.sel .ct-h.r { right: var(--tr, 0%); border-radius: 0 8px 8px 0; }
-  .clip-thumb .ct-h i { display: block; width: 2.5px; height: 20px; border-radius: 2px; background: #fff; pointer-events: none; }
-  .clip-thumb .ct-h::before { content: ""; position: absolute; top: -8px; bottom: -8px; left: -13px; right: -13px; }
-  .clip-thumb.sel .ct-tag { display: block; position: absolute; left: 50%; top: -25px; transform: translateX(-50%); padding: 3px 11px; border-radius: 12px; background: #ff7a3d; color: #fff; font-size: 11.5px; font-weight: 800; line-height: 16px; white-space: nowrap; pointer-events: none; z-index: 4; }
-  body.ef-video .clip-tray-row.multi .clip-thumb.sel .clip-x { display: block; right: -2px; top: -26px; width: 22px; height: 22px; line-height: 22px; z-index: 5; }
-
-  /* ===== Nov 2026: video post in TWO steps. Step 1 = edit (picture, clips, music). Step 2 = details and Post. ===== */
-  #efSummary, #efNext { display: none; }
-  body.ef-video #efTools { display: flex; gap: 8px; padding: 8px 12px 0; margin: 0; }
-  body.ef-video #efTools .ef-t { flex: 1 1 0; min-width: 0; height: 44px; padding: 0 6px; border-radius: 12px; border: 1.5px solid #3a3e4a; background: #1b1d24; color: #fff; flex-direction: row; align-items: center; justify-content: center; gap: 6px; font-size: 12.5px; line-height: 16px; }
-  body.ef-video #efTools .ef-t:active { background: #262932; }
-  body.ef-video #efTools .ef-t .ef-ic { height: auto; display: flex; align-items: center; flex: 0 0 auto; }
-  body.ef-video #efTools .ef-t .ef-ic svg { width: 20px; height: 20px; }
-  body.ef-video #efTools .ef-t .ef-tx { display: block; width: auto; height: auto; max-width: 100%; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; font-size: 12.5px; line-height: 16px; font-weight: 700; }
-  body.ef-video #efTools .ef-t .ef-sb { display: none; }
-  body.ef-video #efTools .ef-t.song { background: rgba(255,122,61,0.16); border-color: #ff7a3d; color: #ffb48a; }
-  body.ef-video #efTools .ef-t.val { color: #ffb48a; }
-  body.ef-video #efTools .ef-t.off { background: #1b1d24; border-color: #2c2f38; cursor: default; }
-  body.ef-video #efTools .ef-t.off > * { opacity: 0.5; }
-  body.ef-video #efTools .ef-t.off .ef-sb { display: block; font-size: 10.5px; line-height: 11px; opacity: 0.75; }
-  body.ef-video #efTools .ef-t.off .ef-tx { line-height: 13px; }
-  body.ef-video #efTools .ef-t.off:has(.ef-sb:not(:empty)) { flex-wrap: wrap; align-content: center; column-gap: 7px; row-gap: 0; }
-  body.ef-video #efTools .ef-t.off:has(.ef-sb:not(:empty)) .ef-ic { margin-top: 0; }
-  body.ef-video #efTools .ef-t .ef-bd { top: 2px; right: 4px; }
-  /* step 1: only Music, Voiceover, Cover */
-  body.ef-video:not(.ef-step2) #efTools .ef-t[data-k="work"], body.ef-video:not(.ef-step2) #efTools .ef-t[data-k="loc"], body.ef-video:not(.ef-step2) #efTools .ef-t[data-k="msg"] { display: none; }
-  body.ef-video:not(.ef-step2) #efSummary, body.ef-video:not(.ef-step2) #captionField, body.ef-video:not(.ef-step2) #socialShareRow, body.ef-video:not(.ef-step2) #uploadBtn { display: none !important; }
-  body.ef-video:not(.ef-step2) #efNext { display: block; }
-  /* the big orange pill (Next, and Post on step 2) */
-  body.ef-video #efNext, body.ef-video.ef-step2 #uploadBtn { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(14px + env(safe-area-inset-bottom, 0px)); width: min(calc(100vw - 32px), 460px); height: 56px; margin: 0; z-index: 60; border: 0; border-radius: 28px; background: linear-gradient(135deg, #ff6a1a, #ff4d0d); color: #fff; font: inherit; font-size: 18px; font-weight: 800; letter-spacing: 0.2px; box-shadow: 0 0 0 10px rgba(12,12,16,0.72), 0 8px 26px rgba(255,90,20,0.38); cursor: pointer; }
-  body.ef-video #efNext:active, body.ef-video.ef-step2 #uploadBtn:active { filter: brightness(0.92); }
-  body.ef-video.ef-step2 #uploadBtn:disabled { opacity: 0.55; box-shadow: 0 0 0 10px rgba(12,12,16,0.72); }
-  body.ef-androidnav.ef-video #efNext, body.ef-androidnav.ef-video.ef-step2 #uploadBtn { bottom: calc(62px + env(safe-area-inset-bottom, 0px)); }
-  body.ef-video.kbd-open.ef-step2 #uploadBtn { position: static; transform: none; width: calc(100% - 24px); margin: 10px 12px; box-shadow: none; }
-  /* step 2 */
-  body.ef-video.ef-step2 #uploadCard #trimSection { position: absolute !important; left: -300vw; top: 0; width: 100vw; pointer-events: none; }
-  body.ef-video.ef-step2 #uploadShell { padding-bottom: calc(110px + env(safe-area-inset-bottom, 0px)) !important; }
-  body.ef-video #flowBackBtn { position: relative; }
-  body.ef-video.ef-step2 #flowBackBtn { width: 100%; justify-content: flex-start; }
-  body.ef-video.ef-step2 #flowBackBtn::after { white-space: nowrap; content: "New post"; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); color: #fff; font-size: 17px; font-weight: 800; pointer-events: none; }
-  body.ef-video.ef-step2 #efSummary { display: flex; gap: 16px; align-items: center; padding: 8px 16px 16px; border-bottom: 1px solid #23262e; }
-  #efSummary .es-thumb { position: relative; flex: 0 0 auto; width: 72px; height: 96px; border-radius: 12px; border: 2px solid #ff7a3d; background: #000 center / cover no-repeat; overflow: hidden; }
-  #efSummary .es-thumb video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
-  #efSummary .es-dur { position: absolute; left: 5px; bottom: 5px; padding: 1px 6px; border-radius: 8px; background: rgba(0,0,0,0.72); color: #fff; font-size: 11px; font-weight: 800; z-index: 2; }
-  #efSummary .es-txt { min-width: 0; flex: 1 1 auto; }
-  #efSummary .es-t1 { font-size: 21px; font-weight: 800; color: #fff; line-height: 1.2; }
-  #efSummary .es-t2 { margin-top: 3px; font-size: 14px; color: #a7abb8; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  #efSummary .es-edit { margin-top: 8px; padding: 4px 0; border: 0; background: none; color: #ff7a3d; font: inherit; font-size: 16px; font-weight: 800; cursor: pointer; }
-  body.ef-video.ef-step2 #efTools { flex-direction: column; gap: 0; padding: 0; }
-  body.ef-video.ef-step2 #efTools .ef-t[data-k="music"], body.ef-video.ef-step2 #efTools .ef-t[data-k="voice"], body.ef-video.ef-step2 #efTools .ef-t[data-k="cover"] { display: none; }
-  body.ef-video.ef-step2 #efTools .ef-t { flex: 0 0 auto; width: 100%; height: 68px; padding: 0 16px; border: 0; border-bottom: 1px solid #23262e; border-radius: 0; background: transparent; justify-content: flex-start; gap: 14px; font-size: 18px; text-align: left; }
-  body.ef-video.ef-step2 #efTools .ef-t .ef-ic { order: -1; width: 46px; height: 46px; border-radius: 12px; background: rgba(255,122,61,0.12); border: 1.5px solid rgba(255,122,61,0.55); justify-content: center; }
-  body.ef-video.ef-step2 #efTools .ef-t .ef-ic svg { width: 24px; height: 24px; }
-  body.ef-video.ef-step2 #efTools .ef-t::before { content: attr(data-lbl); flex: 1 1 auto; font-size: 18px; font-weight: 800; color: #fff; }
-  body.ef-video.ef-step2 #efTools .ef-t .ef-tx { flex: 0 1 auto; max-width: 48%; font-size: 0; color: #8d91a0; }
-  body.ef-video.ef-step2 #efTools .ef-t .ef-tx::after { content: attr(data-ph) "  \203A"; font-size: 16px; font-weight: 600; }
-  body.ef-video.ef-step2 #efTools .ef-t.val .ef-tx { font-size: 16px; font-weight: 700; color: #ffb48a; }
-  body.ef-video.ef-step2 #efTools .ef-t.val .ef-tx::after { content: "  \203A"; font-size: 16px; color: #8d91a0; }
-  body.ef-video.ef-step2 #efTools .ef-t.off .ef-tx { opacity: 1; }
-  body.ef-video.ef-step2 #efTools .ef-t .ef-bd { position: static; order: 5; margin-left: 4px; }
-  body.ef-video.ef-step2 #captionField { display: block !important; margin: 14px 16px 0; padding: 0; }
-  body.ef-video.ef-step2 #captionField #captionLabel { display: none; }
-  body.ef-video.ef-step2 #captionField #caption { display: block; width: 100%; min-height: 92px; height: 92px; padding: 12px 14px; border-radius: 14px; border: 1.5px solid #3a3e4a; background: #14161c; color: #fff; font: inherit; font-size: 16px; line-height: 1.35; resize: none; box-sizing: border-box; }
-  body.ef-video.ef-step2 #socialShareRow { margin: 12px 16px 0 !important; padding: 0 12px !important; height: 62px; border-radius: 14px !important; border: 1.5px solid #3a3e4a !important; background: #14161c !important; }
-  body.ef-video.ef-step2 #socialShareRow .ss-title { white-space: normal; font-size: 15px !important; line-height: 1.25; }
-
-  /* the music bar matches the site's orange (Nov 2026) */
+  /* ===== Nov 2026: ONE PAGE video post. One line of video (clips split by white lines; tap a clip for its handles), pills, caption, Post. ===== */
+  body.ef-video #uploadCard { position: relative; }
+  body.ef-video #flowBackBtn { position: absolute; left: 10px; top: calc(env(safe-area-inset-top, 0px) + 8px); z-index: 8; width: auto; min-height: 0 !important; height: 34px; margin: 0 !important; padding: 0 14px 0 8px !important; border-radius: 999px; background: rgba(0,0,0,0.55); }
+  body.ef-video #trimSection #changeVideoBtn { display: none !important; }
+  body.ef-video #clipTray, body.ef-video .ef-addclip { display: none !important; }
+  /* the cover picker has no pill on the picture any more: the Cover pill below opens it, over the top right of the picture */
+  body.ef-video #coverPicker { position: absolute; right: 10px; top: 10px; width: 0; height: 0; z-index: 7; }
+  body.ef-video #coverPicker > summary { display: none !important; }
+  body.ef-video #coverPicker[open] #coverPickerRow { top: 0; right: 0; }
+  /* play button + time sit on the picture (iPhone); on Android the picture has its own, so only "Keep original sound" shows, higher up */
+  body.ef-video #pvRow.on { position: absolute; left: 10px; top: calc(var(--efvh, 300px) - 46px); z-index: 6; margin: 0 !important; padding: 3px 12px 3px 4px; gap: 8px; border-radius: 999px; background: rgba(0,0,0,0.55); width: auto; max-width: calc(100% - 20px); }
+  body.ef-video #pvRow.on.native { top: calc(var(--efvh, 300px) - 110px); padding: 5px 12px; }
+  body.ef-video #pvRow button#pvPlay { width: 30px; height: 30px; }
+  /* the line */
+  body.ef-video #mixTimeline { position: relative; margin: 0 !important; padding: 30px 12px 0 !important; }
+  body.ef-video .mix-tracks, body.ef-video .mix-tracks.nosong { margin: 0 0 26px; padding-bottom: 0; transition: width 0.22s ease; }
+  body.ef-video .mix-track.mix-video { height: 62px !important; border-radius: 9px; overflow: visible; margin-bottom: 4px; background: transparent; }
+  body.ef-video .mix-tracks.nosong .mix-track.mix-video { margin-bottom: 0; }
+  body.ef-video .mix-filmstrip { border-radius: 9px; overflow: hidden; }
+  body.ef-video .mix-seg { overflow: hidden; border-left: 2px solid #fff; }
+  body.ef-video .mix-track.mix-music { height: 32px !important; border-radius: 9px; overflow: hidden; }
   body.ef-video .mix-clip { background: linear-gradient(90deg, #ff7a3d, #e85a1a); box-shadow: inset 0 2.5px 0 #ffc2a0, inset 0 -2.5px 0 #ffc2a0; }
   body.ef-video .mix-handle { background: #ffc2a0; }
   body.ef-video .mix-handle::after { background: linear-gradient(90deg, #6b2508 0 2px, transparent 2px 4px, #6b2508 4px 6px, transparent 6px 8px, #6b2508 8px 10px) !important; }
   body.ef-video .mix-clip-label, body.ef-video #mixClipLabel { background: rgba(70,22,4,0.72); }
-  @media (max-width: 374px) { body.ef-video:not(.ef-step2) #efTools .ef-t .ef-ic svg { display: none; } }
-  .clip-tray-row { position: relative; }
-  .clip-thumb.sel .ct-fr:empty { background: transparent; }
+  body.ef-video .mix-dot { bottom: -26px; }
+  .ef-lineadd { display: none; position: absolute; right: 12px; top: 30px; width: 38px; height: 62px; border-radius: 9px; border: 1.5px dashed rgba(255,255,255,0.4); background: rgba(255,255,255,0.04); color: #fff; font: inherit; font-size: 24px; line-height: 1; align-items: center; justify-content: center; cursor: pointer; padding: 0; -webkit-tap-highlight-color: transparent; }
+  .ct-ovl { display: none; position: absolute; top: 0; bottom: 0; z-index: 4; pointer-events: none; }
+  .ct-ovl.on { display: block; }
+  .ct-ovl .ct-box { position: absolute; inset: 0; border-top: 2.5px solid #ff7a3d; border-bottom: 2.5px solid #ff7a3d; }
+  .ct-ovl .ct-h { position: absolute; top: -3px; bottom: -3px; width: 15px; background: #ff7a3d; display: flex; align-items: center; justify-content: center; pointer-events: auto; touch-action: none; cursor: ew-resize; -webkit-tap-highlight-color: transparent; }
+  .ct-ovl .ct-h.l { left: 0; border-radius: 8px 0 0 8px; }
+  .ct-ovl .ct-h.r { right: 0; border-radius: 0 8px 8px 0; }
+  .ct-ovl .ct-h i { display: block; width: 2.5px; height: 22px; border-radius: 2px; background: #fff; pointer-events: none; }
+  .ct-ovl .ct-h::before { content: ""; position: absolute; top: -8px; bottom: -8px; left: -14px; right: -14px; }
+  .ct-ovl .ct-tag { position: absolute; top: -29px; transform: translateX(-50%); display: flex; align-items: center; gap: 4px; padding: 3px 4px 3px 11px; border-radius: 13px; background: #ff7a3d; color: #fff; font-size: 11.5px; font-weight: 800; line-height: 16px; white-space: nowrap; pointer-events: none; }
+  .ct-ovl .ct-x { pointer-events: auto; width: 20px; height: 20px; margin: 0; padding: 0; border: 0; border-radius: 50%; background: rgba(0,0,0,0.32); color: #fff; font-size: 10px; line-height: 20px; cursor: pointer; }
+  /* the tools: one clean row of icon tiles with the name underneath (like Instagram's) */
+  body.ef-video #efTools { display: block; padding: 10px 10px 0; margin: 0; }
+  body.ef-video #efTools .ef-row { display: flex; gap: 8px; overflow-x: auto; padding: 0 2px 2px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  body.ef-video #efTools .ef-row::-webkit-scrollbar { display: none; }
+  body.ef-video #efTools .ef-t { flex: 0 0 56px; min-width: 0; height: auto; margin: 0; padding: 0; border: 0; border-radius: 0; background: none; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 5px; position: relative; overflow: visible; -webkit-tap-highlight-color: transparent; }
+  body.ef-video #efTools .ef-t .ef-ic { display: flex; align-items: center; justify-content: center; width: 100%; height: 46px; border-radius: 12px; background: #1b1d24; border: 1.5px solid #2c2f38; flex: 0 0 auto; }
+  body.ef-video #efTools .ef-t:active .ef-ic { background: #2a2d36; }
+  body.ef-video #efTools .ef-t .ef-ic svg { width: 23px; height: 23px; }
+  body.ef-video #efTools .ef-t .ef-tx { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; width: 100%; height: 25px; overflow: hidden; text-align: center; font-size: 10.5px; line-height: 12px; font-weight: 600; color: #e6e8ef; word-break: break-word; }
+  body.ef-video #efTools .ef-t .ef-sb { display: none; }
+  body.ef-video #efTools .ef-t.song .ef-ic, body.ef-video #efTools .ef-t.val .ef-ic { background: rgba(255,122,61,0.16); border-color: #ff7a3d; }
+  body.ef-video #efTools .ef-t.song .ef-tx, body.ef-video #efTools .ef-t.val .ef-tx { color: #ffb48a; }
+  body.ef-video #efTools .ef-t.rec .ef-ic { background: rgba(209,26,42,0.2); border-color: #d11a2a; }
+  body.ef-video #efTools .ef-t.rec .ef-tx { color: #ff8a8a; }
+  body.ef-video #efTools .ef-t.off { cursor: default; }
+  body.ef-video #efTools .ef-t.off > * { opacity: 0.45; }
+  body.ef-video #efTools .ef-t.off .ef-sb:not(:empty) { display: block; margin: 1px -4px 0; font-size: 8.5px; line-height: 10px; font-weight: 600; text-align: center; color: #cfd2dc; }
+  body.ef-video #efTools .ef-t.off:has(.ef-sb:not(:empty)) .ef-tx { height: 12px; -webkit-line-clamp: 1; }
+  body.ef-video #efTools .ef-t .ef-bd { top: -4px; right: 2px; }
+  /* caption, share, Post */
+  body.ef-video #socialShareRow { margin: 8px 12px 0 !important; padding: 0 12px !important; height: 46px; border-radius: 12px !important; border: 1px solid #2a2d36 !important; background: #10141d !important; }
+  body.ef-video #uploadBtn { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(12px + env(safe-area-inset-bottom, 0px)); width: min(calc(100vw - 32px), 460px); height: 52px; margin: 0; z-index: 60; border: 0; border-radius: 26px; background: linear-gradient(135deg, #ff6a1a, #ff4d0d); color: #fff; font: inherit; font-size: 17px; font-weight: 800; box-shadow: 0 0 0 10px rgba(12,12,16,0.72), 0 8px 26px rgba(255,90,20,0.38); cursor: pointer; }
+  body.ef-video #uploadBtn:disabled { opacity: 0.55; }
+  body.ef-android.ef-video.post-fixed:not(.kbd-open) #uploadBtn { bottom: calc(max(env(safe-area-inset-bottom, 0px), 54px) + 12px); }
+  body.ef-video.kbd-open #uploadBtn { position: static; transform: none; width: calc(100% - 24px); margin: 10px 12px; box-shadow: none; }
+  body.ef-android.ef-video #uploadShell { padding-bottom: calc(max(env(safe-area-inset-bottom, 0px), 54px) + 84px) !important; }
+  body.ef-video.ef-multi .ef-dur { display: none; }
+
+  /* empty music row: always there under the video line, tap to pick a song */
+  .ef-addmusic { display: none; }
+  body.ef-video:not(.ef-song) #efAddMusic { display: flex; align-items: center; justify-content: center; width: 100%; height: 34px; margin-top: 6px; padding: 0; border: 1.5px dashed rgba(255,122,61,0.65); border-radius: 10px; background: rgba(255,122,61,0.08); color: #ff9a66; font: 800 13px/1 inherit; font-family: inherit; cursor: pointer; }
+  /* the spare video used for clean cuts between clips must never be wider than the screen (a phone clip is 1080 wide and would zoom the whole page out) */
+  .trim-media video { max-width: 100% !important; }
 </style>
 
 <div class="app-shell narrow" id="uploadShell">
@@ -1108,8 +1086,9 @@
           <span class="pv-time"><span id="pvCur">0:00</span> / <span id="pvDur">0:00</span></span>
         </div>
         <div id="mixTimeline" style="display:none; margin-top:8px;">
+          <button type="button" class="ef-lineadd" id="efLineAdd" aria-label="Add another video">+</button>
           <div class="mix-tracks" id="mixTracks">
-            <div class="mix-track mix-video" id="mixVideoTrack"><div class="mix-filmstrip" id="mixFilmstrip"></div><span class="mix-video-label">Your video</span><span class="ef-dur" id="efDur"></span><div class="ef-trim" id="efTrim"><div class="ef-tdim l"></div><div class="ef-tdim r"></div><div class="ef-tfr"></div><div class="ef-th l" id="efTHL" title="Drag to cut the front of your video"><i></i><i></i></div><div class="ef-th r" id="efTHR" title="Drag to cut the end of your video"><i></i><i></i></div></div></div>
+            <div class="mix-track mix-video" id="mixVideoTrack"><div class="mix-filmstrip" id="mixFilmstrip"></div><span class="mix-video-label">Your video</span><span class="ef-dur" id="efDur"></span><div id="ctOvl" class="ct-ovl"><span class="ct-box"></span><span class="ct-h l" data-side="l" title="Drag to cut the start of this clip"><i></i></span><span class="ct-h r" data-side="r" title="Drag to cut the end of this clip"><i></i></span><span class="ct-tag"><span class="ct-t"></span><button type="button" class="ct-x" aria-label="Remove this clip">&#10005;</button></span></div><div class="ef-trim" id="efTrim"><div class="ef-tdim l"></div><div class="ef-tdim r"></div><div class="ef-tfr"></div><div class="ef-th l" id="efTHL" title="Drag to cut the front of your video"><i></i><i></i></div><div class="ef-th r" id="efTHR" title="Drag to cut the end of your video"><i></i><i></i></div></div></div>
             <div class="mix-track mix-music" id="mixMusicTrack">
               <div class="mix-clip" id="mixClip">
                 <div class="mix-handle mix-handle-l" id="mixHandleL" title="Drag to trim the front of the song"></div>
@@ -1118,6 +1097,7 @@
               <button type="button" class="ef-xrm" id="efXrm" aria-label="Remove music" title="Remove music">&#10005;</button>
             </div>
             <div class="mix-playhead" id="mixPlayhead"><div class="mix-dot" id="mixDot" role="slider" aria-label="Drag to move through your video"></div></div>
+          <button type="button" class="ef-addmusic" id="efAddMusic">&#9835;&nbsp; Add music &nbsp;+</button>
           </div>
           <div id="syncReadout" style="display:none; font-size:12.5px; color:var(--muted-invert, #b9bccb); margin-top:8px; line-height:1.4;"></div>
         </div>
@@ -1136,10 +1116,6 @@
            (nothing is faked): Music opens the song list, Category is the real drop-down laid invisibly over
            the tile, Location is the real text box, Narration is the real recorder. Tile order and the
            show/hide rules live in the little script at the bottom of this page (efLayout). -->
-      <div id="efSummary" class="ef-summary" aria-live="polite">
-        <div class="es-thumb" id="esThumb"><span class="es-dur" id="esDur"></span></div>
-        <div class="es-txt"><div class="es-t1" id="esT1"></div><div class="es-t2" id="esT2"></div><button type="button" class="es-edit" id="esEdit">Edit video</button></div>
-      </div>
       <div id="efTiles" class="ef-grid">
         <div class="ef-tile ef-music" id="trackPickerRow" style="display:none;"><span class="cover-picker-status">Loading tracks…</span></div>
         <div class="field ef-tile ef-cat" id="workoutTypeField">
@@ -1176,7 +1152,7 @@
         <div id="narrationSection" style="display:none;" aria-hidden="true"></div>
       </div>
       <!-- Video post screen (Nov 2026): five tools in Ken's order. Each presses the real control (workout drop-down, location box, recorder, music picker, floating message). -->
-      <div id="efTools" role="group" aria-label="Video tools"><button type="button" class="ef-t" id="efT_work" data-k="work" data-lbl="Activity"><span class="ef-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="#ff7a2f"><rect x="1" y="9" width="3" height="6" rx="1"/><rect x="4" y="6" width="3" height="12" rx="1"/><rect x="7" y="11" width="10" height="2"/><rect x="17" y="6" width="3" height="12" rx="1"/><rect x="20" y="9" width="3" height="6" rx="1"/></svg></span><span class="ef-tx" data-ph="Choose">Activity</span><i class="ef-bd"></i></button><button type="button" class="ef-t" id="efT_loc" data-k="loc" data-lbl="Location"><span class="ef-ic"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M12 22s7-6.5 7-12a7 7 0 10-14 0c0 5.5 7 12 7 12z" fill="#ff7a3d"/><circle cx="12" cy="10" r="2.6" fill="#1b1d24"/></svg></span><span class="ef-tx" data-ph="Add">Location</span><i class="ef-bd"></i></button><button type="button" class="ef-t" id="efT_music" data-k="music"><span class="ef-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M9 17V5l10-2v12" stroke="#ff7a3d" stroke-width="2"/><circle cx="6.5" cy="17.5" r="2.5" fill="#ff7a3d"/><circle cx="16.5" cy="15.5" r="2.5" fill="#ff7a3d"/></svg></span><span class="ef-tx">Music track</span><i class="ef-bd"></i></button><button type="button" class="ef-t" id="efT_voice" data-k="voice"><span class="ef-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ff7a3d" stroke-width="2"><rect x="9" y="3" width="6" height="11" rx="3" fill="#ff7a3d"/><path d="M5 11a7 7 0 0014 0M12 18v3"/></svg></span><span class="ef-tx">Voiceover</span><span class="ef-sb"></span><i class="ef-bd"></i></button><button type="button" class="ef-t" id="efT_msg" data-k="msg" data-lbl="Floating message"><span class="ef-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ff7a3d" stroke-width="2" stroke-linejoin="round"><path d="M3 4h18v12H10l-5 4v-4H3z"/></svg></span><span class="ef-tx" data-ph="Add">Floating message</span><i class="ef-bd"></i></button><button type="button" class="ef-t" id="efT_cover" data-k="cover"><span class="ef-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ff7a3d" stroke-width="2" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M4 18l5-5 4 4 3-3 4 4"/></svg></span><span class="ef-tx">Cover</span></button></div>
+      <div id="efTools" role="group" aria-label="Video tools"><div class="ef-row"><button type="button" class="ef-t" id="efT_music" data-k="music"><span class="ef-ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff7a3d" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M9 17V5l10-2v12"/><circle cx="6.5" cy="17.5" r="2.5" fill="#ff7a3d"/><circle cx="16.5" cy="15.5" r="2.5" fill="#ff7a3d"/></svg></span><span class="ef-tx">Music</span><i class="ef-bd"></i></button><button type="button" class="ef-t" id="efT_voice" data-k="voice"><span class="ef-ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff7a3d" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3" fill="#ff7a3d"/><path d="M5 11a7 7 0 0014 0M12 18v3"/></svg></span><span class="ef-tx">Voice</span><span class="ef-sb"></span><i class="ef-bd"></i></button><button type="button" class="ef-t" id="efT_msg" data-k="msg"><span class="ef-ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff7a3d" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M3 4h18v12H10l-5 4v-4H3z"/></svg></span><span class="ef-tx">Floating caption</span><i class="ef-bd"></i></button><button type="button" class="ef-t" id="efT_cap" data-k="cap"><span class="ef-ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff7a3d" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M7 10h4M7 14h2M13 10h4M11 14h6"/></svg></span><span class="ef-tx">Caption</span><i class="ef-bd"></i></button><button type="button" class="ef-t" id="efT_work" data-k="work"><span class="ef-ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="#ff7a3d"><rect x="1" y="9" width="3" height="6" rx="1"/><rect x="4" y="6" width="3" height="12" rx="1"/><rect x="7" y="11" width="10" height="2"/><rect x="17" y="6" width="3" height="12" rx="1"/><rect x="20" y="9" width="3" height="6" rx="1"/></svg></span><span class="ef-tx">Activity</span><i class="ef-bd"></i></button><button type="button" class="ef-t" id="efT_loc" data-k="loc"><span class="ef-ic"><svg width="24" height="24" viewBox="0 0 24 24"><path d="M12 22s7-6.5 7-12a7 7 0 10-14 0c0 5.5 7 12 7 12z" fill="#ff7a3d"/><circle cx="12" cy="10" r="2.6" fill="#1b1d24"/></svg></span><span class="ef-tx">Location</span><i class="ef-bd"></i></button><button type="button" class="ef-t" id="efT_cover" data-k="cover"><span class="ef-ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff7a3d" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M4 18l5-5 4 4 3-3 4 4"/></svg></span><span class="ef-tx">Cover</span><i class="ef-bd"></i></button><button type="button" class="ef-t" id="efT_change" data-k="change"><span class="ef-ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff7a3d" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 9h18M8 5v14"/></svg></span><span class="ef-tx">Change videos</span><i class="ef-bd"></i></button></div></div>
       <div id="narrationPreview" class="ef-narr-preview" style="display:none;">
         <audio id="narrationAudioPreview" controls></audio>
       </div>
@@ -1241,7 +1217,6 @@
       </div>
 
       <button type="button" class="btn btn-primary btn-block" id="uploadBtn" disabled>↑ Select a file above</button>
-      <button type="button" id="efNext" class="ef-next">Next <span aria-hidden="true">&rarr;</span></button>
 
       <!-- (the old "More options" box is gone: narration is now a tile above; this empty holder just keeps the page script happy) -->
       <div id="moreOptionsBox" style="display:none;" aria-hidden="true"></div>
@@ -2407,7 +2382,7 @@
       // decoded". A tiny nudge forward makes the browser paint the clip's first frame, with no sound or playback.
       try { if (duration > 0.05 && trimPreviewVideo.paused && trimPreviewVideo.currentTime === 0) trimPreviewVideo.currentTime = 0.01; } catch (e) {}
       if (clips.length === 1) clips[0].dur = duration;
-      try { renderTimeline(); } catch (e) {}
+      try { layoutLine(true); renderTimeline(); } catch (e) {}
       generateTrimFilmstrip(trimPreviewVideo, duration);
     };
   }
@@ -2498,7 +2473,7 @@
         srcs.forEach(function (u) { var im = document.createElement("img"); im.src = u; im.alt = ""; seg.appendChild(im); });
         filmEl.appendChild(seg);
       });
-      try { renderTimeline(); } catch (e) {}
+      try { layoutLine(true); paintLine(); renderTimeline(); } catch (e) {}
     }
     paint();
     for (var i = 0; i < clips.length; i++) {
@@ -2519,6 +2494,116 @@
     }
   }
 
+  // ---- ONE line of video (Nov 2026): every clip sits on the same strip, split by thin white lines. Tap a clip and its two orange
+  // handles appear; drag them to shorten (or win back) that clip, and the clips after it slide up so the line stays continuous. ----
+  var trimSel = -1;               // which clip has its handles showing (-1 = none)
+  var lineScale = 0;              // pixels per second of the line while a handle is held (keeps the finger and the handle together)
+  var ctDrag = null, ctDragEnd = 0;
+  function lineAvail() { var w = (mixTimeline && mixTimeline.clientWidth) || 0; return Math.max(120, w - 24 - (clips.length < MAX_CLIPS ? 46 : 0)); }
+  function layoutLine(refit) {
+    if (!mixTracks) return;
+    var n = clips.length, vd = vidDur(), av = lineAvail();
+    var add = document.getElementById("efLineAdd"); if (add) add.style.display = (n > 0 && n < MAX_CLIPS) ? "flex" : "none";
+    var want;
+    if (n <= 1 || !vd) { lineScale = 0; want = av + "px"; }
+    else { if (refit || !lineScale) lineScale = av / vd; want = Math.min(av, vd * lineScale) + "px"; }
+    if (mixTracks.style.width !== want) mixTracks.style.width = want;
+  }
+  function paintLine() {
+    var ov = document.getElementById("ctOvl"); if (!ov) return;
+    var on = clips.length > 1 && trimSel >= 0 && trimSel < clips.length && vidDur() > 0;
+    ov.classList.toggle("on", on);
+    if (!on) return;
+    var seg = document.querySelectorAll("#mixFilmstrip .mix-seg")[trimSel];
+    if (!seg) { ov.classList.remove("on"); return; }
+    var l = seg.offsetLeft, w = seg.offsetWidth, c = clips[trimSel];
+    ov.style.left = l + "px"; ov.style.width = w + "px";
+    var tag = ov.querySelector(".ct-tag"), txt = ov.querySelector(".ct-t");
+    var o = (Math.round((c.dur || 0) * 10) / 10).toFixed(1), k = (Math.round(cEff(c) * 10) / 10).toFixed(1);
+    var t = cCut(c) ? o + "s \u2192 " + k + "s" : o + "s";
+    if (txt.textContent !== t) txt.textContent = t;
+    var total = mixTracks.clientWidth || 0, half = (tag.offsetWidth || 90) / 2;
+    tag.style.left = Math.max(half - l, Math.min(total - half - l, w / 2)) + "px";
+  }
+  function selectClipOnLine(i) {
+    clipSel = i;
+    renderClipTray();
+    var wasPlaying = !trimPreviewVideo.paused;
+    if (wasPlaying) trimPreviewVideo.pause();
+    musicPreviewAudio.pause();
+    reelSeek(reelOffsetOf(i));
+    if (wasPlaying) resumeAfterJump();
+  }
+  function removeClipOnLine(ri) {
+    if (clips.length < 2 || ri < 0 || ri >= clips.length) return;
+    var oldFirst = clips[0] && clips[0].file;
+    try { URL.revokeObjectURL(clips[ri].url); } catch (err) {}
+    clips.splice(ri, 1);
+    trimSel = -1;
+    if (clipSel >= clips.length) clipSel = Math.max(0, clips.length - 1);
+    reelChanged(oldFirst);
+  }
+  function setClipCut(i, ns, ne) {
+    var c = clips[i]; if (!c || !c.dur) return;
+    ns = Math.round(ns * 10) / 10; ne = Math.round(ne * 10) / 10;
+    c.ts = ns <= 0.04 ? 0 : ns;
+    c.te = ne >= c.dur - 0.04 ? 0 : ne;
+    var seg = document.querySelectorAll("#mixFilmstrip .mix-seg")[i];
+    if (seg) seg.style.flex = (cEff(c) || c.dur || 1) + " 1 0";
+    clampWindow(); layoutLine(false); paintLine();
+  }
+  async function playFromReel(t) {
+    applyPreviewMix();
+    if (!trimPreviewVideo.paused) trimPreviewVideo.pause();
+    await reelSeek(t);
+    trimPreviewVideo.play().catch(function () {});
+  }
+  (function wireLine() {
+    var vt = document.getElementById("mixVideoTrack"), ov = document.getElementById("ctOvl"); if (!vt || !ov) return;
+    vt.addEventListener("click", function (e) {
+      if (clips.length < 2 || ctDrag || Date.now() - ctDragEnd < 500) return;
+      if (e.target.closest(".ct-h")) return;
+      if (e.target.closest(".ct-x")) { removeClipOnLine(trimSel); return; }
+      var segs = document.querySelectorAll("#mixFilmstrip .mix-seg"), hit = -1;
+      for (var i = 0; i < segs.length; i++) { var r = segs[i].getBoundingClientRect(); if (e.clientX >= r.left - 1 && e.clientX <= r.right + 1) { hit = i; break; } }
+      if (hit < 0) return;
+      if (trimSel === hit) { trimSel = -1; paintLine(); return; }   // tap the same clip again: handles away
+      trimSel = hit; selectClipOnLine(hit); paintLine();
+    });
+    ov.addEventListener("pointerdown", function (e) {
+      var h = e.target.closest(".ct-h"); if (!h) return;
+      var i = trimSel, c = clips[i]; if (!c || !c.dur || !vidDur()) return;
+      e.preventDefault(); e.stopPropagation();
+      if (!trimPreviewVideo.paused) trimPreviewVideo.pause();
+      if (replayTimer) { clearTimeout(replayTimer); replayTimer = null; }
+      try { musicPreviewAudio.pause(); } catch (err) {}
+      if (reelIdx !== i) reelSeek(reelOffsetOf(i));
+      lineScale = Math.max(1, mixTracks.getBoundingClientRect().width / vidDur());
+      ctDrag = { i: i, side: h.getAttribute("data-side"), x0: e.clientX, s0: cTs(c), e0: cTe(c), pid: e.pointerId };
+      try { h.setPointerCapture(e.pointerId); } catch (err) {}
+    });
+    ov.addEventListener("pointermove", function (e) {
+      var D = ctDrag; if (!D || e.pointerId !== D.pid) return;
+      var c = clips[D.i]; if (!c) return;
+      var d = (e.clientX - D.x0) / lineScale, minL = Math.min(1, c.dur), at;
+      if (D.side === "l") { var ns = Math.min(Math.max(0, D.s0 + d), D.e0 - minL); setClipCut(D.i, ns, D.e0); at = cTs(c); trimBubble("start " + fmtClock(cTs(c))); }
+      else { var ne = Math.max(Math.min(c.dur, D.e0 + d), D.s0 + minL); setClipCut(D.i, D.s0, ne); at = Math.max(cTs(c), cTe(c) - 0.1); trimBubble("end " + fmtClock(cTe(c))); }
+      if (reelIdx === D.i && !reelSwitching && !trimPreviewVideo.seeking) { try { trimPreviewVideo.currentTime = at; } catch (err) {} }   // the picture follows the handle
+    });
+    function up(e) {
+      var D = ctDrag; if (!D || e.pointerId !== D.pid) return;
+      ctDrag = null; ctDragEnd = Date.now();
+      hideBubbleSoon();
+      rebuildReelFilmstrip();                        // (also re-fits the line to the screen)
+      if (replayTimer) clearTimeout(replayTimer);
+      replayTimer = setTimeout(function () { replayTimer = null; playFromReel(reelOffsetOf(D.i)); }, 350);   // let go: this clip plays from its new start, and the reel carries on
+    }
+    ov.addEventListener("pointerup", up);
+    ov.addEventListener("pointercancel", up);
+    var add = document.getElementById("efLineAdd");
+    if (add) add.addEventListener("click", function () { document.getElementById("addClipsInput").click(); });
+    window.addEventListener("resize", function () { layoutLine(true); paintLine(); });
+  })();
   function clipLabel(c) { return c.dur ? (Math.round(cEff(c) * 10) / 10).toFixed(1) + "s" : ""; }
   function renderClipTray() {
     var tray = document.getElementById("clipTray"), row = document.getElementById("clipTrayRow"), ctl = document.getElementById("clipTrayCtl");
@@ -2528,10 +2613,9 @@
     if (clipSel >= clips.length) clipSel = clips.length - 1;
     // Same clips as last time (just a different one selected, e.g. when the reel rolls on): update in
     // place instead of rebuilding every thumbnail — a rebuild at each cut made the strip repaint/flicker.
-    var sig = clips.map(function (c) { return c.url + "|" + (c.dur || 0) + "|" + (c.thumb ? c.thumb.length : 0) + "|" + cTs(c) + "|" + cTe(c) + "|" + (c.frames ? c.frames.length : 0); }).join(",") + "#" + (clips.length < MAX_CLIPS);
+    var sig = clips.map(function (c) { return c.url + "|" + (c.dur || 0) + "|" + (c.thumb ? c.thumb.length : 0); }).join(",") + "#" + (clips.length < MAX_CLIPS);
     if (row.getAttribute("data-sig") === sig && row.children.length) {
       Array.prototype.forEach.call(row.querySelectorAll(".clip-thumb"), function (b, i) { b.classList.toggle("sel", i === clipSel); });
-      scrollTrayToSel();
       return;
     }
     row.setAttribute("data-sig", sig);
@@ -2544,8 +2628,7 @@
       b.setAttribute("data-i", i);
       b.setAttribute("aria-label", "Clip " + (i + 1));
       if (c.thumb) b.style.backgroundImage = "url(" + c.thumb + ")";
-      b.innerHTML = (clips.length > 1 && c.dur ? ctFramesHtml(c) + '<span class="ct-dim l"></span><span class="ct-dim r"></span><span class="ct-box"></span><span class="ct-h l" data-side="l" title="Drag to cut the start of this clip"><i></i></span><span class="ct-h r" data-side="r" title="Drag to cut the end of this clip"><i></i></span><span class="ct-tag"></span>' : '') +
-        '<span class="clip-n">' + (i + 1) + '</span>' + (c.dur ? '<span class="clip-d">' + clipLabel(c) + '</span>' : '') + '<span class="clip-x" data-act="remove" aria-label="Remove clip ' + (i + 1) + '">✕</span>';
+      b.innerHTML = '<span class="clip-n">' + (i + 1) + '</span>' + (c.dur ? '<span class="clip-d">' + clipLabel(c) + '</span>' : '') + '<span class="clip-x" data-act="remove" aria-label="Remove clip ' + (i + 1) + '">✕</span>';
       if (!c.thumb && IS_IOS_DEVICE && c.url) {
         // a phone that hands back black pictures from the canvas still paints a video's first frame natively: show that
         var fv = document.createElement("video");
@@ -2565,88 +2648,11 @@
     var total = clips.reduce(function (a, c) { return a + cEff(c); }, 0);
     if (label) label.textContent = clips.length > 1 ? "🎬 " + clips.length + " videos" + (total ? " · " + (Math.round(total * 10) / 10).toFixed(1) + "s" : "") : "🎬 Your video";
     ctl.style.display = "none"; // no Earlier/Later/Remove row any more: tap a clip to jump to it, ✕ on the chosen clip removes it
-    paintClipCuts();
-    scrollTrayToSel();
   }
-  // ---- shorten a clip: tap it, then drag the two orange handles (Nov 2026) ----
-  function ctFramesHtml(c) {
-    var fr = (c.frames && c.frames.length) ? c.frames : (c.thumb ? [c.thumb] : []);
-    return '<span class="ct-fr">' + fr.map(function (u) { return '<img alt="" src="' + u + '">'; }).join("") + '</span>';
-  }
-  function scrollTrayToSel() {
-    var row = document.getElementById("clipTrayRow"); if (!row || clips.length < 2) return;
-    var b = row.querySelector(".clip-thumb.sel"); if (!b) return;
-    var l = b.offsetLeft - 12, r = b.offsetLeft + b.offsetWidth + 12;
-    if (l < row.scrollLeft) row.scrollLeft = Math.max(0, l);
-    else if (r > row.scrollLeft + row.clientWidth) row.scrollLeft = r - row.clientWidth;
-  }
-  function paintClipCut(i, b) {
-    var c = clips[i]; b = b || document.querySelector('#clipTrayRow .clip-thumb[data-i="' + i + '"]');
-    if (!b || !c || !c.dur) return;
-    b.style.setProperty("--tl", (cTs(c) / c.dur * 100) + "%");
-    b.style.setProperty("--tr", ((c.dur - cTe(c)) / c.dur * 100) + "%");
-    b.classList.toggle("cut", cCut(c));
-    var tag = b.querySelector(".ct-tag");
-    if (tag) { var o = (Math.round(c.dur * 10) / 10).toFixed(1), k = (Math.round(cEff(c) * 10) / 10).toFixed(1); tag.textContent = cCut(c) ? o + "s \u2192 " + k + "s" : o + "s \u00B7 drag the ends"; }
-    var d = b.querySelector(".clip-d"); if (d) d.textContent = clipLabel(c);
-  }
-  function paintClipCuts() { for (var i = 0; i < clips.length; i++) paintClipCut(i); }
-  var ctDrag = null, ctDragEnd = 0;
-  function setClipCut(i, ns, ne) {
-    var c = clips[i]; if (!c || !c.dur) return;
-    ns = Math.round(ns * 10) / 10; ne = Math.round(ne * 10) / 10;
-    c.ts = ns <= 0.04 ? 0 : ns;
-    c.te = ne >= c.dur - 0.04 ? 0 : ne;
-    paintClipCut(i);
-    var seg = document.querySelectorAll("#mixFilmstrip .mix-seg")[i];
-    if (seg) seg.style.flex = (cEff(c) || c.dur || 1) + " 1 0";
-    clampWindow();
-  }
-  async function playFromReel(t) {
-    applyPreviewMix();
-    if (!trimPreviewVideo.paused) trimPreviewVideo.pause();
-    await reelSeek(t);
-    trimPreviewVideo.play().catch(function () {});
-  }
-  (function wireClipCut() {
-    var row = document.getElementById("clipTrayRow"); if (!row) return;
-    row.addEventListener("pointerdown", function (e) {
-      var h = e.target.closest(".ct-h"); if (!h) return;
-      var b = h.closest(".clip-thumb"); if (!b || !b.classList.contains("sel")) return;
-      var i = Number(b.getAttribute("data-i")), c = clips[i]; if (!c || !c.dur) return;
-      e.preventDefault(); e.stopPropagation();
-      if (!trimPreviewVideo.paused) trimPreviewVideo.pause();
-      if (replayTimer) { clearTimeout(replayTimer); replayTimer = null; }
-      try { musicPreviewAudio.pause(); } catch (err) {}
-      if (reelIdx !== i) reelSeek(reelOffsetOf(i));
-      ctDrag = { i: i, side: h.getAttribute("data-side"), x0: e.clientX, s0: cTs(c), e0: cTe(c), w: Math.max(60, b.getBoundingClientRect().width), pid: e.pointerId };
-      try { h.setPointerCapture(e.pointerId); } catch (err) {}
-    });
-    row.addEventListener("pointermove", function (e) {
-      var D = ctDrag; if (!D || e.pointerId !== D.pid) return;
-      var c = clips[D.i]; if (!c) return;
-      var d = (e.clientX - D.x0) / D.w * c.dur, minL = Math.min(1, c.dur), at;
-      if (D.side === "l") { var ns = Math.min(Math.max(0, D.s0 + d), D.e0 - minL); setClipCut(D.i, ns, D.e0); at = cTs(c); trimBubble("start " + fmtClock(cTs(c))); }
-      else { var ne = Math.max(Math.min(c.dur, D.e0 + d), D.s0 + minL); setClipCut(D.i, D.s0, ne); at = Math.max(cTs(c), cTe(c) - 0.1); trimBubble("end " + fmtClock(cTe(c))); }
-      if (reelIdx === D.i && !reelSwitching && !trimPreviewVideo.seeking) { try { trimPreviewVideo.currentTime = at; } catch (err) {} }   // the picture follows the handle
-    });
-    function up(e) {
-      var D = ctDrag; if (!D || e.pointerId !== D.pid) return;
-      ctDrag = null; ctDragEnd = Date.now();
-      hideBubbleSoon();
-      renderClipTray();
-      rebuildReelFilmstrip();
-      if (replayTimer) clearTimeout(replayTimer);
-      replayTimer = setTimeout(function () { replayTimer = null; playFromReel(reelOffsetOf(D.i)); }, 350);   // let go: this clip plays from its new start, and the reel carries on
-    }
-    row.addEventListener("pointerup", up);
-    row.addEventListener("pointercancel", up);
-  })();
   document.getElementById("clipTrayRow").addEventListener("click", function (e) {
     if (e.target.closest("#clipAddBtn")) { document.getElementById("addClipsInput").click(); return; }
     var t = e.target.closest(".clip-thumb");
     if (!t) return;
-    if (e.target.closest(".ct-h") || ctDrag || Date.now() - ctDragEnd < 500) return;
     if (e.target.closest(".clip-x")) { // ✕ on the chosen clip: take it out of the reel
       var ri = Number(t.getAttribute("data-i")), oldFirst = clips[0] && clips[0].file;
       if (ri !== clipSel || clips.length < 2) return;
@@ -2681,6 +2687,7 @@
   // Clips were reordered, removed, or added: refresh everything that depends on them.
   function reelChanged(oldFirst) {
     trimCountSync();
+    trimSel = -1; lineScale = 0;
     if (!trimPreviewVideo.paused) trimPreviewVideo.pause();
     reelFilmGen++;
     if (!clips.length) { // nothing left — same as never having picked a file
@@ -2711,7 +2718,7 @@
     files = files.slice(0, room);
     var fresh = files.map(function (f) { return { file: f, url: URL.createObjectURL(f), dur: 0, thumb: null, frames: null }; });
     clips = clips.concat(fresh);
-    trimCountSync();
+    trimCountSync(); trimSel = -1; lineScale = 0;
     clipSel = clips.length - fresh.length; // jump to the first new clip
     hideMsg(msgEl);
     if (big.length || cut) showMsg(msgEl, (cut ? "Only " + MAX_CLIPS + " clips fit in one post — the extra ones were left out. " : "") + (big.length ? big.length + " clip" + (big.length > 1 ? "s were" : " was") + " too large and left out (limit " + (MAX_UPLOAD_BYTES / (1024 * 1024)).toFixed(0) + " MB each)." : ""), "error");
@@ -3418,6 +3425,7 @@
   function renderTimeline() {
     var hasM = hasMusicSelected(), show = vidDur() > 0 && clips.length > 0;
     mixTimeline.style.display = show ? "block" : "none";
+    if (show) { layoutLine(false); if (trimSel >= 0 && !ctDrag) paintLine(); }
     var mt = document.getElementById("mixMusicTrack");
     if (mt) mt.style.display = hasM ? "" : "none";
     var mtracks = document.getElementById("mixTracks");
@@ -3909,7 +3917,7 @@
     el.addEventListener("pointerup", trimUp);
     el.addEventListener("pointercancel", trimUp);
   });
-  window.efTrimReset = function () { trimS = 0; trimE = 0; tcPrev = 0; if (typeof paintTrim === "function") paintTrim(); };
+  window.efTrimReset = function () { trimS = 0; trimE = 0; tcPrev = 0; trimSel = -1; lineScale = 0; if (typeof paintTrim === "function") paintTrim(); };
   setInterval(paintTrim, 400);
 
   // ---- dragging the song bar -----------------------------------------------
@@ -5482,7 +5490,8 @@
   function $(id) { return document.getElementById(id); }
   var body = document.body, ts = $("trimSection");
   if (!ts || !$("efTools")) return;
-  var sel = $("workoutType"), loc = $("location"), wtTouched = false, wasVid = false;
+  var sel = $("workoutType"), loc = $("location"), wtTouched = false;
+  if ($("efAddMusic")) $("efAddMusic").addEventListener("click", function () { var t = $("efT_music"); if (t) t.click(); });
   // The Android app draws the page right to the bottom edge, under the phone's own back / home / recents bar. If the phone does not
   // report that bar's height (env inset is 0), lift the Post pill clear of it. (Phone browsers already stop above that bar.)
   (function () {
@@ -5494,6 +5503,7 @@
       document.body.appendChild(probe);
       var inset = parseFloat(getComputedStyle(probe).paddingBottom) || 0;
       document.body.removeChild(probe);
+      document.body.classList.add("ef-android");
       if (inset < 20) document.body.classList.add("ef-androidnav");
     } catch (e) {}
   })();
@@ -5509,60 +5519,32 @@
     setTx(bd, o.badge || ""); setCls(t, "has", !!o.badge);
     var sb = t.querySelector(".ef-sb"); if (sb) setTx(sb, o.sub || "");
   }
-  // ---- the two steps (Nov 2026): 1 = edit the video, 2 = details and Post ----
-  function setStep(n) {
-    var two = n === 2;
-    if (two && !(window.clips && window.clips.length)) return;
-    var v = $("trimPreviewVideo"); if (two && v) { try { v.pause(); } catch (e) {} var au = $("musicPreviewAudio"); if (au) { try { au.pause(); } catch (e) {} } }
-    setCls(body, "ef-step2", two);
-    try { window.scrollTo(0, 0); } catch (e) {}
-    update();
-    if (!two) { fitLast = -1; setTimeout(function () { fitLast = -1; update(); }, 60); }
-  }
-  function fmtLen(sec) { sec = Math.max(0, Math.round(sec || 0)); return Math.floor(sec / 60) + ":" + ("0" + (sec % 60)).slice(-2); }
-  var sumKey = "";
-  function paintSummary() {
-    var cl = window.clips || [], n = cl.length; if (!n) return;
-    var secs = 0; try { secs = (typeof vidDur === "function") ? vidDur() : 0; } catch (e) {}
-    var mt = $("trackPickerRow") && $("trackPickerRow").querySelector(".mt-sel-text b");
-    var music = (mt && $("musicTrackSelect") && $("musicTrackSelect").value) ? mt.textContent : "";
-    var key = n + "|" + Math.round(secs * 10) + "|" + music + "|" + (cl[0].thumb ? cl[0].thumb.length : 0) + "|" + cl[0].url;
-    if (key === sumKey) return; sumKey = key;
-    setTx($("esT1"), (n > 1 ? n + " clips" : "1 video") + (secs ? " \u00B7 " + fmtLen(secs) : ""));
-    setTx($("esT2"), music ? "Music: " + music : "No music");
-    setTx($("esDur"), secs ? fmtLen(secs) : "");
-    var th = $("esThumb"); th.style.backgroundImage = "";
-    var old = th.querySelector("video"); if (old) th.removeChild(old);
-    if (cl[0].thumb) th.style.backgroundImage = "url(" + cl[0].thumb + ")";
-    else if (cl[0].url) { var fv = document.createElement("video"); fv.muted = true; fv.setAttribute("muted", ""); fv.playsInline = true; fv.setAttribute("playsinline", ""); fv.preload = "metadata"; fv.src = cl[0].url + "#t=0.1"; th.insertBefore(fv, th.firstChild); }
-  }
   // Fit the picture to the screen: take the space the rows under it need, keep the Post button's zone free, give the rest to the picture.
   var fitLast = -1;
   function fit() {
     var v = $("trimPreviewVideo"); if (!v) return;
-    if (body.classList.contains("ef-step2")) return;
-    var lastRow = $("efTools");
+    var share = $("socialShareRow"), lastRow = (share && share.style.display !== "none" && share.getBoundingClientRect().height > 0) ? share : $("efTools");
     var vr = v.getBoundingClientRect(), lr = lastRow.getBoundingClientRect();
     var below = lr.bottom - vr.bottom;
-    var pb = $("efNext"), pbr = pb ? pb.getBoundingClientRect() : null;
+    var pb = $("uploadBtn"), pbr = pb ? pb.getBoundingClientRect() : null;
     var postZone = (pbr && pbr.height > 0 && getComputedStyle(pb).position === "fixed") ? Math.max(0, (window.innerHeight || 700) - pbr.top) + 16 : 92;
     var vh = window.innerHeight || document.documentElement.clientHeight || 700;
     var h = Math.round(vh - (vr.top + (window.scrollY || 0)) - below - postZone);
     h = Math.max(220, Math.min(640, h));
-    if (Math.abs(h - fitLast) > 1) { fitLast = h; v.style.setProperty("--efvh", h + "px"); }
+    if (Math.abs(h - fitLast) > 1) { fitLast = h; v.style.setProperty("--efvh", h + "px"); ts.style.setProperty("--efvh", h + "px"); }
   }
   window.addEventListener("resize", function () { fitLast = -1; });
   function update() {
     var vid = ts.classList.contains("show");
     setCls(body, "ef-video", vid);
-    if (!vid) { setCls(body, "ef-song", false); setCls(body, "ef-multi", false); setCls(body, "ef-step2", false); wasVid = false; wtTouched = false; return; }
-    if (!wasVid) { wasVid = true; setCls(body, "ef-step2", false); fitLast = -1; }
+    if (!vid) { setCls(body, "ef-song", false); setCls(body, "ef-multi", false); wtTouched = false; return; }
     var ms = $("musicTrackSelect");
     setCls(body, "ef-song", !!(ms && ms.value && !ms.disabled));
     setCls(body, "ef-multi", document.querySelectorAll("#clipTrayRow .clip-thumb").length > 1);
     // workout type
     var wt = (wtTouched && sel.value) ? sel.options[sel.selectedIndex].text : "";
     put("work", wt || "Activity", { val: !!wt });
+    put("cap", "Caption", { val: !!(($("caption").value || "").trim()) });
     // location
     var lv = (loc.value || "").trim();
     put("loc", lv || "Location", { val: !!lv });
@@ -5571,17 +5553,17 @@
     var narrOk = tn.style.display !== "none", recording = rb.classList.contains("recording"), done = tn.classList.contains("rec-done");
     if (done) put("voice", "Voiceover added", { val: true });   // (the page leaves the old 'recording' mark on its hidden button once a take is saved, so 'done' is checked first)
     else if (recording) put("voice", "Stop " + ($("narrationTimer").textContent || ""), { rec: true });
-    else put("voice", "Voiceover", { off: !narrOk, sub: (!narrOk && body.classList.contains("ef-multi")) ? "One clip only" : "" });
+    else put("voice", "Voice", { off: !narrOk, sub: (!narrOk && body.classList.contains("ef-multi")) ? "One clip only" : "" });
     var recEl = $("efRec"), recOn = !done && recording;
     if (recEl) { var quiet = recOn && window.efVoiceQuiet && window.efVoiceQuiet(); setCls(recEl, "on", recOn); setCls(recEl, "warn", !!quiet); setTx(recEl, recOn ? (quiet ? "\u25CF No sound heard \u2014 check your mic" : "\u25CF Recording  " + ($("narrationTimer").textContent || "")) : ""); }
     // music
     var row = $("trackPickerRow"), picked = row.querySelector(".mt-sel-text b"), choose = row.querySelector(".mt-choose");
     var musicOk = row.style.display !== "none" && !!(picked || choose);
     if (picked && musicOk) put("music", picked.textContent, { song: true });
-    else put("music", "Music track", { off: !musicOk });
+    else put("music", "Music", { off: !musicOk });
     // floating message
     var vb = $("vlOpenBtn"), cnt = $("vlCount").textContent;
-    put("msg", cnt ? cnt + " added" : "Floating message", { off: !vb.classList.contains("show"), val: !!cnt });
+    put("msg", cnt ? cnt + " added" : "Floating caption", { off: !vb.classList.contains("show"), val: !!cnt });
     // little chips on the picture / tracks
     var ti = window.efTrimInfo ? window.efTrimInfo() : null;
     var secs = ti && ti.vd ? (ti.e - ti.s) : 0, d = secs ? (Math.floor(secs / 60) + ":" + ("0" + Math.round(secs % 60)).slice(-2)) : "";
@@ -5589,7 +5571,6 @@
     var chip = $("efDur"); setTx(chip, d); chip.style.visibility = (d && d !== "0:00") ? "visible" : "hidden";
     if (!(window.efIsRecording && window.efIsRecording())) fit();
     var ss = $("socialShare"), st = $("ssState"); if (ss && st) setTx(st, ss.checked ? "ON" : "OFF");
-    if (body.classList.contains("ef-step2")) paintSummary();
   }
   new MutationObserver(update).observe(ts, { attributes: true, attributeFilter: ["class"] });
   setInterval(update, 250);
@@ -5625,6 +5606,17 @@
     if (loc.value) w.appendChild(btn("ef-go ghost", "Clear location", function () { inp.value = ""; push(); closeSheet(); }));
     openSheet("Location", w);
     setTimeout(function () { try { inp.focus(); } catch (e) {} }, 60);
+  }
+  function captionSheet() {
+    var w = document.createElement("div"), cb = $("caption");
+    var ta = document.createElement("textarea"); ta.className = "ef-inp"; ta.maxLength = 120; ta.rows = 3; ta.placeholder = "Say something about this one"; ta.value = cb.value || ""; ta.style.cssText = "height:96px;resize:none;";
+    function push() { cb.value = ta.value; cb.dispatchEvent(new Event("input", { bubbles: true })); update(); }
+    ta.addEventListener("input", push);
+    w.appendChild(ta);
+    w.appendChild(btn("ef-go", "Done", function () { push(); closeSheet(); }));
+    if (cb.value) w.appendChild(btn("ef-go ghost", "Clear caption", function () { ta.value = ""; push(); closeSheet(); }));
+    openSheet("Caption", w);
+    setTimeout(function () { try { ta.focus(); } catch (e) {} }, 60);
   }
   function choiceSheet(title, text, goLabel, goFn, keepLabel) {
     var w = document.createElement("div");
@@ -5683,22 +5675,11 @@
         }, "Keep my voiceover");
       } else if (el) el.click();
     }
-    else if (k === "msg") {
-      // the label editor needs the picture to scrub against: from step 2 it goes back to the video, opens, and returns when closed
-      if (body.classList.contains("ef-step2")) {
-        msgFromStep2 = true; setStep(1);
-        setTimeout(function () { $("vlOpenBtn").click(); setTimeout(function () { if (msgFromStep2 && !$("vlSheet").classList.contains("open")) { msgFromStep2 = false; setStep(2); } }, 500); }, 160);
-      } else $("vlOpenBtn").click();
-    }
-    else if (k === "cover") { var cp = $("coverPicker"); if (cp && cp.style.display !== "none") { cp.open = !cp.open; try { window.scrollTo(0, 0); } catch (e) {} } }
+    else if (k === "msg") $("vlOpenBtn").click();
+    else if (k === "change") $("changeVideoBtn").click();
+    else if (k === "cap") captionSheet();
+    else if (k === "cover") { var cp = $("coverPicker"); if (cp && cp.style.display !== "none") cp.open = !cp.open; }
   });
-  var msgFromStep2 = false;
-  if ($("vlSheet")) new MutationObserver(function () { if (msgFromStep2 && !$("vlSheet").classList.contains("open")) { msgFromStep2 = false; setStep(2); } }).observe($("vlSheet"), { attributes: true, attributeFilter: ["class"] });
-  $("efNext").addEventListener("click", function () { setStep(2); });
-  $("esEdit").addEventListener("click", function () { setStep(1); });
-  // Back on step 2 goes back to editing the video (not out of the page)
-  var fb = $("flowBackBtn");
-  if (fb) fb.addEventListener("click", function (e) { if (body.classList.contains("ef-step2")) { e.preventDefault(); e.stopImmediatePropagation(); setStep(1); } }, true);
   $("efXrm").addEventListener("click", function (e) { e.stopPropagation(); var r = $("trackPickerRow").querySelector(".mt-remove"); if (r) r.click(); });
   $("efAddClip").addEventListener("click", function () { var b = $("clipAddBtn"); if (b) b.click(); else $("addClipsInput").click(); });
   // share row: the whole row is the tap target
