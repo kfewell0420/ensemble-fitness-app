@@ -1292,6 +1292,12 @@
     v.addEventListener("seeked", s1);
     try { v.currentTime = far; } catch (e) { finish(); }
   };
+  // (iPhones, Nov 2026) Ken's logs: a clip loaded with a plain address stays at "ready=1" (length known, no picture data) for a minute until touched;
+  // the same clip loaded with a start-time tag ("#t=...") reached ready=4 in about a second. So on iPhones every clip address carries one.
+  window.efSrc = function (url, t) {
+    try { if (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)) return url + (url.indexOf("#") < 0 ? "#t=" + (t > 0 ? t : 0.001) : ""); } catch (e) {}
+    return url;
+  };
   window.createClipSwapper = function (video) {
     var shadow = null, pre = { url: null, ready: false }, swapTok = 0, showing = false, soundGuard = null;
     function make() {
@@ -1354,7 +1360,7 @@
         shadow.removeEventListener("loadeddata", onData);
         if (pre === me && !st && !ios) me.ready = true;
       });
-      shadow.src = url;
+      shadow.src = window.efSrc(url, st);
       try { shadow.load(); } catch (e) {}
     }
     // (iPhones, Nov 2026) Ken's build-11 recording: this phone REFUSES to play any video that no touch has "blessed" (muted too), so the hidden
@@ -2653,7 +2659,7 @@
     trimPreviewVideo.preload = "auto";
     pvDirty = false; pvResetting = false;
     pvWaitStart();
-    trimPreviewVideo.src = clips[0].url;
+    trimPreviewVideo.src = window.efSrc(clips[0].url, cTs(clips[0]));
     trimPreviewVideo.onloadedmetadata = function () {
       trimPreviewVideo.onloadedmetadata = null; // one-shot: later clip swaps must not regenerate the covers
       var duration = trimPreviewVideo.duration || 0;
@@ -3030,7 +3036,7 @@
     selectedFile = clips[0].file;
     var firstChanged = clips[0].file !== oldFirst;
     if (firstChanged || clips.length === 1) loadTrimPreview(true); // new clip 1 (or back to a single video): reload it and its frames
-    else if (reelIdx !== 0) { reelIdx = 0; trimPreviewVideo.src = clips[0].url; }
+    else if (reelIdx !== 0) { reelIdx = 0; trimPreviewVideo.src = window.efSrc(clips[0].url, cTs(clips[0])); }
     renderClipTray();
     updateNarrationVisibility();
     updateMoreOptionsBoxVisibility();
@@ -3217,7 +3223,7 @@
         finishLoad();
       };
       v.addEventListener("loadedmetadata", onMeta);
-      v.src = clips[idx].url;
+      v.src = window.efSrc(clips[idx].url, local !== undefined ? local : startAt);
     });
   }
   // Jump to a moment on the whole timeline (works across clips).
@@ -3946,7 +3952,7 @@
   }
   // Hidden diagnostics: tap the "Your video" heading 5 times to show a small live panel (handy when a phone
   // misbehaves: screen-record it and send the recording). Always keeps the last few events; shows them only when on.
-  var EF_BUILD = 12;   // shown at the top of the green log, so a recording says which page it was made with
+  var EF_BUILD = 13;   // shown at the top of the green log, so a recording says which page it was made with
   var DBG = { on: true, lines: [], el: null, taps: 0, tapAt: 0 };   // (test builds: the log starts ON; five quick taps on the time readout hide it)
   window.efDbg = function (m) { dbg(m); };
   function dbg(msg) { DBG.lines.push((performance.now() / 1000).toFixed(1) + "s " + msg); if (DBG.lines.length > 12) DBG.lines.shift(); }
