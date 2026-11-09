@@ -828,6 +828,41 @@
   #efBigPlay svg { margin-left: 7px; }
   /* a clip whose little picture has not arrived yet (iPhones fill them in as each clip is shown) is still a clip on the line */
   body.ef-video .mix-seg { background: #2a2d36; }
+  /* ===== Nov 2026: Instagram-style iPhone flow. Edit screen (picture, clip squares, tools, Next) -> Trim sheet -> Details (caption, activity, location, share, Post). iPhones only (body.ef-ig). ===== */
+  #igNext, #igHd, #efT_trim { display: none; }
+  body.ef-ig.ef-video:not([data-igs="details"]) #socialShareRow,
+  body.ef-ig.ef-video:not([data-igs="details"]) #efT_cap,
+  body.ef-ig.ef-video:not([data-igs="details"]) #efT_work,
+  body.ef-ig.ef-video:not([data-igs="details"]) #efT_loc,
+  body.ef-ig.ef-video:not([data-igs="details"]) #uploadBtn { display: none !important; }
+  body.ef-ig.ef-video:not([data-igs="details"]) #efT_trim { display: flex; }
+  body.ef-ig.ef-video:not([data-igs="details"]):not(.ef-igtrim) #igNext { display: flex; align-items: center; justify-content: center; position: fixed; right: 16px; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); z-index: 61; height: 50px; padding: 0 26px; border: 0; border-radius: 25px; background: linear-gradient(135deg, #ff6a1a, #ff4d0d); color: #fff; font: inherit; font-size: 17px; font-weight: 800; box-shadow: 0 0 0 8px rgba(12,12,16,0.72), 0 8px 26px rgba(255,90,20,0.38); }
+  /* clip squares under the picture (also for one video: its square and the + Add) */
+  body.ef-ig.ef-video:not([data-igs="details"]) #clipTray { display: block !important; }
+  body.ef-ig.ef-video .clip-tray { padding: 10px 12px 2px; }
+  body.ef-ig.ef-video .clip-thumb, body.ef-ig.ef-video .clip-add { width: 46px; height: 60px; border-radius: 9px; }
+  body.ef-ig.ef-video .clip-add b { font-size: 20px; }
+  body.ef-ig.ef-video .clip-thumb .clip-n { min-width: 15px; height: 15px; line-height: 15px; font-size: 10px; }
+  body.ef-ig.ef-video .clip-thumb .clip-d { font-size: 9px; }
+  /* the line with the handles waits off screen (so its size stays right) and slides up as a bottom sheet from the Trim tool */
+  body.ef-ig.ef-video #mixTimeline { display: block !important; box-sizing: border-box; position: fixed !important; left: -200vw; top: 0; width: 100vw; max-width: none; visibility: hidden; pointer-events: none; z-index: 80; background: #1b1d24; border-radius: 26px 26px 0 0; padding: 12px 12px calc(46px + env(safe-area-inset-bottom, 0px)) !important; box-shadow: 0 -12px 40px rgba(0,0,0,0.6); }
+  body.ef-ig.ef-igtrim.ef-video #mixTimeline { left: 0; top: auto; bottom: 0; visibility: visible; pointer-events: auto; }
+  body.ef-ig.ef-igtrim.ef-video #igHd { display: flex; align-items: center; justify-content: space-between; position: relative; height: 40px; margin: 0 0 30px; }
+  body.ef-ig.ef-video #efLineAdd { top: 82px; }
+  #igHd .ig-grab { position: absolute; left: 50%; top: -4px; width: 44px; height: 5px; margin-left: -22px; border-radius: 3px; background: #555; }
+  #igHd .ig-t { flex: 1; text-align: center; font-size: 16px; font-weight: 700; color: #fff; padding-top: 6px; }
+  #igHd .ig-ok { width: 40px; height: 40px; border: 0; border-radius: 50%; background: #f6c945; color: #111; font-size: 20px; font-weight: 800; line-height: 40px; padding: 0; cursor: pointer; }
+  #igHd .ig-sp { width: 40px; }
+  body.ef-ig.ef-igtrim.ef-video #trimSection, body.ef-ig.ef-igtrim.ef-video #trimPreviewVideo { --efvh: max(200px, calc(100svh - 440px)) !important; }
+  body.ef-ig.ef-igtrim.ef-video #efTools, body.ef-ig.ef-igtrim.ef-video #clipTray { visibility: hidden; }
+  /* details step: no picture, just caption, activity, location, share and Post */
+  body.ef-ig.ef-video[data-igs="details"] #trimSection, body.ef-ig.ef-video[data-igs="details"] #efT_music, body.ef-ig.ef-video[data-igs="details"] #efT_voice, body.ef-ig.ef-video[data-igs="details"] #efT_msg, body.ef-ig.ef-video[data-igs="details"] #efT_cover, body.ef-ig.ef-video[data-igs="details"] #efT_change, body.ef-ig.ef-video[data-igs="details"] #efT_cap { display: none !important; }
+  body.ef-ig.ef-video[data-igs="details"] #uploadCard { padding-top: calc(54px + env(safe-area-inset-top, 0px)) !important; }
+  body.ef-ig.ef-video[data-igs="details"] #captionField { display: block !important; margin: 0 12px 6px; }
+  body.ef-ig.ef-video[data-igs="details"] #efT_trim { display: none !important; }
+  body.ef-ig.ef-video[data-igs="details"] #captionField #caption { display: block; width: 100%; min-height: 84px; box-sizing: border-box; padding: 12px 14px; border: 1px solid #2c2f38; border-radius: 12px; background: #1b1d24; color: #fff; font: inherit; font-size: 16px; resize: none; }
+  body.ef-ig.ef-video[data-igs="details"] #captionField label { display: block; margin: 0 0 6px; font-size: 13px; color: #c9c9d1; }
+  body.ef-ig.ef-video[data-igs="details"] #efTools .ef-row { justify-content: flex-start; padding-left: 12px; gap: 14px; }
 </style>
 
 <div class="app-shell narrow" id="uploadShell">
@@ -2973,7 +3008,7 @@
       var d = (e.clientX - D.x0) / lineScale, minL = Math.min(1, c.dur), at;
       if (D.side === "l") { var ns = Math.min(Math.max(0, D.s0 + d), D.e0 - minL); setClipCut(D.i, ns, D.e0); at = cTs(c); trimBubble("start " + fmtClock(cTs(c))); }
       else { var ne = Math.max(Math.min(c.dur, D.e0 + d), D.s0 + minL); setClipCut(D.i, D.s0, ne); at = Math.max(cTs(c), cTe(c) - 0.1); trimBubble("end " + fmtClock(cTe(c))); }
-      if (reelIdx === D.i && !reelSwitching && !trimPreviewVideo.seeking) { try { trimPreviewVideo.currentTime = at; } catch (err) {} }   // the picture follows the handle
+      if (!IS_IOS_DEVICE && reelIdx === D.i && !reelSwitching && !trimPreviewVideo.seeking) { try { trimPreviewVideo.currentTime = at; } catch (err) {} }   // the picture follows the handle (iPhone: only once the finger lifts)
     });
     function up(e) {
       var D = ctDrag; if (!D || e.pointerId !== D.pid) return;
@@ -3217,6 +3252,32 @@
     document.addEventListener("touchend", efFirstTouch, true);
     document.addEventListener("click", efFirstTouch, true);
   }
+  // (iPhones, Nov 2026) Ken's build-19 recording: letting go of a trim handle or tapping another clip jumps to a clip that is not loaded in the
+  // player, and the player shows black for ~0.4 s while it loads. A still picture of that clip (its thumbnail, an ordinary image that always
+  // paints) now sits over the player for exactly that moment and is taken away once the real picture has painted.
+  window.efStill = (function () {
+    var img = null;
+    function make() {
+      if (img) return img;
+      var v = document.getElementById("trimPreviewVideo"); if (!v || !v.parentNode) return null;
+      img = document.createElement("img"); img.id = "efStill"; img.alt = ""; img.setAttribute("aria-hidden", "true");
+      img.style.cssText = "position:absolute;display:none;pointer-events:none;z-index:4;margin:0;max-width:none;max-height:none;background:#000;";
+      img.addEventListener("load", function () { var por = img.naturalHeight > img.naturalWidth; img.style.objectFit = por ? "cover" : "contain"; img.style.objectPosition = por ? "50% 32%" : "50% 50%"; });
+      v.parentNode.insertBefore(img, v.nextSibling);
+      return img;
+    }
+    return {
+      show: function (src) {
+        var v = document.getElementById("trimPreviewVideo"), m = make(); if (!m || !v || !src) return false;
+        var cs = window.getComputedStyle(v);
+        m.style.left = v.offsetLeft + "px"; m.style.top = v.offsetTop + "px"; m.style.width = v.offsetWidth + "px"; m.style.height = v.offsetHeight + "px";
+        m.style.borderRadius = cs.borderRadius;
+        m.src = src; m.style.display = "block";
+        return true;
+      },
+      hide: function () { if (img) img.style.display = "none"; }
+    };
+  })();
   function loadClipAt(idx, local, andPlay) {
     return new Promise(function (resolve) {
       var startAt = cTs(clips[idx]);
@@ -3229,6 +3290,7 @@
       var oldEnd = clips[reelIdx] ? Math.min(cTe(clips[reelIdx]), trimPreviewVideo.duration || 1e9) : undefined;
       if (andPlay && local === undefined && pvSwapper.swap(clips[idx].url, startAt, oldEnd)) {
         try { if (window.efDbg) window.efDbg("cut: fast path"); } catch (e) {}
+        window.efStill.hide();
         reelLoadTok++; reelSwitching = true; reelIdx = idx; clipSel = idx;
         renderClipTray();
         resolve();
@@ -3242,6 +3304,12 @@
       // While the next clip loads, hide the player's own play button / spinner and hold a still of the
       // clip, so the joins look like one continuous video instead of flashing a big play icon.
       setPlayerChromeHidden(v, true);
+      var stillOn = false;
+      if (IS_IOS_DEVICE && clips[idx].thumb) {
+        stillOn = window.efStill.show(clips[idx].thumb);
+        if (stillOn) { setTimeout(function () { if (tok === reelLoadTok) window.efStill.hide(); }, 3500); }
+      }
+      var hideStill = function () { if (!stillOn) return; setTimeout(function () { if (tok === reelLoadTok) { window.efStill.hide(); try { if (window.efDbg) window.efDbg("still picture taken away"); } catch (e) {} } }, 90); };
       v.poster = clips[idx].thumb || heldPicture();   // never a black screen: the next clip's picture, else the last picture of the one before
       try { if (window.efDbg) window.efDbg("cut: SLOW path (next clip was not ready)"); } catch (e) {}
       var heldOld = !!(window.efHold && window.efHold.on());
@@ -3258,7 +3326,7 @@
           if (tok !== reelLoadTok) { resolve(); return; }
           reelSwitching = false; autoAdvancing = false;
           renderClipTray();
-          if (andPlay) v.play().catch(function () {});
+          if (andPlay) { v.play().catch(function () {}); v.addEventListener("playing", hideStill, { once: true }); setTimeout(hideStill, 1500); } else hideStill();
           if (reelPending !== null) { var p = reelPending; reelPending = null; reelSeek(p); }
           resolve();
         };
@@ -4000,7 +4068,7 @@
   }
   // Hidden diagnostics: tap the "Your video" heading 5 times to show a small live panel (handy when a phone
   // misbehaves: screen-record it and send the recording). Always keeps the last few events; shows them only when on.
-  var EF_BUILD = 19;   // shown at the top of the green log, so a recording says which page it was made with
+  var EF_BUILD = 21;   // shown at the top of the green log, so a recording says which page it was made with
   var DBG = { on: true, lines: [], el: null, taps: 0, tapAt: 0 };   // (test builds: the log starts ON; five quick taps on the time readout hide it)
   window.efDbg = function (m) { dbg(m); };
   function dbg(msg) { DBG.lines.push((performance.now() / 1000).toFixed(1) + "s " + msg); if (DBG.lines.length > 12) DBG.lines.shift(); }
@@ -4415,6 +4483,15 @@
     el.addEventListener("pointerup", trimUp);
     el.addEventListener("pointercancel", trimUp);
   });
+  // (iPhones, Nov 2026) Instagram-style flow: the line with the handles lives in a bottom sheet. These two are called when it opens / closes.
+  window.efTrimOpenSel = function () {
+    try {
+      layoutLine(true);
+      if (clips.length > 1) { trimSel = Math.max(0, Math.min(clipSel, clips.length - 1)); if (reelIdx !== trimSel && !reelSwitching) selectClipOnLine(trimSel); }
+      paintLine(); paintTrim();
+    } catch (e) {}
+  };
+  window.efTrimCloseSel = function () { try { trimSel = -1; paintLine(); } catch (e) {} };
   window.efTrimReset = function () { trimS = 0; trimE = 0; tcPrev = 0; trimSel = -1; lineScale = 0; if (typeof paintTrim === "function") paintTrim(); };
   setInterval(paintTrim, 400);
 
@@ -5979,7 +6056,7 @@
       show.classList.toggle("mute", !v);
       var meal = v === "Meal Prep";
       document.body.classList.toggle("ef-meal", meal);
-      if (!meal && cap && cap.value) cap.value = "";          // leaving Meal Prep: its write-up goes with it
+      if (!meal && prev === "Meal Prep" && cap && cap.value) cap.value = "";          // leaving Meal Prep: its write-up goes with it (only then: picking any other activity used to wipe a caption typed first)
       if (prev !== null && !(ev && ev.type === "change")) { try { sel.dispatchEvent(new Event("change")); } catch (e) {} }   // category set by the page itself (default / deep link): let the page react too
     }
   }
@@ -6050,7 +6127,7 @@
   function update() {
     var vid = ts.classList.contains("show");
     setCls(body, "ef-video", vid);
-    if (!vid) { setCls(body, "ef-song", false); setCls(body, "ef-multi", false); wtTouched = false; return; }
+    if (!vid) { setCls(body, "ef-song", false); setCls(body, "ef-multi", false); wtTouched = false; if (window.efIgReset) window.efIgReset(); return; }
     var ms = $("musicTrackSelect");
     setCls(body, "ef-song", !!(ms && ms.value && !ms.disabled));
     setCls(body, "ef-multi", document.querySelectorAll("#clipTrayRow .clip-thumb").length > 1);
@@ -6202,6 +6279,44 @@
     if (e.target.closest("label, input")) return;
     $("socialShare").click();
   });
+
+  // ---- Instagram-style iPhone flow (Nov 2026): Edit screen -> Trim sheet -> Details, then Post. iPhones only; Android keeps the one-page layout. ----
+  (function igFlow() {
+    var isPhone = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    if (!isPhone) return;
+    body.classList.add("ef-ig"); body.setAttribute("data-igs", "edit");
+    var next = document.createElement("button"); next.type = "button"; next.id = "igNext"; next.textContent = "Next →"; document.body.appendChild(next);
+    var row = document.querySelector("#efTools .ef-row"), voice = $("efT_voice");
+    var tt = document.createElement("button"); tt.type = "button"; tt.className = "ef-t"; tt.id = "efT_trim"; tt.setAttribute("data-k", "trim");
+    tt.innerHTML = '<span class="ef-ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff7a3d" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><circle cx="6" cy="6" r="2.6"/><circle cx="6" cy="18" r="2.6"/><path d="M8 7.5L20 18M8 16.5L20 6"/></svg></span><span class="ef-tx">Trim</span><i class="ef-bd"></i>';
+    if (row) row.insertBefore(tt, voice && voice.nextSibling);
+    var mt = $("mixTimeline");
+    var hd = document.createElement("div"); hd.id = "igHd";
+    hd.innerHTML = '<span class="ig-grab"></span><span class="ig-sp"></span><span class="ig-t">Trim</span><button type="button" class="ig-ok" id="igTrimOk" aria-label="Done">✓</button>';
+    if (mt) mt.insertBefore(hd, mt.firstChild);
+    function pauseAll() { try { $("trimPreviewVideo").pause(); } catch (e) {} try { $("musicPreviewAudio").pause(); } catch (e) {} }
+    function openTrim() {
+      pauseAll();
+      body.classList.add("ef-igtrim"); fitLast = -1;
+      requestAnimationFrame(function () { setTimeout(function () { if (window.efTrimOpenSel) window.efTrimOpenSel(); fitLast = -1; update(); }, 40); });
+    }
+    function closeTrim() {
+      pauseAll();
+      body.classList.remove("ef-igtrim"); fitLast = -1;
+      if (window.efTrimCloseSel) window.efTrimCloseSel();
+      update();
+    }
+    function setStep(s) { body.setAttribute("data-igs", s); fitLast = -1; try { window.scrollTo(0, 0); } catch (e) {} update(); }
+    tt.addEventListener("click", openTrim);
+    $("igTrimOk").addEventListener("click", closeTrim);
+    next.addEventListener("click", function () { pauseAll(); setStep("details"); });
+    document.addEventListener("click", function (e) {
+      var b = e.target && e.target.closest ? e.target.closest("#flowBackBtn") : null; if (!b) return;
+      if (body.classList.contains("ef-igtrim")) { e.preventDefault(); e.stopImmediatePropagation(); closeTrim(); }
+      else if (body.getAttribute("data-igs") === "details") { e.preventDefault(); e.stopImmediatePropagation(); setStep("edit"); }
+    }, true);
+    window.efIgReset = function () { if (body.classList.contains("ef-igtrim")) body.classList.remove("ef-igtrim"); if (body.getAttribute("data-igs") !== "edit") body.setAttribute("data-igs", "edit"); };
+  })();
   update();
 })();
 </script>
