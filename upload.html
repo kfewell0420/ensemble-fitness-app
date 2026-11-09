@@ -385,7 +385,9 @@
   body.ef-simple.ef-video #socialShareRow, body.ef-simple.ef-video #captionField, body.ef-simple.ef-video #efAddClip, body.ef-simple.ef-video #previewSoundNote { display: none !important; }
   body.ef-simple.ef-video #efT_share { display: flex; }
   body.ef-simple.ef-video #uploadShell { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)) !important; }
-  body.ef-simple.ef-video #flowBackBtn { top: calc(var(--efvh, 300px) - 46px) !important; left: auto !important; right: 10px !important; height: 36px !important; z-index: 8; }
+  body.ef-android.ef-simple.ef-video #uploadShell { padding-bottom: calc(max(env(safe-area-inset-bottom, 0px), 54px) + 100px) !important; }
+  body.ef-simple:not(.ef-simple-ios).ef-video #pvRow { display: none !important; }   /* Android: the picture has its own play bar */
+  body.ef-simple-ios.ef-video #flowBackBtn { top: calc(var(--efvh, 300px) - 46px) !important; left: auto !important; right: 10px !important; height: 36px !important; z-index: 8; }
   body.ef-simple.ef-video #clipTray { display: block !important; }
   body.ef-simple.ef-video .clip-tray { padding: 10px 12px 2px; }
   body.ef-simple.ef-video .clip-thumb, body.ef-simple.ef-video .clip-add { width: 46px; height: 60px; border-radius: 9px; }
@@ -1666,9 +1668,11 @@
   // `selectedFile` and becomes the post itself; clips 2+ are saved in media_clips.
   // Nov 2026 (Ken): iPhone gets the SIMPLE upload: members trim on their own phone, then add up to 5 videos here. No editor; the clips still play one after another as one reel
   // Android and desktop keep the page they have. Add ?classic=1 to see the editor on an iPhone.
-  var EF_SIMPLE = (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)) && !/[?&]classic=1/.test(window.location.search);
+  var EF_IPHONE = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  var EF_SIMPLE = (EF_IPHONE || /Android/.test(navigator.userAgent)) && !/[?&]classic=1/.test(window.location.search);   // iPhone and Android phones get the simple page; desktop keeps the editor
   window.EF_SIMPLE = EF_SIMPLE;
   if (EF_SIMPLE) document.body.classList.add("ef-simple");
+  if (EF_SIMPLE && EF_IPHONE) document.body.classList.add("ef-simple-ios");
   var MAX_CLIPS = EF_SIMPLE ? 5 : 10;
   var clips = [];            // [{ file, url, dur, thumb, frames }] in play order
   var clipSel = 0;           // clip highlighted in the tray
@@ -4168,8 +4172,8 @@
   }
   // Hidden diagnostics: tap the "Your video" heading 5 times to show a small live panel (handy when a phone
   // misbehaves: screen-record it and send the recording). Always keeps the last few events; shows them only when on.
-  var EF_BUILD = 34;   // shown at the top of the green log, so a recording says which page it was made with
-  var DBG = { on: true, lines: [], el: null, taps: 0, tapAt: 0 };   // (clean build: the log starts OFF; five quick taps on the time readout turn it on, or open the page with ?dbg=1)
+  var EF_BUILD = 36;   // shown at the top of the green log, so a recording says which page it was made with
+  var DBG = { on: false, lines: [], el: null, taps: 0, tapAt: 0 };   // (clean build: the log starts OFF; five quick taps on the time readout turn it on, or open the page with ?dbg=1)
   window.efDbg = function (m) { dbg(m); };
   function dbg(msg) { DBG.lines.push((performance.now() / 1000).toFixed(1) + "s " + msg); if (DBG.lines.length > 12) DBG.lines.shift(); }
   function dbgPaint() {
