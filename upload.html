@@ -829,7 +829,7 @@
   /* a clip whose little picture has not arrived yet (iPhones fill them in as each clip is shown) is still a clip on the line */
   body.ef-video .mix-seg { background: #2a2d36; }
   /* ===== Nov 2026: Instagram-style iPhone flow. Edit screen (picture, clip squares, tools, Next) -> Trim sheet -> Details (caption, activity, location, share, Post). iPhones only (body.ef-ig). ===== */
-  #igNext, #igHd, #efT_trim { display: none; }
+  #igNext, #igCap, #igHd, #efT_trim { display: none; }
   body.ef-ig.ef-video:not([data-igs="details"]) #socialShareRow,
   body.ef-ig.ef-video:not([data-igs="details"]) #efT_cap,
   body.ef-ig.ef-video:not([data-igs="details"]) #efT_work,
@@ -837,6 +837,12 @@
   body.ef-ig.ef-video:not([data-igs="details"]) #uploadBtn { display: none !important; }
   body.ef-ig.ef-video:not([data-igs="details"]) #efT_trim { display: flex; }
   body.ef-ig.ef-video:not([data-igs="details"]):not(.ef-igtrim) #igNext { display: flex; align-items: center; justify-content: center; position: fixed; right: 16px; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); z-index: 61; height: 50px; padding: 0 26px; border: 0; border-radius: 25px; background: linear-gradient(135deg, #ff6a1a, #ff4d0d); color: #fff; font: inherit; font-size: 17px; font-weight: 800; box-shadow: 0 0 0 8px rgba(12,12,16,0.72), 0 8px 26px rgba(255,90,20,0.38); }
+  body.ef-ig.ef-video:not([data-igs="details"]):not(.ef-igtrim) #igCap { display: block; position: fixed; left: 16px; right: 142px; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); z-index: 61; height: 50px; padding: 0 16px; border: 1.5px solid #3a3d48; border-radius: 25px; background: #10141d; color: #9ea2b0; font: inherit; font-size: 15px; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-shadow: 0 0 0 8px rgba(12,12,16,0.72); }
+  body.ef-ig.ef-video #igCap.has { color: #fff; border-color: #ff7a3d; }
+  body.ef-ig.ef-video:not([data-igs="details"]) #uploadShell { padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px)) !important; }
+  /* Back sits on the picture's bottom row, on the right, where a thumb reaches (same row as the play button and time) */
+  body.ef-ig.ef-video:not([data-igs="details"]) #flowBackBtn { top: calc(var(--efvh, 300px) - 46px) !important; left: auto !important; right: 10px !important; height: 36px !important; z-index: 8; }
+  body.ef-ig.ef-video #efT_change { display: none !important; }
   /* clip squares under the picture (also for one video: its square and the + Add) */
   body.ef-ig.ef-video:not([data-igs="details"]) #clipTray { display: block !important; }
   body.ef-ig.ef-video .clip-tray { padding: 10px 12px 2px; }
@@ -858,7 +864,7 @@
   /* details step: no picture, just caption, activity, location, share and Post */
   body.ef-ig.ef-video[data-igs="details"] #trimSection, body.ef-ig.ef-video[data-igs="details"] #efT_music, body.ef-ig.ef-video[data-igs="details"] #efT_voice, body.ef-ig.ef-video[data-igs="details"] #efT_msg, body.ef-ig.ef-video[data-igs="details"] #efT_cover, body.ef-ig.ef-video[data-igs="details"] #efT_change, body.ef-ig.ef-video[data-igs="details"] #efT_cap { display: none !important; }
   body.ef-ig.ef-video[data-igs="details"] #uploadCard { padding-top: calc(54px + env(safe-area-inset-top, 0px)) !important; }
-  body.ef-ig.ef-video[data-igs="details"] #captionField { display: block !important; margin: 0 12px 6px; }
+  body.ef-ig.ef-video[data-igs="details"] #captionField { display: none !important; }
   body.ef-ig.ef-video[data-igs="details"] #efT_trim { display: none !important; }
   body.ef-ig.ef-video[data-igs="details"] #captionField #caption { display: block; width: 100%; min-height: 84px; box-sizing: border-box; padding: 12px 14px; border: 1px solid #2c2f38; border-radius: 12px; background: #1b1d24; color: #fff; font: inherit; font-size: 16px; resize: none; }
   body.ef-ig.ef-video[data-igs="details"] #captionField label { display: block; margin: 0 0 6px; font-size: 13px; color: #c9c9d1; }
@@ -1564,6 +1570,7 @@
       },
       time: function () { return showing && shadow ? shadow.currentTime : video.currentTime; },
       preroll: function () { return learnedPre; },
+      why: function (url) { return !shadow ? "no spare player" : (pre.url !== url ? (pre.url ? "spare holds another clip" : "spare empty") : (!pre.ready ? "spare still loading" : (showing ? "spare busy" : "ok"))); },
       unlock: unlock,
       onDone: function (fn) { swap.onDone = fn; }
     };
@@ -3034,7 +3041,7 @@
     if (clipSel >= clips.length) clipSel = clips.length - 1;
     // Same clips as last time (just a different one selected, e.g. when the reel rolls on): update in
     // place instead of rebuilding every thumbnail — a rebuild at each cut made the strip repaint/flicker.
-    var sig = clips.map(function (c) { return c.url + "|" + (c.dur || 0) + "|" + (c.thumb ? c.thumb.length : 0); }).join(",") + "#" + (clips.length < MAX_CLIPS);
+    var sig = clips.map(function (c) { return c.url + "|" + (c.dur || 0) + "|" + (c.dur ? cEff(c).toFixed(1) : 0) + "|" + (c.thumb ? c.thumb.length : 0); }).join(",") + "#" + (clips.length < MAX_CLIPS);
     if (row.getAttribute("data-sig") === sig && row.children.length) {
       Array.prototype.forEach.call(row.querySelectorAll(".clip-thumb"), function (b, i) { b.classList.toggle("sel", i === clipSel); });
       return;
@@ -3217,11 +3224,11 @@
         if (done) return;
         frames++;
         var l = efLum(el);
-        if (frames >= 2 && (l < 0 ? true : l > 6)) { fin("painted"); return; }
+        if (frames >= 2 && (l < 0 || l > 6 || frames >= 4)) { fin("painted"); return; }
         if (el.requestVideoFrameCallback) { try { el.requestVideoFrameCallback(look); } catch (e) { fin("no frames"); } } else setTimeout(look, 60);
       }
       if (el.requestVideoFrameCallback) { try { el.requestVideoFrameCallback(look); } catch (e) { setTimeout(look, 60); } } else setTimeout(look, 60);
-      setTimeout(function () { fin("timeout"); }, maxMs || 1200);
+      setTimeout(function () { fin("timeout"); }, maxMs || 700);
     }
   };
   function preloadNextPreview() { if (pvSwapper && hasNextClip()) pvSwapper.preload(clips[reelIdx + 1].url, cTs(clips[reelIdx + 1])); }
@@ -3312,9 +3319,9 @@
       }
       var hideStill = function () { if (!stillOn) return; setTimeout(function () { if (tok === reelLoadTok) { window.efStill.hide(); try { if (window.efDbg) window.efDbg("still picture taken away"); } catch (e) {} } }, 90); };
       v.poster = clips[idx].thumb || heldPicture();   // never a black screen: the next clip's picture, else the last picture of the one before
-      try { if (window.efDbg) window.efDbg("cut: SLOW path (next clip was not ready)"); } catch (e) {}
+      try { if (window.efDbg) window.efDbg("cut: SLOW path (" + (pvSwapper && pvSwapper.why ? pvSwapper.why(clips[idx].url) : "?") + ")"); } catch (e) {}
       var heldOld = !!(window.efHold && window.efHold.on());
-      var restore = function () { if (tok !== reelLoadTok) return; setPlayerChromeHidden(v, false); v.removeAttribute("poster"); if (heldOld) window.efHold.offWhenPainted(v, 1500); };
+      var restore = function () { if (tok !== reelLoadTok) return; setPlayerChromeHidden(v, false); v.removeAttribute("poster"); if (heldOld) window.efHold.offWhenPainted(v, 650); };
       v.addEventListener("playing", restore, { once: true });
       v.addEventListener("seeked", restore, { once: true });
       setTimeout(restore, 2500);
@@ -3326,7 +3333,7 @@
         var finishLoad = function () {
           if (tok !== reelLoadTok) { resolve(); return; }
           reelSwitching = false; autoAdvancing = false;
-          renderClipTray();
+          renderClipTray(); try { preloadNextPreview(); } catch (e) {}
           if (andPlay) { v.play().catch(function () {}); v.addEventListener("playing", hideStill, { once: true }); setTimeout(hideStill, 1500); } else hideStill();
           if (reelPending !== null) { var p = reelPending; reelPending = null; reelSeek(p); }
           resolve();
@@ -4076,7 +4083,7 @@
   }
   // Hidden diagnostics: tap the "Your video" heading 5 times to show a small live panel (handy when a phone
   // misbehaves: screen-record it and send the recording). Always keeps the last few events; shows them only when on.
-  var EF_BUILD = 28;   // shown at the top of the green log, so a recording says which page it was made with
+  var EF_BUILD = 29;   // shown at the top of the green log, so a recording says which page it was made with
   var DBG = { on: true, lines: [], el: null, taps: 0, tapAt: 0 };   // (clean build: the log starts OFF; five quick taps on the time readout turn it on, or open the page with ?dbg=1)
   window.efDbg = function (m) { dbg(m); };
   function dbg(msg) { DBG.lines.push((performance.now() / 1000).toFixed(1) + "s " + msg); if (DBG.lines.length > 12) DBG.lines.shift(); }
@@ -4499,7 +4506,7 @@
       paintLine(); paintTrim();
     } catch (e) {}
   };
-  window.efTrimCloseSel = function () { try { trimSel = -1; paintLine(); } catch (e) {} };
+  window.efTrimCloseSel = function () { try { trimSel = -1; paintLine(); } catch (e) {} try { renderClipTray(); preloadNextPreview(); } catch (e) {} };
   window.efTrimReset = function () { trimS = 0; trimE = 0; tcPrev = 0; trimSel = -1; lineScale = 0; if (typeof paintTrim === "function") paintTrim(); };
   setInterval(paintTrim, 400);
 
@@ -6130,7 +6137,7 @@
     var vh = window.innerHeight || document.documentElement.clientHeight || 700;
     var h = Math.round(vh - (vr.top + (window.scrollY || 0)) - below - postZone);
     h = Math.max(220, Math.min(640, h));
-    if (Math.abs(h - fitLast) > 1) { fitLast = h; v.style.setProperty("--efvh", h + "px"); ts.style.setProperty("--efvh", h + "px"); }
+    if (Math.abs(h - fitLast) > 1) { fitLast = h; v.style.setProperty("--efvh", h + "px"); ts.style.setProperty("--efvh", h + "px"); var _uc = $("uploadCard"); if (_uc) _uc.style.setProperty("--efvh", h + "px"); }
   }
   window.addEventListener("resize", function () { fitLast = -1; });
   function update() {
@@ -6295,6 +6302,10 @@
     if (!isPhone) return;
     body.classList.add("ef-ig"); body.setAttribute("data-igs", "edit");
     var next = document.createElement("button"); next.type = "button"; next.id = "igNext"; next.textContent = "Next →"; document.body.appendChild(next);
+    var capb = document.createElement("button"); capb.type = "button"; capb.id = "igCap"; capb.textContent = "✎  Add a caption"; document.body.appendChild(capb);
+    capb.addEventListener("click", function () { try { pauseAll(); } catch (e) {} captionSheet(); });
+    function syncCap() { var t = (($("caption") && $("caption").value) || "").trim(), want = t ? t : "✎  Add a caption"; if (capb.textContent !== want) capb.textContent = want; if (capb.classList.contains("has") !== !!t) capb.classList.toggle("has", !!t); }
+    setInterval(syncCap, 400);
     var row = document.querySelector("#efTools .ef-row"), voice = $("efT_voice");
     var tt = document.createElement("button"); tt.type = "button"; tt.className = "ef-t"; tt.id = "efT_trim"; tt.setAttribute("data-k", "trim");
     tt.innerHTML = '<span class="ef-ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff7a3d" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><circle cx="6" cy="6" r="2.6"/><circle cx="6" cy="18" r="2.6"/><path d="M8 7.5L20 18M8 16.5L20 6"/></svg></span><span class="ef-tx">Trim</span><i class="ef-bd"></i>';
