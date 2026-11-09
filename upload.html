@@ -2841,6 +2841,23 @@
   trimPreviewVideo.addEventListener("playing", function () { setTimeout(liveThumb, 120); if (IS_IOS_DEVICE && !window.__efPlayLogged) { window.__efPlayLogged = true; setTimeout(function () { efNote("playing: canvas=" + efLum(trimPreviewVideo).toFixed(0)); }, 400); } });
   trimPreviewVideo.addEventListener("seeked", function () { setTimeout(liveThumb, 120); });
   trimPreviewVideo.addEventListener("loadeddata", function () { setTimeout(liveThumb, 300); });
+  // Build 26 (iPhone test): what kind of file did the picker hand us, and can a hidden player make its picture quickly?
+  async function efTempThumbs(list) {
+    try {
+      list.forEach(function (c, i) { efNote("file " + (i + 1) + ": " + ((c.file && c.file.type) || "?") + " " + (c.file ? (c.file.size / 1048576).toFixed(1) : "?") + "MB"); });
+      for (var i = 0; i < list.length; i++) {
+        var c = list[i];
+        if (c.thumb) continue;
+        var t0 = performance.now();
+        var got = await withTempVideo(c, async function (v) {
+          efNote("clip " + (i + 1) + ": hidden player ready after " + Math.round(performance.now() - t0) + "ms, " + v.videoWidth + "x" + v.videoHeight);
+          return await captureFrameDataUrl(v, Math.min(0.3, Math.max(0.05, (c.dur || 1) - 0.1)), true);
+        }, 12000);
+        efNote("clip " + (i + 1) + ": picture " + (got ? "OK" : "FAILED") + " after " + Math.round(performance.now() - t0) + "ms");
+        if (got && !c.thumb && clips.indexOf(c) >= 0) { c.thumb = got; try { rebuildReelFilmstrip(); renderClipTray(); } catch (e) {} }
+      }
+    } catch (e) { efNote("thumb test error " + (e && e.message)); }
+  }
   async function measureClips(list) {
     if (IS_IOS_DEVICE) {
       // iPhones (Nov 2026): a phone clip is a big 60-frame HEVC file and the phone has one video decoder. Making pictures for every
@@ -2859,6 +2876,7 @@
       clampWindow();
       rebuildReelFilmstrip();
       liveThumb();
+      efTempThumbs(list);   // build 26 test: also try to make each clip's picture on the side, and log how long it takes
       return;
     }
     for (var i = 0; i < list.length; i++) {
@@ -4088,10 +4106,10 @@
   }
   // Hidden diagnostics: tap the "Your video" heading 5 times to show a small live panel (handy when a phone
   // misbehaves: screen-record it and send the recording). Always keeps the last few events; shows them only when on.
-  var EF_BUILD = 25;   // shown at the top of the green log, so a recording says which page it was made with
+  var EF_BUILD = 26;   // shown at the top of the green log, so a recording says which page it was made with
   var DBG = { on: false, lines: [], el: null, taps: 0, tapAt: 0 };   // (clean build: the log starts OFF; five quick taps on the time readout turn it on, or open the page with ?dbg=1)
   window.efDbg = function (m) { dbg(m); };
-  function dbg(msg) { DBG.lines.push((performance.now() / 1000).toFixed(1) + "s " + msg); if (DBG.lines.length > 12) DBG.lines.shift(); }
+  function dbg(msg) { DBG.lines.push((performance.now() / 1000).toFixed(1) + "s " + msg); if (DBG.lines.length > 14) DBG.lines.shift(); }
   function dbgPaint() {
     if (!DBG.on) return;
     if (!DBG.el) {
