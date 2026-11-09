@@ -822,6 +822,10 @@
   body.ef-video:not(.ef-song) #efAddMusic { display: flex; align-items: center; justify-content: center; width: 100%; height: 34px; margin-top: 6px; padding: 0; border: 1.5px dashed rgba(255,122,61,0.65); border-radius: 10px; background: rgba(255,122,61,0.08); color: #ff9a66; font: 800 13px/1 inherit; font-family: inherit; cursor: pointer; }
   /* the spare video used for clean cuts between clips must never be wider than the screen (a phone clip is 1080 wide and would zoom the whole page out) */
   .trim-media video { max-width: 100% !important; }
+  /* (iPhones, Nov 2026) the big play button on the player until the first play: an iPhone only paints a video after a real touch. */
+  #efBigPlay { position: absolute; left: 50%; top: calc(var(--efvh, 440px) / 2); transform: translate(-50%, -50%); width: 92px; height: 92px; border-radius: 50%; border: 0; padding: 0; background: #f65c2e; z-index: 6; display: none; align-items: center; justify-content: center; box-shadow: 0 6px 22px rgba(0,0,0,0.45); cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  #efBigPlay.on { display: flex; }
+  #efBigPlay svg { margin-left: 7px; }
   /* a clip whose little picture has not arrived yet (iPhones fill them in as each clip is shown) is still a clip on the line */
   body.ef-video .mix-seg { background: #2a2d36; }
 </style>
@@ -1294,6 +1298,12 @@
   };
   // (iPhones, Nov 2026) Ken's logs: a clip loaded with a plain address stays at "ready=1" (length known, no picture data) for a minute until touched;
   // the same clip loaded with a start-time tag ("#t=...") reached ready=4 in about a second. So on iPhones every clip address carries one.
+  // (iPhones, Nov 2026) Ken's recordings: a paused clip showed black at its very first instant (time 0) but a real picture once he dragged to a later
+  // spot, even though the log said the picture was ready. Experiment: park the PAUSED picture a hair into the clip (0.15 s) instead of at 0.
+  window.efPaintT = function (t) {
+    try { if (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)) return t < 0.15 ? 0.15 : t; } catch (e) {}
+    return t;
+  };
   window.efSrc = function (url, t) {
     try { if (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)) return url + (url.indexOf("#") < 0 ? "#t=" + (t > 0 ? t : 0.001) : ""); } catch (e) {}
     return url;
@@ -2653,7 +2663,22 @@
       if (pvWaitHadControls && !pvCtlOn) trimPreviewVideo.setAttribute("controls", "");
     } catch (e) {}
   }
+  function efBigPlay(show) {
+    try {
+      var b = document.getElementById("efBigPlay");
+      if (!b) {
+        if (!show || !trimPreviewVideo.parentNode) return;
+        b = document.createElement("button"); b.type = "button"; b.id = "efBigPlay"; b.setAttribute("aria-label", "Play");
+        b.innerHTML = '<svg width="38" height="44" viewBox="0 0 38 44"><path d="M2 2l34 20L2 42z" fill="#fff"/></svg>';
+        b.addEventListener("click", function (ev) { ev.stopPropagation(); b.classList.remove("on"); try { trimPreviewVideo.play().catch(function () {}); } catch (e) {} });
+        trimPreviewVideo.parentNode.appendChild(b);
+        trimPreviewVideo.addEventListener("play", function () { b.classList.remove("on"); });
+      }
+      b.classList.toggle("on", !!show);
+    } catch (e) {}
+  }
   function loadTrimPreview(keepWindow) {
+    if (IS_IOS_DEVICE) efBigPlay(true);
     if (!keepWindow) { mDelay = 0; mLenWanted = Infinity; }
     reelIdx = 0; clipSel = 0; reelSwitching = false; reelPending = null; reelLoadTok++;
     trimPreviewVideo.preload = "auto";
@@ -3151,7 +3176,7 @@
     var efTouchDone = { twin: false, pic: false };
     var efFirstTouch = function (ev) {
       try {
-        var onPlay = !!(ev.target && ((ev.target.closest && ev.target.closest("#pvRow")) || ev.target === trimPreviewVideo));
+        var onPlay = !!(ev.target && ((ev.target.closest && (ev.target.closest("#pvRow") || ev.target.closest("#efBigPlay"))) || ev.target === trimPreviewVideo));
         if (!efTouchDone.twin) {
           if (!pvSwapper) { pvSwapper = createClipSwapper(trimPreviewVideo); pvSwapper.onDone(function () { reelSwitching = false; autoAdvancing = false; renderClipTray(); preloadNextPreview(); }); }
           if (pvSwapper.unlock) pvSwapper.unlock();
@@ -3159,7 +3184,7 @@
         if (window.__efNeedPicture && !efTouchDone.pic && clips.length && trimPreviewVideo.paused && !onPlay && trimPreviewVideo.readyState >= 1) {
           efTouchDone.pic = true; window.__efNeedPicture = false;
           var vv = trimPreviewVideo, t0 = Date.now(), startT = (clips.length && cTs(clips[0])) || 0.01;
-          window.efWiggle(vv, startT, function () {
+          window.efWiggle(vv, window.efPaintT(startT), function () {
             var q = null; try { q = vv.getVideoPlaybackQuality && vv.getVideoPlaybackQuality(); } catch (e) {}
             efNote("touch: seek jump done after " + (Date.now() - t0) + "ms frames=" + (q ? q.totalVideoFrames : "?") + " canvas=" + efLum(vv).toFixed(0));
           }, 2500);
@@ -3216,7 +3241,7 @@
         };
         if (IS_IOS_DEVICE && !andPlay) {   // iPhone: a plain seek leaves the picture black; jump away and back so it really shows
           var t0w = Date.now();
-          window.efWiggle(v, local || 0, function () { try { if (window.efDbg) window.efDbg("clip " + (idx + 1) + " picture after " + (Date.now() - t0w) + "ms"); } catch (e) {} finishLoad(); }, 2500);
+          window.efWiggle(v, window.efPaintT(local || 0), function () { try { if (window.efDbg) window.efDbg("clip " + (idx + 1) + " picture after " + (Date.now() - t0w) + "ms"); } catch (e) {} finishLoad(); }, 2500);
           return;
         }
         try { v.currentTime = local || 0; } catch (e) {}
@@ -3952,7 +3977,7 @@
   }
   // Hidden diagnostics: tap the "Your video" heading 5 times to show a small live panel (handy when a phone
   // misbehaves: screen-record it and send the recording). Always keeps the last few events; shows them only when on.
-  var EF_BUILD = 14;   // shown at the top of the green log, so a recording says which page it was made with
+  var EF_BUILD = 16;   // shown at the top of the green log, so a recording says which page it was made with
   var DBG = { on: true, lines: [], el: null, taps: 0, tapAt: 0 };   // (test builds: the log starts ON; five quick taps on the time readout hide it)
   window.efDbg = function (m) { dbg(m); };
   function dbg(msg) { DBG.lines.push((performance.now() / 1000).toFixed(1) + "s " + msg); if (DBG.lines.length > 12) DBG.lines.shift(); }
@@ -6005,7 +6030,7 @@
     var narrOk = tn.style.display !== "none", recording = rb.classList.contains("recording"), done = tn.classList.contains("rec-done");
     if (done) put("voice", "Voiceover added", { val: true });   // (the page leaves the old 'recording' mark on its hidden button once a take is saved, so 'done' is checked first)
     else if (recording) put("voice", "Stop " + ($("narrationTimer").textContent || ""), { rec: true });
-    else put("voice", "Voice", { off: !narrOk, sub: (!narrOk && body.classList.contains("ef-multi")) ? "One clip only" : "" });
+    else put("voice", "Voice", { off: !narrOk && !body.classList.contains("ef-multi") });   // (several clips: the tile stays lit and a tap explains, instead of looking broken)
     var recEl = $("efRec"), recOn = !done && recording;
     if (recEl) { var quiet = recOn && window.efVoiceQuiet && window.efVoiceQuiet(); setCls(recEl, "on", recOn); setCls(recEl, "warn", !!quiet); setTx(recEl, recOn ? (quiet ? "\u25CF No sound heard \u2014 check your mic" : "\u25CF Recording  " + ($("narrationTimer").textContent || "")) : ""); }
     // music
@@ -6106,6 +6131,7 @@
     if (k === "work") workoutSheet();
     else if (k === "loc") locationSheet();
     else if (k === "voice") {
+      if ($("tileNarr").style.display === "none" && document.body.classList.contains("ef-multi")) { choiceSheet("Voiceover is for one video", "Voiceover works with a single video. Remove the extra clips to record one.", "Got it", null, ""); return; }
       var rbn = $("recordNarrationBtn"), isDone = $("tileNarr").classList.contains("rec-done"), isRec = rbn.classList.contains("recording");
       if (isDone) voiceSheet();
       else if (rbn.disabled && !isRec) {       // a song is on: a voiceover would replace it, so ask first
