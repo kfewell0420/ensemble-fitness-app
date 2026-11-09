@@ -1342,16 +1342,16 @@
       function onMeta() {
         shadow.removeEventListener("loadedmetadata", onMeta);
         if (!ios) { try { shadow.currentTime = st; } catch (e) {} return; }
-        // iPhone: a video that has never played has no picture decoded, so showing it gives a black flash. Let it play a hair
-        // (muted, hidden), stop, and go back to its start: now its first picture really is on the layer, ready to be shown.
-        var pp = shadow.play();
-        var back = function () {
+        // iPhone (Ken's build-13 recording: the next clip never became "ready", so every cut reloaded and flashed black): the seek jump that
+        // makes the main player paint its first picture is used here too. The hidden twin jumps away and back, which leaves its first picture
+        // really on its layer, ready to be shown.
+        var tP = Date.now();
+        me.wiggling = true;
+        window.efWiggle(shadow, st, function () {
           if (pre !== me) return;
-          try { shadow.pause(); } catch (e) {}
-          try { shadow.currentTime = st; } catch (e) {}
-        };
-        if (pp && pp.then) pp.then(function () { setTimeout(back, 60); }, function () { me.wiggling = true; window.efWiggle(shadow, st, function () { if (pre === me) { me.wiggling = false; me.ready = true; try { if (window.efDbg) window.efDbg("next clip primed by a seek jump"); } catch (e) {} } }); });
-        else setTimeout(back, 120);
+          me.wiggling = false; me.ready = true;
+          try { if (window.efDbg) window.efDbg("next clip ready after " + (Date.now() - tP) + "ms"); } catch (e) {}
+        }, 3000);
       }
       function onFrame() { if (me.wiggling) return; if (!ios || shadow.paused) { shadow.removeEventListener("seeked", onFrame); if (pre === me) me.ready = true; } }
       shadow.addEventListener("loadedmetadata", onMeta);
@@ -3952,7 +3952,7 @@
   }
   // Hidden diagnostics: tap the "Your video" heading 5 times to show a small live panel (handy when a phone
   // misbehaves: screen-record it and send the recording). Always keeps the last few events; shows them only when on.
-  var EF_BUILD = 13;   // shown at the top of the green log, so a recording says which page it was made with
+  var EF_BUILD = 14;   // shown at the top of the green log, so a recording says which page it was made with
   var DBG = { on: true, lines: [], el: null, taps: 0, tapAt: 0 };   // (test builds: the log starts ON; five quick taps on the time readout hide it)
   window.efDbg = function (m) { dbg(m); };
   function dbg(msg) { DBG.lines.push((performance.now() / 1000).toFixed(1) + "s " + msg); if (DBG.lines.length > 12) DBG.lines.shift(); }
@@ -5577,19 +5577,27 @@
       if (kind === "video" && clips.length > 1) {
         var attached = [clips[0]];
         uploadBtn.textContent = "Uploading clips…";
-        var clipUps = [];
+        var clipUps = [], clipErrs = [], clipBlobs = {};
+        var upOne = async function (ci, attempt) {
+          try {
+            var clipFile = clips[ci].file;
+            if (!clipBlobs[ci]) clipBlobs[ci] = await makeStreamable(clipFile);
+            var clipPath = currentUser.id + "/" + crypto.randomUUID() + "." + getExt(clipFile.name);
+            var { error: clipUploadError } = await window.sb.storage.from("media").upload(clipPath, clipBlobs[ci], { cacheControl: "3600", upsert: false });
+            if (clipUploadError) { clipErrs.push("clip " + (ci + 1) + " try " + attempt + ": " + (clipUploadError.message || clipUploadError) + " (" + Math.round((clipFile.size || 0) / 1048576) + " MB)"); try { if (window.efDbg) window.efDbg(clipErrs[clipErrs.length - 1]); } catch (e) {} return { ci: ci, path: null }; }
+            return { ci: ci, path: clipPath };
+          } catch (clipErr) {
+            clipErrs.push("clip " + (ci + 1) + " try " + attempt + ": " + ((clipErr && (clipErr.message || clipErr.name)) || "failed")); try { if (window.efDbg) window.efDbg(clipErrs[clipErrs.length - 1]); } catch (e) {}
+            return { ci: ci, path: null };
+          }
+        };
         for (var clipIndex = 1; clipIndex < clips.length; clipIndex++) {
-          clipUps.push((async function (ci) {   // (all extra clips travel together; they are attached below in their original order)
-            try {
-              var clipFile = clips[ci].file;
-              var clipPath = currentUser.id + "/" + crypto.randomUUID() + "." + getExt(clipFile.name);
-              var { error: clipUploadError } = await window.sb.storage.from("media").upload(clipPath, await makeStreamable(clipFile), { cacheControl: "3600", upsert: false });
-              if (clipUploadError) return { ci: ci, path: null, orphan: clipPath };
-              return { ci: ci, path: clipPath };
-            } catch (clipErr) { return { ci: ci, path: null }; }
-          })(clipIndex));
+          clipUps.push(upOne(clipIndex, 1));   // (all extra clips travel together; they are attached below in their original order)
         }
         var clipRes = await Promise.all(clipUps);
+        for (var rr = 0; rr < clipRes.length; rr++) {   // a clip that failed gets one more try, on its own, before giving up
+          if (!clipRes[rr].path) { await new Promise(function (r) { setTimeout(r, 900); }); clipRes[rr] = await upOne(clipRes[rr].ci, 2); }
+        }
         for (var cr = 0; cr < clipRes.length; cr++) {
           var cu = clipRes[cr];
           if (!cu.path) { failedExtraClips++; continue; }
@@ -5602,6 +5610,7 @@
               trim_end: (clips[cu.ci].te > 0 && cTe(clips[cu.ci]) < clips[cu.ci].dur - 0.04) ? Math.round(cTe(clips[cu.ci]) * 100) / 100 : null
             });
             if (clipInsertError) {
+              clipErrs.push("clip " + (cu.ci + 1) + " save: " + (clipInsertError.message || clipInsertError)); try { if (window.efDbg) window.efDbg(clipErrs[clipErrs.length - 1]); } catch (e) {}
               try { await window.sb.storage.from("media").remove([cu.path]); } catch (rmErr) {}
               throw clipInsertError;
             }
@@ -5615,7 +5624,7 @@
         }
       }
       var extraClipNote = failedExtraClips
-        ? " (" + failedExtraClips + " clip" + (failedExtraClips > 1 ? "s" : "") + " couldn't be attached — the rest of your post is saved.)"
+        ? " (" + failedExtraClips + " clip" + (failedExtraClips > 1 ? "s" : "") + " couldn't be attached — the rest of your post is saved." + ((typeof DBG !== "undefined" && DBG.on && clipErrs.length) ? " [" + clipErrs.join("; ") + "]" : "") + ")"
         : "";
 
       showMsg(msg, (kind === "photo" && isProfilePhotoChecked
