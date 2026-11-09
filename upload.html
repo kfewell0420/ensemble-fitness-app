@@ -3135,8 +3135,10 @@
       v.addEventListener("playing", restore, { once: true });
       v.addEventListener("seeked", restore, { once: true });
       setTimeout(restore, 2500);
+      var tReload = Date.now();
       var onMeta = function () {
         v.removeEventListener("loadedmetadata", onMeta);
+        try { if (window.efDbg) window.efDbg("clip " + (idx + 1) + " reloaded in " + (Date.now() - tReload) + "ms"); } catch (e) {}
         if (tok !== reelLoadTok) { resolve(); return; }
         try { v.currentTime = local || 0; } catch (e) {}
         reelSwitching = false; autoAdvancing = false;
@@ -3875,23 +3877,20 @@
   }
   // Hidden diagnostics: tap the "Your video" heading 5 times to show a small live panel (handy when a phone
   // misbehaves: screen-record it and send the recording). Always keeps the last few events; shows them only when on.
-  var DBG = { on: false, lines: [], el: null, taps: 0, tapAt: 0 };
+  var EF_BUILD = 8;   // shown at the top of the green log, so a recording says which page it was made with
+  var DBG = { on: true, lines: [], el: null, taps: 0, tapAt: 0 };   // (test builds: the log starts ON; five quick taps on the time readout hide it)
   window.efDbg = function (m) { dbg(m); };
-  function dbg(msg) { DBG.lines.push((performance.now() / 1000).toFixed(1) + "s " + msg); if (DBG.lines.length > 16) DBG.lines.shift(); }
+  function dbg(msg) { DBG.lines.push((performance.now() / 1000).toFixed(1) + "s " + msg); if (DBG.lines.length > 12) DBG.lines.shift(); }
   function dbgPaint() {
     if (!DBG.on) return;
     if (!DBG.el) {
       DBG.el = document.createElement("pre");
-      DBG.el.style.cssText = "position:fixed;left:4px;right:4px;bottom:4px;z-index:99999;margin:0;padding:6px 8px;background:rgba(0,0,0,.82);color:#8f8;font:10px/1.25 monospace;white-space:pre-wrap;pointer-events:none;border-radius:6px;";
+      DBG.el.style.cssText = "position:fixed;left:4px;right:4px;bottom:4px;z-index:99999;margin:0;padding:6px 8px;background:rgba(0,0,0,.82);color:#8f8;font:9px/1.2 monospace;white-space:pre-wrap;pointer-events:none;border-radius:6px;";
       document.body.appendChild(DBG.el);
     }
     var v = trimPreviewVideo, a = (typeof musicPreviewAudio !== "undefined") ? musicPreviewAudio : null, now = performance.now();
     DBG.el.textContent =
-      "video t=" + v.currentTime.toFixed(2) + " paused=" + v.paused + " ready=" + v.readyState + " stuckFor=" + Math.round(now - (mixTick.lastVTAt || now)) + "ms\n" +
-      "frames n=" + frameClock.n + " last=" + (frameClock.at ? Math.round(now - frameClock.at) + "ms ago" : "none") + " media=" + frameClock.media.toFixed(2) + "\n" +
-      "song t=" + (a ? a.currentTime.toFixed(2) + " paused=" + a.paused + " ready=" + a.readyState : "-") + " start=" + musicStartPicker.getValue() + "\n" +
-      "video muted=" + v.muted + " vol=" + v.volume.toFixed(2) + " | song muted=" + (a ? a.muted : "-") + " vol=" + (a ? a.volume.toFixed(2) : "-") + " net=" + (a ? a.networkState : "-") + " err=" + (a && a.error ? a.error.code : 0) + "\n" +
-      (hasMusicSelected() && a ? "want=" + musicWantNow().toFixed(2) + " drift=" + (a.currentTime - musicWantNow()).toFixed(2) + " delay=" + mDelay.toFixed(1) + " ios=" + IS_IOS_DEVICE + "\n" : "") +
+      "BUILD " + EF_BUILD + " | clip " + (reelIdx + 1) + "/" + clips.length + " t=" + v.currentTime.toFixed(2) + " " + (v.paused ? "PAUSED" : "playing") + " ready=" + v.readyState + " stuck=" + Math.round(now - (mixTick.lastVTAt || now)) + "ms" + (pvSwapper && pvSwapper.busy() ? " HANDOVER" : "") + (reelSwitching ? " SWITCHING" : "") + "\n" +
       DBG.lines.join("\n");
   }
   setInterval(dbgPaint, 250);
