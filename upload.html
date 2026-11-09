@@ -375,6 +375,43 @@
   #photoSizer.ps-failed .ps-frame, #photoSizer.ps-failed .ps-hint, #photoSizer.ps-failed .ps-seg, #photoSizer.ps-failed .ps-zoom, #photoSizer.ps-failed .ps-reset { display: none; }
   /* With a photo chosen, the photo itself takes the top of the page; the "JPG selected" box is replaced by it (Change photo is in its header). */
   body.ps-on #dropzone { display: none !important; }
+  /* ===== Nov 2026: SIMPLE iPhone upload (body.ef-simple). Note page, then: picture + play, numbered clips, a comment for each, Activity / Location / Share, Post. ===== */
+  #efSimpleNote, #efSimpleCmt, #efSimpleCount, #efT_share { display: none; }
+  body.ef-simple[data-ef-cat="video"]:not(.ef-video) #efSimpleNote { display: block; margin: 54px 0 16px; padding: 18px; border-radius: 18px; background: #101420; border: 1px solid #2c3550; color: #dfe3ee; }
+  #efSimpleNote b { display: block; margin: 0 0 10px; color: #ffcf5a; font-size: 16.5px; line-height: 1.35; }
+  #efSimpleNote p { margin: 0; font-size: 15px; line-height: 1.4; }
+  body.ef-simple[data-ef-cat="video"]:not(.ef-video) #workoutTypeField, body.ef-simple[data-ef-cat="video"]:not(.ef-video) #locationField, body.ef-simple[data-ef-cat="video"]:not(.ef-video) #captionField, body.ef-simple[data-ef-cat="video"]:not(.ef-video) #uploadBtn, body.ef-simple[data-ef-cat="video"]:not(.ef-video) #trimSection, body.ef-simple[data-ef-cat="video"]:not(.ef-video) #efTools, body.ef-simple[data-ef-cat="video"]:not(.ef-video) #socialShareRow { display: none !important; }
+  body.ef-simple.ef-video #efT_music, body.ef-simple.ef-video #efT_voice, body.ef-simple.ef-video #efT_msg, body.ef-simple.ef-video #efT_cap, body.ef-simple.ef-video #efT_cover, body.ef-simple.ef-video #efT_change, body.ef-simple.ef-video #efT_trim,
+  body.ef-simple.ef-video #socialShareRow, body.ef-simple.ef-video #captionField, body.ef-simple.ef-video #efAddClip, body.ef-simple.ef-video #previewSoundNote { display: none !important; }
+  body.ef-simple.ef-video #efT_share { display: flex; }
+  body.ef-simple.ef-video #uploadShell { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)) !important; }
+  body.ef-simple.ef-video #flowBackBtn { top: calc(var(--efvh, 300px) - 46px) !important; left: auto !important; right: 10px !important; height: 36px !important; z-index: 8; }
+  body.ef-simple.ef-video #clipTray { display: block !important; }
+  body.ef-simple.ef-video .clip-tray { padding: 10px 12px 2px; }
+  body.ef-simple.ef-video .clip-thumb, body.ef-simple.ef-video .clip-add { width: 46px; height: 60px; border-radius: 9px; }
+  body.ef-simple.ef-video .clip-add b { font-size: 20px; }
+  body.ef-simple.ef-video .clip-thumb .clip-n { min-width: 15px; height: 15px; line-height: 15px; font-size: 10px; }
+  body.ef-simple.ef-video .clip-thumb .clip-d { font-size: 9px; }
+  body.ef-simple.ef-video #mixTimeline { display: block !important; position: fixed !important; left: -200vw; top: 0; width: 100vw; visibility: hidden; pointer-events: none; }
+  body.ef-simple.ef-video #efSimpleCount { display: block; padding: 2px 14px 0; font-size: 12px; color: #98989d; }
+  body.ef-simple.ef-video #efSimpleCmt { display: block; padding: 10px 14px 2px; }
+  #efSimpleCmt label { display: block; margin: 0 0 6px; font-size: 13px; font-weight: 600; color: #c9c9d1; }
+  #efSimpleCmt input { display: block; width: 100%; box-sizing: border-box; height: 50px; padding: 0 14px; border-radius: 14px; border: 1.5px solid #ff7a3d; background: #0e1118; color: #fff; font: inherit; font-size: 16px; }
+  #efSimpleCmt input::placeholder { color: #9ea2b0; }
+  #efSimpleCmt .sc-h { margin: 6px 2px 0; font-size: 12px; color: #ffcf5a; }
+  body.ef-simple.ef-video #efTools .ef-row { justify-content: flex-start; padding-left: 12px; gap: 14px; }
+  /* Share box: two check boxes */
+  .ef-sheet .sh-row { display: flex; width: 100%; align-items: center; gap: 12px; padding: 14px 12px; margin: 0 0 8px; border: 0; border-radius: 12px; background: #26272b; color: #fff; font: inherit; font-size: 16px; font-weight: 700; text-align: left; cursor: pointer; }
+  .ef-sheet .sh-row .sh-bx { flex: 0 0 26px; width: 26px; height: 26px; border-radius: 7px; border: 2px solid #8a8d98; box-sizing: border-box; display: flex; align-items: center; justify-content: center; color: transparent; font-size: 17px; font-weight: 900; }
+  .ef-sheet .sh-row.on { background: #3a2410; box-shadow: inset 0 0 0 1.5px #ff7a2f; }
+  .ef-sheet .sh-row.on .sh-bx { background: #ff7a2f; border-color: #ff7a2f; color: #fff; }
+  .ef-sheet .sh-note { margin: 0 0 12px; font-size: 14px; line-height: 1.45; color: #c9ccd6; }
+  /* After posting: share buttons */
+  #efShareDone { margin: 70px 0 0; padding: 22px 18px; border-radius: 18px; background: #101420; border: 1px solid #2c3550; color: #dfe3ee; text-align: center; }
+  #efShareDone h3 { margin: 0 0 6px; font-size: 20px; color: #ffcf5a; }
+  #efShareDone p { margin: 0 0 14px; font-size: 15px; line-height: 1.4; }
+  #efShareDone a.sd-b { display: block; margin: 0 0 10px; padding: 14px; border-radius: 999px; background: linear-gradient(90deg, #ff5a1f, #d9440d); color: #fff; font-size: 16px; font-weight: 800; text-decoration: none; }
+  #efShareDone a.sd-skip { display: block; margin-top: 6px; padding: 10px; color: #aeb2c0; font-size: 14px; text-decoration: none; }
 </style>
 
 </head>
@@ -1065,6 +1102,8 @@
         </div>
       </div>
 
+      <div id="efSimpleNote" role="note"><b>For the best experience, please<br>edit your videos before uploading.</b><p>Trim and cut your clips on your phone,<br>then please upload up to 5 videos.</p></div>
+
       <label class="dropzone" id="dropzone">
         <div class="dropzone-icon">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
@@ -1302,7 +1341,7 @@
       the next, so only the first cut of a session has to learn it. */
 (function () {
   var IOS_SW = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-  var PRE_MAX = IOS_SW ? 2.0 : 0.35, PRE_KEY = IOS_SW ? "ef_swap_pre2" : "ef_swap_pre";
+  var PRE_MAX = IOS_SW ? 2.0 : 0.35, PRE_KEY = IOS_SW ? "ef_swap_pre3" : "ef_swap_pre";
   var learnedLead = 0.2, learnedPre = IOS_SW ? 0.9 : 0.18;
   try { var sv = parseFloat(localStorage.getItem(PRE_KEY)); if (sv > 0.04 && sv < PRE_MAX) learnedPre = sv; var sl = parseFloat(localStorage.getItem("ef_swap_lead")); if (sl >= 0 && sl < 0.8) learnedLead = sl; } catch (e) {}
   function keep(k, v) { try { localStorage.setItem(k, String(v)); } catch (e) {} }
@@ -1442,7 +1481,7 @@
     function swap(url, start, endAt) {
       if (!shadow || pre.url !== url || !pre.ready || showing) return false;
       var S = shadow, tok = ++swapTok, t0 = Date.now(), tries = 0, lead = learnedLead, seeking = false, started = false, soundHanded = false, cutDone = false;
-      var realMuted = video.muted, realVol = video.volume, carrySound = !realMuted && realVol > 0;
+      var realMuted = video.muted, realVol = video.volume, carrySound = !IOS_SW && !realMuted && realVol > 0;   // (iPhones: the spare player starts silent -- a second player starting WITH sound can make the phone pause the first one)
       var st = start || 0, tPlay = 0;
       showing = true;
       place();
@@ -1555,6 +1594,10 @@
         if (meta && meta.mediaTime > st + 0.002) { var l = (performance.now() - tPlay) / 1000; if (l > 0.03 && l < 0.5) note("twin live after " + Math.round(l * 1000) + "ms"); cut("live"); return; }
         try { S.requestVideoFrameCallback(liveCheck); } catch (e) {}
       }
+      if (IOS_SW) {   // what does the first clip do while the spare one starts? (written to the green log)
+        var v0 = video.currentTime;
+        [150, 400, 800, 1200].forEach(function (ms) { setTimeout(function () { if (tok !== swapTok || cutDone) return; note("old clip +" + ms + "ms: moved " + Math.round((video.currentTime - v0) * 1000) + "ms, " + (video.paused ? "PAUSED" : "playing") + ", ready " + video.readyState + "; spare at " + S.currentTime.toFixed(2)); }, ms); });
+      }
       var sp = S.play();
       if (sp && sp.catch) sp.catch(function () {
         // the phone will not start the twin with sound: carry on silently, and leave the real player its own sound
@@ -1600,7 +1643,12 @@
   var selectedFile = null;
   // Several videos in one post (up to 10, each a few seconds — like Instagram / TikTok). Clip 1 is
   // `selectedFile` and becomes the post itself; clips 2+ are saved in media_clips.
-  var MAX_CLIPS = 10;
+  // Nov 2026 (Ken): iPhone gets the SIMPLE upload: members trim on their own phone, then add up to 5 videos here. No editor, no auto-roll between clips
+  // (one clip plays at a time, so nothing can glitch at a cut). Android and desktop keep the page they have. Add ?classic=1 to see the editor on an iPhone.
+  var EF_SIMPLE = (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)) && !/[?&]classic=1/.test(window.location.search);
+  window.EF_SIMPLE = EF_SIMPLE;
+  if (EF_SIMPLE) document.body.classList.add("ef-simple");
+  var MAX_CLIPS = EF_SIMPLE ? 5 : 10;
   var clips = [];            // [{ file, url, dur, thumb, frames }] in play order
   var clipSel = 0;           // clip highlighted in the tray
   var reelIdx = 0;           // clip currently loaded in the preview player
@@ -2143,7 +2191,8 @@
     uploadHeading.textContent = meta.heading;
     uploadSub.textContent = meta.sub;
     dropzoneLabel.textContent = meta.placeholder;
-    document.getElementById("dropzoneHint").textContent = meta.hint;
+    document.getElementById("dropzoneHint").textContent = (EF_SIMPLE && category === "video") ? "MP4 or MOV \u00B7 up to 5 videos" : meta.hint;
+    document.body.setAttribute("data-ef-cat", category);
     categoryGrid.style.display = "none";
     uploadFlow.style.display = "block";
     // The workout Category and Location fields only ever apply to a photo
@@ -2174,7 +2223,7 @@
     productTagField.style.display = "none";
     document.getElementById("songTitleField").style.display = isSong ? "block" : "none";
     document.getElementById("captionField").style.display = isSong ? "none" : "block";
-    if (!opts.skipAutoOpen && !isMessage) {
+    if (!opts.skipAutoOpen && !isMessage && !(EF_SIMPLE && category === "video")) {   // simple iPhone page: the note shows first, then they tap Choose videos
       // Opening the native file picker immediately is the whole point of
       // picking a type first — tapping "Song" feels like it already started
       // the upload, instead of landing on one more empty box to tap again.
@@ -3248,7 +3297,7 @@
   };
   function preloadNextPreview() { if (pvSwapper && hasNextClip()) pvSwapper.preload(clips[reelIdx + 1].url, cTs(clips[reelIdx + 1])); }
   var reelFinished = false;   // the whole reel has played to its end (pressing play then starts it over from clip 1)
-  function hasNextClip() { return clips.length > 1 && reelIdx < clips.length - 1; }
+  function hasNextClip() { return !EF_SIMPLE && clips.length > 1 && reelIdx < clips.length - 1; }
   // Swap the player to another clip (optionally jumping inside it and carrying on playing).
   // (local undefined = "from the clip's own start", i.e. where its cut begins)
   // (iPhones) The first touch anywhere: bless the hidden twin player, and make the main player paint its first frame while a touch is active.
@@ -4098,7 +4147,7 @@
   }
   // Hidden diagnostics: tap the "Your video" heading 5 times to show a small live panel (handy when a phone
   // misbehaves: screen-record it and send the recording). Always keeps the last few events; shows them only when on.
-  var EF_BUILD = 30;   // shown at the top of the green log, so a recording says which page it was made with
+  var EF_BUILD = 32;   // shown at the top of the green log, so a recording says which page it was made with
   var DBG = { on: true, lines: [], el: null, taps: 0, tapAt: 0 };   // (clean build: the log starts OFF; five quick taps on the time readout turn it on, or open the page with ?dbg=1)
   window.efDbg = function (m) { dbg(m); };
   function dbg(msg) { DBG.lines.push((performance.now() / 1000).toFixed(1) + "s " + msg); if (DBG.lines.length > 12) DBG.lines.shift(); }
@@ -4224,7 +4273,8 @@
   function updatePvCtl() {
     if (!pvRowOn) return;
     var d = vidDur() || trimPreviewVideo.duration || 0, t = scrubDrag.hold ? scrubDrag.shown : reelNow();
-    if (d) t = Math.min(t, d);
+    if (EF_SIMPLE && clips.length > 1 && clips[reelIdx] && cEff(clips[reelIdx]) > 0) { d = cEff(clips[reelIdx]); t -= reelOffsetOf(reelIdx); }   // simple page: the time is for the video being watched, not the whole reel
+    if (d) t = Math.max(0, Math.min(t, d));
     var ct = pvFmt(t), dt = pvFmt(d);
     if (pvCur.textContent !== ct) pvCur.textContent = ct;
     if (pvDurEl.textContent !== dt) pvDurEl.textContent = dt;
@@ -4380,7 +4430,7 @@
   });
   trimPreviewVideo.addEventListener("play", async function () {
     if (pvResetting) return; // our own re-load is in progress; it plays again when done
-    if (IS_IOS_DEVICE && pvDirty && clips.length <= 1) {
+    if (IS_IOS_DEVICE && pvDirty && (clips.length <= 1 || EF_SIMPLE)) {
       var dur0 = trimPreviewVideo.duration || 0;
       resetPreviewThenPlay((dur0 && trimPreviewVideo.currentTime >= dur0 - 0.05) ? 0 : trimPreviewVideo.currentTime, "replay after the end");
       return;
@@ -4403,7 +4453,7 @@
     if (reelSwitching || (pvSwapper && pvSwapper.busy())) return;   // a hand-over to the next clip is already under way
     pvDirty = true; // (iPhone replay fix above: the next play re-loads the player first)
     if (hasNextClip()) { autoAdvancing = true; loadClipAt(reelIdx + 1, undefined, true); return; } // next clip, song keeps going
-    if (clips.length > 1) reelFinished = true;
+    if (clips.length > 1 && !EF_SIMPLE) reelFinished = true;
     updatePlayTogetherBtn(); updatePlayhead(); renderTimeline();
     if (songRunsToVideoEnd() && previewTail.start()) return; // song keeps going and fades out over 3 more seconds
     musicPreviewAudio.pause();
@@ -5826,7 +5876,8 @@
       // message, then on to the feed. Change POST_UPLOAD_PAGE (or set it to "") to change/turn this off.
       uploadFlow.style.display = "none";
       try { window.scrollTo(0, 0); } catch (e) {}
-      if (POST_UPLOAD_PAGE) setTimeout(function () { window.location.href = POST_UPLOAD_PAGE; }, 1200);
+      var _shareShown = false; try { _shareShown = !!(window.EF_SIMPLE && kind === "video" && window.efShareDone && window.efShareDone()); } catch (e) {}
+      if (POST_UPLOAD_PAGE && !_shareShown) setTimeout(function () { window.location.href = POST_UPLOAD_PAGE; }, 1200);
     } catch (err) {
       // Ken's ask (Oct 2026): clean up whatever already made it to storage
       // before the failure — the main file, and/or the narration/poster
@@ -6313,10 +6364,84 @@
     $("socialShare").click();
   });
 
+  // ---- SIMPLE iPhone upload (Nov 2026): a comment under each video, Activity / Location / Share pills ----
+  (function simpleFlow() {
+    if (!window.EF_SIMPLE) return;
+    var ways = { text: false, email: false };
+    var cmt = document.createElement("div"); cmt.id = "efSimpleCmt";
+    cmt.innerHTML = '<label for="efSimpleCmtIn" id="efSimpleCmtLb">Comment for video 1</label><input type="text" id="efSimpleCmtIn" maxlength="28" placeholder="Say something about this reel" autocomplete="off" enterkeyhint="done" /><div class="sc-h">It floats in for 2 seconds, then floats out.</div>';
+    var cnt = document.createElement("div"); cnt.id = "efSimpleCount";
+    var tools = $("efTools"); tools.parentNode.insertBefore(cnt, tools); tools.parentNode.insertBefore(cmt, tools);
+    var inp = $("efSimpleCmtIn"), lb = $("efSimpleCmtLb"), shownClip = null, lastSig = "";
+    inp.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); inp.blur(); } });
+    inp.addEventListener("input", function () { var c = clips[clipSel]; if (c) c.cmt = inp.value; syncLabels(); });
+    var row = document.querySelector("#efTools .ef-row");
+    var st = document.createElement("button"); st.type = "button"; st.className = "ef-t"; st.id = "efT_share"; st.setAttribute("data-k", "share");
+    st.innerHTML = '<span class="ef-ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff7a3d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><path d="M12 3v12"/><path d="M7.5 7.5 12 3l4.5 4.5"/></svg></span><span class="ef-tx">Share</span><span class="ef-bd"></span>';
+    if (row) row.appendChild(st);
+    // each comment floats in at the start of its own video (the labels are the same ones the feed already plays)
+    function syncLabels() {
+      var out = [], off = 0;
+      clips.forEach(function (c) {
+        var t = ((c && c.cmt) || "").trim(), eff = c ? (cEff(c) || 0) : 0;
+        if (t) out.push({ t: t.slice(0, 28), u: "", s: Math.round((off + Math.min(0.3, eff / 4)) * 10) / 10, d: 2 });
+        off += eff;
+      });
+      var sg = JSON.stringify(out); if (sg === lastSig) return; lastSig = sg;
+      textLabels = out;
+      try { vlRefreshUi(); } catch (e) {}
+      try { if (vlLayerApi) vlLayerApi.refresh(); } catch (e) {}
+    }
+    function syncShare() {
+      var l = ways.text && ways.email ? "Text + Email" : ways.text ? "Text" : ways.email ? "Email" : "Share";
+      put("share", l, { val: ways.text || ways.email });
+    }
+    function tick() {
+      var n = clips.length;
+      if (!body.classList.contains("ef-video") || !n) { shownClip = null; return; }
+      var i = Math.min(clipSel, n - 1), c = clips[i];
+      if (c !== shownClip) { shownClip = c; inp.value = (c && c.cmt) || ""; }
+      var t1 = "Comment for video " + (i + 1); if (lb.textContent !== t1) lb.textContent = t1;
+      var t2 = n + " of " + MAX_CLIPS + " video" + (MAX_CLIPS === 1 ? "" : "s"); if (cnt.textContent !== t2) cnt.textContent = t2;
+      syncLabels(); syncShare();
+    }
+    setInterval(tick, 300);
+    function shareSheet() {
+      var w = document.createElement("div");
+      var p = document.createElement("p"); p.className = "sh-note";
+      p.textContent = "Posting already shares your reel on the Ensemble Fitness social pages. Want to send it to someone too? Check how, and we will open it for you right after you post.";
+      w.appendChild(p);
+      [["text", "Text message"], ["email", "Email"]].forEach(function (o) {
+        var b = document.createElement("button"); b.type = "button"; b.className = "sh-row" + (ways[o[0]] ? " on" : "");
+        b.innerHTML = '<span class="sh-bx">&#10003;</span><span></span>'; b.lastChild.textContent = o[1];
+        b.addEventListener("click", function () { ways[o[0]] = !ways[o[0]]; b.classList.toggle("on", ways[o[0]]); syncShare(); });
+        w.appendChild(b);
+      });
+      w.appendChild(btn("ef-go", "Done", closeSheet));
+      openSheet("Share", w);
+    }
+    st.addEventListener("click", shareSheet);
+    // after Post: one button for each way they checked (a tap opens Messages / Mail with the note filled in)
+    window.efShareDone = function () {
+      if (!ways.text && !ways.email) return false;
+      var note = "I just posted a new reel on Ensemble Fitness! Come see it: https://ensemblefitness.com", subj = "Check out my reel on Ensemble Fitness";
+      var box = $("efShareDone"); if (box) box.parentNode.removeChild(box);
+      box = document.createElement("div"); box.id = "efShareDone";
+      var h = "<h3>Posted!</h3><p>Send it to someone now:</p>";
+      if (ways.text) h += '<a class="sd-b" href="sms:&amp;body=' + encodeURIComponent(note) + '">Text message</a>';
+      if (ways.email) h += '<a class="sd-b" href="mailto:?subject=' + encodeURIComponent(subj) + "&amp;body=" + encodeURIComponent(note) + '">Email</a>';
+      h += '<a class="sd-skip" href="' + (typeof POST_UPLOAD_PAGE === "string" && POST_UPLOAD_PAGE ? POST_UPLOAD_PAGE : "feed.html") + '">Continue to the feed</a>';
+      box.innerHTML = h;
+      var m = $("uploadMsg"); m.parentNode.insertBefore(box, m.nextSibling);
+      ways.text = false; ways.email = false; syncShare();
+      return true;
+    };
+  })();
+
   // ---- Instagram-style iPhone flow (Nov 2026): Edit screen -> Trim sheet -> Details, then Post. iPhones only; Android keeps the one-page layout. ----
   (function igFlow() {
     var isPhone = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-    if (!isPhone) return;
+    if (!isPhone || window.EF_SIMPLE) return;
     body.classList.add("ef-ig"); body.setAttribute("data-igs", "edit");
     var next = document.createElement("button"); next.type = "button"; next.id = "igNext"; next.textContent = "Next →"; document.body.appendChild(next);
     var capb = document.createElement("button"); capb.type = "button"; capb.id = "igCap"; capb.textContent = "✎  Add a caption"; document.body.appendChild(capb);
