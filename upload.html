@@ -1327,6 +1327,7 @@
     }
     function preload(url, start) {
       if (!make() || !url) return;
+      if (unlocking) { deferredPre = [url, start]; return; }   // the touch-unlock is using the twin for a moment; do this right after
       if (pre.url === url && shadow.getAttribute("data-start") === String(start || 0)) return;
       if (showing) return;
       pre = { url: url, ready: false };
@@ -1355,6 +1356,27 @@
       });
       shadow.src = url;
       try { shadow.load(); } catch (e) {}
+    }
+    // (iPhones, Nov 2026) Ken's build-11 recording: this phone REFUSES to play any video that no touch has "blessed" (muted too), so the hidden
+    // twin could never start early or show a picture, and every cut went black. A player that has been played once during a real touch stays
+    // allowed afterwards. So, on the first touch, play the twin for an instant (on a tiny built-in clip, or on the real next clip if it is
+    // already loading), then stop it. Called from the page's first touch handler.
+    var unlocked = false, unlocking = false, deferredPre = null;
+    var TINY_MP4 = "data:video/mp4;base64,AAAAIGZ0eXBpc29tAAACAGlzb21pc28yYXZjMW1wNDEAAAMubW9vdgAAAGxtdmhkAAAAAAAAAAAAAAAAAAAD6AAAASwAAQAAAQAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAlh0cmFrAAAAXHRraGQAAAADAAAAAAAAAAAAAAABAAAAAAAAASwAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAABAAAAAACAAAAAgAAAAAAAkZWR0cwAAABxlbHN0AAAAAAAAAAEAAAEsAAAAAAABAAAAAAHQbWRpYQAAACBtZGhkAAAAAAAAAAAAAAAAAAAoAAAADABVxAAAAAAALWhkbHIAAAAAAAAAAHZpZGUAAAAAAAAAAAAAAABWaWRlb0hhbmRsZXIAAAABe21pbmYAAAAUdm1oZAAAAAEAAAAAAAAAAAAAACRkaW5mAAAAHGRyZWYAAAAAAAAAAQAAAAx1cmwgAAAAAQAAATtzdGJsAAAAt3N0c2QAAAAAAAAAAQAAAKdhdmMxAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAACAAIABIAAAASAAAAAAAAAABFUxhdmM2MC4zMS4xMDIgbGlieDI2NAAAAAAAAAAAAAAAGP//AAAALWF2Y0MBQsAK/+EAFWdCwArZCWwEQAAAAwBAAAAFA8SJkgEABWjLg8sgAAAAEHBhc3AAAAABAAAAAQAAABRidHJ0AAAAAAAARWAAAEVgAAAAGHN0dHMAAAAAAAAAAQAAAAMAAAQAAAAAFHN0c3MAAAAAAAAAAQAAAAEAAAAcc3RzYwAAAAAAAAABAAAAAQAAAAMAAAABAAAAIHN0c3oAAAAAAAAAAAAAAAMAAAKGAAAACgAAAAoAAAAUc3RjbwAAAAAAAAABAAADXgAAAGJ1ZHRhAAAAWm1ldGEAAAAAAAAAIWhkbHIAAAAAAAAAAG1kaXJhcHBsAAAAAAAAAAAAAAAALWlsc3QAAAAlqXRvbwAAAB1kYXRhAAAAAQAAAABMYXZmNjAuMTYuMTAwAAAACGZyZWUAAAKibWRhdAAAAnEGBf//bdxF6b3m2Ui3lizYINkj7u94MjY0IC0gY29yZSAxNjQgcjMxMDggMzFlMTlmOSAtIEguMjY0L01QRUctNCBBVkMgY29kZWMgLSBDb3B5bGVmdCAyMDAzLTIwMjMgLSBodHRwOi8vd3d3LnZpZGVvbGFuLm9yZy94MjY0Lmh0bWwgLSBvcHRpb25zOiBjYWJhYz0wIHJlZj0zIGRlYmxvY2s9MTowOjAgYW5hbHlzZT0weDE6MHgxMTEgbWU9aGV4IHN1Ym1lPTcgcHN5PTEgcHN5X3JkPTEuMDA6MC4wMCBtaXhlZF9yZWY9MSBtZV9yYW5nZT0xNiBjaHJvbWFfbWU9MSB0cmVsbGlzPTEgOHg4ZGN0PTAgY3FtPTAgZGVhZHpvbmU9MjEsMTEgZmFzdF9wc2tpcD0xIGNocm9tYV9xcF9vZmZzZXQ9LTIgdGhyZWFkcz0xIGxvb2thaGVhZF90aHJlYWRzPTEgc2xpY2VkX3RocmVhZHM9MCBucj0wIGRlY2ltYXRlPTEgaW50ZXJsYWNlZD0wIGJsdXJheV9jb21wYXQ9MCBjb25zdHJhaW5lZF9pbnRyYT0wIGJmcmFtZXM9MCB3ZWlnaHRwPTAga2V5aW50PTI1MCBrZXlpbnRfbWluPTEwIHNjZW5lY3V0PTQwIGludHJhX3JlZnJlc2g9MCByY19sb29rYWhlYWQ9NDAgcmM9Y3JmIG1idHJlZT0xIGNyZj0yMy4wIHFjb21wPTAuNjAgcXBtaW49MCBxcG1heD02OSBxcHN0ZXA9NCBpcF9yYXRpbz0xLjQwIGFxPTE6MS4wMACAAAAADWWIhA/yYoAAw+yddeAAAAAGQZo4HeWAAAAABkGaVAb5YA==";
+    function unlock() {
+      if (unlocked || unlocking || showing || !make()) return;
+      var S = shadow, tiny = !pre.url, startAt = parseFloat(S.getAttribute("data-start")) || 0, pp = null;
+      var finish = function (okay, why) {
+        unlocking = false; if (okay) unlocked = true;
+        try { if (window.efDbg) window.efDbg(okay ? "spare player unlocked by a touch (" + (tiny ? "tiny clip" : "next clip") + ")" : "spare unlock refused: " + why); } catch (e) {}
+        if (tiny) { try { S.removeAttribute("src"); S.load(); } catch (e) {} }
+        var d = deferredPre; deferredPre = null; if (d) preload(d[0], d[1]);
+      };
+      unlocking = true;
+      try { if (tiny) { S.muted = true; S.src = TINY_MP4; } pp = S.play(); } catch (e) { finish(false, e && e.name); return; }
+      var settled = false, ok = function () { if (settled) return; settled = true; setTimeout(function () { try { S.pause(); } catch (e) {} if (!tiny) { try { S.currentTime = startAt; } catch (e) {} } finish(true); }, tiny ? 120 : 80); };
+      if (pp && pp.then) pp.then(ok, function (er) { if (settled) return; settled = true; finish(false, er && er.name); }); else ok();
+      setTimeout(function () { if (!settled) { settled = true; finish(false, "no answer"); } }, 1500);
     }
     // The clip's own sound goes back to the real player.
     var restoreSound = function () {};
@@ -1491,6 +1513,7 @@
       },
       time: function () { return showing && shadow ? shadow.currentTime : video.currentTime; },
       preroll: function () { return learnedPre; },
+      unlock: unlock,
       onDone: function (fn) { swap.onDone = fn; }
     };
   };
@@ -2639,46 +2662,9 @@
       // a real frame to be drawn; now that the thumbnails use their own hidden player this one is left at "never
       // decoded". A tiny nudge forward makes the browser paint the clip's first frame, with no sound or playback.
       try { if (duration > 0.05 && trimPreviewVideo.paused && trimPreviewVideo.currentTime === 0) trimPreviewVideo.currentTime = 0.01; } catch (e) {}
-      if (IS_IOS_DEVICE) {   // (iPhones, Nov 2026) some phones leave the first picture black until the player is touched. Try one remedy after another, and log which (if any) works.
-        var vv = trimPreviewVideo, tw0 = Date.now(), seen = false, d0 = duration;
-        var probe = function (label) {
-          var q = null; try { q = vv.getVideoPlaybackQuality && vv.getVideoPlaybackQuality(); } catch (e) {}
-          efNote(label + ": " + vv.videoWidth + "x" + vv.videoHeight + " ready=" + vv.readyState + " t=" + vv.currentTime.toFixed(2) + " frames=" + (q ? q.totalVideoFrames : "?") + " canvas=" + efLum(vv).toFixed(0));
-        };
-        efNote("first picture: waiting (" + ((navigator.userAgent.match(/OS [\d_]+/) || [""])[0]) + ")");
-        if (vv.requestVideoFrameCallback) { try { vv.requestVideoFrameCallback(function () { seen = true; efNote("PICTURE on screen after " + (Date.now() - tw0) + "ms"); }); } catch (e) {} }
-        // Ken's build 9 and 10 logs: the picture appeared only at the END of the whole ladder both times, right after the old "far seek" step, and
-        // only after a reload and the controls flash had run first (the frame counter only moved after those). So: run exactly that order, driven by
-        // events instead of long waits, and keep repeating the far seek until a picture is really on screen.
-        var startT = (clips.length && cTs(clips[0])) || 0.01;
-        var gone = function () { return seen || !clips.length || vv !== trimPreviewVideo; };
-        var whenReady = function (fn, maxMs) {
-          var done = false, go = function () { if (done) return; done = true; vv.removeEventListener("canplay", go); fn(); };
-          if (vv.readyState >= 3) { go(); return; }
-          vv.addEventListener("canplay", go); setTimeout(go, maxMs || 4000);
-        };
-        var farSeek = function (then) {
-          var far = (startT + 0.5 < d0 - 0.05) ? startT + 0.5 : Math.max(0, startT - 0.5), back = false;
-          var s1 = function () { vv.removeEventListener("seeked", s1); back = true; try { vv.currentTime = startT; } catch (e) {} setTimeout(then, 700); };
-          vv.addEventListener("seeked", s1);
-          setTimeout(function () { if (!back) { vv.removeEventListener("seeked", s1); back = true; try { vv.currentTime = startT; } catch (e) {} setTimeout(then, 700); } }, 1200);
-          try { vv.currentTime = far; } catch (e) {}
-        };
-        var rounds = 0;
-        var again = function () {
-          if (gone()) return;
-          if (++rounds > 8) { efNote("no remedy worked: a touch is needed"); return; }
-          probe("far seek " + rounds); farSeek(function () { if (!gone()) { efNote("  still black"); setTimeout(again, 800); } });
-        };
-        probe("step 1 reload");
-        try { vv.src = clips[0].url + "#t=0.001"; vv.load(); } catch (e) {}
-        if (vv.requestVideoFrameCallback) { try { vv.requestVideoFrameCallback(function () { if (!seen) { seen = true; efNote("PICTURE on screen after " + (Date.now() - tw0) + "ms"); } }); } catch (e) {} }
-        whenReady(function () {
-          if (gone()) return;
-          probe("step 2 controls flash");
-          vv.setAttribute("controls", "");
-          setTimeout(function () { vv.removeAttribute("controls"); if (!gone()) again(); }, 700);
-        }, 4000);
+      if (IS_IOS_DEVICE) {   // (iPhones, Nov 2026) this phone shows a paused first frame only after a real touch. Nothing is forced here any more: the first touch does the work (see efFirstTouch).
+        window.__efNeedPicture = true;
+        efNote("first picture: waiting for a touch (" + ((navigator.userAgent.match(/OS [\d_]+/) || [""])[0]) + ")");
       }
       if (clips.length === 1) clips[0].dur = duration;
       try { layoutLine(true); renderTimeline(); } catch (e) {}
@@ -3154,6 +3140,29 @@
   function hasNextClip() { return clips.length > 1 && reelIdx < clips.length - 1; }
   // Swap the player to another clip (optionally jumping inside it and carrying on playing).
   // (local undefined = "from the clip's own start", i.e. where its cut begins)
+  // (iPhones) The first touch anywhere: bless the hidden twin player, and make the main player paint its first frame while a touch is active.
+  if (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)) {
+    var efTouchDone = { twin: false, pic: false };
+    var efFirstTouch = function (ev) {
+      try {
+        var onPlay = !!(ev.target && ((ev.target.closest && ev.target.closest("#pvRow")) || ev.target === trimPreviewVideo));
+        if (!efTouchDone.twin) {
+          if (!pvSwapper) { pvSwapper = createClipSwapper(trimPreviewVideo); pvSwapper.onDone(function () { reelSwitching = false; autoAdvancing = false; renderClipTray(); preloadNextPreview(); }); }
+          if (pvSwapper.unlock) pvSwapper.unlock();
+        }
+        if (window.__efNeedPicture && !efTouchDone.pic && clips.length && trimPreviewVideo.paused && !onPlay && trimPreviewVideo.readyState >= 1) {
+          efTouchDone.pic = true; window.__efNeedPicture = false;
+          var vv = trimPreviewVideo, t0 = Date.now(), startT = (clips.length && cTs(clips[0])) || 0.01;
+          window.efWiggle(vv, startT, function () {
+            var q = null; try { q = vv.getVideoPlaybackQuality && vv.getVideoPlaybackQuality(); } catch (e) {}
+            efNote("touch: seek jump done after " + (Date.now() - t0) + "ms frames=" + (q ? q.totalVideoFrames : "?") + " canvas=" + efLum(vv).toFixed(0));
+          }, 2500);
+        }
+      } catch (e) { efNote("touch handler error: " + (e && e.message)); }
+    };
+    document.addEventListener("touchend", efFirstTouch, true);
+    document.addEventListener("click", efFirstTouch, true);
+  }
   function loadClipAt(idx, local, andPlay) {
     return new Promise(function (resolve) {
       var startAt = cTs(clips[idx]);
@@ -3937,7 +3946,7 @@
   }
   // Hidden diagnostics: tap the "Your video" heading 5 times to show a small live panel (handy when a phone
   // misbehaves: screen-record it and send the recording). Always keeps the last few events; shows them only when on.
-  var EF_BUILD = 11;   // shown at the top of the green log, so a recording says which page it was made with
+  var EF_BUILD = 12;   // shown at the top of the green log, so a recording says which page it was made with
   var DBG = { on: true, lines: [], el: null, taps: 0, tapAt: 0 };   // (test builds: the log starts ON; five quick taps on the time readout hide it)
   window.efDbg = function (m) { dbg(m); };
   function dbg(msg) { DBG.lines.push((performance.now() / 1000).toFixed(1) + "s " + msg); if (DBG.lines.length > 12) DBG.lines.shift(); }
