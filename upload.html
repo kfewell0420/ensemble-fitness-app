@@ -2117,7 +2117,7 @@
     document.getElementById("songChecking").style.display = "none";
     document.getElementById("songPayoutGate").style.display = "none"; // leaving the bank-link screen for the real flow
     var meta = CATEGORY_META[category];
-    fileInput.accept = meta.accept;
+    fileInput.accept = (window.efIOSAccept ? window.efIOSAccept(meta.accept) : meta.accept);
     fileInput.multiple = (category === "video" || category === "media"); // several clips at once (up to 10)
     // Ken's ask (Oct 2026): the eyebrow/heading/subtext above only earn
     // their place on the category-picker screen itself — once a tile's
@@ -3869,6 +3869,16 @@
   // (Oct 2026) The waveform picture was switched off on iPhones while the iPhone skipping was being chased. The real
   // cause turned out to be the preview thumbnails seeking the watched player (fixed), so the picture is back on iPhones
   // too, as Ken asked: the orange bar shows the song's real volume/pitch bars, with no wording on it.
+  // iPhone only: asking the picker for "video/mp4" (instead of any video) makes iOS hand the page
+  // an ordinary H.264 copy of a phone-recorded HEVC clip, which is far lighter for two players to
+  // run side by side. Other devices keep the exact picker they always had.
+  window.efIOSAccept = function (a) {
+    try {
+      var ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+      return (ios && a === "video/*") ? "video/mp4" : a;
+    } catch (e) { return a; }
+  };
+  try { var _aci = document.getElementById("addClipsInput"); if (_aci) _aci.accept = window.efIOSAccept(_aci.accept); } catch (e) {}
   var IS_IOS_DEVICE = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
   // Oct 27 (the artist: "when I drag the bar the sound sometimes hangs, thinking, until it catches up"): the preview song streamed
   // from the internet, so every jump to a new spot had to fetch that part of the song first. The picture of the song's wave already
@@ -4078,7 +4088,7 @@
   }
   // Hidden diagnostics: tap the "Your video" heading 5 times to show a small live panel (handy when a phone
   // misbehaves: screen-record it and send the recording). Always keeps the last few events; shows them only when on.
-  var EF_BUILD = 24;   // shown at the top of the green log, so a recording says which page it was made with
+  var EF_BUILD = 25;   // shown at the top of the green log, so a recording says which page it was made with
   var DBG = { on: false, lines: [], el: null, taps: 0, tapAt: 0 };   // (clean build: the log starts OFF; five quick taps on the time readout turn it on, or open the page with ?dbg=1)
   window.efDbg = function (m) { dbg(m); };
   function dbg(msg) { DBG.lines.push((performance.now() / 1000).toFixed(1) + "s " + msg); if (DBG.lines.length > 12) DBG.lines.shift(); }
@@ -5394,7 +5404,8 @@
   function pickedCategoryKey() {
     var accept = fileInput.accept;
     for (var key in CATEGORY_META) {
-      if (CATEGORY_META[key].accept === accept) return key;
+      var ma = CATEGORY_META[key].accept;
+      if (ma === accept || (window.efIOSAccept && window.efIOSAccept(ma) === accept)) return key;
     }
     return null;
   }
