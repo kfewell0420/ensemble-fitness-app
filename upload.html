@@ -1239,6 +1239,181 @@
 <script src="js/config.js"></script>
 <script src="js/shared-session.js"></script>
 <script src="js/supabaseClient.js"></script>
+<script>
+/* Clean cut between clips in the video preview (Nov 2026): the same hand-over as js/supabaseClient.js, with three fixes
+   for what phones showed -- a flash and a sound "hit" at each cut:
+   1. The twin must be actually PAINTING the next clip before the real player is touched (it is paused on its last picture
+      underneath, never blanked), so there is no instant with nothing on screen.
+   2. The clip's own sound rides on the twin through the hand-over (the real player is muted while it catches up), then the
+      two swap places on the same frame. If the phone will not let the twin play with sound, nothing changes: the real
+      player simply plays its own sound as soon as it is up.
+   3. The real player is lined up closer (within about one frame) and remembers how far ahead it must aim from one cut to
+      the next, so only the first cut of a session has to learn it. */
+(function () {
+  var learnedLead = 0.2, learnedPre = 0.12;
+  window.createClipSwapper = function (video) {
+    var shadow = null, pre = { url: null, ready: false }, swapTok = 0, showing = false, soundGuard = null;
+    function make() {
+      if (shadow || !video || !video.parentNode) return shadow;
+      shadow = document.createElement("video");
+      shadow.muted = true; shadow.defaultMuted = true;
+      shadow.setAttribute("playsinline", ""); shadow.setAttribute("muted", "");
+      shadow.preload = "auto"; shadow.controls = false; shadow.disablePictureInPicture = true;
+      shadow.setAttribute("aria-hidden", "true");
+      shadow.style.cssText = "position:absolute; pointer-events:none; opacity:0.02; margin:0; transition:none; will-change:opacity; transform:translateZ(0);";
+      video.parentNode.insertBefore(shadow, video.nextSibling);
+      return shadow;
+    }
+    function place() {
+      var cs = window.getComputedStyle(video);
+      shadow.className = video.className;
+      shadow.style.left = video.offsetLeft + "px";
+      shadow.style.top = video.offsetTop + "px";
+      shadow.style.width = video.offsetWidth + "px";
+      shadow.style.height = video.offsetHeight + "px";
+      shadow.style.maxWidth = "none"; shadow.style.maxHeight = "none"; shadow.style.aspectRatio = "auto";
+      shadow.style.objectFit = cs.objectFit; shadow.style.objectPosition = cs.objectPosition;
+      shadow.style.borderRadius = cs.borderRadius; shadow.style.background = cs.backgroundColor;
+      shadow.style.transform = cs.transform === "none" ? "translateZ(0)" : cs.transform;
+    }
+    function preload(url, start) {
+      if (!make() || !url) return;
+      if (pre.url === url && shadow.getAttribute("data-start") === String(start || 0)) return;
+      if (showing) return;
+      pre = { url: url, ready: false };
+      shadow.setAttribute("data-start", String(start || 0));
+      var st = start || 0, me = pre;
+      function onMeta() { shadow.removeEventListener("loadedmetadata", onMeta); try { shadow.currentTime = st; } catch (e) {} }
+      function onFrame() { shadow.removeEventListener("seeked", onFrame); if (pre === me) me.ready = true; }
+      shadow.addEventListener("loadedmetadata", onMeta);
+      shadow.addEventListener("seeked", onFrame);
+      shadow.addEventListener("loadeddata", function onData() {
+        shadow.removeEventListener("loadeddata", onData);
+        if (pre === me && !st) me.ready = true;
+      });
+      shadow.src = url;
+      try { shadow.load(); } catch (e) {}
+    }
+    // The clip's own sound goes back to the real player.
+    var restoreSound = function () {};
+    function swap(url, start, endAt) {
+      if (!shadow || pre.url !== url || !pre.ready || showing) return false;
+      var S = shadow, tok = ++swapTok, t0 = Date.now(), tries = 0, lead = learnedLead, seeking = false, started = false, soundHanded = false, cutDone = false;
+      var realMuted = video.muted, realVol = video.volume, carrySound = !realMuted && realVol > 0;
+      var st = start || 0, tPlay = 0;
+      showing = true;
+      place();
+      function guard() { if (showing && tok === swapTok && carrySound && !soundHanded && !video.muted) video.muted = true; }
+      restoreSound = function () {
+        if (soundGuard) { video.removeEventListener("volumechange", soundGuard); soundGuard = null; }
+        if (carrySound && !soundHanded) { soundHanded = true; try { video.muted = realMuted; } catch (e) {} }
+        try { S.muted = true; } catch (e) {}
+      };
+      function reallyFinish() {
+        if (tok !== swapTok) return;
+        setPlayerChromeHidden(video, false);
+        showing = false;
+        S.style.opacity = "0.02";
+        try { S.pause(); } catch (e) {}
+        pre = { url: null, ready: false };
+        S.removeAttribute("data-start");
+        if (swap.onDone) swap.onDone();
+      }
+      function finish() {
+        if (tok !== swapTok) return;
+        var fired = false;
+        function go() {
+          if (fired) return; fired = true;
+          restoreSound();                                   // sound: real player in, twin out, on the same frame
+          requestAnimationFrame(function () { requestAnimationFrame(reallyFinish); });
+        }
+        if (video.requestVideoFrameCallback && !video.paused) {
+          try { video.requestVideoFrameCallback(function () { go(); }); } catch (e) { go(); }
+          setTimeout(go, 250);
+        } else setTimeout(go, 120);
+      }
+      function aim() {
+        seeking = true;
+        var done = function () { video.removeEventListener("seeked", done); seeking = false; };
+        video.addEventListener("seeked", done);
+        try { video.currentTime = S.currentTime + lead; } catch (e) { seeking = false; }
+      }
+      function onMeta() {
+        video.removeEventListener("loadedmetadata", onMeta);
+        if (tok !== swapTok) return;
+        aim();
+        var p = video.play(); if (p && p.catch) p.catch(function () {});
+        poll();
+      }
+      function poll() {
+        if (tok !== swapTok) return;
+        var d = video.currentTime - S.currentTime;
+        var live = !video.paused && video.readyState >= 3 && !seeking;
+        if (live && Math.abs(d) < 0.045) { learnedLead = lead; finish(); return; }
+        if (Date.now() - t0 > 2500 || tries >= 8) { finish(); return; }
+        if (live) { tries++; lead = Math.max(0, Math.min(0.8, lead - d)); aim(); }
+        requestAnimationFrame(poll);
+      }
+      // The cut itself: the twin comes on top (it is already running), the real player stops on its last picture and,
+      // once the twin is really painting, loads the clip underneath.
+      function cut() {
+        if (cutDone || tok !== swapTok) return; cutDone = true;
+        setPlayerChromeHidden(video, true);
+        if (carrySound) { soundGuard = guard; video.addEventListener("volumechange", guard); video.muted = true; }   // the old clip's sound ends here; the twin's takes over
+        S.style.opacity = "1";
+        try { video.pause(); } catch (e) {}
+        if (S.requestVideoFrameCallback) { try { S.requestVideoFrameCallback(startReal); } catch (e) { startReal(); } setTimeout(startReal, 180); }
+        else setTimeout(startReal, 60);
+      }
+      function startReal() {
+        if (started || tok !== swapTok) return; started = true;
+        video.addEventListener("loadedmetadata", onMeta);
+        video.src = url;
+      }
+      // Start the twin NOW, still hidden, so its picture and sound are already running by the moment the old clip ends
+      // (a player takes ~0.1 s to get going; starting it only at the cut left a hole in the picture and the sound).
+      S.muted = !carrySound; try { S.volume = realVol; } catch (e) {}
+      tPlay = performance.now();
+      function liveCheck(now, meta) {
+        if (cutDone || tok !== swapTok) return;
+        if (meta && meta.mediaTime > st + 0.002) { var l = (performance.now() - tPlay) / 1000; if (l > 0.03 && l < 0.5) learnedPre = Math.max(0.05, Math.min(0.3, learnedPre * 0.5 + l * 0.5)); cut(); return; }
+        try { S.requestVideoFrameCallback(liveCheck); } catch (e) {}
+      }
+      var sp = S.play();
+      if (sp && sp.catch) sp.catch(function () {
+        // the phone will not start the twin with sound: carry on silently, and leave the real player its own sound
+        S.muted = true; carrySound = false;
+        if (soundGuard) { video.removeEventListener("volumechange", soundGuard); soundGuard = null; }
+        try { video.muted = realMuted; } catch (e) {}
+        var again = S.play(); if (again && again.catch) again.catch(function () {});
+      });
+      if (S.requestVideoFrameCallback) { try { S.requestVideoFrameCallback(liveCheck); } catch (e) {} }
+      (function watchOld() {
+        if (cutDone || tok !== swapTok) return;
+        var left = (typeof endAt === "number" && isFinite(endAt)) ? endAt - video.currentTime : 0;
+        if (video.paused || video.ended || left < 0.03 || Date.now() - t0 > 600) { cut(); return; }
+        requestAnimationFrame(watchOld);
+      })();
+      return true;
+    }
+    return {
+      preload: preload,
+      swap: swap,
+      busy: function () { return showing; },
+      cancel: function () {
+        swapTok++;
+        restoreSound();
+        if (showing) setPlayerChromeHidden(video, false);
+        if (showing && shadow) { showing = false; shadow.style.opacity = "0.02"; try { shadow.pause(); } catch (e) {} }
+      },
+      time: function () { return showing && shadow ? shadow.currentTime : video.currentTime; },
+      preroll: function () { return learnedPre; },
+      onDone: function (fn) { swap.onDone = fn; }
+    };
+  };
+})();
+</script>
+
 <script src="js/text-labels-v2.js?v=1"></script>
 <script src="js/notifications.js"></script>
 <script>
@@ -2758,7 +2933,8 @@
         pvSwapper.onDone(function () { reelSwitching = false; autoAdvancing = false; renderClipTray(); preloadNextPreview(); });
       }
       // Playing straight on into the next clip: a clean cut, no loading flash.
-      if (andPlay && local === undefined && pvSwapper.swap(clips[idx].url, startAt)) {
+      var oldEnd = clips[reelIdx] ? Math.min(cTe(clips[reelIdx]), trimPreviewVideo.duration || 1e9) : undefined;
+      if (andPlay && local === undefined && pvSwapper.swap(clips[idx].url, startAt, oldEnd)) {
         reelLoadTok++; reelSwitching = true; reelIdx = idx; clipSel = idx;
         renderClipTray();
         resolve();
@@ -3682,7 +3858,7 @@
     if (clips.length > 1 && hasNextClip() && !reelSwitching && !trimPreviewVideo.paused) {
       var rcNow = clips[reelIdx], endAt = (rcNow && rcNow.te > 0) ? cTe(rcNow) : trimPreviewVideo.duration;
       var leftInClip = endAt - trimPreviewVideo.currentTime;
-      if (isFinite(leftInClip) && trimPreviewVideo.currentTime > 0.3 && leftInClip < 0.09) { autoAdvancing = true; loadClipAt(reelIdx + 1, undefined, true); }
+      if (isFinite(leftInClip) && trimPreviewVideo.currentTime > 0.3 && leftInClip < 0.04 + ((pvSwapper && pvSwapper.preroll) ? pvSwapper.preroll() : 0.05)) { autoAdvancing = true; loadClipAt(reelIdx + 1, undefined, true); }
     }
     // the last clip was shortened: the reel stops where its cut ends (the song stops with it)
     if (clips.length > 1 && !hasNextClip() && !reelSwitching && !trimPreviewVideo.paused && clips[reelIdx] && clips[reelIdx].te > 0 && trimPreviewVideo.currentTime >= cTe(clips[reelIdx]) - 0.04) {
@@ -3809,6 +3985,7 @@
     updatePlayTogetherBtn(); musicPreviewAudio.pause(); updatePlayhead(); renderTimeline();
   });
   trimPreviewVideo.addEventListener("ended", function () {
+    if (reelSwitching || (pvSwapper && pvSwapper.busy())) return;   // a hand-over to the next clip is already under way
     pvDirty = true; // (iPhone replay fix above: the next play re-loads the player first)
     if (hasNextClip()) { autoAdvancing = true; loadClipAt(reelIdx + 1, undefined, true); return; } // next clip, song keeps going
     if (clips.length > 1) reelFinished = true;
