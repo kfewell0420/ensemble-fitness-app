@@ -1287,8 +1287,13 @@
    3. The real player is lined up closer (within about one frame) and remembers how far ahead it must aim from one cut to
       the next, so only the first cut of a session has to learn it. */
 (function () {
-  var learnedLead = 0.2, learnedPre = 0.18;
-  try { var sv = parseFloat(localStorage.getItem("ef_swap_pre")); if (sv > 0.04 && sv < 0.35) learnedPre = sv; var sl = parseFloat(localStorage.getItem("ef_swap_lead")); if (sl >= 0 && sl < 0.8) learnedLead = sl; } catch (e) {}
+  // (iPhones, Nov 2026) Ken's recording of build 23: every cut froze the picture for about 1.2 s. A hidden second player on an iPhone needs about a
+  // second to start a 60-frame clip, and it was being started only ~0.3 s before the old clip ended (that was the most it was allowed). On
+  // iPhones it may now start up to 2 s early, measures its own start-up time, and uses that on every following cut (and remembers it).
+  var IOS_SW = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  var PRE_MAX = IOS_SW ? 2.0 : 0.35, PRE_KEY = IOS_SW ? "ef_swap_pre2" : "ef_swap_pre";
+  var learnedLead = 0.2, learnedPre = IOS_SW ? 0.7 : 0.18;
+  try { var sv = parseFloat(localStorage.getItem(PRE_KEY)); if (sv > 0.04 && sv < PRE_MAX) learnedPre = sv; var sl = parseFloat(localStorage.getItem("ef_swap_lead")); if (sl >= 0 && sl < 0.8) learnedLead = sl; } catch (e) {}
   function keep(k, v) { try { localStorage.setItem(k, String(v)); } catch (e) {} }
   function note(m) { try { if (window.efDbg) window.efDbg("cut: " + m); } catch (e) {} }
   // Is this picture (almost) black? (only possible for pictures from this page's own files)
@@ -1498,9 +1503,9 @@
         // Learn when to start the twin: the cut should land just as the old clip ends. Landed early -> start the twin later next time; the twin was late -> start it sooner.
         if (typeof endAt === "number" && isFinite(endAt)) {
           var leftNow = endAt - video.currentTime;
-          if (why === "live") learnedPre = Math.max(0.04, Math.min(0.35, learnedPre - (leftNow - 0.02) * 0.9));
-          else learnedPre = Math.max(0.04, Math.min(0.35, learnedPre + 0.03));
-          keep("ef_swap_pre", learnedPre.toFixed(3));
+          if (why === "live") learnedPre = Math.max(0.04, Math.min(PRE_MAX, learnedPre - (leftNow - 0.02) * 0.9));
+          else learnedPre = Math.max(0.04, Math.min(PRE_MAX, learnedPre + (IOS_SW ? 0.2 : 0.03)));
+          keep(PRE_KEY, learnedPre.toFixed(3));
         }
         note("cut, old clip has " + ((typeof endAt === "number" && isFinite(endAt)) ? Math.round((endAt - video.currentTime) * 1000) : "?") + "ms left, twin at " + S.currentTime.toFixed(2) + " (start " + st.toFixed(2) + ")");
         var held = !!(window.efHold && window.efHold.on());   // (iPhones) keep the old picture up until the new one has painted
@@ -1522,8 +1527,20 @@
       // (a player takes ~0.1 s to get going; starting it only at the cut left a hole in the picture and the sound).
       S.muted = !carrySound; try { S.volume = realVol; } catch (e) {}
       tPlay = performance.now();
+      var latSeen = false;
       function liveCheck(now, meta) {
-        if (cutDone || tok !== swapTok) return;
+        if (tok !== swapTok) return;
+        if (cutDone) {   // (iPhones) the second player came up only AFTER the cut: that delay is how much earlier it has to start next time
+          if (!IOS_SW || latSeen) return;
+          if (meta && meta.mediaTime > st + 0.002) {
+            latSeen = true;
+            var lt = (performance.now() - tPlay) / 1000;
+            if (lt > 0.05 && lt < PRE_MAX + 0.5) { learnedPre = Math.max(0.1, Math.min(PRE_MAX, lt + 0.1)); keep(PRE_KEY, learnedPre.toFixed(3)); note("second player took " + Math.round(lt * 1000) + "ms to start; next time it starts " + Math.round(learnedPre * 1000) + "ms early"); }
+            return;
+          }
+          try { S.requestVideoFrameCallback(liveCheck); } catch (e) {}
+          return;
+        }
         if (meta && meta.mediaTime > st + 0.002) { var l = (performance.now() - tPlay) / 1000; if (l > 0.03 && l < 0.5) note("twin live after " + Math.round(l * 1000) + "ms"); cut("live"); return; }
         try { S.requestVideoFrameCallback(liveCheck); } catch (e) {}
       }
@@ -1539,7 +1556,7 @@
       (function watchOld() {
         if (cutDone || tok !== swapTok) return;
         var left = (typeof endAt === "number" && isFinite(endAt)) ? endAt - video.currentTime : 0;
-        if (video.paused || video.ended || left < 0.03 || Date.now() - t0 > 600) { cut("end"); return; }
+        if (video.paused || video.ended || left < 0.03 || Date.now() - t0 > (IOS_SW ? 600 + learnedPre * 1000 : 600)) { cut("end"); return; }
         requestAnimationFrame(watchOld);
       })();
       return true;
@@ -1548,6 +1565,7 @@
       preload: preload,
       swap: swap,
       busy: function () { return showing; },
+      ready: function (url, start) { return !!shadow && pre.url === url && pre.ready && !showing; },
       cancel: function () {
         swapTok++;
         restoreSound();
@@ -4060,7 +4078,7 @@
   }
   // Hidden diagnostics: tap the "Your video" heading 5 times to show a small live panel (handy when a phone
   // misbehaves: screen-record it and send the recording). Always keeps the last few events; shows them only when on.
-  var EF_BUILD = 23;   // shown at the top of the green log, so a recording says which page it was made with
+  var EF_BUILD = 24;   // shown at the top of the green log, so a recording says which page it was made with
   var DBG = { on: false, lines: [], el: null, taps: 0, tapAt: 0 };   // (clean build: the log starts OFF; five quick taps on the time readout turn it on, or open the page with ?dbg=1)
   window.efDbg = function (m) { dbg(m); };
   function dbg(msg) { DBG.lines.push((performance.now() / 1000).toFixed(1) + "s " + msg); if (DBG.lines.length > 12) DBG.lines.shift(); }
@@ -4233,7 +4251,10 @@
     if (clips.length > 1 && hasNextClip() && !reelSwitching && !trimPreviewVideo.paused) {
       var rcNow = clips[reelIdx], endAt = (rcNow && rcNow.te > 0) ? cTe(rcNow) : trimPreviewVideo.duration;
       var leftInClip = endAt - trimPreviewVideo.currentTime;
-      if (isFinite(leftInClip) && trimPreviewVideo.currentTime > 0.3 && leftInClip < 0.04 + ((pvSwapper && pvSwapper.preroll) ? pvSwapper.preroll() : 0.05)) { autoAdvancing = true; loadClipAt(reelIdx + 1, undefined, true); }
+      var nxtC = clips[reelIdx + 1];
+      // (iPhones) the second player starts early now; if it is not loaded yet, wait for it (down to the last 0.2 s) instead of reloading the real player under the old clip
+      var waitTwin = IS_IOS_DEVICE && nxtC && pvSwapper && pvSwapper.ready && !pvSwapper.ready(nxtC.url, cTs(nxtC)) && leftInClip > 0.2;
+      if (isFinite(leftInClip) && trimPreviewVideo.currentTime > 0.3 && !waitTwin && leftInClip < 0.04 + ((pvSwapper && pvSwapper.preroll) ? pvSwapper.preroll() : 0.05)) { autoAdvancing = true; loadClipAt(reelIdx + 1, undefined, true); }
     }
     // the last clip was shortened: the reel stops where its cut ends (the song stops with it)
     if (clips.length > 1 && !hasNextClip() && !reelSwitching && !trimPreviewVideo.paused && clips[reelIdx] && clips[reelIdx].te > 0 && trimPreviewVideo.currentTime >= cTe(clips[reelIdx]) - 0.04) {
@@ -6302,6 +6323,17 @@
       if (capb.classList.contains("has") !== !!t) capb.classList.toggle("has", !!t);
     }
     setInterval(syncCap, 400);
+    // (iPhones) until the first touch the player can stay black. Until then: a still picture of the first clip over the player, and the big play button.
+    var stillUp = false;
+    setInterval(function () {
+      try {
+        var v = $("trimPreviewVideo"), need = !!window.__efNeedPicture && v && v.paused && body.getAttribute("data-igs") === "edit" && body.classList.contains("ef-video");
+        var c0 = (typeof clips !== "undefined" && clips.length) ? clips[0] : null;
+        if (need && c0 && c0.thumb && !stillUp && window.efStill && window.efStill.show(c0.thumb)) stillUp = true;
+        else if (!need && stillUp) { window.efStill.hide(); stillUp = false; }
+        if (need && typeof efBigPlay === "function") efBigPlay(true);
+      } catch (e) {}
+    }, 300);
     window.efIgReset = function () { if (body.getAttribute("data-igs") !== "edit") body.setAttribute("data-igs", "edit"); };
   })();
   update();
