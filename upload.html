@@ -1413,10 +1413,12 @@
           keep("ef_swap_pre", learnedPre.toFixed(3));
         }
         note("cut, old clip has " + ((typeof endAt === "number" && isFinite(endAt)) ? Math.round((endAt - video.currentTime) * 1000) : "?") + "ms left, twin at " + S.currentTime.toFixed(2) + " (start " + st.toFixed(2) + ")");
+        var held = !!(window.efHold && window.efHold.on());   // (iPhones) keep the old picture up until the new one has painted
         setPlayerChromeHidden(video, true);
         video.classList.toggle("portrait", wantPortrait());   // the real player is framed for the next clip, under the twin
         if (carrySound) { soundGuard = guard; video.addEventListener("volumechange", guard); video.muted = true; }   // the old clip's sound ends here; the twin's takes over
         S.style.opacity = "1";
+        if (held) window.efHold.offWhenPainted(S, 900);
         try { video.pause(); } catch (e) {}
         if (S.requestVideoFrameCallback) { try { S.requestVideoFrameCallback(startReal); } catch (e) { startReal(); } setTimeout(startReal, 180); }
         else setTimeout(startReal, 60);
@@ -2612,6 +2614,21 @@
       // a real frame to be drawn; now that the thumbnails use their own hidden player this one is left at "never
       // decoded". A tiny nudge forward makes the browser paint the clip's first frame, with no sound or playback.
       try { if (duration > 0.05 && trimPreviewVideo.paused && trimPreviewVideo.currentTime === 0) trimPreviewVideo.currentTime = 0.01; } catch (e) {}
+      if (IS_IOS_DEVICE) {   // (iPhones, Nov 2026) some phones do not paint the first picture until the player has played a moment: wake it
+        var vv = trimPreviewVideo, tw0 = Date.now(), seen = false;
+        efNote("first picture: waiting (" + ((navigator.userAgent.match(/OS [\d_]+/) || [""])[0]) + ")");
+        if (vv.requestVideoFrameCallback) { try { vv.requestVideoFrameCallback(function () { seen = true; efNote("first picture after " + (Date.now() - tw0) + "ms"); }); } catch (e) {} }
+        setTimeout(function () {
+          if (seen || !clips.length) return;
+          efNote("no picture yet: waking the player");
+          try {
+            vv.muted = true;
+            var pp = vv.play();
+            var back = function () { try { vv.pause(); vv.currentTime = clips.length ? (cTs(clips[0]) || 0.01) : 0.01; } catch (e) {} };
+            if (pp && pp.then) pp.then(function () { setTimeout(back, 150); }, function () { efNote("player will not wake without a touch"); }); else setTimeout(back, 300);
+          } catch (e) {}
+        }, 700);
+      }
       if (clips.length === 1) clips[0].dur = duration;
       try { layoutLine(true); renderTimeline(); } catch (e) {}
       generateTrimFilmstrip(trimPreviewVideo, duration);
@@ -3031,6 +3048,56 @@
       return cv.toDataURL("image/jpeg", 0.7);
     } catch (e) { return ""; }
   }
+  // ---- Hold picture (iPhones, Nov 2026): at a cut the screen must never go black. Just before the player is touched, the picture on
+  // it is copied onto a still that sits on top; the still goes away only once the next clip has really painted its own picture.
+  var efHoldCv = null, efHoldOn = false;
+  function efNote(m) { try { if (window.efDbg) window.efDbg(m); } catch (e) {} }
+  function efLum(el) {
+    try {
+      var c = document.createElement("canvas"); c.width = 16; c.height = 16;
+      var g = c.getContext("2d", { willReadFrequently: true }); g.drawImage(el, 0, 0, 16, 16);
+      var d = g.getImageData(0, 0, 16, 16).data, t = 0;
+      for (var i = 0; i < d.length; i += 4) t += d[i] * 0.3 + d[i + 1] * 0.59 + d[i + 2] * 0.11;
+      return t / 256;
+    } catch (e) { return -1; }
+  }
+  window.efHold = {
+    on: function () {
+      if (!IS_IOS_DEVICE) return false;
+      try {
+        var v = trimPreviewVideo; if (!v.videoWidth || v.readyState < 2 || !v.parentNode) return false;
+        var cs = getComputedStyle(v);
+        if (!efHoldCv) { efHoldCv = document.createElement("canvas"); efHoldCv.style.cssText = "position:absolute;z-index:3;pointer-events:none;background:#000;display:none;"; v.parentNode.insertBefore(efHoldCv, v.nextSibling); }
+        var bw = v.offsetWidth, bh = v.offsetHeight, dpr = Math.min(window.devicePixelRatio || 1, 2);
+        efHoldCv.width = Math.round(bw * dpr); efHoldCv.height = Math.round(bh * dpr);
+        efHoldCv.style.left = v.offsetLeft + "px"; efHoldCv.style.top = v.offsetTop + "px"; efHoldCv.style.width = bw + "px"; efHoldCv.style.height = bh + "px";
+        var g = efHoldCv.getContext("2d"); g.fillStyle = "#000"; g.fillRect(0, 0, efHoldCv.width, efHoldCv.height);
+        var vw = v.videoWidth, vh = v.videoHeight, cover = cs.objectFit === "cover";
+        var sc = cover ? Math.max(bw / vw, bh / vh) : Math.min(bw / vw, bh / vh), dw = vw * sc, dh = vh * sc;
+        var py = parseFloat(String(cs.objectPosition || "").split(" ")[1]) / 100; if (!isFinite(py)) py = 0.5;
+        g.drawImage(v, ((bw - dw) / 2) * dpr, ((bh - dh) * (cover ? py : 0.5)) * dpr, dw * dpr, dh * dpr);
+        var l = efLum(efHoldCv);
+        if (l >= 0 && l < 6) { efNote("hold: picture was black, not held"); return false; }
+        efHoldCv.style.display = "block"; efHoldOn = true; efNote("hold: old picture held");
+        return true;
+      } catch (e) { return false; }
+    },
+    off: function (why) { if (!efHoldOn) return; efHoldOn = false; if (efHoldCv) efHoldCv.style.display = "none"; efNote("hold: released " + (why || "")); },
+    offWhenPainted: function (el, maxMs) {
+      if (!efHoldOn) return;
+      var t0 = Date.now(), done = false, frames = 0;
+      function fin(w) { if (done) return; done = true; window.efHold.off(w + " after " + (Date.now() - t0) + "ms"); }
+      function look() {
+        if (done) return;
+        frames++;
+        var l = efLum(el);
+        if (frames >= 2 && (l < 0 ? true : l > 6)) { fin("painted"); return; }
+        if (el.requestVideoFrameCallback) { try { el.requestVideoFrameCallback(look); } catch (e) { fin("no frames"); } } else setTimeout(look, 60);
+      }
+      if (el.requestVideoFrameCallback) { try { el.requestVideoFrameCallback(look); } catch (e) { setTimeout(look, 60); } } else setTimeout(look, 60);
+      setTimeout(function () { fin("timeout"); }, maxMs || 1200);
+    }
+  };
   function preloadNextPreview() { if (pvSwapper && hasNextClip()) pvSwapper.preload(clips[reelIdx + 1].url, cTs(clips[reelIdx + 1])); }
   var reelFinished = false;   // the whole reel has played to its end (pressing play then starts it over from clip 1)
   function hasNextClip() { return clips.length > 1 && reelIdx < clips.length - 1; }
@@ -3063,7 +3130,8 @@
       setPlayerChromeHidden(v, true);
       v.poster = clips[idx].thumb || heldPicture();   // never a black screen: the next clip's picture, else the last picture of the one before
       try { if (window.efDbg) window.efDbg("cut: SLOW path (next clip was not ready)"); } catch (e) {}
-      var restore = function () { if (tok !== reelLoadTok) return; setPlayerChromeHidden(v, false); v.removeAttribute("poster"); };
+      var heldOld = !!(window.efHold && window.efHold.on());
+      var restore = function () { if (tok !== reelLoadTok) return; setPlayerChromeHidden(v, false); v.removeAttribute("poster"); if (heldOld) window.efHold.offWhenPainted(v, 1500); };
       v.addEventListener("playing", restore, { once: true });
       v.addEventListener("seeked", restore, { once: true });
       setTimeout(restore, 2500);
@@ -3809,7 +3877,7 @@
   // misbehaves: screen-record it and send the recording). Always keeps the last few events; shows them only when on.
   var DBG = { on: false, lines: [], el: null, taps: 0, tapAt: 0 };
   window.efDbg = function (m) { dbg(m); };
-  function dbg(msg) { DBG.lines.push((performance.now() / 1000).toFixed(1) + "s " + msg); if (DBG.lines.length > 14) DBG.lines.shift(); }
+  function dbg(msg) { DBG.lines.push((performance.now() / 1000).toFixed(1) + "s " + msg); if (DBG.lines.length > 16) DBG.lines.shift(); }
   function dbgPaint() {
     if (!DBG.on) return;
     if (!DBG.el) {
@@ -3827,6 +3895,16 @@
       DBG.lines.join("\n");
   }
   setInterval(dbgPaint, 250);
+  (function () {
+    // five quick taps on the time readout (the "0:00 / 0:16" on the picture) show or hide the green log; "?dbg=1" in the address turns it on
+    try { if (/[?&]dbg=1/.test(location.search)) DBG.on = true; } catch (e) {}
+    var tm = document.getElementById("pvCur"), tmBox = tm && tm.parentNode;
+    if (tmBox) tmBox.addEventListener("click", function () {
+      var n = performance.now();
+      DBG.taps = (n - DBG.tapAt < 3000) ? DBG.taps + 1 : 1; DBG.tapAt = n;
+      if (DBG.taps >= 5) { DBG.taps = 0; DBG.on = !DBG.on; if (!DBG.on && DBG.el) { DBG.el.remove(); DBG.el = null; } }
+    });
+  })();
   (function () {
     var lab = document.getElementById("yourVideosLabel");
     if (!lab) return;
@@ -4576,7 +4654,6 @@
       dbg("song " + ev + " t=" + musicPreviewAudio.currentTime.toFixed(1) + (ev === "error" && musicPreviewAudio.error ? " code=" + musicPreviewAudio.error.code : ""));
     });
   });
-  trimPreviewVideo.addEventListener("volumechange", function () { if (DBG.on) dbg("video volumechange muted=" + trimPreviewVideo.muted + " vol=" + trimPreviewVideo.volume.toFixed(2)); });
   var trackPickerRow = document.getElementById("trackPickerRow");
   var tracksLoaded = false;
   var tracksById = {};
