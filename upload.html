@@ -2673,12 +2673,13 @@
         b.addEventListener("click", function (ev) { ev.stopPropagation(); b.classList.remove("on"); try { trimPreviewVideo.play().catch(function () {}); } catch (e) {} });
         trimPreviewVideo.parentNode.appendChild(b);
         trimPreviewVideo.addEventListener("play", function () { b.classList.remove("on"); });
+        trimPreviewVideo.addEventListener("playing", function () { b.classList.remove("on"); });
       }
       b.classList.toggle("on", !!show);
     } catch (e) {}
   }
   function loadTrimPreview(keepWindow) {
-    if (IS_IOS_DEVICE) efBigPlay(true);
+    if (IS_IOS_DEVICE && !keepWindow) efBigPlay(true);   // (only for freshly chosen videos: never again once the member has started playing or a picture has painted)
     if (!keepWindow) { mDelay = 0; mLenWanted = Infinity; }
     reelIdx = 0; clipSel = 0; reelSwitching = false; reelPending = null; reelLoadTok++;
     trimPreviewVideo.preload = "auto";
@@ -2696,6 +2697,27 @@
       if (IS_IOS_DEVICE) {   // (iPhones, Nov 2026) this phone shows a paused first frame only after a real touch. Nothing is forced here any more: the first touch does the work (see efFirstTouch).
         window.__efNeedPicture = true;
         efNote("first picture: waiting for a touch (" + ((navigator.userAgent.match(/OS [\d_]+/) || [""])[0]) + ")");
+        // Nov 2026: Safari (the website) refuses any playback before a touch, but the installed app's web view may allow it (Ken: "no tap, just like
+        // Instagram"). So try: start the clip silently, then stop and park on a picture. Allowed = the picture is just there; refused = the play button stays.
+        (function () {
+          var vv = trimPreviewVideo, startT = (clips.length && cTs(clips[0])) || 0.01, ta = Date.now(), gen = reelLoadTok;
+          try {
+            vv.muted = true;
+            var pa = vv.play();
+            if (pa && pa.then) pa.then(function () {
+              efNote("auto-start worked: no touch needed");
+              setTimeout(function () {
+                if (gen !== reelLoadTok) return;
+                try { vv.pause(); } catch (e) {}
+                window.efWiggle(vv, window.efPaintT(startT), function () {
+                  var l = efLum(vv);
+                  efNote("auto-start picture after " + (Date.now() - ta) + "ms canvas=" + l.toFixed(0));
+                  if (l > 8) { window.__efNeedPicture = false; efBigPlay(false); } else efBigPlay(true);   // still black: keep the play button
+                }, 2500);
+              }, 200);
+            }, function (er) { efNote("auto-start refused: " + (er && er.name) + " (a touch is needed)"); });
+          } catch (e) { efNote("auto-start error: " + (e && e.name)); }
+        })();
       }
       if (clips.length === 1) clips[0].dur = duration;
       try { layoutLine(true); renderTimeline(); } catch (e) {}
@@ -3187,6 +3209,7 @@
           window.efWiggle(vv, window.efPaintT(startT), function () {
             var q = null; try { q = vv.getVideoPlaybackQuality && vv.getVideoPlaybackQuality(); } catch (e) {}
             efNote("touch: seek jump done after " + (Date.now() - t0) + "ms frames=" + (q ? q.totalVideoFrames : "?") + " canvas=" + efLum(vv).toFixed(0));
+            efBigPlay(false);   // the touch has painted the picture (Ken's recordings): the play button has done its job
           }, 2500);
         }
       } catch (e) { efNote("touch handler error: " + (e && e.message)); }
@@ -3241,7 +3264,7 @@
         };
         if (IS_IOS_DEVICE && !andPlay) {   // iPhone: a plain seek leaves the picture black; jump away and back so it really shows
           var t0w = Date.now();
-          window.efWiggle(v, window.efPaintT(local || 0), function () { try { if (window.efDbg) window.efDbg("clip " + (idx + 1) + " picture after " + (Date.now() - t0w) + "ms"); } catch (e) {} finishLoad(); }, 2500);
+          window.efWiggle(v, window.efPaintT(local || 0), function () { try { if (window.efDbg) window.efDbg("clip " + (idx + 1) + " picture after " + (Date.now() - t0w) + "ms"); } catch (e) {} efBigPlay(false); finishLoad(); }, 2500);
           return;
         }
         try { v.currentTime = local || 0; } catch (e) {}
@@ -3977,7 +4000,7 @@
   }
   // Hidden diagnostics: tap the "Your video" heading 5 times to show a small live panel (handy when a phone
   // misbehaves: screen-record it and send the recording). Always keeps the last few events; shows them only when on.
-  var EF_BUILD = 16;   // shown at the top of the green log, so a recording says which page it was made with
+  var EF_BUILD = 18;   // shown at the top of the green log, so a recording says which page it was made with
   var DBG = { on: true, lines: [], el: null, taps: 0, tapAt: 0 };   // (test builds: the log starts ON; five quick taps on the time readout hide it)
   window.efDbg = function (m) { dbg(m); };
   function dbg(msg) { DBG.lines.push((performance.now() / 1000).toFixed(1) + "s " + msg); if (DBG.lines.length > 12) DBG.lines.shift(); }
