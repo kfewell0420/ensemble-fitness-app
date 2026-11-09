@@ -818,6 +818,8 @@
   body.ef-video:not(.ef-song) #efAddMusic { display: flex; align-items: center; justify-content: center; width: 100%; height: 34px; margin-top: 6px; padding: 0; border: 1.5px dashed rgba(255,122,61,0.65); border-radius: 10px; background: rgba(255,122,61,0.08); color: #ff9a66; font: 800 13px/1 inherit; font-family: inherit; cursor: pointer; }
   /* the spare video used for clean cuts between clips must never be wider than the screen (a phone clip is 1080 wide and would zoom the whole page out) */
   .trim-media video { max-width: 100% !important; }
+  /* a clip whose little picture has not arrived yet (iPhones fill them in as each clip is shown) is still a clip on the line */
+  body.ef-video .mix-seg { background: #2a2d36; }
 </style>
 
 <div class="app-shell narrow" id="uploadShell">
@@ -1304,14 +1306,27 @@
       if (showing) return;
       pre = { url: url, ready: false };
       shadow.setAttribute("data-start", String(start || 0));
-      var st = start || 0, me = pre;
-      function onMeta() { shadow.removeEventListener("loadedmetadata", onMeta); try { shadow.currentTime = st; } catch (e) {} }
-      function onFrame() { shadow.removeEventListener("seeked", onFrame); if (pre === me) me.ready = true; }
+      var st = start || 0, me = pre, ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+      function onMeta() {
+        shadow.removeEventListener("loadedmetadata", onMeta);
+        if (!ios) { try { shadow.currentTime = st; } catch (e) {} return; }
+        // iPhone: a video that has never played has no picture decoded, so showing it gives a black flash. Let it play a hair
+        // (muted, hidden), stop, and go back to its start: now its first picture really is on the layer, ready to be shown.
+        var pp = shadow.play();
+        var back = function () {
+          if (pre !== me) return;
+          try { shadow.pause(); } catch (e) {}
+          try { shadow.currentTime = st; } catch (e) {}
+        };
+        if (pp && pp.then) pp.then(function () { setTimeout(back, 60); }, function () { try { shadow.currentTime = st; } catch (e) {} });
+        else setTimeout(back, 120);
+      }
+      function onFrame() { if (!ios || shadow.paused) { shadow.removeEventListener("seeked", onFrame); if (pre === me) me.ready = true; } }
       shadow.addEventListener("loadedmetadata", onMeta);
       shadow.addEventListener("seeked", onFrame);
       shadow.addEventListener("loadeddata", function onData() {
         shadow.removeEventListener("loadeddata", onData);
-        if (pre === me && !st) me.ready = true;
+        if (pre === me && !st && !ios) me.ready = true;
       });
       shadow.src = url;
       try { shadow.load(); } catch (e) {}
@@ -2622,10 +2637,11 @@
   // ---- Several clips in one post --------------------------------------------
   // A hidden, off-screen <video> used only to read a clip's length and grab small frames, so the
   // main preview player is never disturbed.
-  function withTempVideo(c, fn, maxMs) {
+  function withTempVideo(c, fn, maxMs, opts) {
+    var metaOnly = !!(opts && opts.metaOnly);
     return new Promise(function (resolve) {
       var v = document.createElement("video");
-      v.muted = true; v.playsInline = true; v.preload = "auto";
+      v.muted = true; v.playsInline = true; v.preload = metaOnly ? "metadata" : "auto";
       v.style.cssText = "position:fixed;right:0;bottom:0;width:64px;height:64px;opacity:0.02;pointer-events:none;z-index:-1;";
       document.body.appendChild(v);
       var finished = false;
@@ -2636,7 +2652,7 @@
         resolve(val);
       }
       v.addEventListener("loadedmetadata", async function () {
-        if (IS_IOS_DEVICE) { // wake the hidden player so it really paints frames (a never-played iPhone video can hand back black)
+        if (IS_IOS_DEVICE && !metaOnly) { // wake the hidden player so it really paints frames (a never-played iPhone video can hand back black)
           try { await Promise.race([v.play(), new Promise(function (r) { setTimeout(r, 1500); })]); v.pause(); } catch (e) {}
         }
         Promise.resolve(fn(v)).then(fin, function () { fin(null); });
@@ -2646,7 +2662,53 @@
       v.src = c.url;
     });
   }
+  // iPhones: a clip's little picture is taken from the player itself the moment that clip is on screen (no second decoder, no waiting).
+  var liveThumbBusy = false;
+  function liveThumb() {
+    if (!IS_IOS_DEVICE || clips.length < 2 || liveThumbBusy) return;
+    var c = clips[reelIdx], v = trimPreviewVideo;
+    if (!c || c.thumb || reelSwitching || (pvSwapper && pvSwapper.busy()) || v.readyState < 2 || !v.videoWidth) return;
+    liveThumbBusy = true;
+    var run = function () {
+      liveThumbBusy = false;
+      try {
+        if (clips[reelIdx] !== c || c.thumb) return;
+        var w = 90, h = Math.max(1, Math.round(v.videoHeight / v.videoWidth * w)), cv = document.createElement("canvas");
+        cv.width = w; cv.height = h;
+        var g = cv.getContext("2d"); g.drawImage(v, 0, 0, w, h);
+        var px = g.getImageData(0, 0, w, h).data, sum = 0, n = 0;
+        for (var i = 0; i < px.length; i += 64) { sum += px[i] + px[i + 1] + px[i + 2]; n += 3; }
+        if (n && sum / n < 6) return;     // a black picture: try again at the next chance
+        c.thumb = cv.toDataURL("image/jpeg", 0.6);
+        rebuildReelFilmstrip();
+      } catch (e) {}
+    };
+    if (v.requestVideoFrameCallback) { try { v.requestVideoFrameCallback(function () { run(); }); setTimeout(function () { if (liveThumbBusy) run(); }, 400); } catch (e) { run(); } }
+    else setTimeout(run, 80);
+  }
+  trimPreviewVideo.addEventListener("playing", function () { setTimeout(liveThumb, 120); });
+  trimPreviewVideo.addEventListener("seeked", function () { setTimeout(liveThumb, 120); });
+  trimPreviewVideo.addEventListener("loadeddata", function () { setTimeout(liveThumb, 300); });
   async function measureClips(list) {
+    if (IS_IOS_DEVICE) {
+      // iPhones (Nov 2026): a phone clip is a big 60-frame HEVC file and the phone has one video decoder. Making pictures for every
+      // clip up front took 10+ seconds PER clip (35 s for three, and four never finished) and left the preview black meanwhile.
+      // Now only each clip's LENGTH is read here (a quick look at the file's header, two at a time, no playing, no pictures).
+      // The little pictures on the line are filled in later, straight from the player, as each clip is shown (see liveThumb).
+      for (var j = 0; j < list.length; j += 2) {
+        await Promise.all(list.slice(j, j + 2).map(function (c) {
+          if (c.dur) return null;
+          return withTempVideo(c, function (v) { c.dur = isFinite(v.duration) ? v.duration : 0; }, 9000, { metaOnly: true });
+        }));
+        if (!clips.length) return;
+        try { clampWindow(); layoutLine(true); renderTimeline(); } catch (e) {}
+      }
+      renderClipTray();
+      clampWindow();
+      rebuildReelFilmstrip();
+      liveThumb();
+      return;
+    }
     for (var i = 0; i < list.length; i++) {
       var c = list[i];
       if (c.dur && c.thumb) continue;
@@ -2681,7 +2743,7 @@
         var seg = document.createElement("div");
         seg.className = "mix-seg";
         seg.style.flex = (cEff(c) || c.dur || 1) + " 1 0";
-        var srcs = (c.frames && c.frames.length) ? c.frames : (c.thumb ? [c.thumb] : []);
+        var srcs = (c.frames && c.frames.length) ? c.frames : (c.thumb ? (IS_IOS_DEVICE ? [c.thumb, c.thumb, c.thumb] : [c.thumb]) : []);
         if (c.frames && c.frames.length > 1 && cCut(c) && c.dur) {   // only the pictures from the part that is kept
           var kept = c.frames.filter(function (u, k) { var at = c.dur * (k + 0.5) / c.frames.length; return at >= cTs(c) - 0.01 && at <= cTe(c) + 0.01; });
           srcs = kept.length ? kept : [c.frames[Math.min(c.frames.length - 1, Math.floor(cTs(c) / c.dur * c.frames.length))]];
@@ -2695,7 +2757,7 @@
     for (var i = 0; i < clips.length; i++) {
       var c = clips[i];
       if (c.frames || !c.dur) continue;
-      if (IS_IOS_DEVICE) { if (phoneMakesBlankPictures()) continue; await whenIdle(60000); if (gen !== reelFilmGen) return; }
+      if (IS_IOS_DEVICE) continue;   // (iPhones: one picture per clip, taken live from the player -- see liveThumb)
       var got = await withTempVideo(c, async function (v) {
         var out = [];
         for (var k = 0; k < per; k++) {
@@ -2960,6 +3022,15 @@
     }
     return typeof pvNow === "function" ? pvNow() : trimPreviewVideo.currentTime;
   }
+  // The picture on the player right now, as a small still (used to hold the screen while a clip loads).
+  function heldPicture() {
+    try {
+      var v = trimPreviewVideo; if (!v.videoWidth || v.readyState < 2) return "";
+      var w = 240, h = Math.max(1, Math.round(v.videoHeight / v.videoWidth * w)), cv = document.createElement("canvas");
+      cv.width = w; cv.height = h; cv.getContext("2d").drawImage(v, 0, 0, w, h);
+      return cv.toDataURL("image/jpeg", 0.7);
+    } catch (e) { return ""; }
+  }
   function preloadNextPreview() { if (pvSwapper && hasNextClip()) pvSwapper.preload(clips[reelIdx + 1].url, cTs(clips[reelIdx + 1])); }
   var reelFinished = false;   // the whole reel has played to its end (pressing play then starts it over from clip 1)
   function hasNextClip() { return clips.length > 1 && reelIdx < clips.length - 1; }
@@ -2976,6 +3047,7 @@
       // Playing straight on into the next clip: a clean cut, no loading flash.
       var oldEnd = clips[reelIdx] ? Math.min(cTe(clips[reelIdx]), trimPreviewVideo.duration || 1e9) : undefined;
       if (andPlay && local === undefined && pvSwapper.swap(clips[idx].url, startAt, oldEnd)) {
+        try { if (window.efDbg) window.efDbg("cut: fast path"); } catch (e) {}
         reelLoadTok++; reelSwitching = true; reelIdx = idx; clipSel = idx;
         renderClipTray();
         resolve();
@@ -2989,7 +3061,8 @@
       // While the next clip loads, hide the player's own play button / spinner and hold a still of the
       // clip, so the joins look like one continuous video instead of flashing a big play icon.
       setPlayerChromeHidden(v, true);
-      v.poster = clips[idx].thumb || "";
+      v.poster = clips[idx].thumb || heldPicture();   // never a black screen: the next clip's picture, else the last picture of the one before
+      try { if (window.efDbg) window.efDbg("cut: SLOW path (next clip was not ready)"); } catch (e) {}
       var restore = function () { if (tok !== reelLoadTok) return; setPlayerChromeHidden(v, false); v.removeAttribute("poster"); };
       v.addEventListener("playing", restore, { once: true });
       v.addEventListener("seeked", restore, { once: true });
