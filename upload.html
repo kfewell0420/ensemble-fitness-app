@@ -1278,17 +1278,25 @@
       video.parentNode.insertBefore(shadow, video.nextSibling);
       return shadow;
     }
+    // The twin must be framed the way the NEXT clip will be (a sideways clip among upright ones is shown whole, an upright
+    // one fills the frame). The page decides that from the real player's "portrait" class, so read the framing with the
+    // class set for the twin's own clip, then put the real player's class back (it only changes at the cut).
+    function wantPortrait() { return shadow && shadow.videoWidth ? shadow.videoHeight > shadow.videoWidth : video.classList.contains("portrait"); }
     function place() {
+      var want = wantPortrait(), had = video.classList.contains("portrait");
+      if (want !== had) video.classList.toggle("portrait", want);
       var cs = window.getComputedStyle(video);
-      shadow.className = video.className;
+      var cls = video.className, of = cs.objectFit, op = cs.objectPosition, br = cs.borderRadius, bg = cs.backgroundColor, tf = cs.transform;
+      if (want !== had) video.classList.toggle("portrait", had);
+      shadow.className = cls;
       shadow.style.left = video.offsetLeft + "px";
       shadow.style.top = video.offsetTop + "px";
       shadow.style.width = video.offsetWidth + "px";
       shadow.style.height = video.offsetHeight + "px";
       shadow.style.maxWidth = "none"; shadow.style.maxHeight = "none"; shadow.style.aspectRatio = "auto";
-      shadow.style.objectFit = cs.objectFit; shadow.style.objectPosition = cs.objectPosition;
-      shadow.style.borderRadius = cs.borderRadius; shadow.style.background = cs.backgroundColor;
-      shadow.style.transform = cs.transform === "none" ? "translateZ(0)" : cs.transform;
+      shadow.style.objectFit = of; shadow.style.objectPosition = op;
+      shadow.style.borderRadius = br; shadow.style.background = bg;
+      shadow.style.transform = tf === "none" ? "translateZ(0)" : tf;
     }
     function preload(url, start) {
       if (!make() || !url) return;
@@ -1380,10 +1388,18 @@
       }
       // The cut itself: the twin comes on top (it is already running), the real player stops on its last picture and,
       // once the twin is really painting, loads the clip underneath.
-      function cut() {
+      function cut(why) {
         if (cutDone || tok !== swapTok) return; cutDone = true;
+        // Learn when to start the twin: the cut should land just as the old clip ends. Landed early -> start the twin later next time; the twin was late -> start it sooner.
+        if (typeof endAt === "number" && isFinite(endAt)) {
+          var leftNow = endAt - video.currentTime;
+          if (why === "live") learnedPre = Math.max(0.04, Math.min(0.35, learnedPre - (leftNow - 0.02) * 0.9));
+          else learnedPre = Math.max(0.04, Math.min(0.35, learnedPre + 0.03));
+          keep("ef_swap_pre", learnedPre.toFixed(3));
+        }
         note("cut, old clip has " + ((typeof endAt === "number" && isFinite(endAt)) ? Math.round((endAt - video.currentTime) * 1000) : "?") + "ms left, twin at " + S.currentTime.toFixed(2) + " (start " + st.toFixed(2) + ")");
         setPlayerChromeHidden(video, true);
+        video.classList.toggle("portrait", wantPortrait());   // the real player is framed for the next clip, under the twin
         if (carrySound) { soundGuard = guard; video.addEventListener("volumechange", guard); video.muted = true; }   // the old clip's sound ends here; the twin's takes over
         S.style.opacity = "1";
         try { video.pause(); } catch (e) {}
@@ -1401,7 +1417,7 @@
       tPlay = performance.now();
       function liveCheck(now, meta) {
         if (cutDone || tok !== swapTok) return;
-        if (meta && meta.mediaTime > st + 0.002) { var l = (performance.now() - tPlay) / 1000; if (l > 0.03 && l < 0.5) learnedPre = Math.max(0.05, Math.min(0.3, learnedPre * 0.5 + l * 0.5)); keep("ef_swap_pre", learnedPre.toFixed(3)); note("twin live after " + Math.round(l * 1000) + "ms"); cut(); return; }
+        if (meta && meta.mediaTime > st + 0.002) { var l = (performance.now() - tPlay) / 1000; if (l > 0.03 && l < 0.5) note("twin live after " + Math.round(l * 1000) + "ms"); cut("live"); return; }
         try { S.requestVideoFrameCallback(liveCheck); } catch (e) {}
       }
       var sp = S.play();
@@ -1416,7 +1432,7 @@
       (function watchOld() {
         if (cutDone || tok !== swapTok) return;
         var left = (typeof endAt === "number" && isFinite(endAt)) ? endAt - video.currentTime : 0;
-        if (video.paused || video.ended || left < 0.03 || Date.now() - t0 > 600) { cut(); return; }
+        if (video.paused || video.ended || left < 0.03 || Date.now() - t0 > 600) { cut("end"); return; }
         requestAnimationFrame(watchOld);
       })();
       return true;
