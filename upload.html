@@ -1332,6 +1332,7 @@
             <option value="Biking">Biking</option>
             <option value="Running">Running</option>
             <option value="Swimming">Swimming</option>
+            <option value="Inspiration">Inspiration</option>
             <option value="Strike a Pose">Strike a Pose</option>
             <option value="Just Doing You">Just Doing Me</option>
             <option value="Meal Prep">Healthy Meal Prep</option>
@@ -5668,7 +5669,7 @@
     var precheckIsProfilePhoto = false;   // a post is never a profile photo
     var workoutTypeField2 = document.getElementById("workoutType");
     if ((precheckKind === "photo" || precheckKind === "video") && !precheckIsProfilePhoto && !workoutTypeField2.value.trim()) {
-      showMsg(msg, "Please choose a category (Working Out, Walking, Hiking, Biking, Running, Swimming, Strike a Pose, Just Doing Me, Healthy Meal Prep, or Other) so your post shows up in the right place.", "error");
+      showMsg(msg, "Please choose a category (Working Out, Walking, Hiking, Biking, Running, Swimming, Inspiration, Strike a Pose, Just Doing Me, Healthy Meal Prep, or Other) so your post shows up in the right place.", "error");
       workoutTypeField2.focus();
       return;
     }

@@ -728,6 +728,7 @@ function wireReelPlayback(video, clips, durations) {
   function watchEnd() {
     watchRaf = null;
     if (video.paused || swapper.busy()) return;
+    if (!settled || justCut()) { watchRaf = requestAnimationFrame(watchEnd); return; }   // a cut has only just happened: keep watching, judge later
     if (finishHook && index === clips.length - 1) return; // the last clip runs to its true end (a song fade-out may follow)
     var end = clipEnd(clips[index]);
     var limit = end !== null ? end : video.duration;
@@ -735,19 +736,21 @@ function wireReelPlayback(video, clips, durations) {
     watchRaf = requestAnimationFrame(watchEnd);
   }
   video.addEventListener("playing", function () {
+    settled = true;
     preloadNext(); // once a clip is really playing, get the next one ready behind it
     if (!watchRaf) watchRaf = requestAnimationFrame(watchEnd);
   });
   swapper.onDone(preloadNext);
 
-  // Nov 2026 (Ken: "video 1, video 2, then video 2 by itself, then both again"): when the last clip reaches its end, several things can
-  // all say "move on" within the same instant (the early-cut watcher, the clip's own "ended", the trim-end check). The first one hands
-  // over to clip 1, and a second one arriving a moment later used to push the reel straight on to clip 2 -- skipping clip 1 and
-  // restarting the song out of step. A cut that has only just happened now ignores any further "move on" for a moment.
-  var lastCutAt = 0;
+  // Nov 2026 (Ken: "video 1, video 2, then video 2 by itself, then both again"): when the reel wraps from the last clip back to
+  // clip 1, the picture can for a moment still be reporting the LAST clip's time (say 29.9 s) while the code is already
+  // looking at clip 1 (which was trimmed to end at 13.1 s) -- so clip 1 looked "already finished" and the reel skipped
+  // straight on to clip 2. Two guards: a cut that has just happened ignores any further "move on"; and a clip's end is only
+  // judged once the picture has really started playing that clip ("settled").
+  var lastCutAt = 0, settled = true;
   function justCut() { return Date.now() - lastCutAt < 900; }
   function goToClip(i) {
-    lastCutAt = Date.now();
+    lastCutAt = Date.now(); settled = false;
     index = i;
     var clip = clips[index];
     if (swapper.swap(clip.url, clipStart(clip))) return; // clean cut — the next clip was already waiting
@@ -777,12 +780,12 @@ function wireReelPlayback(video, clips, durations) {
   // wireTrimPlayback does, no need to reload it here.
   video.addEventListener("loadedmetadata", clampToStart);
   video.addEventListener("timeupdate", function () {
-    if (justCut() || swapper.busy()) return;   // the picture may still be reporting the PREVIOUS clip's time for an instant
+    if (!settled || justCut() || swapper.busy()) return;
     var end = clipEnd(clips[index]);
     if (end !== null && video.currentTime >= end) advance();
   });
   // A clip with no trim_end just plays to its own natural end instead.
-  video.addEventListener("ended", advance);
+  video.addEventListener("ended", function () { if (video.ended) advance(); });   // a late "ended" left over from the clip just cut away does not count
 
   return {
     hasTimes: !!offsets,
