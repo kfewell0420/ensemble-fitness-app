@@ -2844,7 +2844,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
   // log and this public feature are now one and the same, renamed
   // everywhere a member sees it to "Share Your Journey" — no more "Fitness
   // Journeys" branding anywhere.
-  function categoryLabel(c) { return c === "Meal Prep" ? "Healthy Meal Prep" : c === "Journeys" ? "Share Your Journey" : c; }
+  function categoryLabel(c) { return c === "Meal Prep" ? "Healthy Meal Prep" : c === "Journeys" ? "Share Your Journey" : c === "Just Doing You" ? "Just Doing Me" : c; } // "Just Doing You" stays the saved value; only the words people see change
 
   // Illustrative placeholders — the same six "not live posts yet" examples
   // already used on the public Healthy Meal Prep page on the marketing
@@ -4794,7 +4794,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     if (item.workout_type) {
       badgeParts.push('<span class="rp-context-badge rp-badge-type">' +
         (CATEGORY_ICONS[item.workout_type] ? CATEGORY_ICONS[item.workout_type] + " " : "") +
-        escapeHtml(item.workout_type) + '</span>');
+        escapeHtml(categoryLabel(item.workout_type)) + '</span>');
     }
     if (item.location) {
       badgeParts.push('<span class="rp-context-badge">📍 ' + escapeHtml(item.location) + '</span>');
