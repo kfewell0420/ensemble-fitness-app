@@ -73,8 +73,9 @@
   function destinationFor(row) {
     // Oct 28 (Ken): a comment notification opens your Comments list (see who said it, reply, tap their photo); a message opens Messages.
     if (row.type === "removal") return "profile.html";
-    if (row.type === "comment") return "profile.html#comments";
-    if (row.type === "reaction") return "feed.html";
+    // Nov 2026 (Ken): a comment or a heart/thumbs-up opens the actual post (feed.html?post=<id>); older rows with no post fall back as before.
+    if (row.type === "comment") return row.media_id ? "feed.html?post=" + encodeURIComponent(row.media_id) : "profile.html#comments";
+    if (row.type === "reaction") return row.media_id ? "feed.html?post=" + encodeURIComponent(row.media_id) : "feed.html";
     if (row.type === "follow") return row.actor_id ? "member.html?id=" + encodeURIComponent(row.actor_id) : "members.html";
     if (row.type === "message") return row.actor_id ? "profile.html?chat=" + encodeURIComponent(row.actor_id) + "#messages" : "profile.html#messages";
     return "feed.html";
