@@ -728,7 +728,7 @@ function wireReelPlayback(video, clips, durations) {
   if (!video || !clips || clips.length < 2) return null;
   var index = 0;
   var rid = "r" + (++efTrackReels);
-  function T(msg) { if (efTrackOn !== false) efTrack(rid + " c" + (index + 1) + " t=" + (video.currentTime || 0).toFixed(1) + " | " + msg); }
+  function T(msg) { if (efTrackOn !== false) efTrack(rid + " c" + (index + 1) + " t=" + (video.currentTime || 0).toFixed(1) + " " + (video.muted ? "MUTED" : "SOUND-ON") + " | " + msg); }
   T("wired, " + clips.length + " clips");
   // durations (optional): how long each clip plays (seconds), in order. With them the reel can say
   // "how far along the WHOLE reel are we" — what lets one song run across all the clips.
@@ -833,7 +833,7 @@ function wireReelPlayback(video, clips, durations) {
   // A clip with no trim_end just plays to its own natural end instead.
   video.addEventListener("ended", function () { T("video ENDED event (video.ended=" + video.ended + ")"); if (video.ended) advance("ended event"); });
   var wire = {};
-  ["playing", "waiting", "error", "emptied"].forEach(function (ev) { video.addEventListener(ev, function () { T("video " + ev); }); });   // a late "ended" left over from the clip just cut away does not count
+  ["playing", "waiting", "error", "emptied", "volumechange"].forEach(function (ev) { video.addEventListener(ev, function () { T("video " + ev + (ev === "volumechange" ? " (volume " + video.volume + ")" : "")); }); });   // a late "ended" left over from the clip just cut away does not count
 
   return {
     hasTimes: !!offsets,
