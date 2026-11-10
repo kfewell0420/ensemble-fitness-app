@@ -6,11 +6,28 @@
    iPhones and computers keep the original player. Same name, same returned object, so no page needs to change except to load this file
    right after js/supabaseClient.js. */
 (function () {
+  var FORCE_LOG = true; // TEST BUILD 40: log always on; switch to false once the problem is found
   if (!/Android/.test(navigator.userAgent || "")) return;
   if (typeof window.wireReelPlayback !== "function") return;
 
+  function logLine(m) {
+    try {
+      if (!FORCE_LOG && !/[?&]dbg=1/.test(location.search)) return;
+      var box = document.getElementById("efReelLog");
+      if (!box) {
+        box = document.createElement("div"); box.id = "efReelLog";
+        box.style.cssText = "position:fixed;left:4px;right:4px;bottom:4px;max-height:28vh;overflow:hidden;z-index:99999;background:rgba(0,0,0,.75);color:#7CFC00;font:11px/1.3 monospace;padding:4px;pointer-events:none;white-space:pre-wrap";
+        (document.body || document.documentElement).appendChild(box);
+      }
+      var lines = (box._l = box._l || []); lines.push(((Date.now() / 1000) % 1000).toFixed(1) + " " + m);
+      if (lines.length > 14) lines.shift(); box.textContent = lines.join("\n");
+    } catch (e) {}
+  }
+  document.addEventListener("DOMContentLoaded", function () { logLine("reel-fix 40 loaded"); });
+  var wired = 0;
   window.wireReelPlayback = function (video, clips, durations) {
     if (!video || !clips || clips.length < 2) return null;
+    var rid = "r" + (++wired);
     var index = 0, holding = false, finishHook = null, lastAdvance = 0, tok = 0;
     var offsets = null;
     if (durations && durations.length === clips.length) {
@@ -26,22 +43,17 @@
         return r.bottom > 0 && r.top < h && r.height > 0;
       } catch (e) { return true; }
     }
-    // Hidden helper: open the feed with ?dbg=1 on the end of its address to see a small log of what the reel is doing.
-    function say(m) {
-      try {
-        if (!/[?&]dbg=1/.test(location.search)) return;
-        var box = document.getElementById("efReelLog");
-        if (!box) {
-          box = document.createElement("div"); box.id = "efReelLog";
-          box.style.cssText = "position:fixed;left:4px;right:4px;bottom:4px;max-height:28vh;overflow:hidden;z-index:99999;background:rgba(0,0,0,.75);color:#7CFC00;font:11px/1.3 monospace;padding:4px;pointer-events:none;white-space:pre-wrap";
-          document.body.appendChild(box);
-        }
-        var lines = (box._l = box._l || []); lines.push(((Date.now() / 1000) % 1000).toFixed(1) + " " + m);
-        if (lines.length > 14) lines.shift(); box.textContent = lines.join("\n");
-      } catch (e) {}
-    }
+    function say(m) { logLine(rid + " " + m); }
 
     video.loop = false;
+    say("wired " + clips.length + " clips, links: " + clips.map(function (c) { return c.url ? "Y" : "NO"; }).join(","));
+    ["error", "stalled", "waiting", "ended", "loadedmetadata", "playing", "pause"].forEach(function (ev) {
+      video.addEventListener(ev, function () {
+        if (!onScreen()) return;
+        var e = ev === "error" && video.error ? " code " + video.error.code : "";
+        say(ev + e + " c" + (index + 1) + " t=" + (video.currentTime || 0).toFixed(1) + "/" + (isFinite(video.duration) ? video.duration.toFixed(1) : "?"));
+      });
+    });
     function clampToStart() { var s = clipStart(clips[index]); if (s && video.currentTime < s) { try { video.currentTime = s; } catch (e) {} } }
 
     function goToClip(i) {
