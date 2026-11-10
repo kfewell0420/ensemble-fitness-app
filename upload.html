@@ -376,7 +376,7 @@
   /* With a photo chosen, the photo itself takes the top of the page; the "JPG selected" box is replaced by it (Change photo is in its header). */
   body.ps-on #dropzone { display: none !important; }
   /* ===== Nov 2026: SIMPLE iPhone upload (body.ef-simple). Note page, then: picture + play, numbered clips, a comment for each, Activity / Location / Share, Post. ===== */
-  #efSimpleNote, #efSimpleCmt, #efSimpleCount, #efT_share { display: none; }
+  #efSimpleNote, #efSimpleCmt, #efSimpleCount, #efT_share, #efMusicBar { display: none; }
   body.ef-simple[data-ef-cat="video"]:not(.ef-video) #efSimpleNote { display: block; margin: 54px 0 16px; padding: 18px; border-radius: 18px; background: #101420; border: 1px solid #2c3550; color: #dfe3ee; }
   #efSimpleNote b { display: block; margin: 0 0 10px; color: #ffcf5a; font-size: 16px; line-height: 1.35; white-space: nowrap; }
   #efSimpleNote p { margin: 0; font-size: 15px; line-height: 1.4; }
@@ -397,6 +397,19 @@
   body.ef-simple.ef-video #mixTimeline { display: block !important; position: fixed !important; left: -200vw; top: 0; width: 100vw; visibility: hidden; pointer-events: none; }
   body.ef-simple.ef-video #efSimpleCount { display: block; padding: 2px 14px 0; font-size: 12px; color: #98989d; }
   body.ef-simple.ef-video #efSimpleCmt { display: block; padding: 10px 14px 2px; }
+  /* Music bar (Nov 2026): one wide bar under the clips, above the comment. It opens the same "Add sound" song picker as the Music tile. */
+  body.ef-simple.ef-video #efMusicBar { display: block; padding: 12px 14px 0; }
+  #efMusicBar .mb-b { display: flex; align-items: center; gap: 12px; width: 100%; box-sizing: border-box; height: 56px; padding: 0 16px; border-radius: 14px; background: #1c1c1e; border: 1.5px solid #2c2f38; color: #fff; font: inherit; font-size: 16px; font-weight: 700; text-align: left; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  #efMusicBar .mb-b:active { background: #2a2d36; }
+  #efMusicBar .mb-ic { flex: 0 0 26px; display: flex; align-items: center; justify-content: center; }
+  #efMusicBar .mb-tx { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #efMusicBar .mb-sub { flex: 0 0 auto; font-size: 13px; font-weight: 600; color: #98989d; }
+  #efMusicBar .mb-x { display: none; flex: 0 0 34px; width: 34px; height: 34px; margin-right: -8px; border-radius: 50%; align-items: center; justify-content: center; font-size: 17px; color: #ffb48a; }
+  #efMusicBar.val .mb-b { border-color: #ff7a3d; }
+  #efMusicBar.val .mb-tx { color: #ffb48a; }
+  #efMusicBar.val .mb-sub { display: none; }
+  #efMusicBar.val .mb-x { display: flex; }
+  #efMusicBar.off .mb-b { opacity: 0.5; }
   #efSimpleCmt label { display: block; margin: 0 0 6px; font-size: 13px; font-weight: 600; color: #c9c9d1; }
   #efSimpleCmt input { display: block; width: 100%; box-sizing: border-box; height: 50px; padding: 0 14px; border-radius: 14px; border: 1.5px solid #ff7a3d; background: #0e1118; color: #fff; font: inherit; font-size: 16px; }
   #efSimpleCmt input::placeholder { color: #9ea2b0; }
@@ -6410,6 +6423,25 @@
     cmt.innerHTML = '<label for="efSimpleCmtIn" id="efSimpleCmtLb">Comment for video 1</label><input type="text" id="efSimpleCmtIn" maxlength="56" placeholder="Say something about this reel" autocomplete="off" enterkeyhint="done" /><div class="sc-h">It floats in for 2 seconds, then floats out.</div>';
     var cnt = document.createElement("div"); cnt.id = "efSimpleCount";
     var tools = $("efTools"); tools.parentNode.insertBefore(cnt, tools); tools.parentNode.insertBefore(cmt, tools);
+    // Music bar: a wide bar under the clips. The real Music tile (hidden in this page) still does the work; this bar taps it and mirrors its state.
+    var mbar = document.createElement("div"); mbar.id = "efMusicBar";
+    mbar.innerHTML = '<button type="button" class="mb-b" id="efMusicBtn" aria-label="Add music"><span class="mb-ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff7a3d" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M9 17V5l10-2v12"/><circle cx="6.5" cy="17.5" r="2.5" fill="#ff7a3d"/><circle cx="16.5" cy="15.5" r="2.5" fill="#ff7a3d"/></svg></span><span class="mb-tx">Add music</span><span class="mb-sub">Pick a song</span><span class="mb-x" id="efMusicX" role="button" aria-label="Remove music">\u2715</span></button>';
+    tools.parentNode.insertBefore(mbar, cmt);
+    var mbBtn = $("efMusicBtn"), mbTx = mbar.querySelector(".mb-tx");
+    mbBtn.addEventListener("click", function (e) {
+      if (e.target.closest("#efMusicX")) { e.stopPropagation(); var rm = $("trackPickerRow").querySelector(".mt-remove"); if (rm) rm.click(); return; }
+      var mt = $("efT_music"); if (mt && !mt.classList.contains("off")) mt.click();
+    });
+    function syncMusicBar() {
+      var mt = $("efT_music"); if (!mt) return;
+      var song = mt.classList.contains("song"), off = mt.classList.contains("off");
+      var t = mt.querySelector(".ef-tx") ? mt.querySelector(".ef-tx").textContent : "";
+      var want = song ? (t || "Your song") : "Add music";
+      if (mbTx.textContent !== want) mbTx.textContent = want;
+      if (mbar.classList.contains("val") !== song) mbar.classList.toggle("val", song);
+      if (mbar.classList.contains("off") !== off) mbar.classList.toggle("off", off);
+    }
+    syncMusicBar(); setInterval(syncMusicBar, 300);
     var inp = $("efSimpleCmtIn"), lb = $("efSimpleCmtLb"), shownClip = null, lastSig = "";
     inp.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); inp.blur(); } });
     inp.addEventListener("input", function () { var c = clips[clipSel]; if (c) c.cmt = inp.value; syncLabels(); });
