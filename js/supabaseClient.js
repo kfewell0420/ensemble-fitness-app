@@ -740,7 +740,14 @@ function wireReelPlayback(video, clips, durations) {
   });
   swapper.onDone(preloadNext);
 
+  // Nov 2026 (Ken: "video 1, video 2, then video 2 by itself, then both again"): when the last clip reaches its end, several things can
+  // all say "move on" within the same instant (the early-cut watcher, the clip's own "ended", the trim-end check). The first one hands
+  // over to clip 1, and a second one arriving a moment later used to push the reel straight on to clip 2 -- skipping clip 1 and
+  // restarting the song out of step. A cut that has only just happened now ignores any further "move on" for a moment.
+  var lastCutAt = 0;
+  function justCut() { return Date.now() - lastCutAt < 900; }
   function goToClip(i) {
+    lastCutAt = Date.now();
     index = i;
     var clip = clips[index];
     if (swapper.swap(clip.url, clipStart(clip))) return; // clean cut — the next clip was already waiting
@@ -755,6 +762,7 @@ function wireReelPlayback(video, clips, durations) {
   }
 
   function advance() {
+    if (justCut()) return;
     if (index === clips.length - 1 && finishHook) {
       if (holding) return;
       if (finishHook()) { holding = true; if (!video.paused && !video.ended) video.pause(); return; }
@@ -769,6 +777,7 @@ function wireReelPlayback(video, clips, durations) {
   // wireTrimPlayback does, no need to reload it here.
   video.addEventListener("loadedmetadata", clampToStart);
   video.addEventListener("timeupdate", function () {
+    if (justCut() || swapper.busy()) return;   // the picture may still be reporting the PREVIOUS clip's time for an instant
     var end = clipEnd(clips[index]);
     if (end !== null && video.currentTime >= end) advance();
   });
