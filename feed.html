@@ -2588,6 +2588,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
 <script src="js/shared-session.js"></script>
 <script src="js/supabaseClient.js"></script>
 <script src="js/reel-fix.js?v=46"></script>
+<script src="js/label-fix.js?v=47"></script>
 <script src="js/text-labels-v2.js?v=1"></script>
 <script src="js/feed-sound.js?v=4"></script>
 <script src="js/moderation.js"></script>
@@ -2671,6 +2672,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
   // screen showed so the fresh load can KEEP those cards when nothing changed (see loadMoreReel).
   var flashItemIds = [];
   var flashFollowKey = "";
+  var flashClipCounts = []; // how many extra clips each cached card was built with
   function followKeyOf(arr) { return Array.from(arr || []).map(String).sort().join(","); }
 
   function feedCacheKey(userId, filter) {
@@ -3887,6 +3889,47 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     missing.forEach(function (id) { connStatusCache[id] = found[id] || ""; });
   }
 
+  // A reel whose extra clips are not all attached yet (Ken, Nov 2026: a brand-new 4-clip post showed on the computer as ONE clip).
+  // The post is saved first and its other clips are uploaded and attached a few seconds later; a feed that loads the post in between
+  // (the live check does, the moment it appears) used to keep the one-clip version for good. The post saves how many clips it has
+  // (clip_durations), so when fewer have arrived, ask again every few seconds, and swap the card for the full reel once they are there.
+  function refreshSlideFor(item) {
+    var old = document.querySelector('#rpReel [data-media-id="' + item.id + '"]');
+    if (!old || !old.parentNode) return; // not on screen yet: whenever it is built it will use the clips found so far
+    var fresh = buildAnySlide(item);
+    if (old.classList.contains("rp-slide-new")) fresh.classList.add("rp-slide-new");
+    old.parentNode.replaceChild(fresh, old);
+    try { reelObserver.unobserve(old); } catch (e) {}
+    try { videoSrcObserver.unobserve(old); } catch (e) {}
+    try { reelObserver.observe(fresh); videoSrcObserver.observe(fresh); } catch (e) {}
+  }
+  function healIncompleteReel(item) {
+    try {
+      if (!item || item.kind !== "video" || item._healing) return;
+      var want = Array.isArray(item.clipDurations) ? item.clipDurations.length : 0;
+      function have() { return 1 + (item.extraClips ? item.extraClips.length : 0); }
+      if (want < 2 || have() >= want) return;
+      item._healing = true;
+      var tries = 0;
+      (function again() {
+        setTimeout(async function () {
+          tries++;
+          try {
+            var map = await fetchClipsForMediaIds([item.id]);
+            var rows = map[item.id] || [];
+            if (rows.length + 1 > have()) {
+              var paths = rows.map(function (r) { return r.storage_path; }).filter(Boolean);
+              var urls = paths.length ? await resolveSignedUrls(paths) : {};
+              item.extraClips = rows.map(function (c) { return { order_index: c.order_index, url: urls[c.storage_path] || "", trim_start: c.trim_start, trim_end: c.trim_end }; });
+              if (have() >= want || tries >= 36) refreshSlideFor(item);   // wait for the whole reel, then swap once
+            }
+          } catch (e) {}
+          if (have() < want && tries < 36) again(); else item._healing = false;
+        }, tries === 0 ? 4000 : 5000);
+      })();
+    } catch (e) {}
+  }
+
   async function buildItems(rows) {
     // Oct 2026 (speed pass, step 3): everything below that needs only `rows` now STARTS AT THE SAME
     // MOMENT instead of queuing — the extra-clips lookup, reaction/comment counts, author badges,
@@ -3987,6 +4030,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     // above for why this one's safe to let run in the background while
     // posts render with their colored-initial fallback first.
     hydrateAvatars(items);
+    items.forEach(healIncompleteReel);
 
     return items;
   }
@@ -4708,6 +4752,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
   function buildSlide(item) {
     var el = document.createElement("div");
     el.className = "rp-slide";
+    el.setAttribute("data-media-id", item.id);
 
     // Ken's ask (Nov 2026): starts with whatever the shared reelMuted
     // setting currently is (default: unmuted) instead of a hardcoded
@@ -6011,7 +6056,8 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
       var keepFlash = false;
       if (cacheFlashNodes.length && flashItemIds.length === cacheFlashNodes.length && combined.length >= flashItemIds.length &&
           flashFollowKey === followKeyOf(followingIds)) {
-        keepFlash = flashItemIds.every(function (id, i) { return String(combined[i].id) === id; });
+        // (a reel that has more clips now than when it was saved is rebuilt, so it is not kept stuck on its first clip)
+        keepFlash = flashItemIds.every(function (id, i) { return String(combined[i].id) === id && ((combined[i].extraClips ? combined[i].extraClips.length : 0) === (flashClipCounts[i] || 0)); });
       }
       if (keepFlash) {
         var keptCount = flashItemIds.length;
@@ -6248,6 +6294,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
           renderingCacheFlash = false;
         }
         flashItemIds = cachedFeed.items.map(function (it) { return String(it.id); });
+        flashClipCounts = cachedFeed.items.map(function (it) { return (it.extraClips ? it.extraClips.length : 0); });
         flashFollowKey = followKeyOf(cachedFeed.followingIds);
         loadedItems = []; // flash items are placeholders, not real pagination state
       } else {
