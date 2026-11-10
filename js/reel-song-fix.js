@@ -19,10 +19,16 @@
     if (reel && audio && video && protoDesc && protoDesc.get && protoDesc.set) {
       try {
         var changeAt = 0, lastIdx = -1, holdTimer = null;
+        // the moment the picture really swaps to the next clip (the player empties and loads the new file) also opens the "clip change" window
+        ["emptied", "loadstart", "play"].forEach(function (ev) { video.addEventListener(ev, function () { if (ev === "play" && (Date.now() - changeAt) > 2500) return; changeAt = Date.now(); }); });
+        function note(m) {   // shows in the green reel log (only when that log is on)
+          try { var box = document.getElementById("efReelLog"); if (!box) return; var l = (box._l = box._l || []); l.push(((Date.now() / 1000) % 1000).toFixed(1) + " song: " + m); if (l.length > 14) l.shift(); box.textContent = l.join("\n"); } catch (e) {}
+        }
         var origPause = audio.pause.bind(audio);
         var delay = musicWin && musicWin.delay > 0 ? Number(musicWin.delay) : 0;
         var wlen = musicWin && musicWin.length > 0 ? Number(musicWin.length) : null;
         function songPartOver() { try { return wlen !== null && reel.time() >= delay + wlen - 0.02; } catch (e) { return false; } }
+        note("song fix active");
         var tick = setInterval(function () {
           if (!video.isConnected && lastIdx !== -2) { /* slide gone: the original guard stops the song */ }
           var i = -1; try { i = (typeof reel.index === "function") ? reel.index() : reel.index; } catch (e) {}
@@ -33,18 +39,19 @@
           get: function () { return protoDesc.get.call(audio); },
           set: function (v) {
             var cur = protoDesc.get.call(audio);
-            if (!audio.paused && isFinite(cur) && isFinite(v) && Math.abs(v - cur) < 3) return;   // playing and close enough: leave the song alone
+            if (!audio.paused && isFinite(cur) && isFinite(v) && Math.abs(v - cur) < 3) { note("kept playing (skipped a " + Math.abs(v - cur).toFixed(1) + "s re-aim)"); return; }   // playing and close enough: leave the song alone
             protoDesc.set.call(audio, v);
           }
         });
         audio.pause = function () {
           if (audio.paused) return;
           // within a moment of the picture changing clips, a stop request is held back and only applied if it is still true afterwards
-          if ((Date.now() - changeAt) < 1500) {
+          if ((Date.now() - changeAt) < 2500) {
             if (!holdTimer) holdTimer = setTimeout(function () {
               holdTimer = null;
               if (!audio.paused && (video.paused || songPartOver())) origPause();   // the picture really stopped, or the song's own part ended
             }, 500);
+            note("held a stop during the clip change");
             return;
           }
           origPause();
