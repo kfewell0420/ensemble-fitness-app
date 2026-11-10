@@ -395,6 +395,13 @@
   body.ef-simple.ef-video .clip-thumb .clip-n { min-width: 15px; height: 15px; line-height: 15px; font-size: 10px; }
   body.ef-simple.ef-video .clip-thumb .clip-d { font-size: 9px; }
   body.ef-simple.ef-video #mixTimeline { display: block !important; position: fixed !important; left: -200vw; top: 0; width: 100vw; visibility: hidden; pointer-events: none; }
+  /* Once a song is chosen the strip comes into view under the Music bar: the member drags the song's left handle to where it should start, and the song stays locked to the video. */
+  body.ef-simple.ef-video.ef-song #mixTimeline { position: relative !important; left: auto !important; top: auto !important; width: auto !important; visibility: visible !important; pointer-events: auto !important; margin: 0 !important; padding: 14px 0 6px !important; }
+  body.ef-simple.ef-video.ef-song .mix-tracks, body.ef-simple.ef-video.ef-song .mix-tracks.nosong { margin: 0 0 22px; }
+  body.ef-simple.ef-video #mixVideoTrack { pointer-events: none; }   /* the picture strip is only a guide here: no per-clip trim handles in the simple page */
+  body.ef-simple.ef-video #efLineAdd, body.ef-simple.ef-video #efAddMusic, body.ef-simple.ef-video #efXrm { display: none !important; }
+  #efMusicBar .mix-hint { display: none; margin: 4px 2px 0; font-size: 12px; color: #ffcf5a; }
+  body.ef-simple.ef-video.ef-song #efMusicBar .mix-hint { display: block; }
   body.ef-simple.ef-video #efSimpleCount { display: block; padding: 2px 14px 0; font-size: 12px; color: #98989d; }
   body.ef-simple.ef-video #efSimpleCmt { display: block; padding: 10px 14px 2px; }
   /* Music bar (Nov 2026): one wide bar under the clips, above the comment. It opens the same "Add sound" song picker as the Music tile. */
@@ -3030,7 +3037,7 @@
   var trimSel = -1;               // which clip has its handles showing (-1 = none)
   var lineScale = 0;              // pixels per second of the line while a handle is held (keeps the finger and the handle together)
   var ctDrag = null, ctDragEnd = 0;
-  function lineAvail() { var w = (mixTimeline && mixTimeline.clientWidth) || 0; return Math.max(120, w - 24 - (clips.length < MAX_CLIPS ? 46 : 0)); }
+  function lineAvail() { var w = (mixTimeline && mixTimeline.clientWidth) || 0; if (window.EF_SIMPLE) return Math.max(120, w); return Math.max(120, w - 24 - (clips.length < MAX_CLIPS ? 46 : 0)); }
   function layoutLine(refit) {
     if (!mixTracks) return;
     var n = clips.length, vd = vidDur(), av = lineAvail();
@@ -6427,6 +6434,8 @@
     var mbar = document.createElement("div"); mbar.id = "efMusicBar";
     mbar.innerHTML = '<button type="button" class="mb-b" id="efMusicBtn" aria-label="Add music"><span class="mb-ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff7a3d" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M9 17V5l10-2v12"/><circle cx="6.5" cy="17.5" r="2.5" fill="#ff7a3d"/><circle cx="16.5" cy="15.5" r="2.5" fill="#ff7a3d"/></svg></span><span class="mb-tx">Add music</span><span class="mb-sub">Pick a song</span><span class="mb-x" id="efMusicX" role="button" aria-label="Remove music">\u2715</span></button>';
     tools.parentNode.insertBefore(mbar, cmt);
+    var mixTl = $("mixTimeline"); if (mixTl) mbar.appendChild(mixTl);
+    var mh = document.createElement("div"); mh.className = "mix-hint"; mh.textContent = "Drag the left handle to set where the song starts."; mbar.appendChild(mh);   // the picture-strip + song bar with the start handle lives right under the Music bar (shown once a song is chosen)
     var mbBtn = $("efMusicBtn"), mbTx = mbar.querySelector(".mb-tx");
     mbBtn.addEventListener("click", function (e) {
       if (e.target.closest("#efMusicX")) { e.stopPropagation(); var rm = $("trackPickerRow").querySelector(".mt-remove"); if (rm) rm.click(); return; }
