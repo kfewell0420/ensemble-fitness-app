@@ -697,12 +697,20 @@ function efTrack(msg) {
   try {
     if (efTrackOn === null) {
       efTrackOn = /[?&]dbg=1/.test(location.search);
-      if (efTrackOn) ["seeking", "play", "pause", "ended"].forEach(function (ev) {
-        document.addEventListener(ev, function (e) {
-          var el = e.target;
-          if (el && el.tagName === "AUDIO") efTrack("SONG " + ev + " at " + (el.currentTime || 0).toFixed(1) + "s");
-        }, true);
-      });
+      if (efTrackOn) {
+        // the song is an audio element that is not on the page itself, so watch it by wrapping the browser's own controls
+        try {
+          var d = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "currentTime");
+          if (d && d.set) Object.defineProperty(HTMLMediaElement.prototype, "currentTime", {
+            configurable: true, enumerable: d.enumerable, get: d.get,
+            set: function (v) { if (this.tagName === "AUDIO") efTrack("SONG moved to " + Number(v).toFixed(1) + "s (was " + (d.get.call(this) || 0).toFixed(1) + "s)"); return d.set.call(this, v); }
+          });
+          ["play", "pause"].forEach(function (fn) {
+            var orig = HTMLMediaElement.prototype[fn];
+            HTMLMediaElement.prototype[fn] = function () { if (this.tagName === "AUDIO") efTrack("SONG " + fn + " at " + (this.currentTime || 0).toFixed(1) + "s"); return orig.apply(this, arguments); };
+          });
+        } catch (e) {}
+      }
     }
     if (!efTrackOn) return;
     if (!efTrackBox) {
@@ -757,7 +765,8 @@ function wireReelPlayback(video, clips, durations) {
   var watchRaf = null;
   function watchEnd() {
     watchRaf = null;
-    if (video.paused || swapper.busy()) return;
+    if (video.paused) return;
+    if (swapper.busy()) { watchRaf = requestAnimationFrame(watchEnd); return; }   // a hand-over is still finishing: keep watching
     if (!settled || justCut()) { watchRaf = requestAnimationFrame(watchEnd); return; }   // a cut has only just happened: keep watching, judge later
     if (finishHook && index === clips.length - 1) return; // the last clip runs to its true end (a song fade-out may follow)
     var end = clipEnd(clips[index]);
