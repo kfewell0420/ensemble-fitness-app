@@ -100,7 +100,7 @@
   .mp-cmt input { flex: 1 1 auto; min-width: 0; border-radius: 21px; border: 1px solid rgba(255,255,255,0.18); background: #1b1f33; color: #fff; padding: 0 14px; font-family: inherit; font-size: 15px; }
   .mp-cmt input::placeholder { color: #8b91a8; }
   .mp-cmt button { flex: 0 0 84px; width: 84px; border-radius: 21px; border: 1px solid transparent; background: #ff6a1a; color: #fff; font-family: inherit; font-size: 14px; font-weight: 700; line-height: 1; cursor: pointer; padding: 0; -webkit-tap-highlight-color: transparent; }
-  .mp-cmt button.mp-cmt-close { background: rgba(40,44,62,0.94); border-color: rgba(255,255,255,0.16); font-weight: 800; }
+  .mp-cmt button.mp-cmt-close { background: #ff6a1a; border-color: transparent; color: #fff; font-weight: 800; }
   .mp-cmt button:disabled { opacity: 0.55; }
   @media (min-width: 721px) {
     #mediaGrid.mp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
@@ -657,7 +657,7 @@ window.efEnsureSound = function (video, audio, keepOriginal) {
           '<div class="mp-card-sub">' + subParts.join(" · ") + (narrationUrl ? ' · 🎙️ narrated' : musicUrl ? ' · 🎵 ' + escapeHtml(item.tracks.title) + ' — ' + escapeHtml(item.tracks.artist_name) : '') + '</div>' +
           (item.caption ? '<p class="mp-card-caption">' + escapeHtml(item.caption) + '</p>' : "") +
         '</div>' +
-        '<form class="mp-cmt" data-mid="' + escapeHtml(String(item.id)) + '" autocomplete="off"><input type="text" maxlength="500" placeholder="Add a comment\u2026" aria-label="Add a comment" enterkeyhint="send"><button type="submit" aria-label="Post comment">Post</button><button type="button" class="mp-cmt-close" aria-label="Close and go back to the grid">\u2715 Close</button></form>';
+        '<form class="mp-cmt" data-mid="' + escapeHtml(String(item.id)) + '" autocomplete="off"><input type="text" maxlength="500" placeholder="Add a comment\u2026" aria-label="Add a comment" enterkeyhint="send"><button type="button" class="mp-cmt-close" aria-label="Close and go back to the grid">\u2715 Close</button></form>';
 
       grid.appendChild(card);
       // Oct 29 (Ken): a video box with no saved picture used to show Android's own big grey play-button placeholder until its first
@@ -851,16 +851,16 @@ window.efEnsureSound = function (video, audio, keepOriginal) {
       var f = e.target && e.target.closest ? e.target.closest(".mp-cmt") : null;
       if (!f) return;
       e.preventDefault();
-      var inp = f.querySelector("input"), btn = f.querySelector("button");
+      var inp = f.querySelector("input");
       var body = (inp.value || "").trim();
-      if (!body || btn.disabled) return;
-      btn.disabled = true;
+      if (!body || f.getAttribute("data-busy") === "1") return;
+      f.setAttribute("data-busy", "1");
       var ok = false;
       try {
         var res = await window.sb.from("media_comments").insert({ media_id: f.getAttribute("data-mid"), user_id: currentUserId, body: body });
         ok = !(res && res.error);
       } catch (er) { ok = false; }
-      btn.disabled = false;
+      f.removeAttribute("data-busy");
       if (ok) { inp.value = ""; inp.placeholder = "Comment posted \u2713"; try { inp.blur(); } catch (er) {}
         setTimeout(function () { inp.placeholder = "Add a comment\u2026"; }, 2500); }
       else { inp.placeholder = "Couldn\u2019t post \u2014 try again"; setTimeout(function () { inp.placeholder = "Add a comment\u2026"; }, 3000); }
