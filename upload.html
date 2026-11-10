@@ -396,26 +396,27 @@
   body.ef-simple.ef-video .clip-thumb .clip-d { font-size: 9px; }
   body.ef-simple.ef-video #mixTimeline { display: block !important; position: fixed !important; left: -200vw; top: 0; width: 100vw; visibility: hidden; pointer-events: none; }
   /* Once a song is chosen the strip comes into view under the Music bar: the member drags the song's left handle to where it should start, and the song stays locked to the video. */
-  body.ef-simple.ef-video.ef-song #mixTimeline { position: relative !important; left: auto !important; top: auto !important; width: auto !important; visibility: visible !important; pointer-events: auto !important; margin: 0 !important; padding: 14px 0 6px !important; }
-  body.ef-simple.ef-video.ef-song .mix-tracks, body.ef-simple.ef-video.ef-song .mix-tracks.nosong { margin: 0 0 22px; }
+  body.ef-simple.ef-video.ef-song #mixTimeline { position: relative !important; left: auto !important; top: auto !important; width: auto !important; visibility: visible !important; pointer-events: auto !important; margin: 0 !important; padding: 12px 0 0 !important; }
+  body.ef-simple.ef-video.ef-song .mix-tracks, body.ef-simple.ef-video.ef-song .mix-tracks.nosong { margin: 0 0 14px; }
+  body.ef-simple.ef-video #mixClipLabel { display: none !important; }   /* the song's name is on the Music bar above: the sound bars are shown clean */
   body.ef-simple.ef-video #mixVideoTrack { pointer-events: none; }
   /* about 30% thicker so a thumb can grab them (was 62px picture strip / 32px song bar) */
   body.ef-simple.ef-video .mix-track.mix-video { height: 80px !important; }
   body.ef-simple.ef-video .mix-track.mix-music { height: 42px !important; }
   body.ef-simple.ef-video .mix-handle { flex-basis: 32px !important; width: 32px !important; }   /* the picture strip is only a guide here: no per-clip trim handles in the simple page */
   body.ef-simple.ef-video #efLineAdd, body.ef-simple.ef-video #efAddMusic, body.ef-simple.ef-video #efXrm { display: none !important; }
-  #efMusicBar .mix-hint { display: none; margin: 4px 2px 0; font-size: 12px; color: #ffcf5a; }
+  #efMusicBar .mix-hint { display: none; margin: 0 2px 0; font-size: 12px; color: #ffcf5a; }
   body.ef-simple.ef-video.ef-song #efMusicBar .mix-hint { display: block; }
   body.ef-simple.ef-video #efSimpleCount { display: block; padding: 2px 14px 0; font-size: 12px; color: #98989d; }
   body.ef-simple.ef-video #efSimpleCmt { display: block; padding: 10px 14px 2px; }
   /* Music bar (Nov 2026): one wide bar under the clips, above the comment. It opens the same "Add sound" song picker as the Music tile. */
   body.ef-simple.ef-video #efMusicBar { display: block; padding: 12px 14px 0; }
-  #efMusicBar .mb-b { display: flex; align-items: center; gap: 12px; width: 100%; box-sizing: border-box; height: 56px; padding: 0 16px; border-radius: 14px; background: #1c1c1e; border: 1.5px solid #2c2f38; color: #fff; font: inherit; font-size: 16px; font-weight: 700; text-align: left; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  #efMusicBar .mb-b { display: flex; align-items: center; gap: 12px; width: 100%; box-sizing: border-box; height: 42px; padding: 0 14px; border-radius: 9px; background: #1c1c1e; border: 1.5px solid #2c2f38; color: #fff; font: inherit; font-size: 15px; font-weight: 700; text-align: left; cursor: pointer; -webkit-tap-highlight-color: transparent; }
   #efMusicBar .mb-b:active { background: #2a2d36; }
   #efMusicBar .mb-ic { flex: 0 0 26px; display: flex; align-items: center; justify-content: center; }
   #efMusicBar .mb-tx { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #efMusicBar .mb-sub { flex: 0 0 auto; font-size: 13px; font-weight: 600; color: #98989d; }
-  #efMusicBar .mb-x { display: none; flex: 0 0 34px; width: 34px; height: 34px; margin-right: -8px; border-radius: 50%; align-items: center; justify-content: center; font-size: 17px; color: #ffb48a; }
+  #efMusicBar .mb-x { display: none; flex: 0 0 34px; width: 34px; height: 34px; margin-right: -9px; border-radius: 50%; align-items: center; justify-content: center; font-size: 17px; color: #ffb48a; }
   #efMusicBar.val .mb-b { border-color: #ff7a3d; }
   #efMusicBar.val .mb-tx { color: #ffb48a; }
   #efMusicBar.val .mb-sub { display: none; }
