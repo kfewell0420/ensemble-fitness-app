@@ -4428,9 +4428,17 @@
       mixRaf = requestAnimationFrame(mixTick);
       return;
     }
-    if (hasMusicSelected()) {
+    // Ken (Nov 2026): with several videos the song is NOT locked to each clip. It starts where the member placed it and then simply
+    // runs on: no re-syncing, no jumping, no pausing when the picture moves from one clip to the next (that was the skipping).
+    var freeRun = clips.length > 1;
+    var clipHandOver = freeRun && (reelSwitching || autoAdvancing || (pvSwapper && pvSwapper.busy()));
+    if (clipHandOver && !musicPreviewAudio.paused) { /* leave the song alone while the next clip is loading */ }
+    else if (hasMusicSelected()) {
       var t = reelNow(), s = musicStartPicker.getValue();
-      if (t >= mDelay - 0.02 && t < mDelay + mLen) {
+      if (freeRun && !musicPreviewAudio.paused) {
+        // already playing: only stop it when the song's own bar ends or the member jumped back before where it starts
+        if (t >= mDelay + mLen - 0.02 || t < mDelay - 0.4) { if (!(t >= vidDur() - 0.15 && songRunsToVideoEnd())) musicPreviewAudio.pause(); }
+      } else if (t >= mDelay - 0.02 && t < mDelay + mLen) {
         var want = s + Math.max(0, t - mDelay);
         if (musicPreviewAudio.paused) {
           startMusicInSync();
