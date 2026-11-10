@@ -398,7 +398,11 @@
   /* Once a song is chosen the strip comes into view under the Music bar: the member drags the song's left handle to where it should start, and the song stays locked to the video. */
   body.ef-simple.ef-video.ef-song #mixTimeline { position: relative !important; left: auto !important; top: auto !important; width: auto !important; visibility: visible !important; pointer-events: auto !important; margin: 0 !important; padding: 14px 0 6px !important; }
   body.ef-simple.ef-video.ef-song .mix-tracks, body.ef-simple.ef-video.ef-song .mix-tracks.nosong { margin: 0 0 22px; }
-  body.ef-simple.ef-video #mixVideoTrack { pointer-events: none; }   /* the picture strip is only a guide here: no per-clip trim handles in the simple page */
+  body.ef-simple.ef-video #mixVideoTrack { pointer-events: none; }
+  /* about 30% thicker so a thumb can grab them (was 62px picture strip / 32px song bar) */
+  body.ef-simple.ef-video .mix-track.mix-video { height: 80px !important; }
+  body.ef-simple.ef-video .mix-track.mix-music { height: 42px !important; }
+  body.ef-simple.ef-video .mix-handle { flex-basis: 32px !important; width: 32px !important; }   /* the picture strip is only a guide here: no per-clip trim handles in the simple page */
   body.ef-simple.ef-video #efLineAdd, body.ef-simple.ef-video #efAddMusic, body.ef-simple.ef-video #efXrm { display: none !important; }
   #efMusicBar .mix-hint { display: none; margin: 4px 2px 0; font-size: 12px; color: #ffcf5a; }
   body.ef-simple.ef-video.ef-song #efMusicBar .mix-hint { display: block; }
@@ -1706,10 +1710,6 @@
   // lifts, and the little previews being made in the background wait while the finger is on the bar.
   var scrubDrag = { on: false, hold: false, shown: 0, want: null, busy: false };
   var autoAdvancing = false; // true only while the preview rolls on by itself from one clip into the next
-  // Ken (Nov 2026): the song must not skip when the picture rolls from one clip into the next. For about two seconds after such a
-  // roll-on the song is left completely alone (no pause, no seek, no swapping its file), whatever the video player reports.
-  var handOverAt = 0;
-  function inHandOver() { return clips.length > 1 && (autoAdvancing || reelSwitching || (performance.now() - handOverAt) < 2000); }
   var pvSwapper = null; // clean cuts between clips (see createClipSwapper in js/supabaseClient.js)
   var memberDisplayName = "";
   // Ken's ask (Oct 2026): a 1:42 workout video hit Supabase's "the object
@@ -3403,7 +3403,6 @@
   function loadClipAt(idx, local, andPlay) {
     return new Promise(function (resolve) {
       var startAt = cTs(clips[idx]);
-      if (andPlay && local === undefined) handOverAt = performance.now();   // rolling on by itself (not a member's tap)
       reelFinished = false;
       if (!pvSwapper) {
         pvSwapper = createClipSwapper(trimPreviewVideo);
@@ -4006,7 +4005,7 @@
   function swapToBlob(id) {
     var u = songBlobUrl[id], a = musicPreviewAudio;
     if (!u || !a || a.dataset.trackId !== id || a.dataset.blobFor === id || !a.paused) return;
-    if (inHandOver() || (performance.now() - (mixTick.lastPlayingAt || 0)) < 3000) return;   // never swap the song's file right after it was playing: that restarts it
+    if (typeof songHold !== "undefined" && (performance.now() - songHold.playedAt) < 3000) return;   // never swap the song's file right after it was playing: that restarts it
     var t = a.currentTime || 0;
     try { a.src = u; a.dataset.blobFor = id; a.load(); try { a.currentTime = t; } catch (e) {} } catch (e) {}
   }
@@ -4438,11 +4437,7 @@
     // runs on: no re-syncing, no jumping, no pausing when the picture moves from one clip to the next (that was the skipping).
     var freeRun = clips.length > 1;
     var clipHandOver = freeRun && (reelSwitching || autoAdvancing || (pvSwapper && pvSwapper.busy()));
-    if (clipHandOver) handOverAt = performance.now();
-    if (!musicPreviewAudio.paused) mixTick.lastPlayingAt = performance.now();
-    if (freeRun && musicPreviewAudio.paused && hasMusicSelected() && inHandOver() && (performance.now() - (mixTick.lastPlayingAt || 0)) < 2500 && !trimPreviewVideo.paused) {
-      musicPreviewAudio.play().catch(function () {});   // it was stopped by the clip change: carry on from where it is, no seeking
-    } else if (clipHandOver && !musicPreviewAudio.paused) { /* leave the song alone while the next clip is loading */ }
+    if (clipHandOver && !musicPreviewAudio.paused) { /* leave the song alone while the next clip is loading */ }
     else if (hasMusicSelected()) {
       var t = reelNow(), s = musicStartPicker.getValue();
       if (freeRun && !musicPreviewAudio.paused) {
@@ -4522,10 +4517,6 @@
     // Only the preview rolling on into the next clip is allowed to leave the song playing; any other
     // pause (a tap, a scrub, a jump to another clip) stops the song with the picture.
     if (autoAdvancing || (trimPreviewVideo.ended && hasNextClip())) return;
-    if (inHandOver() && !musicPreviewAudio.paused) {   // the player blinked while rolling into the next clip: keep the song going; if the picture really stays stopped, stop the song shortly after
-      setTimeout(function () { if (trimPreviewVideo.paused && !musicPreviewAudio.paused && !previewTail.active()) { musicPreviewAudio.pause(); updatePlayTogetherBtn(); } }, 2100);
-      return;
-    }
     if (previewTail.active() || (trimPreviewVideo.ended && songRunsToVideoEnd())) { updatePlayTogetherBtn(); updatePlayhead(); renderTimeline(); return; } // the fade-out tail
     updatePlayTogetherBtn(); musicPreviewAudio.pause(); updatePlayhead(); renderTimeline();
   });
@@ -4546,7 +4537,7 @@
   // the song waits and re-places itself on Play), and (2) moves the white line on the song/filmstrip track live,
   // while dragging, not only when the drag ends.
   trimPreviewVideo.addEventListener("seeking", function () {
-    if (reelSwitching || autoAdvancing || inHandOver() || (pvSwapper && pvSwapper.busy())) return; // our own clip hand-over, not the member
+    if (reelSwitching || autoAdvancing || (pvSwapper && pvSwapper.busy())) return; // our own clip hand-over, not the member
     mixTick.lastVTAt = performance.now(); // a seek is not a freeze
     if (hasMusicSelected() && !musicPreviewAudio.paused && !previewTail.active()) musicPreviewAudio.pause();
     updatePlayhead();
@@ -5021,8 +5012,28 @@
   var musicSection = document.getElementById("musicSection");
   var musicTrackSelect = document.getElementById("musicTrackSelect");
   var musicPreviewAudio = document.getElementById("musicPreviewAudio");
+  // ---- Song stays smooth across clip changes (Ken, Nov 2026) ----
+  // Touches ONLY the song's own player; the video code is unchanged. With several videos, when the picture rolls from one clip into
+  // the next, the video player can blink (pause / seek events) and those used to stop the song, which then restarted: heard as a skip.
+  // For about 1.5 s after the clip number changes, a pause of the song is held back; if the picture really is stopped (or the song
+  // should end) the pause is applied right after. The song's own file is also never swapped while it is playing.
+  var songHold = { idx: -1, at: 0, timer: null, playedAt: 0 };
+  (function () {
+    var a = musicPreviewAudio, origPause = a.pause.bind(a);
+    function inWindow() { return clips.length > 1 && (performance.now() - songHold.at) < 1500; }
+    function shouldStop() { return trimPreviewVideo.paused || !hasMusicSelected() || reelFinished || reelNow() >= mDelay + mLen - 0.02; }
+    a.pause = function () {
+      if (!a.paused && inWindow() && hasMusicSelected() && !shouldStop()) {
+        if (!songHold.timer) songHold.timer = setTimeout(function () { songHold.timer = null; if (!a.paused && shouldStop() && !previewTail.active()) origPause(); }, 1600);
+        return;
+      }
+      origPause();
+    };
+    a.addEventListener("timeupdate", function () { if (!a.paused) songHold.playedAt = performance.now(); });
+    setInterval(function () { if (reelIdx !== songHold.idx) { songHold.idx = reelIdx; songHold.at = performance.now(); } }, 60);
+  })();
   ["play", "pause", "seeking", "waiting", "stalled", "ended"].forEach(function (ev) {
-    musicPreviewAudio.addEventListener(ev, function () { if (!DBG.on) return; dbg("SONG " + ev + " at " + (musicPreviewAudio.currentTime || 0).toFixed(1) + "s (video " + (reelIdx + 1) + ", reel " + reelNow().toFixed(1) + ")" + (inHandOver() ? " [clip change]" : "")); });
+    musicPreviewAudio.addEventListener(ev, function () { if (!DBG.on) return; dbg("SONG " + ev + " at " + (musicPreviewAudio.currentTime || 0).toFixed(1) + "s (video " + (reelIdx + 1) + ", reel " + reelNow().toFixed(1) + ")"); });
   });
   // Diagnostics only (shown in the hidden panel: tap "Your videos" 5 times): what the song and the picture report.
   ["play", "playing", "pause", "waiting", "stalled", "error", "seeking", "seeked", "ended"].forEach(function (ev) {
