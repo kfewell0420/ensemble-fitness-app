@@ -472,18 +472,19 @@
     body.ef-simple[data-ef-cat="video"]:not(.ef-video) #efSimpleNote b { white-space: normal; font-size: 18px; }
     body.ef-simple[data-ef-cat="video"]:not(.ef-video) #dropzone { display: block; box-sizing: border-box; max-width: 620px; margin-left: auto; margin-right: auto; }
     body.ef-simple.ef-video #uploadShell { padding-bottom: 48px !important; }
-    body.ef-simple.ef-video #uploadFlow { display: grid !important; grid-template-columns: 420px 400px; justify-content: center; grid-template-rows: auto auto auto auto 1fr auto auto; column-gap: 32px; align-items: start; width: fit-content; max-width: 100%; margin: 0 auto; box-sizing: border-box; background: #0d1017; border: 1px solid #242833; border-radius: 24px; padding: 14px 30px 30px; }
+    body.ef-simple.ef-video #uploadFlow { display: grid !important; grid-template-columns: calc(min(56vh, 520px) * 0.5625) 400px; justify-content: center; grid-template-rows: auto auto auto auto 1fr auto auto; column-gap: 32px; align-items: start; width: fit-content; max-width: 100%; margin: 0 auto; box-sizing: border-box; background: #0d1017; border: 1px solid #242833; border-radius: 24px; padding: 14px 30px 30px; }
     body.ef-simple.ef-video #flowBackBtn { grid-column: 1 / -1; grid-row: 1; position: static !important; justify-self: start; margin: 6px 0 12px !important; }
-    body.ef-simple.ef-video #trimSection { grid-column: 1; grid-row: 2 / 6; width: 100%; min-width: 0; margin: 0 !important; padding: 0 !important; border-radius: 18px; overflow: hidden; background: #000; border: 1px solid #2c2f38; }
-    body.ef-simple.ef-video #trimSection .trim-media { margin: 0 !important; }
-    body.ef-simple.ef-video #trimPreviewVideo, body.ef-simple.ef-video #trimPreviewVideo.portrait { height: min(56vh, 520px) !important; min-height: 300px; }
-    body.ef-simple.ef-video #clipTray { background: #0b0d12; border-top: 1px solid #1f2330; }
-    body.ef-simple.ef-video .clip-tray { padding: 12px 16px 8px; gap: 10px; }
+    body.ef-simple.ef-video #trimSection { grid-column: 1; grid-row: 2 / 6; width: 100% !important; justify-self: stretch; min-width: 0; margin: 0 !important; padding: 0 !important; border-radius: 0; overflow: visible; background: transparent; border: 0; }
+    body.ef-simple.ef-video #trimSection .trim-media { margin: 0 !important; display: block !important; width: 100% !important; }
+    body.ef-simple.ef-video #trimPreviewVideo, body.ef-simple.ef-video #trimPreviewVideo.portrait { width: 100% !important; max-width: none !important; height: min(56vh, 520px) !important; min-height: 300px; background: #000; border: 1px solid #2c2f38; border-radius: 18px !important; box-sizing: border-box; }
+    body.ef-simple.ef-video #clipTray { background: #0b0d12; border: 1px solid #1f2330; border-radius: 14px; margin-top: 12px; width: 100%; box-sizing: border-box; }
+    body.ef-simple.ef-video .clip-tray { padding: 12px 14px 12px; gap: 8px; }
     body.ef-simple.ef-video .clip-thumb, body.ef-simple.ef-video .clip-add { width: 56px; height: 72px; border-radius: 11px; }
     body.ef-simple.ef-video .clip-thumb .clip-n { min-width: 18px; height: 18px; line-height: 18px; font-size: 11px; }
     body.ef-simple.ef-video .clip-thumb .clip-d { font-size: 11px; }
     body.ef-simple.ef-video #efSimpleCount { grid-column: 1; grid-row: 6; padding: 8px 4px 0; font-size: 13px; }
-    body.ef-simple.ef-video #efMusicBar { grid-column: 1; grid-row: 7; padding: 10px 0 0; }
+    body.ef-simple.ef-video #efMusicBar { grid-column: 1 / -1; grid-row: 7; padding: 14px 0 0; }
+    body.ef-simple.ef-video .clip-tray-row { flex-wrap: wrap; overflow: visible; }
     body.ef-simple.ef-video #efSimpleCmt { grid-column: 2; grid-row: 2; padding: 0 0 4px; }
     body.ef-simple.ef-video #efSimpleCmt label { font-size: 15px; margin-bottom: 8px; }
     body.ef-simple.ef-video #efSimpleCmt input { height: 56px; font-size: 17px; }
