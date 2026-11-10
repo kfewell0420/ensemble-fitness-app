@@ -2587,7 +2587,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
 <script src="js/config.js"></script>
 <script src="js/shared-session.js"></script>
 <script src="js/supabaseClient.js"></script>
-<script src="js/reel-fix.js?v=44"></script>
+<script src="js/reel-fix.js?v=46"></script>
 <script src="js/text-labels-v2.js?v=1"></script>
 <script src="js/feed-sound.js?v=4"></script>
 <script src="js/moderation.js"></script>
@@ -6156,6 +6156,25 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
       .on("postgres_changes", { event: "*", schema: "public", table: "media" }, function () { checkForLiveUpdates(); checkForNewMealPrep(); })
       .on("postgres_changes", { event: "*", schema: "public", table: "community_questions" }, function () { checkForLiveUpdates(); })
       .subscribe();
+    startLivePolling();
+  }
+
+  // Safety net for a feed left open for hours on a computer (Ken, Nov 2026: "it should always be open and you see live feeds as they
+  // come in"). The live connection above can quietly drop (laptop sleep, a long idle tab, Realtime not switched on for a table), and
+  // nothing re-checked afterwards. So, on the wide (computer) layout only: every 45 seconds while the tab is showing, and the moment
+  // it is shown again, ask the same "anything newer than what is on screen?" question. One small query; nothing is shown unless it
+  // finds a genuinely new post, and then it is the same "new" pill as before.
+  var livePollStarted = false;
+  function startLivePolling() {
+    if (livePollStarted || !isWideLayout) return;
+    livePollStarted = true;
+    function poll() {
+      if (document.hidden) return;
+      try { checkForLiveUpdates().catch(function () {}); } catch (e) {}
+      try { if (typeof checkForNewMealPrep === "function") { var r = checkForNewMealPrep(); if (r && r.catch) r.catch(function () {}); } } catch (e) {}
+    }
+    setInterval(poll, 45000);
+    document.addEventListener("visibilitychange", function () { if (!document.hidden) poll(); });
   }
 
   (async function init() {

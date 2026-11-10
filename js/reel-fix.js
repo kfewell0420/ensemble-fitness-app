@@ -25,7 +25,7 @@
       if (lines.length > 14) lines.shift(); box.textContent = lines.join("\n");
     } catch (e) {}
   }
-  document.addEventListener("DOMContentLoaded", function () { logLine("reel-fix 44 loaded"); });
+  document.addEventListener("DOMContentLoaded", function () { logLine("reel-fix 46 loaded"); });
   var wired = 0;
   window.wireReelPlayback = function (video, clips, durations) {
     if (!video || !clips || clips.length < 2) return null;
@@ -61,6 +61,9 @@
     // Get the NEXT clip's file downloaded into memory while the current one plays, so the cut is instant (no second
     // hidden player, which Android phones cannot spare). At the cut the phone plays that in-memory copy.
     var pre = null, curBlob = null, cutT = 0, cutHow = "";
+    // armed: the clip on screen has really started playing (only then can "it ended and nothing happened" be true).
+    // pendingCut: a cut has been asked for but the next clip has not been handed to the player yet (still arriving).
+    var armed = !video.paused && video.readyState >= 3, pendingCut = false;
     function dropPre() {
       if (!pre) return;
       try { if (pre.ctl) pre.ctl.abort(); } catch (e) {}
@@ -129,11 +132,12 @@
       // a clip with no address (its link could not be made) is skipped, not waited on
       var tries = 0;
       while (!clips[i] || !clips[i].url) { i = (i + 1) % clips.length; if (++tries >= clips.length) return; }
-      index = i; lastAdvance = Date.now(); cutT = Date.now();
+      index = i; lastAdvance = Date.now(); cutT = Date.now(); armed = false; pendingCut = true;
       var my = ++tok, clip = clips[i];
       say("going to clip " + (i + 1) + " of " + clips.length);
       function go(src, how) {
         if (my !== tok) return;
+        pendingCut = false; lastAdvance = Date.now();
         cutHow = how;
         video.loop = false;
         holdPicture();
@@ -155,9 +159,9 @@
       if (rec && rec.i === i) {
         if (rec.blob) { pre = null; go(rec.blob, "memory"); return; }
         if (!rec.done) {
-          // still arriving: the last picture stays on screen for a moment; give it up to 3 seconds
+          // still arriving: the last picture stays on screen for a moment; give it up to 5 seconds
           var fired = false;
-          var timer = setTimeout(function () { if (fired) return; fired = true; if (pre === rec) dropPre(); go(clip.url, "network"); }, 3000);
+          var timer = setTimeout(function () { if (fired) return; fired = true; if (pre === rec) dropPre(); go(clip.url, "network"); }, 5000);
           rec.waiters.push(function () {
             if (fired) return; fired = true; clearTimeout(timer);
             if (pre === rec) pre = null;
@@ -171,6 +175,7 @@
     }
 
     function advance() {
+      if (pendingCut) return;                       // the next clip is still on its way
       if (Date.now() - lastAdvance < 300) return;   // one hand-over at a time
       if (index === clips.length - 1 && finishHook) {
         if (holding) return;
@@ -180,12 +185,14 @@
     }
     video.addEventListener("play", function () { if (holding) { holding = false; goToClip(0); } });
     video.addEventListener("playing", function () {
+      armed = true; pendingCut = false;
       releasePicture();
       if (cutT) { say("clip " + (index + 1) + " on screen " + (Date.now() - cutT) + " ms after the cut (" + cutHow + ")"); cutT = 0; }
       prefetchNext();
     });
     video.addEventListener("loadedmetadata", clampToStart);
     video.addEventListener("timeupdate", function () {
+      if (pendingCut || !armed) return;
       var end = clipEnd(clips[index]);
       if (end !== null && video.currentTime >= end) advance();
     });
@@ -206,7 +213,7 @@
 
     // watchdog: a clip has ended (or sits at its very end) and the reel did not move on
     setInterval(function () {
-      if (!video.isConnected || holding) return;
+      if (!video.isConnected || holding || !armed || pendingCut) return;
       var d = video.duration;
       var atEnd = onScreen() && (video.ended || (isFinite(d) && d > 0 && video.currentTime >= d - 0.05 && video.paused));
       if (atEnd && Date.now() - lastAdvance > 1200) { say("moving on from clip " + (index + 1)); advance(); }
@@ -220,6 +227,7 @@
       restart: function () { holding = false; goToClip(0); },
       time: function () {
         var base = offsets ? offsets[index] : 0;
+        if (pendingCut) return base;
         return base + Math.max(0, video.currentTime - clipStart(clips[index]));
       }
     };
