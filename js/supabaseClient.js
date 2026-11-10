@@ -985,7 +985,7 @@ function sanitizeTextLabels(raw) {
   raw.forEach(function (x) {
     if (!x || typeof x !== "object") return;
     var t = String(x.t == null ? "" : x.t).replace(/\s+/g, " ").trim().slice(0, 28);
-    var u = String(x.u == null ? "" : x.u).replace(/\s+/g, " ").trim().slice(0, 18);
+    var u = String(x.u == null ? "" : x.u).replace(/\s+/g, " ").trim().slice(0, 24);
     var s = Number(x.s), d = Number(x.d);
     if (!t || !isFinite(s) || s < 0) return;
     if (!isFinite(d) || d < 1 || d > 6) d = TEXT_LABEL_SECONDS;

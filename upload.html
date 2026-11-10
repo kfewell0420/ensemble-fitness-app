@@ -1129,7 +1129,7 @@
       <div class="vl-card">
         <div class="vl-head"><strong>Exercise label</strong><button type="button" class="vl-done" id="vlDone">Done</button></div>
         <input type="text" id="vlText" maxlength="56" placeholder="Exercise, e.g. Tricep Extensions" autocomplete="off" autocapitalize="sentences" />
-        <input type="text" id="vlDetail" maxlength="18" placeholder="Details (optional), e.g. 3x10-12 reps" autocomplete="off" autocapitalize="sentences" />
+        <input type="text" id="vlDetail" maxlength="24" placeholder="Details (optional), e.g. 3x10-12 reps" autocomplete="off" autocapitalize="sentences" />
         <div class="vl-time"><span>Shows at <b id="vlAt">0:00</b></span><span class="vl-grow"></span><button type="button" class="vl-step" id="vlMinus">&minus; 0.5s</button><button type="button" class="vl-step" id="vlPlus">+ 0.5s</button></div>
         <div class="vl-msg" id="vlMsg"></div>
         <button type="button" class="vl-add" id="vlAdd">Add label</button>
@@ -6530,7 +6530,7 @@
     var ways = { text: false, email: false };
     try { if (!EF_IPHONE && !/Android/.test(navigator.userAgent)) { var _np = document.querySelector("#efSimpleNote p"); if (_np) _np.innerHTML = "Trim and cut your clips first,<br>then please upload up to 5 videos."; } } catch (e) {}
     var cmt = document.createElement("div"); cmt.id = "efSimpleCmt";
-    cmt.innerHTML = '<label for="efSimpleCmtIn" id="efSimpleCmtLb">Comment for video 1</label><input type="text" id="efSimpleCmtIn" maxlength="56" placeholder="Comment about this reel" autocomplete="off" enterkeyhint="done" aria-label="Comment about this reel" /><input type="text" id="efSimpleCmt2In" maxlength="18" placeholder="Second description (optional)" autocomplete="off" enterkeyhint="done" aria-label="Second description, optional" /><div class="sc-h">It floats in for 2 seconds, then floats out.</div>';
+    cmt.innerHTML = '<label for="efSimpleCmtIn" id="efSimpleCmtLb">Comment for video 1</label><input type="text" id="efSimpleCmtIn" maxlength="56" placeholder="Comment about this reel" autocomplete="off" enterkeyhint="done" aria-label="Comment about this reel" /><input type="text" id="efSimpleCmt2In" maxlength="24" placeholder="Second description (optional)" autocomplete="off" enterkeyhint="done" aria-label="Second description, optional" /><div class="sc-h">It floats in for 2 seconds, then floats out.</div>';
     var cnt = document.createElement("div"); cnt.id = "efSimpleCount";
     var tools = $("efTools"); tools.parentNode.insertBefore(cnt, tools); tools.parentNode.insertBefore(cmt, tools);
     // Music bar: a wide bar under the clips. The real Music tile (hidden in this page) still does the work; this bar taps it and mirrors its state.
@@ -6569,7 +6569,7 @@
       var out = [], off = 0;
       clips.forEach(function (c) {
         var t = ((c && c.cmt) || "").trim(), eff = c ? (cEff(c) || 0) : 0;
-        var u2 = ((c && c.cmt2) || "").trim().slice(0, 18); if (!t && u2) { t = u2; u2 = ""; }   // only the second pill filled in: it shows as a one-line label
+        var u2 = ((c && c.cmt2) || "").trim().slice(0, 24); if (!t && u2) { t = u2; u2 = ""; }   // only the second pill filled in: it shows as a one-line label
         if (t) out.push({ t: t.slice(0, 56), u: u2, s: Math.round((off + Math.min(0.3, eff / 4)) * 10) / 10, d: 2 });
         off += eff;
       });

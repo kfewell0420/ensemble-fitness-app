@@ -19,7 +19,7 @@
     raw.forEach(function (x) {
       if (!x || typeof x !== "object") return;
       var t = String(x.t == null ? "" : x.t).replace(/\s+/g, " ").trim().slice(0, 56);   // 56 = two lines (was 28, which cut "bike ride at the beach" short)
-      var u = String(x.u == null ? "" : x.u).replace(/\s+/g, " ").trim().slice(0, 18);
+      var u = String(x.u == null ? "" : x.u).replace(/\s+/g, " ").trim().slice(0, 24);
       var s = Number(x.s);
       if (!t || !isFinite(s) || s < 0) return;
       out.push({ t: t, u: u, s: Math.round(s * 10) / 10, d: TOTAL });

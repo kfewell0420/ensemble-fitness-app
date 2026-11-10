@@ -4,7 +4,7 @@
    (sanitizeTextLabels) and adds the wrapping style. Nothing already saved changes: labels saved shorter look the same. */
 (function () {
   var MAX_TEXT = 56;     // two lines of about 28
-  var MAX_DETAIL = 18;   // the small second line (sets/reps) is unchanged
+  var MAX_DETAIL = 24;   // the small second line (sets/reps) is unchanged
   window.sanitizeTextLabels = function (raw) {
     if (!Array.isArray(raw)) return [];
     var maxLabels = (typeof TEXT_LABEL_MAX === "number") ? TEXT_LABEL_MAX : 6;
