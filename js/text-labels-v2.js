@@ -5,6 +5,7 @@
      (before, it faded out in place). Every label, old posts included, runs the same 4 seconds in total.
    - Words show as typed (a capital first letter, then normal letters) instead of ALL CAPS.
    - Change IN / HOLD / OUT below to retime it.
+   Nov 2026: a label may be up to 56 characters and wraps to a second line (the wrapping style is in js/label-fix.js).
    To undo all of this, remove the <script src="js/text-labels-v2.js"> line from feed.html and upload.html. */
 (function () {
   var IN = 1.0, HOLD = 2.0, OUT = 1.0;           // seconds: walks in, stays, walks back out
@@ -17,7 +18,7 @@
     var out = [];
     raw.forEach(function (x) {
       if (!x || typeof x !== "object") return;
-      var t = String(x.t == null ? "" : x.t).replace(/\s+/g, " ").trim().slice(0, 28);
+      var t = String(x.t == null ? "" : x.t).replace(/\s+/g, " ").trim().slice(0, 56);   // 56 = two lines (was 28, which cut "bike ride at the beach" short)
       var u = String(x.u == null ? "" : x.u).replace(/\s+/g, " ").trim().slice(0, 18);
       var s = Number(x.s);
       if (!t || !isFinite(s) || s < 0) return;
