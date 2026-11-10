@@ -7,7 +7,9 @@
    right after js/supabaseClient.js. */
 (function () {
   var FORCE_LOG = false; // set to true to show the green reel log without ?dbg=1
-  if (!/Android/.test(navigator.userAgent || "")) return;
+  // Everything EXCEPT iPhones/iPads (those keep the original player, which Ken saw playing cleanly): Android phones and computers.
+  var UA = navigator.userAgent || "";
+  if (/iPhone|iPad|iPod/.test(UA) || (/Macintosh/.test(UA) && navigator.maxTouchPoints > 1)) return;
   if (typeof window.wireReelPlayback !== "function") return;
 
   function logLine(m) {
@@ -23,7 +25,7 @@
       if (lines.length > 14) lines.shift(); box.textContent = lines.join("\n");
     } catch (e) {}
   }
-  document.addEventListener("DOMContentLoaded", function () { logLine("reel-fix 43 loaded"); });
+  document.addEventListener("DOMContentLoaded", function () { logLine("reel-fix 44 loaded"); });
   var wired = 0;
   window.wireReelPlayback = function (video, clips, durations) {
     if (!video || !clips || clips.length < 2) return null;
@@ -87,6 +89,42 @@
       }).catch(function (e) { say("clip " + (n + 1) + " ahead-load failed: " + (e && e.message ? e.message : e)); finishPre(rec); });
     }
 
+    // Across a cut the phone would show its own placeholder (the "old media player" look). Hold the last picture instead
+    // (copied from the clip when the phone allows it, otherwise a plain black frame), and put the post's own poster back after.
+    var BLANK = "data:image/gif;base64,R0lGODdhAQABAIEAAAAAAAAAAAAAAAAAACwAAAAAAQABAAAIBAABBAQAOw==";
+    var savedPoster, posterHeld = false;
+    function holdPicture() {
+      var shot = null;
+      try {
+        if (video.videoWidth && video.readyState >= 2) {
+          var w = Math.min(video.videoWidth, 540), h = Math.round(video.videoHeight * w / video.videoWidth);
+          var cv = document.createElement("canvas"); cv.width = w; cv.height = h;
+          cv.getContext("2d").drawImage(video, 0, 0, w, h);
+          shot = cv.toDataURL("image/jpeg", 0.6);   // throws for a clip still coming straight from the web; fine, black is used then
+        }
+      } catch (e) { shot = null; }
+      try {
+        if (!posterHeld) { savedPoster = video.getAttribute("poster"); posterHeld = true; }
+        video.setAttribute("poster", shot || BLANK);
+        if (window.setPlayerChromeHidden) window.setPlayerChromeHidden(video, true);
+      } catch (e) {}
+    }
+    function releasePicture() {
+      if (!posterHeld) return;
+      function put() {
+        if (!posterHeld) return; posterHeld = false;
+        try {
+          if (savedPoster === null || savedPoster === undefined || savedPoster === "") video.removeAttribute("poster");
+          else video.setAttribute("poster", savedPoster);
+          if (window.setPlayerChromeHidden) window.setPlayerChromeHidden(video, false);
+        } catch (e) {}
+      }
+      try {
+        if (video.requestVideoFrameCallback) { video.requestVideoFrameCallback(function () { requestAnimationFrame(put); }); setTimeout(put, 400); }
+        else setTimeout(put, 150);
+      } catch (e) { put(); }
+    }
+
     function goToClip(i) {
       // a clip with no address (its link could not be made) is skipped, not waited on
       var tries = 0;
@@ -98,6 +136,7 @@
         if (my !== tok) return;
         cutHow = how;
         video.loop = false;
+        holdPicture();
         var old = curBlob; curBlob = (how === "memory") ? src : null;
         video.src = src;
         if (old) { try { URL.revokeObjectURL(old); } catch (e) {} }
@@ -141,6 +180,7 @@
     }
     video.addEventListener("play", function () { if (holding) { holding = false; goToClip(0); } });
     video.addEventListener("playing", function () {
+      releasePicture();
       if (cutT) { say("clip " + (index + 1) + " on screen " + (Date.now() - cutT) + " ms after the cut (" + cutHow + ")"); cutT = 0; }
       prefetchNext();
     });
