@@ -689,9 +689,39 @@ function createClipSwapper(video) {
   };
 }
 
+/* On-screen tracker (Nov 2026, for finding the "video 2 plays by itself" loop problem). Off unless the page address ends in ?dbg=1
+   (for example  feed.html?dbg=1 ). Then a small green log sits at the bottom of the screen showing every clip change, every
+   "move on" signal (and why it was accepted or ignored), the picture's own play/stop events and every time the song is moved. */
+var efTrackBox = null, efTrackLines = [], efTrackOn = null, efTrackReels = 0;
+function efTrack(msg) {
+  try {
+    if (efTrackOn === null) {
+      efTrackOn = /[?&]dbg=1/.test(location.search);
+      if (efTrackOn) ["seeking", "play", "pause", "ended"].forEach(function (ev) {
+        document.addEventListener(ev, function (e) {
+          var el = e.target;
+          if (el && el.tagName === "AUDIO") efTrack("SONG " + ev + " at " + (el.currentTime || 0).toFixed(1) + "s");
+        }, true);
+      });
+    }
+    if (!efTrackOn) return;
+    if (!efTrackBox) {
+      efTrackBox = document.createElement("div");
+      efTrackBox.style.cssText = "position:fixed;left:4px;right:4px;bottom:64px;max-height:34vh;overflow:hidden;z-index:99999;background:rgba(0,0,0,.78);color:#7CFC00;font:10.5px/1.28 monospace;padding:4px;pointer-events:none;white-space:pre-wrap";
+      (document.body || document.documentElement).appendChild(efTrackBox);
+    }
+    efTrackLines.push((performance.now() / 1000).toFixed(1) + "s " + msg);
+    if (efTrackLines.length > 16) efTrackLines.shift();
+    efTrackBox.textContent = efTrackLines.join("\n");
+  } catch (e) {}
+}
+
 function wireReelPlayback(video, clips, durations) {
   if (!video || !clips || clips.length < 2) return null;
   var index = 0;
+  var rid = "r" + (++efTrackReels);
+  function T(msg) { if (efTrackOn !== false) efTrack(rid + " c" + (index + 1) + " t=" + (video.currentTime || 0).toFixed(1) + " | " + msg); }
+  T("wired, " + clips.length + " clips");
   // durations (optional): how long each clip plays (seconds), in order. With them the reel can say
   // "how far along the WHOLE reel are we" — what lets one song run across all the clips.
   var offsets = null;
@@ -732,7 +762,7 @@ function wireReelPlayback(video, clips, durations) {
     if (finishHook && index === clips.length - 1) return; // the last clip runs to its true end (a song fade-out may follow)
     var end = clipEnd(clips[index]);
     var limit = end !== null ? end : video.duration;
-    if (isFinite(limit) && video.currentTime > 0.3 && limit - video.currentTime < 0.09) { advance(); return; }
+    if (isFinite(limit) && video.currentTime > 0.3 && limit - video.currentTime < 0.09) { advance("early-cut near clip end"); return; }
     watchRaf = requestAnimationFrame(watchEnd);
   }
   video.addEventListener("playing", function () {
@@ -749,11 +779,13 @@ function wireReelPlayback(video, clips, durations) {
   // judged once the picture has really started playing that clip ("settled").
   var lastCutAt = 0, settled = true;
   function justCut() { return Date.now() - lastCutAt < 900; }
-  function goToClip(i) {
+  function goToClip(i, why) {
     lastCutAt = Date.now(); settled = false;
+    var from = index + 1;
     index = i;
     var clip = clips[index];
-    if (swapper.swap(clip.url, clipStart(clip))) return; // clean cut — the next clip was already waiting
+    if (swapper.swap(clip.url, clipStart(clip))) { T("GO " + from + " -> " + (i + 1) + " clean cut (" + (why || "?") + ")"); return; } // clean cut — the next clip was already waiting
+    T("GO " + from + " -> " + (i + 1) + " reload, next clip was not ready (" + (why || "?") + ")");
     swapper.cancel();
     video.src = clip.url;
     video.addEventListener("loadedmetadata", function onReady() {
@@ -764,35 +796,42 @@ function wireReelPlayback(video, clips, durations) {
     if (p && p.catch) p.catch(function () {});
   }
 
-  function advance() {
-    if (justCut()) return;
+  function advance(why) {
+    if (justCut()) { T("ignored move-on '" + why + "' (a cut just happened)"); return; }
     if (index === clips.length - 1 && finishHook) {
       if (holding) return;
-      if (finishHook()) { holding = true; if (!video.paused && !video.ended) video.pause(); return; }
+      if (finishHook()) { T("last clip done: holding for song/tail"); holding = true; if (!video.paused && !video.ended) video.pause(); return; }
     }
-    goToClip((index + 1) % clips.length);
+    T("move-on accepted: " + why);
+    goToClip((index + 1) % clips.length, why);
   }
   // Pressing play on a reel that has finished (and is holding) starts it over from clip 1.
-  video.addEventListener("play", function () { if (holding) { holding = false; goToClip(0); } });
+  video.addEventListener("play", function () { if (holding) { holding = false; goToClip(0, "play pressed after finish"); } });
 
   // Clip 1 is already loaded (its src was set when the slide/tile itself
   // was built) — just clamp its own start point the same way
   // wireTrimPlayback does, no need to reload it here.
   video.addEventListener("loadedmetadata", clampToStart);
   video.addEventListener("timeupdate", function () {
-    if (!settled || justCut() || swapper.busy()) return;
+    if (!settled || justCut() || swapper.busy()) {
+      var e0 = clipEnd(clips[index]);
+      if (e0 !== null && video.currentTime >= e0 && efTrackOn) { var nw = Date.now(); if (!wire.lastIgn || nw - wire.lastIgn > 700) { wire.lastIgn = nw; T("trim-end check SKIPPED (settled=" + settled + " justCut=" + justCut() + " busy=" + swapper.busy() + ")"); } }
+      return;
+    }
     var end = clipEnd(clips[index]);
-    if (end !== null && video.currentTime >= end) advance();
+    if (end !== null && video.currentTime >= end) advance("trim end reached");
   });
   // A clip with no trim_end just plays to its own natural end instead.
-  video.addEventListener("ended", function () { if (video.ended) advance(); });   // a late "ended" left over from the clip just cut away does not count
+  video.addEventListener("ended", function () { T("video ENDED event (video.ended=" + video.ended + ")"); if (video.ended) advance("ended event"); });
+  var wire = {};
+  ["playing", "waiting", "error", "emptied"].forEach(function (ev) { video.addEventListener(ev, function () { T("video " + ev); }); });   // a late "ended" left over from the clip just cut away does not count
 
   return {
     hasTimes: !!offsets,
     total: function () { return offsets ? offsets[offsets.length - 1] : null; },
     index: function () { return index; },
     onFinish: function (fn) { finishHook = fn; },
-    restart: function () { holding = false; goToClip(0); },
+    restart: function () { holding = false; goToClip(0, "song/tail restart"); },
     // Seconds into the whole reel (clip 1 starts at 0).
     time: function () {
       var base = offsets ? offsets[index] : 0;
