@@ -454,6 +454,43 @@
   body.ef-simple.ef-video #efTools #efT_share.val { border-color: #2c2f38; }
   body.ef-simple.ef-video #efT_share.val .ef-tx, body.ef-simple.ef-video #efT_share .ef-tx { color: #fff; }
   .ef-sheet .sh-note { margin: 0 0 12px; font-size: 14px; line-height: 1.45; color: #c9ccd6; }
+
+  /* ===== Nov 2026: COMPUTER layout for the simple page: same pieces as the phone, spread out. Big picture + clips + Music bar + song strip on the left;
+     comment, Activity / Location / Share and Post on the right; all centered. Phones and narrow windows are untouched. ===== */
+  @media (min-width: 900px) {
+    body.ef-simple #uploadShell { max-width: 1240px !important; width: 100% !important; margin-left: auto !important; margin-right: auto !important; padding-left: 28px !important; padding-right: 28px !important; box-sizing: border-box; }
+    body.ef-simple #uploadCard { background: transparent !important; border: 0 !important; box-shadow: none !important; padding: 0 !important; }
+    body.ef-simple[data-ef-cat="video"]:not(.ef-video) #efSimpleNote { max-width: 620px; margin: 18px auto 18px; padding: 22px 26px; text-align: left; }
+    body.ef-simple[data-ef-cat="video"]:not(.ef-video) #efSimpleNote b { white-space: normal; font-size: 18px; }
+    body.ef-simple[data-ef-cat="video"]:not(.ef-video) #dropzone { display: block; box-sizing: border-box; max-width: 620px; margin-left: auto; margin-right: auto; }
+    body.ef-simple.ef-video #uploadShell { padding-bottom: 48px !important; }
+    body.ef-simple.ef-video #uploadFlow { display: grid !important; grid-template-columns: minmax(0, 1fr) 400px; grid-template-rows: auto auto auto auto 1fr auto auto; column-gap: 32px; align-items: start; }
+    body.ef-simple.ef-video #flowBackBtn { grid-column: 1 / -1; grid-row: 1; position: static !important; justify-self: start; margin: 6px 0 12px !important; }
+    body.ef-simple.ef-video #trimSection { grid-column: 1; grid-row: 2 / 6; width: 100%; min-width: 0; margin: 0 !important; padding: 0 !important; border-radius: 18px; overflow: hidden; background: #000; border: 1px solid #2c2f38; }
+    body.ef-simple.ef-video #trimSection .trim-media { margin: 0 !important; }
+    body.ef-simple.ef-video #trimPreviewVideo, body.ef-simple.ef-video #trimPreviewVideo.portrait { height: min(50vh, 480px) !important; min-height: 300px; }
+    body.ef-simple.ef-video #clipTray { background: #0b0d12; border-top: 1px solid #1f2330; }
+    body.ef-simple.ef-video .clip-tray { padding: 12px 16px 8px; gap: 10px; }
+    body.ef-simple.ef-video .clip-thumb, body.ef-simple.ef-video .clip-add { width: 56px; height: 72px; border-radius: 11px; }
+    body.ef-simple.ef-video .clip-thumb .clip-n { min-width: 18px; height: 18px; line-height: 18px; font-size: 11px; }
+    body.ef-simple.ef-video .clip-thumb .clip-d { font-size: 11px; }
+    body.ef-simple.ef-video #efSimpleCount { grid-column: 1; grid-row: 6; padding: 8px 4px 0; font-size: 13px; }
+    body.ef-simple.ef-video #efMusicBar { grid-column: 1; grid-row: 7; padding: 10px 0 0; }
+    body.ef-simple.ef-video #efSimpleCmt { grid-column: 2; grid-row: 2; padding: 0 0 4px; }
+    body.ef-simple.ef-video #efSimpleCmt label { font-size: 15px; margin-bottom: 8px; }
+    body.ef-simple.ef-video #efSimpleCmt input { height: 56px; font-size: 17px; }
+    body.ef-simple.ef-video #efSimpleCmt .sc-h { font-size: 13px; }
+    body.ef-simple.ef-video #efTools { grid-column: 2; grid-row: 3; padding: 18px 0 0; }
+    body.ef-simple.ef-video #efTools .ef-t { height: 84px; padding-top: 12px; gap: 6px; border-radius: 16px; cursor: pointer; }
+    body.ef-simple.ef-video #efTools .ef-t:hover { background: #262932; border-color: #44485a; }
+    body.ef-simple.ef-video #efTools .ef-t .ef-tx { font-size: 14px; max-height: 18px; line-height: 18px; }
+    body.ef-simple.ef-video #uploadBtn, body.ef-video.post-fixed #uploadBtn { grid-column: 2; grid-row: 4; position: static !important; transform: none !important; width: 100% !important; height: 58px; margin: 22px 0 0 !important; box-shadow: 0 8px 26px rgba(255,90,20,0.30) !important; border-radius: 29px; font-size: 18px; }
+    body.ef-simple.ef-video #uploadBtn:hover:not(:disabled) { filter: brightness(1.07); }
+    body.ef-simple.ef-video #efMusicBar .mb-b:hover { background: #262932; }
+    body.ef-simple.ef-video.ef-song #mixTimeline { padding-top: 14px !important; }
+    /* the pop-up boxes (Activity, Location, Share) sit in the middle of the screen on a computer instead of stretching across the bottom */
+    .ef-sheet .ef-pn { left: 50% !important; right: auto !important; bottom: 40px !important; transform: translateX(-50%); width: 520px; max-width: 92vw; border-radius: 18px !important; }
+  }
   /* After posting: share buttons */
   #efShareDone { margin: 70px 0 0; padding: 22px 18px; border-radius: 18px; background: #101420; border: 1px solid #2c3550; color: #dfe3ee; text-align: center; }
   #efShareDone h3 { margin: 0 0 6px; font-size: 20px; color: #ffcf5a; }
@@ -1695,7 +1732,7 @@
   // Nov 2026 (Ken): iPhone gets the SIMPLE upload: members trim on their own phone, then add up to 5 videos here. No editor; the clips still play one after another as one reel
   // Android and desktop keep the page they have. Add ?classic=1 to see the editor on an iPhone.
   var EF_IPHONE = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-  var EF_SIMPLE = (EF_IPHONE || /Android/.test(navigator.userAgent)) && !/[?&]classic=1/.test(window.location.search);   // iPhone and Android phones get the simple page; desktop keeps the editor
+  var EF_SIMPLE = !/[?&]classic=1/.test(window.location.search);   // phones AND computers get the simple page (Nov 2026); ?classic=1 still opens the old editor
   window.EF_SIMPLE = EF_SIMPLE;
   if (EF_SIMPLE) document.body.classList.add("ef-simple");
   if (EF_SIMPLE && EF_IPHONE) document.body.classList.add("ef-simple-ios");
@@ -6463,6 +6500,7 @@
   (function simpleFlow() {
     if (!window.EF_SIMPLE) return;
     var ways = { text: false, email: false };
+    try { if (!EF_IPHONE && !/Android/.test(navigator.userAgent)) { var _np = document.querySelector("#efSimpleNote p"); if (_np) _np.innerHTML = "Trim and cut your clips first,<br>then please upload up to 5 videos."; } } catch (e) {}
     var cmt = document.createElement("div"); cmt.id = "efSimpleCmt";
     cmt.innerHTML = '<label for="efSimpleCmtIn" id="efSimpleCmtLb">Comment for video 1</label><input type="text" id="efSimpleCmtIn" maxlength="56" placeholder="Say something about this reel" autocomplete="off" enterkeyhint="done" /><div class="sc-h">It floats in for 2 seconds, then floats out.</div>';
     var cnt = document.createElement("div"); cnt.id = "efSimpleCount";
