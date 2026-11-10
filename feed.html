@@ -2587,7 +2587,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
 <script src="js/config.js"></script>
 <script src="js/shared-session.js"></script>
 <script src="js/supabaseClient.js"></script>
-<script src="js/reel-fix.js?v=40"></script>
+<script src="js/reel-fix.js?v=43"></script>
 <script src="js/text-labels-v2.js?v=1"></script>
 <script src="js/feed-sound.js?v=4"></script>
 <script src="js/moderation.js"></script>
@@ -3816,6 +3816,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
   }
 
   var postSoundCache = {};
+  var postDurCache = {}; // each clip's length for multi-clip posts, kept even when the post has no music or voice-over
   async function loadPostSounds(rows) {
     var ids = [];
     rows.forEach(function (r) {
@@ -3838,6 +3839,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
         if (res && !res.error) break;
       }
       var data = res && !res.error && res.data ? res.data : [];
+      data.forEach(function (r) { if (Array.isArray(r.clip_durations)) postDurCache[r.id] = r.clip_durations.map(Number); });
       var narrationPaths = [], trackPaths = [];
       data.forEach(function (r) {
         if (r.narration_path) narrationPaths.push(r.narration_path);
@@ -3978,7 +3980,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
       it.isMusicSound = snd ? !!snd.isMusic : false;
       it.musicStart = snd ? (snd.start || 0) : 0;
       it.musicWin = snd ? { delay: snd.delay || 0, length: snd.length || null } : null;
-      it.clipDurations = snd ? snd.durations : null;
+      it.clipDurations = (snd && snd.durations) || postDurCache[it.id] || null;
     });
 
     // Avatars: NOT awaited (round 13, Oct 2026) — see hydrateAvatars()

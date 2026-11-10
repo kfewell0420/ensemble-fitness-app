@@ -6,7 +6,7 @@
    iPhones and computers keep the original player. Same name, same returned object, so no page needs to change except to load this file
    right after js/supabaseClient.js. */
 (function () {
-  var FORCE_LOG = true; // TEST BUILD 40: log always on; switch to false once the problem is found
+  var FORCE_LOG = false; // set to true to show the green reel log without ?dbg=1
   if (!/Android/.test(navigator.userAgent || "")) return;
   if (typeof window.wireReelPlayback !== "function") return;
 
@@ -23,7 +23,7 @@
       if (lines.length > 14) lines.shift(); box.textContent = lines.join("\n");
     } catch (e) {}
   }
-  document.addEventListener("DOMContentLoaded", function () { logLine("reel-fix 40 loaded"); });
+  document.addEventListener("DOMContentLoaded", function () { logLine("reel-fix 43 loaded"); });
   var wired = 0;
   window.wireReelPlayback = function (video, clips, durations) {
     if (!video || !clips || clips.length < 2) return null;
@@ -56,25 +56,79 @@
     });
     function clampToStart() { var s = clipStart(clips[index]); if (s && video.currentTime < s) { try { video.currentTime = s; } catch (e) {} } }
 
+    // Get the NEXT clip's file downloaded into memory while the current one plays, so the cut is instant (no second
+    // hidden player, which Android phones cannot spare). At the cut the phone plays that in-memory copy.
+    var pre = null, curBlob = null, cutT = 0, cutHow = "";
+    function dropPre() {
+      if (!pre) return;
+      try { if (pre.ctl) pre.ctl.abort(); } catch (e) {}
+      try { if (pre.blob) URL.revokeObjectURL(pre.blob); } catch (e) {}
+      pre = null;
+    }
+    function finishPre(rec) { rec.done = true; var w = rec.waiters; rec.waiters = []; w.forEach(function (f) { f(); }); }
+    function prefetchNext() {
+      if (!window.fetch || !window.URL || !URL.createObjectURL) return;
+      var n = (index + 1) % clips.length, k = 0;
+      while ((!clips[n] || !clips[n].url) && k++ < clips.length) n = (n + 1) % clips.length;
+      if (n === index || !clips[n] || !clips[n].url) return;
+      if (pre && pre.i === n) return;
+      dropPre();
+      var rec = pre = { i: n, blob: null, done: false, waiters: [], ctl: (window.AbortController ? new AbortController() : null) };
+      var t0 = Date.now();
+      fetch(clips[n].url, rec.ctl ? { signal: rec.ctl.signal } : {}).then(function (r) {
+        if (!r.ok) throw new Error("http " + r.status);
+        return r.blob();
+      }).then(function (b) {
+        if (pre !== rec) return;
+        if (b.size > 90 * 1024 * 1024) throw new Error("too big");
+        rec.blob = URL.createObjectURL(b);
+        say("clip " + (n + 1) + " ready ahead: " + (b.size / 1048576).toFixed(1) + " MB in " + ((Date.now() - t0) / 1000).toFixed(1) + "s");
+        finishPre(rec);
+      }).catch(function (e) { say("clip " + (n + 1) + " ahead-load failed: " + (e && e.message ? e.message : e)); finishPre(rec); });
+    }
+
     function goToClip(i) {
       // a clip with no address (its link could not be made) is skipped, not waited on
       var tries = 0;
       while (!clips[i] || !clips[i].url) { i = (i + 1) % clips.length; if (++tries >= clips.length) return; }
-      index = i; lastAdvance = Date.now(); say("going to clip " + (i + 1) + " of " + clips.length);
+      index = i; lastAdvance = Date.now(); cutT = Date.now();
       var my = ++tok, clip = clips[i];
-      video.loop = false;
-      video.src = clip.url;
-      video.addEventListener("loadedmetadata", function onReady() { video.removeEventListener("loadedmetadata", onReady); clampToStart(); });
-      var p = video.play(); if (p && p.catch) p.catch(function () {});
-      // the phone sometimes accepts the new address but never begins: try again, and restart the load if nothing arrived at all
-      [900, 2200, 4500].forEach(function (ms, n) {
-        setTimeout(function () {
-          if (my !== tok || holding || !video.paused || video.ended || !onScreen()) return;
-          say("clip " + (i + 1) + " still waiting, trying again");
-          if (video.readyState === 0 && n >= 1) { try { video.load(); } catch (e) {} }
-          var q = video.play(); if (q && q.catch) q.catch(function () {});
-        }, ms);
-      });
+      say("going to clip " + (i + 1) + " of " + clips.length);
+      function go(src, how) {
+        if (my !== tok) return;
+        cutHow = how;
+        video.loop = false;
+        var old = curBlob; curBlob = (how === "memory") ? src : null;
+        video.src = src;
+        if (old) { try { URL.revokeObjectURL(old); } catch (e) {} }
+        var p = video.play(); if (p && p.catch) p.catch(function () {});
+        // the phone sometimes accepts the new source but never begins: try again, and restart the load if nothing arrived
+        [900, 2200, 4500].forEach(function (ms, n) {
+          setTimeout(function () {
+            if (my !== tok || holding || !video.paused || video.ended || !onScreen()) return;
+            say("clip " + (i + 1) + " still waiting, trying again");
+            if (video.readyState === 0 && n >= 1) { try { video.load(); } catch (e) {} }
+            var q = video.play(); if (q && q.catch) q.catch(function () {});
+          }, ms);
+        });
+      }
+      var rec = pre;
+      if (rec && rec.i === i) {
+        if (rec.blob) { pre = null; go(rec.blob, "memory"); return; }
+        if (!rec.done) {
+          // still arriving: the last picture stays on screen for a moment; give it up to 3 seconds
+          var fired = false;
+          var timer = setTimeout(function () { if (fired) return; fired = true; if (pre === rec) dropPre(); go(clip.url, "network"); }, 3000);
+          rec.waiters.push(function () {
+            if (fired) return; fired = true; clearTimeout(timer);
+            if (pre === rec) pre = null;
+            if (rec.blob) go(rec.blob, "memory"); else go(clip.url, "network");
+          });
+          return;
+        }
+        pre = null;
+      }
+      go(clip.url, "network");
     }
 
     function advance() {
@@ -86,12 +140,30 @@
       goToClip((index + 1) % clips.length);
     }
     video.addEventListener("play", function () { if (holding) { holding = false; goToClip(0); } });
+    video.addEventListener("playing", function () {
+      if (cutT) { say("clip " + (index + 1) + " on screen " + (Date.now() - cutT) + " ms after the cut (" + cutHow + ")"); cutT = 0; }
+      prefetchNext();
+    });
     video.addEventListener("loadedmetadata", clampToStart);
     video.addEventListener("timeupdate", function () {
       var end = clipEnd(clips[index]);
       if (end !== null && video.currentTime >= end) advance();
     });
     video.addEventListener("ended", advance);
+    // Build 43 experiment. Ken saw that with the green log showing, every clip played, and with it hidden they did not (on two different
+    // pages). The log redraws part of the screen at every clip change. This does the same, invisibly: while the reel is on screen, a
+    // 3-pixel almost-clear dot in the corner is refreshed ten times a second. Remove if it turns out not to matter.
+    var beat = document.getElementById("efReelBeat"), beatN = 0;
+    if (!beat) {
+      beat = document.createElement("div"); beat.id = "efReelBeat"; beat.setAttribute("aria-hidden", "true");
+      beat.style.cssText = "position:fixed;left:0;top:0;width:3px;height:3px;overflow:hidden;opacity:0.04;font:2px/3px monospace;color:#fff;z-index:99998;pointer-events:none";
+      (document.body || document.documentElement).appendChild(beat);
+    }
+    var beatTimer = setInterval(function () {
+      if (!video.isConnected) { clearInterval(beatTimer); return; }
+      if (onScreen()) beat.textContent = (beatN++ % 2) ? "." : ":";
+    }, 100);
+
     // watchdog: a clip has ended (or sits at its very end) and the reel did not move on
     setInterval(function () {
       if (!video.isConnected || holding) return;
