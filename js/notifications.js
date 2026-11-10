@@ -1136,13 +1136,14 @@
   // =====================================================================================================================
   // Nov 2026 (Ken): phone banners. On the iPhone app, ask once ("Allow notifications?"), remember this phone's address in Supabase
   // (register_device_token), and open the right screen when a banner is tapped. The banners themselves are sent by the
-  // "send-push" function the moment a row lands in the notifications table. Does nothing in a web browser or on Android (yet).
+  // "send-push" function the moment a row lands in the notifications table. Android (Nov 2026) does the same through Firebase. Does nothing in a web browser.
   // =====================================================================================================================
   function initPush() {
     try {
       var C = window.Capacitor;
       if (!C || !C.isNativePlatform || !C.isNativePlatform()) return;
-      if (C.getPlatform && C.getPlatform() !== "ios") return;
+      var plat = C.getPlatform ? C.getPlatform() : "";
+      if (plat !== "ios" && plat !== "android") return;
       var P = C.Plugins && C.Plugins.PushNotifications;
       if (!P || window.__efitPushStarted) return;
       window.__efitPushStarted = true;
@@ -1151,7 +1152,7 @@
         if (!t || !t.value) return;
         var stamp = (currentUserId || "") + "|" + t.value;
         try { if (window.localStorage.getItem("efit_push_reg") === stamp) return; } catch (e) {}
-        window.sb.rpc("register_device_token", { p_token: t.value, p_platform: "ios" }).then(function (res) {
+        window.sb.rpc("register_device_token", { p_token: t.value, p_platform: plat }).then(function (res) {
           if (res && !res.error) { try { window.localStorage.setItem("efit_push_reg", stamp); } catch (e) {} }
         }, function () {});
       });
