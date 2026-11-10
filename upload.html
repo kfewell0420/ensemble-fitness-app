@@ -6612,6 +6612,26 @@
         } catch (e) {}
       }, 250);
     }
+    // iPhone Safari only (Nov 2026): once a video is chosen, the picture is the top of the page. Anything left over from the
+    // "choose a file" screen (the Choose videos box, the Workout category / Location tiles, the intro note) is forced out of sight,
+    // with a setting nothing else on the page can override, and checked again every half second in case something puts it back.
+    if (body.classList.contains("ef-simple-ios")) {
+      var iosGuard = function () {
+        try {
+          var on = ts.classList.contains("show");
+          if (on && !body.classList.contains("ef-video")) body.classList.add("ef-video");
+          if (!on) return;
+          ["dropzone", "efTiles", "efSimpleNote", "changeVideoBtn", "workoutTypeField", "locationField", "captionField"].forEach(function (id) {
+            var el = document.getElementById(id);
+            if (el && el.style.getPropertyValue("display") !== "none") el.style.setProperty("display", "none", "important");
+          });
+          var fl = document.getElementById("uploadFlow");
+          if (fl && fl.style.backgroundColor !== "rgb(0, 0, 0)") fl.style.backgroundColor = "#000";
+        } catch (e) {}
+      };
+      try { new MutationObserver(iosGuard).observe(ts, { attributes: true, attributeFilter: ["class"] }); } catch (e) {}
+      setInterval(iosGuard, 500); iosGuard();
+    }
     function shareSheet() {
       var w = document.createElement("div");
       function row(cls, on, title, sub, toggle) {
