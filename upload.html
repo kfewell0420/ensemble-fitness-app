@@ -476,6 +476,12 @@
     body.ef-simple.ef-video #flowBackBtn { grid-column: 1 / -1; grid-row: 1; position: static !important; justify-self: start; margin: 6px 0 12px !important; }
     body.ef-simple.ef-video #trimSection { grid-column: 1; grid-row: 2 / 6; width: 100% !important; justify-self: stretch; min-width: 0; margin: 0 !important; padding: 0 !important; border-radius: 0; overflow: visible; background: transparent; border: 0; }
     body.ef-simple.ef-video #trimSection .trim-media { margin: 0 !important; display: block !important; width: 100% !important; }
+    /* Picture column: one fixed width for the picture AND its clip box, set directly (not as a % of anything), so nothing can shrink it. */
+    body.ef-simple.ef-video #uploadFlow { --efw: calc(min(56vh, 520px) * 0.5625); }
+    body.ef-simple.ef-video #trimSection, body.ef-simple.ef-video #trimSection .trim-layout, body.ef-simple.ef-video #trimSection .trim-media,
+    body.ef-simple.ef-video #trimSection #trimPreviewVideo, body.ef-simple.ef-video #trimSection #trimPreviewVideo.portrait,
+    body.ef-simple.ef-video #trimSection #clipTray { width: var(--efw) !important; min-width: var(--efw) !important; max-width: var(--efw) !important; box-sizing: border-box; flex: none; justify-self: start; }
+    body.ef-simple.ef-video #trimSection .trim-layout { display: block !important; margin: 0 !important; padding: 0 !important; }
     body.ef-simple.ef-video #trimPreviewVideo, body.ef-simple.ef-video #trimPreviewVideo.portrait { width: 100% !important; max-width: none !important; height: min(56vh, 520px) !important; min-height: 300px; background: #000; border: 1px solid #2c2f38; border-radius: 18px !important; box-sizing: border-box; }
     body.ef-simple.ef-video #clipTray { background: #0b0d12; border: 1px solid #1f2330; border-radius: 14px; margin-top: 12px; width: 100%; box-sizing: border-box; }
     body.ef-simple.ef-video .clip-tray { padding: 12px 14px 12px; gap: 8px; }
