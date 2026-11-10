@@ -426,6 +426,14 @@
   #efSimpleCmt input { display: block; width: 100%; box-sizing: border-box; height: 50px; padding: 0 14px; border-radius: 14px; border: 1.5px solid #ff7a3d; background: #0e1118; color: #fff; font: inherit; font-size: 16px; }
   #efSimpleCmt input::placeholder { color: #9ea2b0; }
   #efSimpleCmt .sc-h { margin: 6px 2px 0; font-size: 12px; color: #ffcf5a; }
+  /* Nov 2026: no "Comment for video N" heading (the box explains itself); a second optional white-outlined pill under it; spacing a hair tighter */
+  #efSimpleCmt label { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); margin: 0 !important; }
+  #efSimpleCmt input + input { margin-top: 6px; height: 44px; font-size: 16px; border-color: #ffffff; }
+  body.ef-simple.ef-video #efSimpleCount { padding-top: 0; margin-top: -2px; }
+  body.ef-simple.ef-video #efMusicBar { padding-top: 6px; }
+  body.ef-simple.ef-video #efSimpleCmt { padding-top: 3px; }
+  body.ef-simple.ef-video #efSimpleCmt .sc-h { margin-top: 4px; }
+  body.ef-simple.ef-video .clip-tray { padding: 2px 12px 0; }   /* thumbnails sit a little closer to the video, which gives the new box its room */
   /* three even boxes straight across (Activity, Location, Share), the same look as the approved picture */
   body.ef-simple.ef-video #efTools { padding: 12px 14px 0; }
   body.ef-simple.ef-video #efTools .ef-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; overflow: visible; padding: 0; }
@@ -464,11 +472,11 @@
     body.ef-simple[data-ef-cat="video"]:not(.ef-video) #efSimpleNote b { white-space: normal; font-size: 18px; }
     body.ef-simple[data-ef-cat="video"]:not(.ef-video) #dropzone { display: block; box-sizing: border-box; max-width: 620px; margin-left: auto; margin-right: auto; }
     body.ef-simple.ef-video #uploadShell { padding-bottom: 48px !important; }
-    body.ef-simple.ef-video #uploadFlow { display: grid !important; grid-template-columns: minmax(0, 1fr) 400px; grid-template-rows: auto auto auto auto 1fr auto auto; column-gap: 32px; align-items: start; }
+    body.ef-simple.ef-video #uploadFlow { display: grid !important; grid-template-columns: 420px 400px; justify-content: center; grid-template-rows: auto auto auto auto 1fr auto auto; column-gap: 32px; align-items: start; width: fit-content; max-width: 100%; margin: 0 auto; box-sizing: border-box; background: #0d1017; border: 1px solid #242833; border-radius: 24px; padding: 14px 30px 30px; }
     body.ef-simple.ef-video #flowBackBtn { grid-column: 1 / -1; grid-row: 1; position: static !important; justify-self: start; margin: 6px 0 12px !important; }
     body.ef-simple.ef-video #trimSection { grid-column: 1; grid-row: 2 / 6; width: 100%; min-width: 0; margin: 0 !important; padding: 0 !important; border-radius: 18px; overflow: hidden; background: #000; border: 1px solid #2c2f38; }
     body.ef-simple.ef-video #trimSection .trim-media { margin: 0 !important; }
-    body.ef-simple.ef-video #trimPreviewVideo, body.ef-simple.ef-video #trimPreviewVideo.portrait { height: min(50vh, 480px) !important; min-height: 300px; }
+    body.ef-simple.ef-video #trimPreviewVideo, body.ef-simple.ef-video #trimPreviewVideo.portrait { height: min(56vh, 520px) !important; min-height: 300px; }
     body.ef-simple.ef-video #clipTray { background: #0b0d12; border-top: 1px solid #1f2330; }
     body.ef-simple.ef-video .clip-tray { padding: 12px 16px 8px; gap: 10px; }
     body.ef-simple.ef-video .clip-thumb, body.ef-simple.ef-video .clip-add { width: 56px; height: 72px; border-radius: 11px; }
@@ -484,7 +492,19 @@
     body.ef-simple.ef-video #efTools .ef-t { height: 84px; padding-top: 12px; gap: 6px; border-radius: 16px; cursor: pointer; }
     body.ef-simple.ef-video #efTools .ef-t:hover { background: #262932; border-color: #44485a; }
     body.ef-simple.ef-video #efTools .ef-t .ef-tx { font-size: 14px; max-height: 18px; line-height: 18px; }
-    body.ef-simple.ef-video #uploadBtn, body.ef-video.post-fixed #uploadBtn { grid-column: 2; grid-row: 4; position: static !important; transform: none !important; width: 100% !important; height: 58px; margin: 22px 0 0 !important; box-shadow: 0 8px 26px rgba(255,90,20,0.30) !important; border-radius: 29px; font-size: 18px; }
+    body.ef-simple.ef-video #socialShareRow:not([style*="none"]) { display: flex !important; }
+    body.ef-simple.ef-video #socialShareRow { grid-column: 2; grid-row: 4; margin: 16px 0 0 !important; height: 54px; padding: 0 16px !important; gap: 14px !important; border-radius: 14px !important; border: 1px solid #2a2d36 !important; background: #10141d !important; align-items: center; cursor: pointer; }
+    body.ef-simple.ef-video #socialShareRow .ss-hit { position: relative; flex: 0 0 auto; width: 26px; height: 26px; margin: 0 !important; display: block; cursor: pointer; }
+    body.ef-simple.ef-video #socialShareRow .ss-hit input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+    body.ef-simple.ef-video #socialShareRow .ss-ck { position: absolute; inset: 0; border-radius: 6px; background: #fff; box-shadow: inset 0 0 0 2px #000; pointer-events: none; display: block; }
+    body.ef-simple.ef-video #socialShareRow .ss-ck svg { position: absolute; left: -2px; top: -11px; width: 38px; height: 38px; overflow: visible; opacity: 0; transform: scale(.6); transform-origin: 30% 80%; transition: opacity .12s, transform .12s; filter: drop-shadow(0 1px 1px rgba(0,0,0,.5)); }
+    body.ef-simple.ef-video #socialShareRow .ss-hit input:checked + .ss-ck svg { opacity: 1; transform: scale(1); }
+    body.ef-simple.ef-video #socialShareRow .ss-text { flex: 1 1 auto; min-width: 0; }
+    body.ef-simple.ef-video #socialShareRow .ss-sub, body.ef-simple.ef-video #socialShareRow .ss-long { display: none; }
+    body.ef-simple.ef-video #socialShareRow .ss-short { display: inline; }
+    body.ef-simple.ef-video #socialShareRow .ss-title { font-size: 14.5px !important; font-weight: 700 !important; color: #fff !important; white-space: nowrap; margin: 0 !important; cursor: pointer; }
+    body.ef-simple.ef-video #socialShareRow .ss-state { display: block; font-size: 12.5px; font-weight: 800; color: #ffc58a; }
+    body.ef-simple.ef-video #uploadBtn, body.ef-video.post-fixed #uploadBtn { grid-column: 2; grid-row: 5; align-self: start; position: static !important; transform: none !important; width: 100% !important; height: 58px; margin: 16px 0 0 !important; box-shadow: 0 8px 26px rgba(255,90,20,0.30) !important; border-radius: 29px; font-size: 18px; }
     body.ef-simple.ef-video #uploadBtn:hover:not(:disabled) { filter: brightness(1.07); }
     body.ef-simple.ef-video #efMusicBar .mb-b:hover { background: #262932; }
     body.ef-simple.ef-video.ef-song #mixTimeline { padding-top: 14px !important; }
@@ -6502,7 +6522,7 @@
     var ways = { text: false, email: false };
     try { if (!EF_IPHONE && !/Android/.test(navigator.userAgent)) { var _np = document.querySelector("#efSimpleNote p"); if (_np) _np.innerHTML = "Trim and cut your clips first,<br>then please upload up to 5 videos."; } } catch (e) {}
     var cmt = document.createElement("div"); cmt.id = "efSimpleCmt";
-    cmt.innerHTML = '<label for="efSimpleCmtIn" id="efSimpleCmtLb">Comment for video 1</label><input type="text" id="efSimpleCmtIn" maxlength="56" placeholder="Say something about this reel" autocomplete="off" enterkeyhint="done" /><div class="sc-h">It floats in for 2 seconds, then floats out.</div>';
+    cmt.innerHTML = '<label for="efSimpleCmtIn" id="efSimpleCmtLb">Comment for video 1</label><input type="text" id="efSimpleCmtIn" maxlength="56" placeholder="Comment about this reel" autocomplete="off" enterkeyhint="done" aria-label="Comment about this reel" /><input type="text" id="efSimpleCmt2In" maxlength="18" placeholder="Second description (optional)" autocomplete="off" enterkeyhint="done" aria-label="Second description, optional" /><div class="sc-h">It floats in for 2 seconds, then floats out.</div>';
     var cnt = document.createElement("div"); cnt.id = "efSimpleCount";
     var tools = $("efTools"); tools.parentNode.insertBefore(cnt, tools); tools.parentNode.insertBefore(cmt, tools);
     // Music bar: a wide bar under the clips. The real Music tile (hidden in this page) still does the work; this bar taps it and mirrors its state.
@@ -6529,6 +6549,9 @@
     var inp = $("efSimpleCmtIn"), lb = $("efSimpleCmtLb"), shownClip = null, lastSig = "";
     inp.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); inp.blur(); } });
     inp.addEventListener("input", function () { var c = clips[clipSel]; if (c) c.cmt = inp.value; syncLabels(); });
+    var inp2 = $("efSimpleCmt2In");
+    inp2.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); inp2.blur(); } });
+    inp2.addEventListener("input", function () { var c = clips[clipSel]; if (c) c.cmt2 = inp2.value; syncLabels(); });
     var row = document.querySelector("#efTools .ef-row");
     var st = document.createElement("button"); st.type = "button"; st.className = "ef-t"; st.id = "efT_share"; st.setAttribute("data-k", "share");
     st.innerHTML = '<span class="ef-ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff7a3d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><path d="M12 3v12"/><path d="M7.5 7.5 12 3l4.5 4.5"/></svg></span><span class="ef-tx">Share</span><span class="ef-bd"></span>';
@@ -6538,7 +6561,8 @@
       var out = [], off = 0;
       clips.forEach(function (c) {
         var t = ((c && c.cmt) || "").trim(), eff = c ? (cEff(c) || 0) : 0;
-        if (t) out.push({ t: t.slice(0, 56), u: "", s: Math.round((off + Math.min(0.3, eff / 4)) * 10) / 10, d: 2 });
+        var u2 = ((c && c.cmt2) || "").trim().slice(0, 18); if (!t && u2) { t = u2; u2 = ""; }   // only the second pill filled in: it shows as a one-line label
+        if (t) out.push({ t: t.slice(0, 56), u: u2, s: Math.round((off + Math.min(0.3, eff / 4)) * 10) / 10, d: 2 });
         off += eff;
       });
       var sg = JSON.stringify(out); if (sg === lastSig) return; lastSig = sg;
@@ -6555,7 +6579,7 @@
       var n = clips.length;
       if (!body.classList.contains("ef-video") || !n) { shownClip = null; return; }
       var i = Math.min(clipSel, n - 1), c = clips[i];
-      if (c !== shownClip) { shownClip = c; inp.value = (c && c.cmt) || ""; }
+      if (c !== shownClip) { shownClip = c; inp.value = (c && c.cmt) || ""; inp2.value = (c && c.cmt2) || ""; }
       var t1 = "Comment for video " + (i + 1); if (lb.textContent !== t1) lb.textContent = t1;
       var t2 = n + " of " + MAX_CLIPS + " video" + (MAX_CLIPS === 1 ? "" : "s"); if (cnt.textContent !== t2) cnt.textContent = t2;
       syncLabels(); syncShare();
@@ -6593,7 +6617,7 @@
       w.appendChild(row("", ways.email, "Email", "", function () { ways.email = !ways.email; return ways.email; }));
       w.appendChild(row("", ways.text, "Text message", "", function () { ways.text = !ways.text; return ways.text; }));
       var ssRow = $("socialShareRow");
-      if (ssRow && ssRow.style.display !== "none") w.appendChild(row(" sh-soc", $("socialShare").checked, "Share on Ensemble Fitness social media pages", "Uncheck to keep this on the app only.", function () { $("socialShare").click(); return $("socialShare").checked; }));
+      if (!(window.matchMedia && window.matchMedia("(min-width: 900px)").matches) && ssRow && ssRow.style.display !== "none") w.appendChild(row(" sh-soc", $("socialShare").checked, "Share on Ensemble Fitness social media pages", "Uncheck to keep this on the app only.", function () { $("socialShare").click(); return $("socialShare").checked; }));
       w.appendChild(btn("ef-go", "Done", closeSheet));
       openSheet("Share", w);
     }
