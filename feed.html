@@ -4789,8 +4789,20 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     // for why. poster stays eager either way; it's either a tiny data URI
     // or an already-captured image, never a fresh network fetch of the
     // video itself.
+    // Nov 2026 (Ken): a black flash (about a tenth of a second) between the clips of a post with more than one video on Android phones and
+    // computers. The player holds the last picture across the cut, but could not copy it from a clip that came straight from the web (the
+    // browser treats that picture as off-limits unless the video asks for it). Posts with more than one clip now ask (crossorigin), which
+    // lets the player copy the last picture and hold it. If the server ever refuses, the video drops the request and loads the plain way,
+    // so it always plays. iPhones keep their own player and are left out.
+    var xoClip = "";
+    try {
+      var uaX = navigator.userAgent || "";
+      if (item.kind === "video" && item.extraClips && item.extraClips.length && !/iPhone|iPad|iPod/.test(uaX) && !(/Macintosh/.test(uaX) && navigator.maxTouchPoints > 1)) {
+        xoClip = ' crossorigin="anonymous" onerror="if(this.hasAttribute(\'crossorigin\')){var s=this.currentSrc||this.getAttribute(\'src\');this.removeAttribute(\'crossorigin\');if(s){this.src=s;this.load();}}"';
+      }
+    } catch (e) { xoClip = ""; }
     var mediaHtml = item.kind === "video"
-      ? '<video data-src="' + item.url + '" poster="' + videoPoster + '"' + (reelMuted ? ' muted' : '') + ' loop playsinline preload="metadata"></video>'
+      ? '<video data-src="' + item.url + '" poster="' + videoPoster + '"' + (reelMuted ? ' muted' : '') + xoClip + ' loop playsinline preload="metadata"></video>'
       : '<img src="' + (item.imgUrl || item.url) + '" data-orig="' + item.url + '" onerror="if(this.dataset.orig&&this.src!==this.dataset.orig){this.src=this.dataset.orig}" alt="Workout post" loading="' + (loadedItems.length <= 8 ? 'eager' : 'lazy') + '" decoding="async" />';
 
     var badgeParts = [];
