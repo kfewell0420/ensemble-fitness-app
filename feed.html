@@ -5046,7 +5046,20 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
       if (item.poster_path) pathsToRemove.push(item.poster_path);
       if (pathsToRemove.length) await window.sb.storage.from("media").remove(pathsToRemove);
       await window.sb.from("media").delete().eq("id", item.id);
+      // Nov 2026 (Ken): deleting a post made the NEXT post vanish from the feed until a refresh. Pages are fetched by position ("rows 12 to 23"),
+      // so once a post disappears from the list everything after it moves up one place, and the next page started one post too late and skipped
+      // one. The place the next page starts from now moves back by one too. The saved "last screenful" is dropped as well, so a return visit
+      // never shows the deleted post.
+      var wasCounted = loadedItems.some(function (it) { return it.id === item.id; }) && !(pinnedSharedId && String(item.id) === pinnedSharedId);
       loadedItems = loadedItems.filter(function (it) { return it.id !== item.id; });
+      try { if (wasCounted && item.kind !== "journal" && activeFilter !== "Journeys") offset = Math.max(0, offset - 1); } catch (e) { /* fine */ }
+      try {
+        [window.localStorage, window.sessionStorage].forEach(function (st) {
+          var del = [];
+          for (var i = 0; i < st.length; i++) { var k = st.key(i); if (k && k.indexOf("efit_feed_cache_") === 0) del.push(k); }
+          del.forEach(function (k) { st.removeItem(k); });
+        });
+      } catch (e) { /* fine */ }
       stopSlideMedia(el); // Oct 2026: a deleted post's picture and song stop at once
       el.remove();
     });
