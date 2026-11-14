@@ -1443,6 +1443,7 @@
 <script src="js/shared-session.js"></script>
 <script src="js/supabaseClient.js"></script>
 <script src="js/label-fix.js?v=47"></script>
+<script src="js/shrink-video.js?v=1"></script>
 <script>
 /* Clean cut between clips in the video preview (Nov 2026): the same hand-over as js/supabaseClient.js, with three fixes
    for what phones showed -- a flash and a sound "hit" at each cut:
@@ -1900,6 +1901,24 @@
       return file;
     }
   }
+
+  // ----- Shrink each clip on the member's own phone (Nov 2026, Ken) --------------------------------------------
+  // A phone's original clip is ~22 MB. The feed has to download the NEXT clip while this one plays, and a file that big
+  // often hasn't arrived by the cut, so the picture froze. Instagram/TikTok shrink every upload; this does the same
+  // right here, free (the member's phone does the work), see js/shrink-video.js. The cut the member made is baked in:
+  // the new file contains exactly the kept part, so it starts and stops exactly where they trimmed it.
+  // On ANY doubt (older phone, odd file, not smaller, an error) it returns null and the original uploads as it always did.
+  async function shrinkClipForUpload(file, s, e, label) {
+    try {
+      if (!file || !(file.size > 4 * 1048576)) return null;                         // already small
+      if (!window.efShrinkVideo || !window.efShrinkSupported || !window.efShrinkSupported()) return null;
+      var r = await window.efShrinkVideo(file, { start: s, end: e, onProgress: function (p) { try { uploadBtn.textContent = label + " " + Math.round(p * 100) + "%"; } catch (x) {} } });
+      try { if (window.efDbg) window.efDbg("shrink " + (r ? (Math.round(r.from / 104857.6) / 10) + " MB -> " + (Math.round(r.to / 104857.6) / 10) + " MB" : "skipped")); } catch (x2) {}
+      return r;
+    } catch (err) { return null; }
+  }
+  // the length of a clip as it will really play: the new file's own length when it was shrunk, else the kept length
+  function keptDur(c) { return (c && c._shrunk && c._shrunk.duration > 0) ? c._shrunk.duration : cEff(c); }
 
   function getExt(filename) {
     var parts = filename.split(".");
@@ -5798,10 +5817,21 @@
         if (shrunkPhoto.shrunk) { fileToUpload = shrunkPhoto.blob; photoShrunk = true; }
         else fileToUpload = await resizeImageFile(selectedFile, 1920, 0.85);   // could not decode here: the earlier safe path
       } else if (kind === "video") {
-        fileToUpload = await makeStreamable(selectedFile); // index to the front so the video starts fast and seeks cleanly
+        // shrink every clip first (one after another so the phone isn't overloaded); a clip that can't be shrunk goes up as it is
+        clips.forEach(function (c) { c._shrunk = null; });
+        if (!clips.length) { /* nothing to shrink */ }
+        else if (clips.length > 1) {
+          for (var sk = 0; sk < clips.length; sk++) {
+            clips[sk]._shrunk = await shrinkClipForUpload(clips[sk].file, cTs(clips[sk]), cCut(clips[sk]) ? cTe(clips[sk]) : 0, "Preparing clip " + (sk + 1) + " of " + clips.length + "…");
+          }
+        } else {
+          clips[0]._shrunk = await shrinkClipForUpload(selectedFile, trimActive() ? trimS : 0, trimActive() ? effEnd() : 0, "Preparing your video…");
+        }
+        uploadBtn.textContent = "Uploading…";
+        fileToUpload = (clips[0] && clips[0]._shrunk) ? clips[0]._shrunk.file : await makeStreamable(selectedFile); // (index to the front so the video starts fast and seeks cleanly)
       }
 
-      var ext = kind === "photo" ? "jpg" : getExt(selectedFile.name);
+      var ext = kind === "photo" ? "jpg" : ((kind === "video" && clips[0] && clips[0]._shrunk) ? "mp4" : getExt(selectedFile.name));
       // "-w" at the end of the name = the member chose "Original (whole photo)": the feed shows such a photo whole instead of filling the box
       var photoWhole = kind === "photo" && (function () { try { return PS.ok && PS.file === selectedFile && PS.mode === "orig"; } catch (e) { return false; } })();
       var path = currentUser.id + "/" + crypto.randomUUID() + (photoShrunk ? "-s" : "") + (photoWhole ? "-w" : "") + "." + ext;
@@ -5928,11 +5958,12 @@
       var labelsToSave = (kind === "video" && typeof vlLabelsForSave === "function") ? vlLabelsForSave() : [];
       if (labelsToSave.length) insertRow.text_labels = labelsToSave;
       delete insertRow.trim_start; delete insertRow.trim_end;
-      if (kind === "video" && trimActive()) { insertRow.trim_start = Math.round(trimS * 100) / 100; insertRow.trim_end = Math.round(effEnd() * 100) / 100; }
+      if (kind === "video" && clips[0] && clips[0]._shrunk) { /* clip 1 was cut when it was shrunk: nothing to trim at playback */ }
+      else if (kind === "video" && trimActive()) { insertRow.trim_start = Math.round(trimS * 100) / 100; insertRow.trim_end = Math.round(effEnd() * 100) / 100; }
       else if (kind === "video" && clips.length > 1 && cCut(clips[0])) { insertRow.trim_start = Math.round(cTs(clips[0]) * 100) / 100; insertRow.trim_end = Math.round(cTe(clips[0]) * 100) / 100; }   // clip 1's cut (the other clips' cuts go in media_clips below)
       delete insertRow.clip_durations;
       if (kind === "video" && clips.length > 1 && clips.every(function (c) { return c.dur > 0; })) {
-        insertRow.clip_durations = clips.map(function (c) { return Math.round(cEff(c) * 100) / 100; });   // the KEPT length of each clip
+        insertRow.clip_durations = clips.map(function (c) { return Math.round(keptDur(c) * 100) / 100; });   // the KEPT length of each clip
       }
       var { data: insertedRow, error: insertError } = await window.sb.from("media").insert(insertRow).select().single();
       // Either optional column may not exist yet (its SQL not run) — drop whichever one the
@@ -5961,9 +5992,9 @@
         var clipUps = [], clipErrs = [], clipBlobs = {};
         var upOne = async function (ci, attempt) {
           try {
-            var clipFile = clips[ci].file;
-            if (!clipBlobs[ci]) clipBlobs[ci] = await makeStreamable(clipFile);
-            var clipPath = currentUser.id + "/" + crypto.randomUUID() + "." + getExt(clipFile.name);
+            var clipFile = clips[ci]._shrunk ? clips[ci]._shrunk.file : clips[ci].file;
+            if (!clipBlobs[ci]) clipBlobs[ci] = clips[ci]._shrunk ? clipFile : await makeStreamable(clipFile);
+            var clipPath = currentUser.id + "/" + crypto.randomUUID() + "." + (clips[ci]._shrunk ? "mp4" : getExt(clipFile.name));
             var { error: clipUploadError } = await window.sb.storage.from("media").upload(clipPath, clipBlobs[ci], { cacheControl: "31536000", upsert: false });
             if (clipUploadError) { clipErrs.push("clip " + (ci + 1) + " try " + attempt + ": " + (clipUploadError.message || clipUploadError) + " (" + Math.round((clipFile.size || 0) / 1048576) + " MB)"); try { if (window.efDbg) window.efDbg(clipErrs[clipErrs.length - 1]); } catch (e) {} return { ci: ci, path: null }; }
             return { ci: ci, path: clipPath };
@@ -5987,8 +6018,8 @@
               media_id: insertedRow.id,
               order_index: attached.length + 1, // 2, 3, 4… with no gaps even if one clip fails
               storage_path: cu.path,
-              trim_start: cTs(clips[cu.ci]) > 0.04 ? Math.round(cTs(clips[cu.ci]) * 100) / 100 : null,
-              trim_end: (clips[cu.ci].te > 0 && cTe(clips[cu.ci]) < clips[cu.ci].dur - 0.04) ? Math.round(cTe(clips[cu.ci]) * 100) / 100 : null
+              trim_start: (!clips[cu.ci]._shrunk && cTs(clips[cu.ci]) > 0.04) ? Math.round(cTs(clips[cu.ci]) * 100) / 100 : null,
+              trim_end: (!clips[cu.ci]._shrunk && clips[cu.ci].te > 0 && cTe(clips[cu.ci]) < clips[cu.ci].dur - 0.04) ? Math.round(cTe(clips[cu.ci]) * 100) / 100 : null
             });
             if (clipInsertError) {
               clipErrs.push("clip " + (cu.ci + 1) + " save: " + (clipInsertError.message || clipInsertError)); try { if (window.efDbg) window.efDbg(clipErrs[clipErrs.length - 1]); } catch (e) {}
@@ -6001,7 +6032,7 @@
           }
         }
         if (failedExtraClips && insertRow.clip_durations) {
-          try { await window.sb.from("media").update({ clip_durations: attached.map(function (c) { return Math.round(cEff(c) * 100) / 100; }) }).eq("id", insertedRow.id); } catch (durErr) {}
+          try { await window.sb.from("media").update({ clip_durations: attached.map(function (c) { return Math.round(keptDur(c) * 100) / 100; }) }).eq("id", insertedRow.id); } catch (durErr) {}
         }
       }
       var extraClipNote = failedExtraClips
