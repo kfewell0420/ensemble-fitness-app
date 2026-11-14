@@ -5724,7 +5724,7 @@
 
         var songToUpload = await makeStreamable(selectedFile); // index to the front so the song streams/seeks cleanly on phones
         var { error: trackUploadError } = await window.sb.storage.from("tracks").upload(trackPath, songToUpload, {
-          cacheControl: "3600",
+          cacheControl: "31536000",
           upsert: false,
           contentType: audioContentType(selectedFile, ext)
         });
@@ -5806,7 +5806,7 @@
       var photoWhole = kind === "photo" && (function () { try { return PS.ok && PS.file === selectedFile && PS.mode === "orig"; } catch (e) { return false; } })();
       var path = currentUser.id + "/" + crypto.randomUUID() + (photoShrunk ? "-s" : "") + (photoWhole ? "-w" : "") + "." + ext;
 
-      var uploadOpts = { cacheControl: "3600", upsert: false };
+      var uploadOpts = { cacheControl: "31536000", upsert: false };
       if (kind === "photo") uploadOpts.contentType = "image/jpeg";
       // Nov 2026 (speed): the video, the voiceover and the cover picture used to go up one after another. They are independent,
       // so all three now travel at the same time and the post is saved once the last one lands.
@@ -5819,7 +5819,7 @@
       if (kind === "video" && narrationBlob) {
         narrationPath = currentUser.id + "/" + crypto.randomUUID() + "-narration.webm";
         narrUpP = window.sb.storage.from("media").upload(narrationPath, narrationBlob, {
-          cacheControl: "3600",
+          cacheControl: "31536000",
           upsert: false,
           contentType: "audio/webm"
         }).catch(function (e) { return { error: e }; });
@@ -5857,7 +5857,7 @@
           if (posterBlob) {
             var candidatePosterPath = currentUser.id + "/" + crypto.randomUUID() + "-poster.jpg";
             var { error: posterError } = await window.sb.storage.from("media").upload(candidatePosterPath, posterBlob, {
-              cacheControl: "3600",
+              cacheControl: "31536000",
               upsert: false,
               contentType: "image/jpeg"
             });
@@ -5964,7 +5964,7 @@
             var clipFile = clips[ci].file;
             if (!clipBlobs[ci]) clipBlobs[ci] = await makeStreamable(clipFile);
             var clipPath = currentUser.id + "/" + crypto.randomUUID() + "." + getExt(clipFile.name);
-            var { error: clipUploadError } = await window.sb.storage.from("media").upload(clipPath, clipBlobs[ci], { cacheControl: "3600", upsert: false });
+            var { error: clipUploadError } = await window.sb.storage.from("media").upload(clipPath, clipBlobs[ci], { cacheControl: "31536000", upsert: false });
             if (clipUploadError) { clipErrs.push("clip " + (ci + 1) + " try " + attempt + ": " + (clipUploadError.message || clipUploadError) + " (" + Math.round((clipFile.size || 0) / 1048576) + " MB)"); try { if (window.efDbg) window.efDbg(clipErrs[clipErrs.length - 1]); } catch (e) {} return { ci: ci, path: null }; }
             return { ci: ci, path: clipPath };
           } catch (clipErr) {
