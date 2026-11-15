@@ -1,0 +1,25 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>iPhone video test</title>
+<style>body{background:#111;color:#eee;font:16px -apple-system,Helvetica,sans-serif;margin:0;padding:16px}
+.t{margin:0 0 22px;padding:12px;border:1px solid #444;border-radius:12px}video{width:100%;max-height:60vh;background:#000;border-radius:8px}
+.s{margin-top:8px;font-weight:700}.ok{color:#5f5}.bad{color:#f66}.wait{color:#fc3}h1{font-size:20px}</style></head><body>
+<h1>iPhone video test</h1>
+<p>On your iPhone in Safari: tap the play button on each video below. Each one shows a result line underneath. Screenshot the whole page when you are done.</p>
+<div id="list"></div>
+<script>
+var tests=[["A","Original file from the Android phone (11 MB)","a_original.mp4"],
+["B","Same video, repackaged, declared level changed to 5.1","b_remux_level51.mp4"],
+["C","Same video, repackaged only (no changes to the video)","d_remux_same_level.mp4"],
+["D","Same video, re-made in a standard iPhone-friendly way","c_reencoded_standard.mp4"]];
+var list=document.getElementById("list");
+tests.forEach(function(t){var d=document.createElement("div");d.className="t";
+d.innerHTML="<b>"+t[0]+".</b> "+t[1]+"<br><video controls playsinline preload=\"metadata\" src=\""+t[2]+"\"></video><div class=\"s wait\">not played yet - tap play</div>";
+list.appendChild(d);var v=d.querySelector("video"),s=d.querySelector(".s");
+function set(c,m){s.className="s "+c;s.textContent=m}
+v.addEventListener("playing",function(){set("ok","PLAYS (picture + sound running)")});
+v.addEventListener("loadeddata",function(){if(s.className.indexOf("ok")<0)set("wait","loaded, tap play...")});
+v.addEventListener("error",function(){set("bad","CANNOT PLAY - error code "+(v.error?v.error.code:"?"))});
+v.addEventListener("stalled",function(){if(s.className.indexOf("ok")<0)set("wait","stalled...")});
+v.addEventListener("timeupdate",function(){if(v.currentTime>0.5&&v.videoWidth===0)set("bad","SOUND ONLY - no picture")});
+});
+</script></body></html>
