@@ -148,6 +148,7 @@
       esds = child(b, e3, "esds", kids2);
       if (!esds) { var wave = child(b, e3, "wave", kids2); if (wave) esds = child(b, wave, "esds"); }
       if (!esds) return null;
+      T.channels = u16(b, ent.start + 24) || 2; T.rate = u32(b, ent.start + 32) >>> 16;
       T.entry = box("mp4a", zeros(6), w16(1), zeros(8), w16(u16(b, ent.start + 24) || 2), w16(16), w16(0), w16(0),
         w32((u32(b, ent.start + 32) >>> 16) * 65536), b.slice(esds.start, esds.end));
     } else return null;
@@ -284,155 +285,199 @@
 
   function pickSize(w, h) {
     var sc = Math.min(1, MAX_SHORT / Math.min(w, h), MAX_LONG / Math.max(w, h));
-    var ow = Math.max(2, Math.round(w * sc / 2) * 2), oh = Math.max(2, Math.round(h * sc / 2) * 2);
-    return { w: ow, h: oh };
+    return { w: Math.max(2, Math.round(w * sc / 2) * 2), h: Math.max(2, Math.round(h * sc / 2) * 2) };
   }
 
-  async function run(file, opt) {
-    if (typeof VideoDecoder === "undefined" || typeof VideoEncoder === "undefined" || typeof VideoFrame === "undefined") return null;
+  // open one clip: its index, its frame times, how it is turned for display
+  async function openClip(file, spec) {
     if (!file || !file.size || file.size > MAX_INPUT_BYTES || typeof file.slice !== "function") return null;
-    var t0Run = Date.now();
     var moov = await readMoov(file);
     if (!moov) return null;
     var info = parseFile(moov);
     if (!info || !info.v || info.audioBad) return null;
-    var V = info.v, A = info.a;
-    var vScale = V.timescale;
-    // presentation time of every video frame, in seconds (edit-list corrected, like the <video> element shows it)
-    var n = V.n, i, vPts = new Float64Array(n);
-    for (i = 0; i < n; i++) vPts[i] = (V.cts[i] - V.mediaTime) / vScale;
-    var totalDur = 0; for (i = 0; i < n; i++) if (vPts[i] + V.dur[i] / vScale > totalDur) totalDur = vPts[i] + V.dur[i] / vScale;
-    var ts = Math.max(0, +opt.start || 0), te = +opt.end > 0 ? Math.min(+opt.end, totalDur) : totalDur;
-    if (!(te - ts > 0.05)) return null;
-    var fps = n / Math.max(0.001, totalDur);
-    var out = pickSize(V.width, V.height);
-    // the decoder
-    var decCfg = { codec: V.codec, codedWidth: V.width, codedHeight: V.height };
-    if (V.description) decCfg.description = V.description;
-    var ds = await VideoDecoder.isConfigSupported(decCfg);
+    var V = info.v, A = info.a, n = V.n, i;
+    var C = { file: file, V: V, A: A, vPts: new Float64Array(n) };
+    for (i = 0; i < n; i++) C.vPts[i] = (V.cts[i] - V.mediaTime) / V.timescale;
+    var total = 0; for (i = 0; i < n; i++) if (C.vPts[i] + V.dur[i] / V.timescale > total) total = C.vPts[i] + V.dur[i] / V.timescale;
+    C.ts = Math.max(0, +spec.start || 0);
+    C.te = +spec.end > 0 ? Math.min(+spec.end, total) : total;
+    if (!(C.te - C.ts > 0.05)) return null;
+    C.fps = n / Math.max(0.001, total);
+    var m = V.matrix;
+    C.ma = i32(m, 0) / 65536; C.mb = i32(m, 4) / 65536; C.mc = i32(m, 12) / 65536; C.md = i32(m, 16) / 65536;
+    C.cw = V.width; C.ch = V.height;
+    C.sw = Math.round(Math.abs(C.ma * C.cw + C.mc * C.ch)); C.sh = Math.round(Math.abs(C.mb * C.cw + C.md * C.ch));   // size as the member sees it (turned upright)
+    if (!(C.sw > 0 && C.sh > 0)) return null;
+    C.decCfg = { codec: V.codec, codedWidth: V.width, codedHeight: V.height };
+    if (V.description) C.decCfg.description = V.description;
+    var ds = await VideoDecoder.isConfigSupported(C.decCfg);
     if (!ds || !ds.supported) return null;
-    // the encoder: the first H.264 setting this phone accepts
-    var bitrate = Math.round(Math.max(1000000, Math.min(fps > 45 ? 7000000 : 6000000, out.w * out.h * Math.min(fps, 60) * BITS_PER_PIXEL)));
+    // which frames to decode: from the keyframe at/just before the start, to just past the end
+    var st = -1;
+    for (i = 0; i < n; i++) if (V.sync[i] && C.vPts[i] <= C.ts + 0.001 && (st < 0 || V.cts[i] >= V.cts[st])) st = i;
+    if (st < 0) for (i = 0; i < n; i++) if (V.sync[i]) { st = i; break; }
+    if (st < 0) return null;
+    var en = st;
+    for (i = st; i < n; i++) if (C.vPts[i] < C.te) en = i;
+    C.startIdx = st; C.endIdx = Math.min(n - 1, en + 6);
+    return C;
+  }
+
+  // Make ONE finished .mp4 out of one or more clips, each cut to [start, end]. Several clips are joined into one
+  // continuous file (a hard cut from one to the next, no gap, no overlap).
+  async function build(specs, opt) {
+    if (typeof VideoDecoder === "undefined" || typeof VideoEncoder === "undefined" || typeof VideoFrame === "undefined") return null;
+    var t0Run = Date.now(), i, k, clips = [], origBytes = 0;
+    for (i = 0; i < specs.length; i++) {
+      var C = await openClip(specs[i].file, specs[i]);
+      if (!C) return null;
+      clips.push(C); origBytes += specs[i].file.size;
+    }
+    // the sound has to be the same kind in every clip (or absent from every clip), or it can't be joined
+    var hasA = !!clips[0].A;
+    for (i = 1; i < clips.length; i++) {
+      if (!!clips[i].A !== hasA) return null;
+      if (hasA && (clips[i].A.timescale !== clips[0].A.timescale || clips[i].A.channels !== clips[0].A.channels)) return null;
+    }
+    var maxFps = 0; clips.forEach(function (c) { if (c.fps > maxFps) maxFps = c.fps; });
+    var out = pickSize(clips[0].sw, clips[0].sh);
+    var bitrate = Math.round(Math.max(1000000, Math.min(maxFps > 45 ? 7000000 : 6000000, out.w * out.h * Math.min(maxFps, 60) * BITS_PER_PIXEL)));
     var tries = (opt.outCodecs && opt.outCodecs.length) ? opt.outCodecs : ["avc1.64002A", "avc1.4D402A", "avc1.42E02A"];
     var encCfg = null, outCodec = null;
     for (i = 0; i < tries.length && !encCfg; i++) {
-      var c = { codec: tries[i], width: out.w, height: out.h, bitrate: bitrate, framerate: Math.round(fps * 100) / 100, latencyMode: "quality" };
-      if (/^avc1/.test(tries[i])) c.avc = { format: "avc" };
-      try { var es = await VideoEncoder.isConfigSupported(c); if (es && es.supported) { encCfg = es.config || c; outCodec = tries[i]; } } catch (e) { /* next */ }
+      var cfg = { codec: tries[i], width: out.w, height: out.h, bitrate: bitrate, framerate: Math.round(maxFps * 100) / 100, latencyMode: "quality" };
+      if (/^avc1/.test(tries[i])) cfg.avc = { format: "avc" };
+      try { var es = await VideoEncoder.isConfigSupported(cfg); if (es && es.supported) { encCfg = es.config || cfg; outCodec = tries[i]; } } catch (e) { /* next */ }
     }
     if (!encCfg) return null;
     var isAvcOut = /^avc1/.test(outCodec);
-
-    // which input frames to decode: from the keyframe at/just before the start, to just past the end
-    var startIdx = -1;
-    for (i = 0; i < n; i++) if (V.sync[i] && vPts[i] <= ts + 0.001 && (startIdx < 0 || V.cts[i] >= V.cts[startIdx])) startIdx = i;
-    if (startIdx < 0) for (i = 0; i < n; i++) if (V.sync[i]) { startIdx = i; break; }
-    if (startIdx < 0) return null;
-    var endIdx = startIdx;
-    for (i = startIdx; i < n; i++) if (vPts[i] < te) endIdx = i;
-    endIdx = Math.min(n - 1, endIdx + 6);          // a few extra so every frame before the end comes out of the decoder
 
     var canvas = document.createElement("canvas");
     canvas.width = out.w; canvas.height = out.h;
     var ctx = canvas.getContext("2d");
     if (!ctx) return null;
 
-    var vOut = [];                                   // [{data, pts(us, relative to first kept), key}]
-    var outConfig = null, failed = null, kept = 0, firstUs = -1, lastKeyUs = -1e12, lastUs = -1, wantFrames = Math.max(1, Math.round((te - ts) * fps));
-    var tsUs = ts * 1e6 - 5000, teUs = te * 1e6 - 5000;
+    var vOut = [], outConfig = null, failed = null, kept = 0, lastKeyUs = -1e12;
+    var totalFeed = 0, fed = 0, wantFrames = 0;
+    clips.forEach(function (c) { totalFeed += c.endIdx - c.startIdx + 1; wantFrames += Math.max(1, Math.round((c.te - c.ts) * c.fps)); });
 
     var encoder = new VideoEncoder({
       output: function (chunk, meta) {
         var buf = new Uint8Array(chunk.byteLength); chunk.copyTo(buf);
-        if (meta && meta.decoderConfig && meta.decoderConfig.description && !outConfig) outConfig = new Uint8Array(meta.decoderConfig.description instanceof ArrayBuffer ? meta.decoderConfig.description : meta.decoderConfig.description.buffer.slice(meta.decoderConfig.description.byteOffset, meta.decoderConfig.description.byteOffset + meta.decoderConfig.description.byteLength));
+        if (meta && meta.decoderConfig && meta.decoderConfig.description && !outConfig) {
+          var dsc = meta.decoderConfig.description;
+          outConfig = new Uint8Array(dsc instanceof ArrayBuffer ? dsc : dsc.buffer.slice(dsc.byteOffset, dsc.byteOffset + dsc.byteLength));
+        }
         vOut.push({ data: buf, pts: chunk.timestamp, key: chunk.type === "key" });
       },
       error: function (e) { failed = failed || e; }
     });
     encoder.configure(encCfg);
-    var decoder = new VideoDecoder({
-      output: function (frame) {
-        try {
-          var t = frame.timestamp;
-          if (failed || t < tsUs || t >= teUs) { frame.close(); return; }
-          if (firstUs < 0) firstUs = t;
-          ctx.drawImage(frame, 0, 0, out.w, out.h);
-          var rel = t - firstUs;
-          var nf = new VideoFrame(canvas, { timestamp: rel, duration: Math.round(1e6 / fps) });
-          var key = (kept === 0) || (rel - lastKeyUs >= KEYFRAME_EVERY_US);
-          if (key) lastKeyUs = rel;
-          encoder.encode(nf, { keyFrame: key });
-          nf.close(); frame.close();
-          kept++; lastUs = rel;
-          if (opt.onProgress && (kept % 8 === 0)) { try { opt.onProgress(Math.min(0.97, kept / wantFrames * 0.95)); } catch (e) {} }
-        } catch (e) { failed = failed || e; try { frame.close(); } catch (e2) {} }
-      },
-      error: function (e) { failed = failed || e; }
-    });
-    decoder.configure(decCfg);
 
-    // feed the decoder, a few frames at a time, reading only the bytes we need
-    var BATCH = 24, idx = startIdx;
-    while (idx <= endIdx && !failed) {
-      var last = Math.min(endIdx, idx + BATCH - 1), lo = Infinity, hi = 0, k;
-      for (k = idx; k <= last; k++) { if (V.offset[k] < lo) lo = V.offset[k]; if (V.offset[k] + V.size[k] > hi) hi = V.offset[k] + V.size[k]; }
-      var blob = new Uint8Array(await file.slice(lo, hi).arrayBuffer());
-      for (k = idx; k <= last; k++) {
-        var o = V.offset[k] - lo;
-        decoder.decode(new EncodedVideoChunk({
-          type: V.sync[k] ? "key" : "delta",
-          timestamp: Math.round(vPts[k] * 1e6),
-          data: blob.subarray(o, o + V.size[k])
-        }));
+    var offsetUs = 0, clipInfo = [];
+    for (k = 0; k < clips.length && !failed; k++) {
+      var Ck = clips[k], V = Ck.V;
+      // how this clip is laid onto the common picture: the same shape = fill it; a different shape = fit it whole (black bars)
+      var sameShape = Math.abs((Ck.sw / Ck.sh) / (out.w / out.h) - 1) < 0.04;
+      var fit = sameShape ? Math.max(out.w / Ck.sw, out.h / Ck.sh) : Math.min(out.w / Ck.sw, out.h / Ck.sh);
+      var cs = { firstUs: -1, lastRel: -1, kept: 0 };
+      var tsUs = Ck.ts * 1e6 - 5000, teUs = Ck.te * 1e6 - 5000, frameUs = Math.round(1e6 / Ck.fps), base = offsetUs;
+      var decoder = new VideoDecoder({
+        output: function (frame) {
+          try {
+            var t = frame.timestamp;
+            if (failed || t < tsUs || t >= teUs) { frame.close(); return; }
+            if (cs.firstUs < 0) cs.firstUs = t;
+            var rel = t - cs.firstUs;
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            if (!sameShape) { ctx.fillStyle = "#000"; ctx.fillRect(0, 0, out.w, out.h); }
+            ctx.translate(out.w / 2, out.h / 2);
+            ctx.transform(Ck.ma, Ck.mb, Ck.mc, Ck.md, 0, 0);      // turn it upright the way the phone's file says
+            ctx.drawImage(frame, -Ck.cw * fit / 2, -Ck.ch * fit / 2, Ck.cw * fit, Ck.ch * fit);
+            var abs = base + rel;
+            var nf = new VideoFrame(canvas, { timestamp: abs, duration: frameUs });
+            var key = (cs.kept === 0) || (abs - lastKeyUs >= KEYFRAME_EVERY_US);   // every clip starts on a keyframe
+            if (key) lastKeyUs = abs;
+            encoder.encode(nf, { keyFrame: key });
+            nf.close(); frame.close();
+            cs.kept++; kept++; cs.lastRel = rel;
+            if (opt.onProgress && (kept % 8 === 0)) { try { opt.onProgress(Math.min(0.97, kept / wantFrames * 0.95)); } catch (e) {} }
+          } catch (e) { failed = failed || e; try { frame.close(); } catch (e2) {} }
+        },
+        error: function (e) { failed = failed || e; }
+      });
+      decoder.configure(Ck.decCfg);
+      var idx = Ck.startIdx, BATCH = 24;
+      while (idx <= Ck.endIdx && !failed) {
+        var last = Math.min(Ck.endIdx, idx + BATCH - 1), lo = Infinity, hi = 0, q;
+        for (q = idx; q <= last; q++) { if (V.offset[q] < lo) lo = V.offset[q]; if (V.offset[q] + V.size[q] > hi) hi = V.offset[q] + V.size[q]; }
+        var blob = new Uint8Array(await Ck.file.slice(lo, hi).arrayBuffer());
+        for (q = idx; q <= last; q++) {
+          var o = V.offset[q] - lo;
+          decoder.decode(new EncodedVideoChunk({ type: V.sync[q] ? "key" : "delta", timestamp: Math.round(Ck.vPts[q] * 1e6), data: blob.subarray(o, o + V.size[q]) }));
+        }
+        fed += last - idx + 1; idx = last + 1;
+        while (!failed && (decoder.decodeQueueSize > 8 || encoder.encodeQueueSize > 8)) await sleep(4);
+        // a phone too slow for this job (would take more than ~5 min): stop early, the originals go up as before
+        var spent = Date.now() - t0Run, frac = fed / totalFeed;
+        if (spent > 8000 && frac > 0 && spent / frac > (opt.maxWorkMs || 300000)) failed = new Error("too slow on this phone");
       }
-      idx = last + 1;
-      while (!failed && (decoder.decodeQueueSize > 8 || encoder.encodeQueueSize > 8)) await sleep(4);
-      // a phone too slow for this clip (would take more than MAX_WORK_MS): stop early and let the original go up as before
-      var spent = Date.now() - t0Run, doneFrac = (idx - startIdx) / (endIdx - startIdx + 1);
-      if (spent > 8000 && doneFrac > 0 && spent / doneFrac > (opt.maxWorkMs || 300000)) failed = new Error("too slow on this phone");
+      if (!failed) await decoder.flush();
+      try { decoder.close(); } catch (e) {}
+      if (failed || cs.kept < 2) { failed = failed || new Error("clip " + (k + 1) + " gave no picture"); break; }
+      var clipDurUs = cs.lastRel + frameUs;
+      clipInfo.push({ firstUs: cs.firstUs, durUs: clipDurUs, offsetUs: offsetUs });
+      offsetUs += clipDurUs;
     }
-    if (failed) { try { decoder.close(); encoder.close(); } catch (e) {} return null; }
-    await decoder.flush();
-    await encoder.flush();
-    try { decoder.close(); encoder.close(); } catch (e) {}
-    if (failed || kept < 2 || vOut.length !== kept) return null;
+    if (!failed) await encoder.flush();
+    try { encoder.close(); } catch (e) {}
+    if (failed || vOut.length !== kept || kept < 2) return null;
     if (isAvcOut && !outConfig) return null;
     for (i = 1; i < vOut.length; i++) if (vOut[i].pts <= vOut[i - 1].pts) return null;   // an encoder that reorders frames: don't risk it
 
     // ---- video track of the new file
-    var vTicks = vOut.map(function (f) { return Math.round(f.pts * VIDEO_TS / 1e6); });
-    var frameDurTicks = Math.max(1, Math.round(VIDEO_TS / fps));
+    var avgFps = maxFps, vTicks = vOut.map(function (f) { return Math.round(f.pts * VIDEO_TS / 1e6); });
     var vDeltas = [], vSyncs = [];
     for (i = 0; i < vOut.length; i++) {
-      vDeltas.push(i + 1 < vOut.length ? Math.max(1, vTicks[i + 1] - vTicks[i]) : frameDurTicks);
+      vDeltas.push(i + 1 < vOut.length ? Math.max(1, vTicks[i + 1] - vTicks[i]) : Math.max(1, Math.round(VIDEO_TS / Math.max(1, clips[clips.length - 1].fps))));
       if (vOut[i].key) vSyncs.push(i + 1);
     }
-    var vEntry;
     var vHead = cat([zeros(6), w16(1), zeros(16), w16(out.w), w16(out.h), w32(0x480000), w32(0x480000), w32(0), w16(1), zeros(32), w16(0x18), w16(0xffff)]);
+    var vEntry;
     if (isAvcOut) vEntry = box("avc1", vHead, box("avcC", outConfig));
     else { // (only used by our own tests, with VP9)
-      var m = /^vp09\.(\d+)\.(\d+)\.(\d+)/.exec(outCodec);
-      vEntry = box("vp09", vHead, fullbox("vpcC", 1, 0, new Uint8Array([+m[1], +m[2], (+m[3] << 4) | 0x02, 2, 2, 2, 0, 0])));
+      var mm = /^vp09\.(\d+)\.(\d+)\.(\d+)/.exec(outCodec);
+      vEntry = box("vp09", vHead, fullbox("vpcC", 1, 0, new Uint8Array([+mm[1], +mm[2], (+mm[3] << 4) | 0x02, 2, 2, 2, 0, 0])));
     }
     var vDurTicks = vTicks[vTicks.length - 1] + vDeltas[vDeltas.length - 1];
     var durSec = vDurTicks / VIDEO_TS;
-    var vTrack = { handler: "vide", timescale: VIDEO_TS, durTicks: vDurTicks, sizes: vOut.map(function (f) { return f.data.length; }), deltas: vDeltas, syncs: vSyncs, chunks: [], entry: vEntry, matrix: V.matrix, width: out.w, height: out.h, trackId: 1 };
+    var vTrack = { handler: "vide", timescale: VIDEO_TS, durTicks: vDurTicks, sizes: vOut.map(function (f) { return f.data.length; }), deltas: vDeltas, syncs: vSyncs, chunks: [], entry: vEntry, matrix: null, width: out.w, height: out.h, trackId: 1 };
 
-    // ---- audio track: the sound is copied across, just the part that belongs to the kept video
+    // ---- audio track: the sound is copied across clip by clip, each part lined up with its own picture
     var aTrack = null, aSamples = [];
-    if (A) {
-      var aScale = A.timescale, aStart = firstUs / 1e6, aEnd = aStart + durSec, aIdx = [];
-      for (i = 0; i < A.n; i++) { var at = (A.cts[i] - A.mediaTime) / aScale; if (at >= aStart - 0.0005 && at < aEnd) aIdx.push(i); }
-      if (aIdx.length) {
-        var AB = 64, p;
-        for (p = 0; p < aIdx.length; p += AB) {
-          var seg = aIdx.slice(p, p + AB), lo2 = Infinity, hi2 = 0;
-          seg.forEach(function (q) { if (A.offset[q] < lo2) lo2 = A.offset[q]; if (A.offset[q] + A.size[q] > hi2) hi2 = A.offset[q] + A.size[q]; });
-          var ab = new Uint8Array(await file.slice(lo2, hi2).arrayBuffer());
-          seg.forEach(function (q) { var o2 = A.offset[q] - lo2; aSamples.push({ data: ab.slice(o2, o2 + A.size[q]), delta: A.dur[q], start: (A.cts[q] - A.mediaTime) / aScale - aStart }); });
+    if (hasA) {
+      var aScale = clips[0].A.timescale, audioEnd = 0;       // audioEnd = seconds of sound written so far
+      for (k = 0; k < clips.length; k++) {
+        var A = clips[k].A, ci = clipInfo[k], aStart = ci.firstUs / 1e6, endTarget = (ci.offsetUs + ci.durUs) / 1e6, picks = [];
+        for (i = 0; i < A.n; i++) {
+          var at = (A.cts[i] - A.mediaTime) / aScale - aStart;
+          if (at < -0.0005) continue;
+          if (at >= (ci.durUs / 1e6) + 0.05) break;
+          var dsec = A.dur[i] / aScale;
+          if (audioEnd + dsec / 2 > endTarget) break;          // keeps the sound from drifting away from the picture, clip after clip
+          picks.push(i); audioEnd += dsec;
         }
-        var aDur = 0; aSamples.forEach(function (s) { aDur += s.delta; });
-        aTrack = { handler: "soun", timescale: aScale, durTicks: aDur, sizes: aSamples.map(function (s) { return s.data.length; }), deltas: aSamples.map(function (s) { return s.delta; }), syncs: null, chunks: [], entry: A.entry, matrix: null, trackId: 2 };
+        var AB = 64, p;
+        for (p = 0; p < picks.length; p += AB) {
+          var seg = picks.slice(p, p + AB), lo2 = Infinity, hi2 = 0;
+          seg.forEach(function (q2) { if (A.offset[q2] < lo2) lo2 = A.offset[q2]; if (A.offset[q2] + A.size[q2] > hi2) hi2 = A.offset[q2] + A.size[q2]; });
+          var ab = new Uint8Array(await clips[k].file.slice(lo2, hi2).arrayBuffer());
+          seg.forEach(function (q2) { var o2 = A.offset[q2] - lo2; aSamples.push({ data: ab.slice(o2, o2 + A.size[q2]), delta: A.dur[q2] }); });
+        }
+      }
+      if (aSamples.length) {
+        var cum = 0; aSamples.forEach(function (s2) { s2.start = cum / aScale; cum += s2.delta; });
+        aTrack = { handler: "soun", timescale: aScale, durTicks: cum, sizes: aSamples.map(function (s3) { return s3.data.length; }), deltas: aSamples.map(function (s4) { return s4.delta; }), syncs: null, chunks: [], entry: clips[0].A.entry, matrix: null, trackId: 2 };
       }
     }
 
@@ -451,27 +496,35 @@
       w++;
       if (w > 100000) return null;
     }
-    var tracks = aTrack ? [vTrack, aTrack] : [vTrack];
-    var result = writeMp4(tracks, inter, Math.round(durSec * 1000));
+    var result = writeMp4(aTrack ? [vTrack, aTrack] : [vTrack], inter, Math.round(durSec * 1000));
     if (!(result.size > 1000)) return null;
-    var baseName = (file.name || "clip").replace(/\.[^.]+$/, "") + ".mp4";
+    var baseName = (specs[0].file.name || "clip").replace(/\.[^.]+$/, "") + ".mp4";
     var newFile;
     try { newFile = new File([result], baseName, { type: "video/mp4", lastModified: Date.now() }); } catch (e) { newFile = result; }
     if (opt.onProgress) { try { opt.onProgress(1); } catch (e) {} }
-    return { file: newFile, duration: Math.round(durSec * 100) / 100, from: file.size, to: result.size };
+    return {
+      file: newFile, duration: Math.round(durSec * 100) / 100, from: origBytes, to: result.size,
+      durations: clipInfo.map(function (c) { return Math.round(c.durUs / 10000) / 100; })      // how long each clip is inside the new file
+    };
   }
 
+  function accept(r, opt) {
+    // not clearly smaller? then the member's original is already fine: leave it alone
+    if (!r) return null;
+    if (!(r.to < r.from * 0.75) && !(opt && opt.force)) return null;
+    return r;
+  }
+  function logSkip(e) { try { if (window.efDbg) window.efDbg("shrink skipped: " + ((e && (e.message || e.name)) || e)); } catch (e2) {} }
+
+  // one clip -> one small file
   window.efShrinkVideo = async function (file, opt) {
-    try {
-      var r = await run(file, opt || {});
-      if (!r) return null;
-      // not clearly smaller? then the member's original is already fine: leave it alone
-      if (!(r.to < r.from * 0.75) && !(opt && opt.force)) return null;
-      return r;
-    } catch (e) {
-      try { if (window.efDbg) window.efDbg("shrink skipped: " + ((e && (e.message || e.name)) || e)); } catch (e2) {}
-      return null;
-    }
+    try { opt = opt || {}; return accept(await build([{ file: file, start: opt.start, end: opt.end }], opt), opt); }
+    catch (e) { logSkip(e); return null; }
+  };
+  // several clips -> ONE small file with hard cuts between them. specs = [{ file, start, end }, ...] in play order.
+  window.efStitchVideos = async function (specs, opt) {
+    try { opt = opt || {}; if (!specs || specs.length < 1) return null; return accept(await build(specs, opt), opt); }
+    catch (e) { logSkip(e); return null; }
   };
   window.efShrinkSupported = function () {
     return typeof VideoDecoder !== "undefined" && typeof VideoEncoder !== "undefined" && typeof VideoFrame !== "undefined";
