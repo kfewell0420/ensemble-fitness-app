@@ -282,6 +282,8 @@
 
   /* ---------- the job ---------- */
   function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  // every "can't do it" says why (window.efShrinkWhy), so a clip that went up unshrunk can be explained
+  function bail(why) { window.efShrinkWhy = why; return null; }
 
   function pickSize(w, h) {
     var sc = Math.min(1, MAX_SHORT / Math.min(w, h), MAX_LONG / Math.max(w, h));
@@ -290,33 +292,42 @@
 
   // open one clip: its index, its frame times, how it is turned for display
   async function openClip(file, spec) {
-    if (!file || !file.size || file.size > MAX_INPUT_BYTES || typeof file.slice !== "function") return null;
+    if (!file || !file.size || file.size > MAX_INPUT_BYTES || typeof file.slice !== "function") return bail("file empty or too big");
     var moov = await readMoov(file);
-    if (!moov) return null;
+    if (!moov) return bail("could not find the video index in the file");
     var info = parseFile(moov);
-    if (!info || !info.v || info.audioBad) return null;
+    if (!info || !info.v || info.audioBad) return bail(info && info.audioBad ? "the sound format is not supported" : "the video format is not supported (not plain H.264/H.265 in an MP4/MOV)");
     var V = info.v, A = info.a, n = V.n, i;
     var C = { file: file, V: V, A: A, vPts: new Float64Array(n) };
     for (i = 0; i < n; i++) C.vPts[i] = (V.cts[i] - V.mediaTime) / V.timescale;
     var total = 0; for (i = 0; i < n; i++) if (C.vPts[i] + V.dur[i] / V.timescale > total) total = C.vPts[i] + V.dur[i] / V.timescale;
     C.ts = Math.max(0, +spec.start || 0);
     C.te = +spec.end > 0 ? Math.min(+spec.end, total) : total;
-    if (!(C.te - C.ts > 0.05)) return null;
+    if (!(C.te - C.ts > 0.05)) return bail("the kept part is too short");
     C.fps = n / Math.max(0.001, total);
     var m = V.matrix;
     C.ma = i32(m, 0) / 65536; C.mb = i32(m, 4) / 65536; C.mc = i32(m, 12) / 65536; C.md = i32(m, 16) / 65536;
     C.cw = V.width; C.ch = V.height;
     C.sw = Math.round(Math.abs(C.ma * C.cw + C.mc * C.ch)); C.sh = Math.round(Math.abs(C.mb * C.cw + C.md * C.ch));   // size as the member sees it (turned upright)
-    if (!(C.sw > 0 && C.sh > 0)) return null;
+    if (!(C.sw > 0 && C.sh > 0)) return bail("picture size unreadable");
     C.decCfg = { codec: V.codec, codedWidth: V.width, codedHeight: V.height };
     if (V.description) C.decCfg.description = V.description;
     var ds = await VideoDecoder.isConfigSupported(C.decCfg);
-    if (!ds || !ds.supported) return null;
+    if ((!ds || !ds.supported) && /^avc1\.[0-9a-fA-F]{6}$/.test(V.codec)) {
+      // Some phones record H.264 labelled with an extreme "level" (Samsung writes 6.0). Browsers refuse to decode on the label
+      // alone although the picture itself is ordinary. The real settings are inside the stream, so retry with common levels.
+      var lv = ["34", "33", "2a", "28", "1f"];
+      for (var li = 0; li < lv.length && !(ds && ds.supported); li++) {
+        var alt = { codec: V.codec.slice(0, 11) + lv[li], codedWidth: V.width, codedHeight: V.height, description: V.description };
+        try { var d2 = await VideoDecoder.isConfigSupported(alt); if (d2 && d2.supported) { ds = d2; C.decCfg = alt; } } catch (e) { /* next */ }
+      }
+    }
+    if (!ds || !ds.supported) return bail("this phone cannot decode this video (" + V.codec + ")");
     // which frames to decode: from the keyframe at/just before the start, to just past the end
     var st = -1;
     for (i = 0; i < n; i++) if (V.sync[i] && C.vPts[i] <= C.ts + 0.001 && (st < 0 || V.cts[i] >= V.cts[st])) st = i;
     if (st < 0) for (i = 0; i < n; i++) if (V.sync[i]) { st = i; break; }
-    if (st < 0) return null;
+    if (st < 0) return bail("no starting keyframe");
     var en = st;
     for (i = st; i < n; i++) if (C.vPts[i] < C.te) en = i;
     C.startIdx = st; C.endIdx = Math.min(n - 1, en + 6);
@@ -326,7 +337,8 @@
   // Make ONE finished .mp4 out of one or more clips, each cut to [start, end]. Several clips are joined into one
   // continuous file (a hard cut from one to the next, no gap, no overlap).
   async function build(specs, opt) {
-    if (typeof VideoDecoder === "undefined" || typeof VideoEncoder === "undefined" || typeof VideoFrame === "undefined") return null;
+    if (typeof VideoDecoder === "undefined" || typeof VideoEncoder === "undefined" || typeof VideoFrame === "undefined") return bail("this browser has no video converter");
+    window.efShrinkWhy = "";
     var t0Run = Date.now(), i, k, clips = [], origBytes = 0;
     for (i = 0; i < specs.length; i++) {
       var C = await openClip(specs[i].file, specs[i]);
@@ -336,8 +348,8 @@
     // the sound has to be the same kind in every clip (or absent from every clip), or it can't be joined
     var hasA = !!clips[0].A;
     for (i = 1; i < clips.length; i++) {
-      if (!!clips[i].A !== hasA) return null;
-      if (hasA && (clips[i].A.timescale !== clips[0].A.timescale || clips[i].A.channels !== clips[0].A.channels)) return null;
+      if (!!clips[i].A !== hasA) return bail("some clips have sound and some don't");
+      if (hasA && (clips[i].A.timescale !== clips[0].A.timescale || clips[i].A.channels !== clips[0].A.channels)) return bail("the clips have different sound formats");
     }
     var maxFps = 0; clips.forEach(function (c) { if (c.fps > maxFps) maxFps = c.fps; });
     var out = pickSize(clips[0].sw, clips[0].sh);
@@ -349,13 +361,13 @@
       if (/^avc1/.test(tries[i])) cfg.avc = { format: "avc" };
       try { var es = await VideoEncoder.isConfigSupported(cfg); if (es && es.supported) { encCfg = es.config || cfg; outCodec = tries[i]; } } catch (e) { /* next */ }
     }
-    if (!encCfg) return null;
+    if (!encCfg) return bail("this phone cannot make H.264 video");
     var isAvcOut = /^avc1/.test(outCodec);
 
     var canvas = document.createElement("canvas");
     canvas.width = out.w; canvas.height = out.h;
     var ctx = canvas.getContext("2d");
-    if (!ctx) return null;
+    if (!ctx) return bail("no drawing surface");
 
     var vOut = [], outConfig = null, failed = null, kept = 0, lastKeyUs = -1e12;
     var totalFeed = 0, fed = 0, wantFrames = 0;
@@ -431,9 +443,9 @@
     }
     if (!failed) await encoder.flush();
     try { encoder.close(); } catch (e) {}
-    if (failed || vOut.length !== kept || kept < 2) return null;
-    if (isAvcOut && !outConfig) return null;
-    for (i = 1; i < vOut.length; i++) if (vOut[i].pts <= vOut[i - 1].pts) return null;   // an encoder that reorders frames: don't risk it
+    if (failed || vOut.length !== kept || kept < 2) return bail("the conversion stopped: " + ((failed && (failed.message || failed.name)) || ("only " + kept + " frames came out")));
+    if (isAvcOut && !outConfig) return bail("the encoder gave no settings");
+    for (i = 1; i < vOut.length; i++) if (vOut[i].pts <= vOut[i - 1].pts) return bail("the encoder reordered frames");   // an encoder that reorders frames: don't risk it
 
     // ---- video track of the new file
     var avgFps = maxFps, vTicks = vOut.map(function (f) { return Math.round(f.pts * VIDEO_TS / 1e6); });
@@ -494,10 +506,10 @@
         if (list.length) { var ref2 = { first: c0, count: list.length, offset: 0 }; aTrack.chunks.push(ref2); inter.push({ ref: ref2, samples: list, bytes: bytes }); }
       }
       w++;
-      if (w > 100000) return null;
+      if (w > 100000) return bail("layout error");
     }
     var result = writeMp4(aTrack ? [vTrack, aTrack] : [vTrack], inter, Math.round(durSec * 1000));
-    if (!(result.size > 1000)) return null;
+    if (!(result.size > 1000)) return bail("empty result");
     var baseName = (specs[0].file.name || "clip").replace(/\.[^.]+$/, "") + ".mp4";
     var newFile;
     try { newFile = new File([result], baseName, { type: "video/mp4", lastModified: Date.now() }); } catch (e) { newFile = result; }
@@ -511,10 +523,11 @@
   function accept(r, opt) {
     // not clearly smaller? then the member's original is already fine: leave it alone
     if (!r) return null;
-    if (!(r.to < r.from * 0.75) && !(opt && opt.force)) return null;
+    if (!(r.to < r.from * 0.75) && !(opt && opt.force)) { window.efShrinkWhy = "the result was not clearly smaller (" + Math.round(r.from / 104857.6) / 10 + " MB -> " + Math.round(r.to / 104857.6) / 10 + " MB)"; return null; }
+    window.efShrinkWhy = "ok";
     return r;
   }
-  function logSkip(e) { try { if (window.efDbg) window.efDbg("shrink skipped: " + ((e && (e.message || e.name)) || e)); } catch (e2) {} }
+  function logSkip(e) { window.efShrinkWhy = "error: " + ((e && (e.message || e.name)) || e); try { if (window.efDbg) window.efDbg("shrink skipped: " + ((e && (e.message || e.name)) || e)); } catch (e2) {} }
 
   // one clip -> one small file
   window.efShrinkVideo = async function (file, opt) {
