@@ -332,6 +332,15 @@
     if (mpShown < mpRows.length) {
       grid.insertAdjacentHTML("beforeend", '<button type="button" class="mp-more" id="mpMore">Show more meal preps (' + (mpRows.length - mpShown) + ' more)</button>');
       document.getElementById("mpMore").addEventListener("click", mpShowMore);
+      // Nov 2026 (Ken): it must just keep going as the member scrolls: the next batch loads by itself as the button nears the screen
+      try {
+        if ("IntersectionObserver" in window) {
+          var mpIo = new IntersectionObserver(function (es, ob) {
+            for (var q = 0; q < es.length; q++) if (es[q].isIntersecting) { ob.disconnect(); mpShowMore(); break; }
+          }, { rootMargin: "600px" });
+          mpIo.observe(document.getElementById("mpMore"));
+        }
+      } catch (e) { /* the button still works by tap */ }
     }
   }
   async function mpLoad() {
@@ -342,7 +351,7 @@
         .select("*, profiles!media_user_id_fkey(display_name)")
         .eq("status", "approved").eq("workout_type", "Meal Prep")
         .in("kind", ["photo", "video"])
-        .order("created_at", { ascending: false }).limit(300);
+        .order("created_at", { ascending: false }).limit(1000);
       mpRows = res.data || [];
       if (typeof filterOutBlocked === "function") { try { mpRows = filterOutBlocked(mpRows); } catch (e) {} }
     } catch (e) { mpRows = []; }

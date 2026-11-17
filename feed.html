@@ -275,6 +275,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     -webkit-overflow-scrolling: touch;
   }
   .rp-mealprep-track::-webkit-scrollbar { display: none; }
+  .rp-mps-arrow { display: none; }
   /* Circular "story" bubbles, like the row Instagram uses for Stories —
      a common cross-app idiom (TikTok, Snapchat, and most social apps do
      some version of it), not something unique to copy. Kept as a plain
@@ -2041,7 +2042,14 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     .rp-mealprep-banner-icon svg { width: 30px; height: 30px; }
     .rp-mealprep-banner-text { white-space: nowrap; flex-shrink: 0; }
     .rp-mealprep-banner-sub { margin-left: 0; margin-top: 2px; }
-    .rp-mealprep-track { padding: 2px 2px 4px; flex-wrap: wrap; gap: 14px; }
+    .rp-mealprep-track { padding: 2px 2px 4px; flex-wrap: nowrap; gap: 14px; overflow-x: auto; scrollbar-width: thin; scroll-behavior: auto; }
+    .rp-mealprep-track::-webkit-scrollbar { display: block; height: 6px; }
+    .rp-mealprep-track::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.25); border-radius: 3px; }
+    .rp-mealprep { position: relative; }
+    .rp-mps-arrow { display: flex; position: absolute; bottom: 36px; z-index: 3; width: 30px; height: 30px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.25); background: rgba(0,0,0,0.65); color: #fff; font-size: 20px; line-height: 1; align-items: center; justify-content: center; cursor: pointer; padding: 0 0 2px; }
+    .rp-mps-arrow:hover { background: rgba(255,255,255,0.18); }
+    .rp-mps-prev { left: -6px; }
+    .rp-mps-next { right: -6px; }
     .rp-mealprep-card { width: 82px; }
     .rp-mealprep-ring { width: 82px; height: 82px; }
     .rp-mealprep-name { max-width: 82px; }
@@ -2925,6 +2933,13 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
   // plus illustrative filler combined — see composeMealPrepStrip below.
   // Matches ILLUSTRATIVE_MEAL_PREP's own length (6 examples) on purpose.
   var MEAL_PREP_STRIP_SIZE = 6;
+  // Nov 2026 (Ken): the strip must hold HUNDREDS of meal preps, not a locked 6. MEAL_PREP_STRIP_SIZE above is now only the
+  // fewest cards ever shown (the examples fill up to it while there are fewer real posts). Real posts load a page at a
+  // time and the next page loads as the member swipes toward the end of the row.
+  var MEAL_PREP_PAGE = 24;
+  var mealPrepNextOffset = 0;      // how many real rows the server has already handed over (for the next page)
+  var mealPrepAllLoaded = false;   // true once the server has no more
+  var mealPrepLoadingMore = false;
   // The real (non-illustrative) approved Meal Prep posts fetched so far,
   // newest first — kept separate from mealPrepItems (the actual rendered
   // strip) so a live update can recompute the padded/mixed strip without
@@ -2960,7 +2975,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
   // photo. As more real posts get approved, they keep pushing illustrative
   // filler off the end one slot at a time until eventually all 6 are real.
   function composeMealPrepStrip(realItems) {
-    var real = realItems.slice(0, MEAL_PREP_STRIP_SIZE);
+    var real = realItems;
     var fillerNeeded = MEAL_PREP_STRIP_SIZE - real.length;
     var filler = [];
     for (var i = 0; i < fillerNeeded && i < ILLUSTRATIVE_MEAL_PREP.length; i++) {
@@ -4042,6 +4057,66 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
   var mealPrepItems = [];
   var currentMealPrepIndex = -1;
 
+  function mealPrepCardHtml(item, i) {
+      var initial = (item.name || "?").trim().charAt(0).toUpperCase();
+      // A colored initial sits underneath every bubble as a base layer so a
+      // slow-loading or missing thumbnail never reads as a blank/broken
+      // circle — the img/video fades in on top once it's actually ready.
+      var fallback = '<span class="rp-mealprep-fallback" style="background:' + avatarColor(item.user_id) + '">' + escapeHtml(initial) + '</span>';
+      var thumb = item.kind === "video"
+        ? '<video class="rp-mealprep-media" src="' + item.url + '"' + (item.posterUrl ? ' poster="' + item.posterUrl + '"' : '') + ' muted playsinline preload="metadata" onloadeddata="this.classList.add(\'ready\')"></video><span class="rp-play-badge">▶</span>'
+        : '<img class="rp-mealprep-media" src="' + (item.imgUrl || item.url) + '" data-orig="' + item.url + '" alt="Meal prep" loading="lazy" decoding="async" onload="this.classList.add(\'ready\')" onerror="if(this.dataset.orig&&this.src!==this.dataset.orig){this.src=this.dataset.orig}else{this.style.display=\'none\'}" />';
+      return '<button type="button" class="rp-mealprep-card" data-index="' + i + '">' +
+        '<span class="rp-mealprep-ring"><span class="rp-mealprep-thumb">' + fallback + thumb + '</span></span>' +
+        '<span class="rp-mealprep-name">' + escapeHtml(item.name) + '</span>' +
+        '</button>';
+  }
+
+  // Loads the next page of real meal preps and adds the cards to the END of the row (the member's swipe position stays put).
+  async function loadMoreMealPreps() {
+    if (mealPrepLoadingMore || mealPrepAllLoaded) return;
+    mealPrepLoadingMore = true;
+    try {
+      var batch = await fetchBatch(true, MEAL_PREP_PAGE, mealPrepNextOffset);
+      if (lastFetchError && !batch.rawCount) { return; }          // try again on the next swipe
+      mealPrepNextOffset += batch.rawCount;
+      if (batch.rawCount < MEAL_PREP_PAGE) mealPrepAllLoaded = true;
+      var items = await buildItems(batch.rows);
+      var have = {}; mealPrepRealItems.forEach(function (x) { if (x && x.id) have[x.id] = 1; });
+      items = items.filter(function (x) { return !have[x.id]; });
+      if (!items.length) { return; }
+      var startIdx = mealPrepItems.length;
+      mealPrepRealItems = mealPrepRealItems.concat(items);
+      mealPrepItems = composeMealPrepStrip(mealPrepRealItems);
+      var track = document.getElementById("rpMealPrepTrack");
+      if (track) track.insertAdjacentHTML("beforeend", mealPrepItems.slice(startIdx).map(function (it, k) { return mealPrepCardHtml(it, startIdx + k); }).join(""));
+    } catch (e) {
+      console.error("[feed] loadMoreMealPreps failed:", e);
+    } finally {
+      mealPrepLoadingMore = false;
+    }
+    // still no overflow (very wide screen)? keep going
+    setTimeout(maybeLoadMoreMealPreps, 300);
+  }
+  function maybeLoadMoreMealPreps() {
+    var track = document.getElementById("rpMealPrepTrack");
+    if (!track || mealPrepAllLoaded || mealPrepLoadingMore) return;
+    if (track.scrollLeft + track.clientWidth >= track.scrollWidth - 400) loadMoreMealPreps();
+  }
+  // Computer layout: little arrows to move the row left/right (a mouse has no thumb to swipe with).
+  function wireMealPrepArrows() {
+    var wrap = document.getElementById("rpMealPrep"), track = document.getElementById("rpMealPrepTrack");
+    if (!wrap || !track || wrap.querySelector(".rp-mps-arrow")) return;
+    var mk = function (cls, label, dir) {
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "rp-mps-arrow " + cls; b.setAttribute("aria-label", label); b.textContent = dir < 0 ? "\u2039" : "\u203A";
+      b.addEventListener("click", function () { track.scrollBy({ left: dir * Math.max(120, track.clientWidth * 0.8), behavior: "smooth" }); });
+      wrap.appendChild(b);
+    };
+    mk("rp-mps-prev", "Scroll meal preps left", -1);
+    mk("rp-mps-next", "Scroll meal preps right", 1);
+  }
+
   function renderMealPrepStrip() {
     var wrap = document.getElementById("rpMealPrep");
     var track = document.getElementById("rpMealPrepTrack");
@@ -4059,26 +4134,20 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
       track.remove();
       return;
     }
-    track.innerHTML = mealPrepItems.map(function (item, i) {
-      var initial = (item.name || "?").trim().charAt(0).toUpperCase();
-      // A colored initial sits underneath every bubble as a base layer so a
-      // slow-loading or missing thumbnail never reads as a blank/broken
-      // circle — the img/video fades in on top once it's actually ready.
-      var fallback = '<span class="rp-mealprep-fallback" style="background:' + avatarColor(item.user_id) + '">' + escapeHtml(initial) + '</span>';
-      var thumb = item.kind === "video"
-        ? '<video class="rp-mealprep-media" src="' + item.url + '"' + (item.posterUrl ? ' poster="' + item.posterUrl + '"' : '') + ' muted playsinline preload="metadata" onloadeddata="this.classList.add(\'ready\')"></video><span class="rp-play-badge">▶</span>'
-        : '<img class="rp-mealprep-media" src="' + (item.imgUrl || item.url) + '" data-orig="' + item.url + '" alt="Meal prep" loading="lazy" decoding="async" onload="this.classList.add(\'ready\')" onerror="if(this.dataset.orig&&this.src!==this.dataset.orig){this.src=this.dataset.orig}else{this.style.display=\'none\'}" />';
-      return '<button type="button" class="rp-mealprep-card" data-index="' + i + '">' +
-        '<span class="rp-mealprep-ring"><span class="rp-mealprep-thumb">' + fallback + thumb + '</span></span>' +
-        '<span class="rp-mealprep-name">' + escapeHtml(item.name) + '</span>' +
-        '</button>';
-    }).join("");
-    track.querySelectorAll(".rp-mealprep-card").forEach(function (btn) {
-      btn.addEventListener("click", function () {
+    track.innerHTML = mealPrepItems.map(mealPrepCardHtml).join("");
+    // one click listener for every card, so cards added later work without re-wiring
+    if (!track._mpWired) {
+      track._mpWired = true;
+      track.addEventListener("click", function (e) {
+        var btn = e.target && e.target.closest ? e.target.closest(".rp-mealprep-card") : null;
+        if (!btn || !track.contains(btn)) return;
         var idx = Number(btn.dataset.index);
-        openMealPrepModal(mealPrepItems[idx], idx);
+        if (mealPrepItems[idx]) openMealPrepModal(mealPrepItems[idx], idx);
       });
-    });
+      track.addEventListener("scroll", function () { maybeLoadMoreMealPreps(); }, { passive: true });
+    }
+    wireMealPrepArrows();
+    setTimeout(maybeLoadMoreMealPreps, 400);       // a wide screen may not overflow yet: fetch more until it does
   }
 
   // A member's write-up (prep time, ingredients, tips) split into
@@ -6126,7 +6195,11 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     var rows = await fetchNewMealPrepPosts();
     if (!rows.length) return;
     var items = await buildItems(rows);
-    mealPrepRealItems = items.concat(mealPrepRealItems).slice(0, MEAL_PREP_STRIP_SIZE);
+    var haveIds = {}; mealPrepRealItems.forEach(function (x) { if (x && x.id) haveIds[x.id] = 1; });
+    items = items.filter(function (x) { return !haveIds[x.id]; });
+    if (!items.length) return;
+    mealPrepRealItems = items.concat(mealPrepRealItems);
+    mealPrepNextOffset += items.length;           // everything older moved down by this many
     newestMealPrepSeenAt = items[0].created_at;
     mealPrepItems = composeMealPrepStrip(mealPrepRealItems);
     renderMealPrepStrip();
@@ -6350,7 +6423,11 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
     // strip and the main reel are independent content, so they fetch at the
     // same time instead of the reel waiting for the strip to finish first.
     await blockedPromise;
-    var mealPrepPromise = fetchBatch(true, MEAL_PREP_STRIP_SIZE, 0).then(function (batch) { return buildItems(batch.rows); });
+    var mealPrepPromise = fetchBatch(true, MEAL_PREP_PAGE, 0).then(function (batch) {
+      mealPrepNextOffset = batch.rawCount;
+      mealPrepAllLoaded = batch.rawCount < MEAL_PREP_PAGE;
+      return buildItems(batch.rows);
+    });
     var reelPromise = loadMoreReel();
 
     mealPrepRealItems = await mealPrepPromise;
