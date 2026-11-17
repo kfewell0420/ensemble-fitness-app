@@ -301,8 +301,8 @@
     var out = [], ex = 0;
     function exRow(i) { var e = MP_EXAMPLES[i]; return { __ex: 1, id: "illustrative-" + i, userId: e.name, name: e.name, title: e.title, imgUrl: "assets/mealprep/" + e.file }; }
     for (var i = 0; i < rows.length; i++) {
+      if (ex < MP_EXAMPLES.length) out.push(exRow(ex++));   // example, real, example, real ...
       out.push(rows[i]);
-      if ((i + 1) % 3 === 0 && ex < MP_EXAMPLES.length) out.push(exRow(ex++));
     }
     while (ex < MP_EXAMPLES.length) out.push(exRow(ex++));
     return out;
