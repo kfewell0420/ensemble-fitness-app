@@ -295,6 +295,18 @@
   // Room for hundreds of meal preps: everything is fetched once (newest first) but shown 24 at a time, signing
   // photo links only for the cards on screen, with a "Show more" button for the rest.
   var MP_BATCH = 24;
+  // Nov 2026 (Ken): ALL the example meal preps stay in the rotation for good, mixed in among the real posts, so new members
+  // see what they could post themselves. One example follows every 3 real posts; any not yet used come after the last real one.
+  function mpWeaveExamples(rows) {
+    var out = [], ex = 0;
+    function exRow(i) { var e = MP_EXAMPLES[i]; return { __ex: 1, id: "illustrative-" + i, userId: e.name, name: e.name, title: e.title, imgUrl: "assets/mealprep/" + e.file }; }
+    for (var i = 0; i < rows.length; i++) {
+      out.push(rows[i]);
+      if ((i + 1) % 3 === 0 && ex < MP_EXAMPLES.length) out.push(exRow(ex++));
+    }
+    while (ex < MP_EXAMPLES.length) out.push(exRow(ex++));
+    return out;
+  }
   var mpRows = [], mpShown = 0;
   async function mpCardsFor(rows) {
     var paths = [];
@@ -327,7 +339,9 @@
     if (more) more.remove();
     var batch = mpRows.slice(mpShown, mpShown + MP_BATCH);
     mpShown += batch.length;
-    var cards = await mpCardsFor(batch);
+    var realCards = await mpCardsFor(batch.filter(function (r) { return !r.__ex; }));
+    var rci = 0;
+    var cards = batch.map(function (r) { return r.__ex ? r : realCards[rci++]; });
     grid.insertAdjacentHTML("beforeend", cards.map(mpCard).join(""));
     if (mpShown < mpRows.length) {
       grid.insertAdjacentHTML("beforeend", '<button type="button" class="mp-more" id="mpMore">Show more meal preps (' + (mpRows.length - mpShown) + ' more)</button>');
@@ -355,17 +369,10 @@
       mpRows = res.data || [];
       if (typeof filterOutBlocked === "function") { try { mpRows = filterOutBlocked(mpRows); } catch (e) {} }
     } catch (e) { mpRows = []; }
+    mpRows = mpWeaveExamples(mpRows);
+    mpShown = 0;
     grid.innerHTML = "";
     await mpShowMore();
-    // While there are only a few real posts, the six examples fill the page so it is never blank.
-    if (mpRows.length < 6) {
-      var ex = [];
-      for (var i = 0; mpRows.length + ex.length < 6 && i < MP_EXAMPLES.length; i++) {
-        var e = MP_EXAMPLES[i];
-        ex.push({ id: "illustrative-" + i, userId: e.name, name: e.name, title: e.title, imgUrl: "assets/mealprep/" + e.file });
-      }
-      grid.insertAdjacentHTML("beforeend", ex.map(mpCard).join(""));
-    }
   }
   (async function init() {
     var user = await requireAuth();

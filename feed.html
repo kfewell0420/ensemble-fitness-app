@@ -2974,14 +2974,18 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
   // went from 6 example avatars straight down to just the 1 new real
   // photo. As more real posts get approved, they keep pushing illustrative
   // filler off the end one slot at a time until eventually all 6 are real.
+  // Nov 2026 (Ken): ALL the example meal preps stay in the rotation for good, mixed in among the real posts, so new members
+  // see what they could post themselves. One example follows every MEAL_PREP_EXAMPLE_EVERY real posts; any not yet used
+  // (when there are only a few real posts) come after the last real one.
+  var MEAL_PREP_EXAMPLE_EVERY = 3;
   function composeMealPrepStrip(realItems) {
-    var real = realItems;
-    var fillerNeeded = MEAL_PREP_STRIP_SIZE - real.length;
-    var filler = [];
-    for (var i = 0; i < fillerNeeded && i < ILLUSTRATIVE_MEAL_PREP.length; i++) {
-      filler.push(buildIllustrativeMealPrepItem(i));
+    var out = [], ex = 0, total = ILLUSTRATIVE_MEAL_PREP.length;
+    for (var i = 0; i < realItems.length; i++) {
+      out.push(realItems[i]);
+      if ((i + 1) % MEAL_PREP_EXAMPLE_EVERY === 0 && ex < total) out.push(buildIllustrativeMealPrepItem(ex++));
     }
-    return real.concat(filler);
+    while (ex < total) out.push(buildIllustrativeMealPrepItem(ex++));
+    return out;
   }
   // Newest real (non-illustrative) Meal Prep post's created_at, for the
   // live-update check below — stays null while only illustrative
@@ -4085,11 +4089,13 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
       var have = {}; mealPrepRealItems.forEach(function (x) { if (x && x.id) have[x.id] = 1; });
       items = items.filter(function (x) { return !have[x.id]; });
       if (!items.length) { return; }
-      var startIdx = mealPrepItems.length;
+      var oldItems = mealPrepItems, startIdx = oldItems.length;
       mealPrepRealItems = mealPrepRealItems.concat(items);
       mealPrepItems = composeMealPrepStrip(mealPrepRealItems);
       var track = document.getElementById("rpMealPrepTrack");
-      if (track) track.insertAdjacentHTML("beforeend", mealPrepItems.slice(startIdx).map(function (it, k) { return mealPrepCardHtml(it, startIdx + k); }).join(""));
+      var sameStart = startIdx > 0 && mealPrepItems.length === startIdx + items.length && String(mealPrepItems[startIdx - 1].id) === String(oldItems[startIdx - 1].id);
+      if (track && sameStart) track.insertAdjacentHTML("beforeend", mealPrepItems.slice(startIdx).map(function (it, k) { return mealPrepCardHtml(it, startIdx + k); }).join(""));
+      else if (track) { var keepLeft = track.scrollLeft; renderMealPrepStrip(); var t2 = document.getElementById("rpMealPrepTrack"); if (t2) t2.scrollLeft = keepLeft; }
     } catch (e) {
       console.error("[feed] loadMoreMealPreps failed:", e);
     } finally {
