@@ -1111,3 +1111,78 @@ function attachTextLabels(video, host, getLabels, trimStart, getTime) {
   }
   return { refresh: function () { shown = null; render(); } };
 }
+
+
+/* Nov 2026 (Ken: "I close the app and still get 5 to 7 hits of the music, a bit, then a bit more, then it wears off").
+   When the app goes to the background the phone freezes the page, but a song that was already playing (a feed post's music
+   plays through its own player beside the video) keeps trickling out, and every little wake-up of the page used to start
+   it again. Now the moment the app is hidden (or the screen locks, or the member switches apps) every playing video and
+   sound is stopped, nothing is allowed to start while the page is hidden, and when the member comes back the videos that
+   were playing pick up again (their songs follow them as always). Songs that were deliberately paused stay paused. */
+(function () {
+  if (window.__efBgSilence) return;
+  var proto = window.HTMLMediaElement && window.HTMLMediaElement.prototype;
+  if (!proto || !proto.play) return;
+  window.__efBgSilence = true;
+  var origPlay = proto.play;
+  var seen = [];        // every media element that has been asked to play (includes `new Audio()` players that are not in the page)
+  var away = false;     // set by the app's own "I'm going to the background" signals
+  var resumeList = [];  // videos that were playing when the app went away
+  function isAway() { return away || document.hidden === true || document.visibilityState === "hidden"; }
+  function remember(m) { if (seen.indexOf(m) < 0) { seen.push(m); if (seen.length > 80) seen = seen.filter(function (x) { return !x.paused; }).concat([m]); } }
+  proto.play = function () {
+    if (isAway()) {
+      try { this.pause(); } catch (e) {}
+      var err; try { err = new DOMException("The app is in the background", "AbortError"); } catch (e2) { err = new Error("background"); err.name = "AbortError"; }
+      return Promise.reject(err);   // AbortError: the page's own code treats this as "nothing to do"
+    }
+    remember(this);
+    return origPlay.apply(this, arguments);
+  };
+  function goAway() {
+    if (away) return;
+    away = true;
+    resumeList = [];
+    seen.forEach(function (m) {
+      try {
+        if (!m.paused) {
+          if (m.tagName === "VIDEO") resumeList.push(m);
+          m.pause();
+        }
+      } catch (e) {}
+    });
+    // sounds that sit in the page but never went through play() (autoplay) are stopped too
+    try { document.querySelectorAll("video, audio").forEach(function (m) { if (!m.paused) { if (m.tagName === "VIDEO" && resumeList.indexOf(m) < 0) resumeList.push(m); m.pause(); } }); } catch (e3) {}
+  }
+  function comeBack() {
+    if (!away && !document.hidden) return;
+    if (document.hidden === true) return;   // still hidden: wait
+    away = false;
+    var list = resumeList; resumeList = [];
+    setTimeout(function () {
+      list.forEach(function (m) { try { if (m.isConnected && m.paused) { var p = m.play(); if (p && p.catch) p.catch(function () {}); } } catch (e) {} });
+    }, 150);
+  }
+  document.addEventListener("visibilitychange", function () { if (document.hidden) goAway(); else comeBack(); });
+  window.addEventListener("pagehide", goAway);
+  window.addEventListener("pageshow", function () { comeBack(); });
+  document.addEventListener("freeze", goAway);
+  document.addEventListener("pause", goAway, false);
+  document.addEventListener("resume", comeBack, false);
+  // the phone app (Capacitor) says so directly the moment it goes to / comes back from the background
+  var wired = false;
+  function wireNative() {
+    if (wired) return;
+    try {
+      var C = window.Capacitor, A = C && C.Plugins && C.Plugins.App;
+      if (!A && C && C.registerPlugin && C.isNativePlatform && C.isNativePlatform()) A = C.registerPlugin("App");
+      if (A && A.addListener) {
+        wired = true;
+        A.addListener("appStateChange", function (st) { if (st && st.isActive === false) goAway(); else comeBack(); });
+      }
+    } catch (e) {}
+  }
+  wireNative();
+  window.addEventListener("load", wireNative);
+  var tries = 0, t = setInterval(function () { wireNative(); if (wired || ++tries > 20) clearInterval(t); }, 500);
+})();
