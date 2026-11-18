@@ -137,7 +137,7 @@
      Only plain CSS that iOS 15+ Safari and the in-app WebView both support. Wider screens
      never see any of this: the pill row is hidden and every card shows, as before. */
   .pf-pills, .pf-bio, .pf-actions, .pf-stat-uploads, .pf-tabbar, .pf-chips, .pf-name { display: none; }
-  @media (max-width: 720px) {
+  @media all {   /* Nov 2026 (Ken): the website now uses the same condensed profile as the phone */
     /* only the chosen pill's card(s) show */
     .pf-panel { display: none !important; }
     .pf-panel.pf-on { display: block !important; }
@@ -220,14 +220,11 @@
    The first card becomes display:contents on phones so its photo row, bio and edit button can
    be ordered together with the stats and tab row below it.
    ====================================================================== */
-@media (max-width: 720px) {
+@media all {
   body {
     background: #0b0f1a; color: #fff;
     --muted-invert: rgba(255,255,255,0.64); --faint-invert: rgba(255,255,255,0.5);
   }
-  .app-nav { background: #0b0f1a; border-bottom: 1px solid rgba(255,255,255,0.08); padding: calc(10px + env(safe-area-inset-top, 0px)) 16px 10px; }
-  .app-brand { color: #fff; font-size: 17px; }
-  .app-brand-mark img { mix-blend-mode: lighten; } /* the logo file has a black square behind it; on navy this makes the square disappear */
   .app-shell { display: flex; flex-direction: column; max-width: none; padding: 0 0 calc(96px + env(safe-area-inset-bottom, 0px)); }
   .app-shell > .card:first-child { display: contents; }
   .pf-x { display: none !important; }
@@ -363,6 +360,18 @@
     background: none; color: #fff; border: 2px solid currentColor; border-radius: 7px; width: 30px; height: 22px;
     text-align: center; font-weight: 700; font-size: 20px; filter: none;
   }
+}
+@media (max-width: 720px) {
+  .app-nav { background: #0b0f1a; border-bottom: 1px solid rgba(255,255,255,0.08); padding: calc(10px + env(safe-area-inset-top, 0px)) 16px 10px; }
+  .app-brand { color: #fff; font-size: 17px; }
+  .app-brand-mark img { mix-blend-mode: lighten; } /* the logo file has a black square behind it; on navy this makes the square disappear */
+}
+/* Nov 2026 (Ken): on the website the profile is the same condensed page as on the phone, as a centered column. The website keeps its own top
+   menu, and no bottom tab bar (that is for the app). Everything else (Followers & Following, Messages, Comments, Blocked, passwords, Delete
+   account) is behind the icon row and "Edit profile", exactly like the phone. */
+@media (min-width: 721px) {
+  .pf-tabbar { display: none !important; }
+  .app-shell { max-width: 640px; margin-left: auto; margin-right: auto; padding-bottom: 48px; }
 }
 </style>
 
@@ -2625,7 +2634,7 @@ window.efEnsureSound = function (video, audio, keepOriginal) {
     var panels = Array.prototype.slice.call(document.querySelectorAll(".pf-panel"));
     var current = "uploads";
 
-    function isPhone() { return window.matchMedia("(max-width: 720px)").matches; }
+    function isPhone() { return true; }   // Nov 2026: the website uses the same condensed profile as the phone
     function pauseAll() {
       Array.prototype.forEach.call(grid.querySelectorAll("video, audio"), function (m) { try { m.pause(); } catch (e) {} });
     }
