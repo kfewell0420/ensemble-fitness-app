@@ -225,7 +225,7 @@
     if (bad.test(text) || bad.test(author)) { msg.textContent = "Please leave out links, email addresses and phone numbers."; msg.className = "form-msg show error"; return; }
     if (!currentUser) { msg.textContent = "Please sign in again."; msg.className = "form-msg show error"; return; }
     btn.disabled = true; btn.textContent = "Sending…";
-    var ins = await window.sb.from("quote_submissions").insert({ user_id: currentUser.id, quote_text: text, author: author || null });
+    var ins = await window.sb.from("quote_submissions").insert({ user_id: currentUser.id, quote_text: text, author: author || null }).select("id").single();
     btn.disabled = false; btn.textContent = "Send for review";
     if (ins.error) {
       var m = String(ins.error.message || "");
@@ -233,6 +233,17 @@
       msg.className = "form-msg show error";
       return;
     }
+    // Tell the admin team by email (support@). Fire-and-forget: the member never waits on it or sees an error from it.
+    try {
+      var qsess = await window.sb.auth.getSession();
+      if (ins.data && ins.data.id && qsess.data && qsess.data.session) {
+        fetch("https://ensemblefitness.com/.netlify/functions/notify-quote", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: "Bearer " + qsess.data.session.access_token },
+          body: JSON.stringify({ id: ins.data.id })
+        }).catch(function () {});
+      }
+    } catch (e) {}
     document.getElementById("qlText").value = ""; document.getElementById("qlAuthor").value = ""; document.getElementById("qlCount").textContent = "0";
     msg.textContent = "Thank you! Your quote was sent for review.";
     msg.className = "form-msg show success";
