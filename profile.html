@@ -2508,7 +2508,7 @@ window.efEnsureSound = function (video, audio, keepOriginal) {
 
       // Nov 2026 (Ken): "Profile only" -- keep a post off the feed, circles and Explore but still on this profile. Only shown when the
       // column exists (sql/hide-from-feed.sql) and for real photo/video posts that are live. Shows up when the post is opened.
-      if ("hide_from_feed" in item && item.status === "approved" && (item.kind === "photo" || item.kind === "video") && !(item.is_profile_photo === true && !item.workout_type)) {
+      if ("hide_from_feed" in item && item.status === "approved" && (item.kind === "photo" || item.kind === "video") && item.is_profile_photo !== true) {   // a profile picture is never a feed post, so it gets no feed switch
         (function (it, tileEl) {
           var tg = document.createElement("div");
           tg.className = "media-tile-reason pf-feedtoggle";
@@ -2517,8 +2517,8 @@ window.efEnsureSound = function (video, audio, keepOriginal) {
           tb.type = "button";
           function paint() {
             var hid = it.hide_from_feed === true;
-            txt.textContent = hid ? "👤 Profile only (not on the feed)" : "Showing on the feed";
-            tb.textContent = hid ? "Show on feed" : "Profile only";
+            txt.textContent = hid ? "👤 Profile only. Not on the feed." : "On the feed";
+            tb.textContent = hid ? "Put back on feed" : "Make profile only";
             var kb = tileEl.querySelector(".kind-badge");
             if (kb) kb.textContent = kb.textContent.replace(/ 👤$/, "") + (hid ? " 👤" : "");
           }
