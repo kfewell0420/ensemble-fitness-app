@@ -2508,7 +2508,7 @@ window.efEnsureSound = function (video, audio, keepOriginal) {
 
       // Nov 2026 (Ken): "Profile only" -- keep a post off the feed, circles and Explore but still on this profile. Only shown when the
       // column exists (sql/hide-from-feed.sql) and for real photo/video posts that are live. Shows up when the post is opened.
-      if ("hide_from_feed" in item && item.status === "approved" && (item.kind === "photo" || item.kind === "video") && item.is_profile_photo !== true) {   // a profile picture is never a feed post, so it gets no feed switch
+      if ("hide_from_feed" in item && item.status === "approved" && (item.kind === "photo" || item.kind === "video") && !(item.is_profile_photo === true && !item.workout_type)) {   // a plain profile picture is not an upload at all; a profile picture posted with a category is, and can be shown on the feed
         (function (it, tileEl) {
           var tg = document.createElement("div");
           tg.className = "media-tile-reason pf-feedtoggle";

@@ -3572,7 +3572,6 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
       .from("media")
       .select("id, user_id, kind, storage_path, poster_path, caption, workout_type, location, signature, created_at, trim_start, trim_end, profiles!media_user_id_fkey(display_name)")
       .eq("status", "approved")
-      .not("is_profile_photo", "is", true)   // Nov 2026: a profile photo is never a post
       .not("hide_from_feed", "is", true)   // Nov 2026 (Ken): a post set to "Profile only" never shows in the feed, the circles or Explore
       .in("kind", ["video", "photo"]);
     // NOTE: plain .neq("workout_type", "Meal Prep") silently drops every row
@@ -3616,7 +3615,6 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
       .from("media")
       .select("id, user_id, kind, storage_path, poster_path, caption, workout_type, location, signature, created_at, trim_start, trim_end, profiles!media_user_id_fkey(display_name)")
       .eq("status", "approved")
-      .not("is_profile_photo", "is", true)   // Nov 2026: a profile photo is never a post
       .not("hide_from_feed", "is", true)   // Nov 2026 (Ken): a post set to "Profile only" never shows in the feed, the circles or Explore
       .in("kind", ["video", "photo"]);
     if (filterType && filterType !== "All") {
@@ -6215,7 +6213,6 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
       .from("media")
       .select("id, user_id, kind, storage_path, poster_path, caption, workout_type, location, signature, created_at, profiles!media_user_id_fkey(display_name)")
       .eq("status", "approved")
-      .not("is_profile_photo", "is", true)   // Nov 2026: a profile photo is never a post
       .not("hide_from_feed", "is", true)   // Nov 2026 (Ken): a post set to "Profile only" never shows in the feed, the circles or Explore
       .in("kind", ["video", "photo"])
       .eq("workout_type", "Meal Prep")
