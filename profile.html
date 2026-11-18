@@ -176,6 +176,9 @@
     .pf-uploads .media-tile audio { display: none; }
     .pf-uploads .media-tile .audio-card audio { display: none; }
     .pf-uploads .media-tile-reason { display: none; }
+    .pf-feedtoggle { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .pf-feedtoggle button { border: 1px solid rgba(255,255,255,0.35); background: rgba(255,255,255,0.08); color: #fff; font-size: 12.5px; font-weight: 700; border-radius: 999px; padding: 7px 14px; cursor: pointer; white-space: nowrap; }
+    .pf-feedtoggle button:disabled { opacity: .55; }
     .pf-uploads .empty-state { grid-column: 1 / -1; }
     .pf-uploads .media-tile-wrap { cursor: pointer; -webkit-tap-highlight-color: transparent; }
     /* opened */
@@ -189,6 +192,7 @@
        opened photo (deleting a post stays on Home). Closing is the Back button under the photo. */
     .pf-uploads .media-tile-wrap.pf-open .media-tile-delete { display: none; }
     .pf-uploads .media-tile-wrap.pf-open .media-tile-reason { display: block; }
+    .pf-uploads .media-tile-wrap.pf-open .pf-feedtoggle { display: flex !important; }
     .pf-uploads .media-tile-wrap.pf-open .media-tile .kind-badge { top: 8px; left: 8px; font-size: 10px; padding: 3px 7px; }
     .pf-uploads .media-tile-wrap.pf-open .media-tile .status-badge { bottom: 8px; left: 8px; right: 8px; font-size: 10.5px; padding: 4px 8px; }
     .pf-close {
@@ -2340,7 +2344,7 @@ window.efEnsureSound = function (video, audio, keepOriginal) {
     var mediaCols = "id, kind, storage_path, poster_path, status, narration_path, trim_start, trim_end, reject_reason, music_track_id, is_profile_photo, workout_type, tracks(storage_path, title, artist_name)";
     var { data, error } = await window.sb
       .from("media")
-      .select(mediaCols + ", rejected_at")
+      .select(mediaCols + ", rejected_at, hide_from_feed")
       .eq("user_id", currentUser.id)
       .order("created_at", { ascending: false });
     if (error) {
@@ -2487,11 +2491,51 @@ window.efEnsureSound = function (video, audio, keepOriginal) {
 
       tile.innerHTML =
         mediaEl +
-        '<span class="kind-badge">' + item.kind + (narrationUrl ? ' 🎙️' : musicUrl ? ' 🎵' : '') + '</span>' +
+        '<span class="kind-badge">' + item.kind + (narrationUrl ? ' 🎙️' : musicUrl ? ' 🎵' : '') + (item.hide_from_feed === true ? ' 👤' : '') + '</span>' +
         '<button class="media-tile-delete" data-id="' + item.id + '" data-path="' + item.storage_path + '" data-narration-path="' + (item.narration_path || "") + '" data-poster-path="' + (item.poster_path || "") + '" title="Delete">&times;</button>' +
         '<span class="status-badge ' + item.status + '">' + (item.status === "rejected" ? "removed by admin" : item.status) + '</span>';
 
       wrap.appendChild(tile);
+
+      // Nov 2026 (Ken): "Profile only" -- keep a post off the feed, circles and Explore but still on this profile. Only shown when the
+      // column exists (sql/hide-from-feed.sql) and for real photo/video posts that are live. Shows up when the post is opened.
+      if ("hide_from_feed" in item && item.status === "approved" && (item.kind === "photo" || item.kind === "video") && !(item.is_profile_photo === true && !item.workout_type)) {
+        (function (it, tileEl) {
+          var tg = document.createElement("div");
+          tg.className = "media-tile-reason pf-feedtoggle";
+          var txt = document.createElement("span");
+          var tb = document.createElement("button");
+          tb.type = "button";
+          function paint() {
+            var hid = it.hide_from_feed === true;
+            txt.textContent = hid ? "👤 Profile only (not on the feed)" : "Showing on the feed";
+            tb.textContent = hid ? "Show on feed" : "Profile only";
+            var kb = tileEl.querySelector(".kind-badge");
+            if (kb) kb.textContent = kb.textContent.replace(/ 👤$/, "") + (hid ? " 👤" : "");
+          }
+          paint();
+          tb.addEventListener("click", async function (ev) {
+            ev.stopPropagation();
+            tb.disabled = true;
+            var nv = !(it.hide_from_feed === true);
+            var up = await window.sb.from("media").update({ hide_from_feed: nv }).eq("id", it.id);
+            tb.disabled = false;
+            if (up.error) { alert("Couldn't change that. Please try again in a moment."); return; }
+            it.hide_from_feed = nv;
+            paint();
+            try {
+              [window.localStorage, window.sessionStorage].forEach(function (st) {
+                var del = [];
+                for (var i = 0; i < st.length; i++) { var k = st.key(i); if (k && k.indexOf("efit_feed_cache_") === 0) del.push(k); }
+                del.forEach(function (k) { st.removeItem(k); });
+              });
+            } catch (e) { /* fine */ }
+          });
+          tg.addEventListener("click", function (ev) { ev.stopPropagation(); });
+          tg.appendChild(txt); tg.appendChild(tb);
+          wrap.appendChild(tg);
+        })(item, tile);
+      }
 
       if (musicUrl && item.tracks) {
         var creditEl = document.createElement("div");

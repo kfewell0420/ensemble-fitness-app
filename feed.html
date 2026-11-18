@@ -3573,6 +3573,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
       .select("id, user_id, kind, storage_path, poster_path, caption, workout_type, location, signature, created_at, trim_start, trim_end, profiles!media_user_id_fkey(display_name)")
       .eq("status", "approved")
       .not("is_profile_photo", "is", true)   // Nov 2026: a profile photo is never a post
+      .not("hide_from_feed", "is", true)   // Nov 2026 (Ken): a post set to "Profile only" never shows in the feed, the circles or Explore
       .in("kind", ["video", "photo"]);
     // NOTE: plain .neq("workout_type", "Meal Prep") silently drops every row
     // where workout_type is NULL (Postgres: NULL <> 'x' is NULL, not true —
@@ -3616,6 +3617,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
       .select("id, user_id, kind, storage_path, poster_path, caption, workout_type, location, signature, created_at, trim_start, trim_end, profiles!media_user_id_fkey(display_name)")
       .eq("status", "approved")
       .not("is_profile_photo", "is", true)   // Nov 2026: a profile photo is never a post
+      .not("hide_from_feed", "is", true)   // Nov 2026 (Ken): a post set to "Profile only" never shows in the feed, the circles or Explore
       .in("kind", ["video", "photo"]);
     if (filterType && filterType !== "All") {
       query = query.eq("workout_type", filterType);
@@ -4916,6 +4918,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
             '<div class="rp-more-menu" id="rpMore-' + item.id + '">' +
               (isOwnPost ?
                 '<button type="button" data-action="edit-post">✏️ Edit post</button>' +
+                '<button type="button" data-action="profile-only">👤 Profile only</button>' +
                 '<button type="button" class="conn-key-open"><svg class="conn-check" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" style="width:1.15em;height:1em;vertical-align:-0.14em;overflow:visible"><path d="M3.5 13.5 C5.5 12.5 7.5 15 9 19 C11.5 11 16 6 21.5 3.5" fill="none" stroke="#0095f6" stroke-width="4.6" stroke-linecap="round" stroke-linejoin="round"/></svg> What do the badges mean?</button>' +
                 '<button type="button" class="danger" data-action="delete-post">🗑️ Delete post</button>'
                 :
@@ -5111,6 +5114,33 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
 
     var editBtn = el.querySelector('[data-action="edit-post"]');
     if (editBtn) editBtn.addEventListener("click", function () { openEditPostModal(item, el); });
+
+    // Nov 2026 (Ken): "Profile only" - the post leaves the feed, the meal-prep circles and Explore but stays on the member's own profile
+    // (they can bring it back from there). Needs sql/hide-from-feed.sql (media.hide_from_feed).
+    var profileOnlyBtn = el.querySelector('[data-action="profile-only"]');
+    if (profileOnlyBtn) profileOnlyBtn.addEventListener("click", async function () {
+      profileOnlyBtn.disabled = true;
+      var up = await window.sb.from("media").update({ hide_from_feed: true }).eq("id", item.id);
+      if (up.error) {
+        profileOnlyBtn.disabled = false;
+        alert("Couldn't move this post to your profile only. Please try again in a moment.");
+        return;
+      }
+      // same bookkeeping as deleting a post: the pages are fetched by position, so everything after it moves up one place
+      var wasCounted = loadedItems.some(function (it) { return it.id === item.id; }) && !(pinnedSharedId && String(item.id) === pinnedSharedId);
+      loadedItems = loadedItems.filter(function (it) { return it.id !== item.id; });
+      try { if (wasCounted && item.kind !== "journal" && activeFilter !== "Journeys") offset = Math.max(0, offset - 1); } catch (e) { /* fine */ }
+      try {
+        [window.localStorage, window.sessionStorage].forEach(function (st) {
+          var del = [];
+          for (var i = 0; i < st.length; i++) { var k = st.key(i); if (k && k.indexOf("efit_feed_cache_") === 0) del.push(k); }
+          del.forEach(function (k) { st.removeItem(k); });
+        });
+      } catch (e) { /* fine */ }
+      stopSlideMedia(el);
+      el.remove();
+      try { shareToast("Moved to your profile only. You can put it back on the feed from your profile."); } catch (e) { /* fine */ }
+    });
 
     var deletePostBtn = el.querySelector('[data-action="delete-post"]');
     if (deletePostBtn) deletePostBtn.addEventListener("click", async function () {
@@ -6186,6 +6216,7 @@ if(n)document.documentElement.classList.add("ef-native");}catch(e){}}m();documen
       .select("id, user_id, kind, storage_path, poster_path, caption, workout_type, location, signature, created_at, profiles!media_user_id_fkey(display_name)")
       .eq("status", "approved")
       .not("is_profile_photo", "is", true)   // Nov 2026: a profile photo is never a post
+      .not("hide_from_feed", "is", true)   // Nov 2026 (Ken): a post set to "Profile only" never shows in the feed, the circles or Explore
       .in("kind", ["video", "photo"])
       .eq("workout_type", "Meal Prep")
       .order("created_at", { ascending: false })

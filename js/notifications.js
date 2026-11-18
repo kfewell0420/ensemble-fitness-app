@@ -341,7 +341,8 @@
     } else if (key === "mealprep" || key === "posts") {
       q = window.sb.from("media")
         .select(wantRow ? "caption, created_at, profiles!media_user_id_fkey(display_name)" : "id", wantRow ? undefined : { count: "exact", head: true })
-        .eq("status", "approved").in("kind", ["video", "photo"]);
+        .eq("status", "approved").in("kind", ["video", "photo"])
+        .not("hide_from_feed", "is", true);   // Nov 2026: "Profile only" posts are not feed news
       q = key === "mealprep" ? q.eq("workout_type", "Meal Prep") : q.or("workout_type.neq.Meal Prep,workout_type.is.null");
       q = notMine(q, uid).gt("created_at", since);
     } else {

@@ -364,6 +364,7 @@
       var res = await window.sb.from("media")
         .select("*, profiles!media_user_id_fkey(display_name)")
         .eq("status", "approved").eq("workout_type", "Meal Prep")
+        .not("hide_from_feed", "is", true)   // Nov 2026: "Profile only" posts stay off Explore
         .in("kind", ["photo", "video"])
         .order("created_at", { ascending: false }).limit(1000);
       mpRows = res.data || [];
