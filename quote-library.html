@@ -37,6 +37,16 @@
   </span>
 </header>
 <style>
+  /* Nov 2026 (Ken): members can send in a quote for review. Two tabs: today's quote and Submit a quote. */
+  .ql-tabs { display: flex; gap: 8px; margin: 0 0 18px; }
+  .ql-tab { flex: 1 1 0; border: 1px solid rgba(255,255,255,0.18); background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.78); font: 700 14px/1 inherit; font-family: inherit; padding: 12px 8px; border-radius: 999px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .ql-tab.active { background: var(--accent-2, #ff7a3d); border-color: var(--accent-2, #ff7a3d); color: #fff; }
+  .ql-count { text-align: right; font-size: 12px; opacity: .6; margin-top: 4px; }
+  .ql-mine { margin-top: 22px; }
+  .ql-mine h3 { font-size: 15px; margin: 0 0 8px; }
+  .ql-mine-row { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-top: 1px solid rgba(255,255,255,0.1); font-size: 14px; }
+  .ql-mine-row em { flex: 1; font-style: italic; opacity: .9; }
+  .ql-mine-row span { flex: 0 0 auto; font-size: 12px; font-weight: 700; opacity: .8; }
   .app-nav {
     padding-top: calc(4px + env(safe-area-inset-top, 0px));
     padding-bottom: 4px;
@@ -68,8 +78,38 @@
   <h2 style="margin-bottom:6px;">Words to carry with you.</h2>
   <p class="card-sub" style="margin-bottom:24px;">One line each day — something to hold onto before, during, or after your workout.</p>
 
+  <div class="ql-tabs" role="tablist">
+    <button type="button" class="ql-tab active" data-ql="today" role="tab">Today's quote</button>
+    <button type="button" class="ql-tab" data-ql="submit" role="tab">Submit a quote</button>
+  </div>
+
+  <div id="qlToday">
   <div class="card" id="quoteCard" style="text-align:center; padding:40px 28px;">
     <div class="empty-state">Loading…</div>
+  </div>
+  </div>
+
+  <div id="qlSubmit" hidden>
+    <div class="card">
+      <div class="eyebrow">Share your words</div>
+      <h3 style="margin:2px 0 6px;">Send in a quote for review</h3>
+      <p class="card-sub" style="margin-bottom:14px;">One line that lifts you up. If we choose it, it can show up as a Daily Inspiration. Just write it, and we add the quotation marks.</p>
+      <div class="form-msg" id="qlMsg"></div>
+      <div class="field">
+        <label for="qlText">Your quote</label>
+        <textarea id="qlText" rows="3" maxlength="200" placeholder="Write your quote here"></textarea>
+        <div class="ql-count"><span id="qlCount">0</span> / 200</div>
+      </div>
+      <div class="field">
+        <label for="qlAuthor">Who said it? (optional)</label>
+        <input type="text" id="qlAuthor" maxlength="60" placeholder="Leave blank if it's yours" />
+      </div>
+      <button type="button" class="btn btn-primary btn-block" id="qlSend">Send for review</button>
+      <div class="ql-mine" id="qlMine" hidden>
+        <h3>Your quotes</h3>
+        <div id="qlMineList"></div>
+      </div>
+    </div>
   </div>
 
 </div>
@@ -143,6 +183,57 @@
       (q.author ? '<div class="eyebrow" style="margin-bottom:16px;">' + escapeHtml(q.author) + "</div>" : "") +
       '<p style="font-size:22px; font-weight:600; font-style:italic; margin:0; line-height:1.5;">“' + escapeHtml(q.quote_text) + '”</p>';
   }
+
+  // ---- Submit a quote (Nov 2026, Ken) ------------------------------------
+  // Members write one line; it goes to quote_submissions as "pending" and the admin reviews it (admin.html > Quote Library).
+  // Needs sql/quote-submissions.sql. Nothing goes live until it is approved there.
+  var QL_STATUS = { pending: "Waiting for review", approved: "Chosen!", rejected: "Not used" };
+  function qlTab(which) {
+    document.querySelectorAll(".ql-tab").forEach(function (b) { b.classList.toggle("active", b.getAttribute("data-ql") === which); });
+    document.getElementById("qlToday").hidden = which !== "today";
+    document.getElementById("qlSubmit").hidden = which !== "submit";
+    if (which === "submit") qlLoadMine();
+  }
+  document.querySelectorAll(".ql-tab").forEach(function (b) {
+    b.addEventListener("click", function () { qlTab(b.getAttribute("data-ql")); });
+  });
+  document.getElementById("qlText").addEventListener("input", function () {
+    document.getElementById("qlCount").textContent = String(this.value.length);
+  });
+  async function qlLoadMine() {
+    if (!currentUser) return;
+    var r = await window.sb.from("quote_submissions").select("id, quote_text, status, created_at")
+      .eq("user_id", currentUser.id).order("created_at", { ascending: false }).limit(10);
+    var box = document.getElementById("qlMine"), list = document.getElementById("qlMineList");
+    if (r.error || !r.data || !r.data.length) { box.hidden = true; return; }
+    box.hidden = false;
+    list.innerHTML = r.data.map(function (x) {
+      return '<div class="ql-mine-row"><em>“' + escapeHtml(x.quote_text) + '”</em><span>' + escapeHtml(QL_STATUS[x.status] || x.status) + '</span></div>';
+    }).join("");
+  }
+  document.getElementById("qlSend").addEventListener("click", async function () {
+    var btn = this, msg = document.getElementById("qlMsg");
+    msg.className = "form-msg";
+    var text = document.getElementById("qlText").value.replace(/\s+/g, " ").trim().replace(/^[“"”]+|[“"”]+$/g, "").trim();
+    var author = document.getElementById("qlAuthor").value.replace(/\s+/g, " ").trim();
+    var bad = /(https?:\/\/|www\.|[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}|(?:\d[\s().-]*){10,})/;   // no links, emails or phone numbers
+    if (text.length < 3) { msg.textContent = "Please write your quote first."; msg.className = "form-msg show error"; return; }
+    if (bad.test(text) || bad.test(author)) { msg.textContent = "Please leave out links, email addresses and phone numbers."; msg.className = "form-msg show error"; return; }
+    if (!currentUser) { msg.textContent = "Please sign in again."; msg.className = "form-msg show error"; return; }
+    btn.disabled = true; btn.textContent = "Sending…";
+    var ins = await window.sb.from("quote_submissions").insert({ user_id: currentUser.id, quote_text: text, author: author || null });
+    btn.disabled = false; btn.textContent = "Send for review";
+    if (ins.error) {
+      var m = String(ins.error.message || "");
+      msg.textContent = /too many|limit/i.test(m) ? "You've sent a few quotes today. Please try again tomorrow." : "Couldn't send that just now. Please try again in a moment.";
+      msg.className = "form-msg show error";
+      return;
+    }
+    document.getElementById("qlText").value = ""; document.getElementById("qlAuthor").value = ""; document.getElementById("qlCount").textContent = "0";
+    msg.textContent = "Thank you! Your quote was sent for review.";
+    msg.className = "form-msg show success";
+    qlLoadMine();
+  });
 
   init();
 </script>

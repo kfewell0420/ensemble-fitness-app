@@ -379,6 +379,14 @@
       <h2>Quotes shown on the Quote Library page</h2>
       <p class="card-sub" style="margin-bottom:24px;">Add a quote here and it instantly shows up on quote-library.html. "Edit" fixes a typo in place (without affecting its spot in the daily rotation); "Delete" removes a quote for good.</p>
 
+      <!-- Nov 2026 (Ken): quotes members send in from the Daily Inspiration page (needs sql/quote-submissions.sql) -->
+      <div class="card" style="margin-bottom:20px;" id="quoteSubCard">
+        <div class="eyebrow">From members</div>
+        <h3 style="margin:2px 0 6px;">Quotes waiting for review</h3>
+        <div class="form-msg" id="quoteSubMsg"></div>
+        <div id="quoteSubList"><div class="empty-state">Loading…</div></div>
+      </div>
+
       <div class="card" style="margin-bottom:20px;">
         <div class="form-msg" id="quoteMsg"></div>
         <div class="field">
@@ -579,6 +587,7 @@ var REASON_CHIPS_MEDIA = [
     await loadRecentPhotos();
     await loadTracks();
     await loadQuotes();
+    try { await loadQuoteSubmissions(); } catch (e) { /* table not created yet */ }
     await loadReviewFee();
     await loadSubmissionQueue();
     await loadOrders();
@@ -1722,6 +1731,47 @@ var REASON_CHIPS_MEDIA = [
 
   // ---- Quote Voiceover Library (Ken curates quotes; members record their -
   // ---- own reading of one, building a library of voices) -----------------
+  // ---- Quotes members send in (Nov 2026, Ken) ----------------------------
+  async function loadQuoteSubmissions() {
+    var el = document.getElementById("quoteSubList");
+    if (!el) return;
+    var r = await window.sb.from("quote_submissions")
+      .select("id, user_id, quote_text, author, created_at, profiles(display_name)")
+      .eq("status", "pending").order("created_at", { ascending: true });
+    var tabBtn = document.querySelector('.admin-tab-btn[data-tab="quotes"]');
+    if (r.error) { el.innerHTML = '<div class="empty-state">Not switched on yet (run sql/quote-submissions.sql in Supabase).</div>'; return; }
+    var rows = r.data || [];
+    if (tabBtn) tabBtn.textContent = "Quote Library" + (rows.length ? " (" + rows.length + ")" : "");
+    if (!rows.length) { el.innerHTML = '<div class="empty-state">No quotes waiting.</div>'; return; }
+    el.innerHTML = rows.map(function (x) {
+      var who = (x.profiles && x.profiles.display_name) || "A member";
+      return '<div class="card" style="margin:0 0 12px; padding:14px;" data-sid="' + escapeAttrAdmin(x.id) + '">' +
+        '<div style="font-style:italic; font-size:17px; line-height:1.45; margin-bottom:8px;">“' + escapeHtmlAdmin(x.quote_text) + '”</div>' +
+        '<div class="card-sub" style="margin-bottom:10px;">From ' + escapeHtmlAdmin(who) + (x.author ? ' · credited to ' + escapeHtmlAdmin(x.author) : ' · credit to them') + ' · ' + escapeHtmlAdmin(new Date(x.created_at).toLocaleString()) + '</div>' +
+        '<div style="display:flex; gap:8px; flex-wrap:wrap;">' +
+          '<button type="button" class="btn btn-primary btn-sm qsub-approve" data-id="' + escapeAttrAdmin(x.id) + '" data-text="' + escapeAttrAdmin(x.quote_text) + '" data-author="' + escapeAttrAdmin(x.author || who) + '">Add to Daily Inspiration</button>' +
+          '<button type="button" class="btn btn-ghost btn-sm qsub-reject" data-id="' + escapeAttrAdmin(x.id) + '">Not now</button>' +
+        '</div></div>';
+    }).join("");
+    el.querySelectorAll(".qsub-approve").forEach(function (b) {
+      b.addEventListener("click", async function () {
+        var msg = document.getElementById("quoteSubMsg"); msg.className = "form-msg";
+        b.disabled = true;
+        var ins = await window.sb.from("quotes").insert({ quote_text: b.getAttribute("data-text"), author: b.getAttribute("data-author") || null, is_active: true });
+        if (ins.error) { b.disabled = false; msg.textContent = "Couldn't add it: " + (ins.error.message || "try again"); msg.className = "form-msg show error"; return; }
+        await window.sb.from("quote_submissions").update({ status: "approved" }).eq("id", b.getAttribute("data-id"));
+        await loadQuoteSubmissions(); await loadQuotes();
+      });
+    });
+    el.querySelectorAll(".qsub-reject").forEach(function (b) {
+      b.addEventListener("click", async function () {
+        b.disabled = true;
+        await window.sb.from("quote_submissions").update({ status: "rejected" }).eq("id", b.getAttribute("data-id"));
+        await loadQuoteSubmissions();
+      });
+    });
+  }
+
   async function loadQuotes() {
     var el = document.getElementById("quoteList");
     var summaryEl = document.getElementById("quoteSummary");
@@ -2834,6 +2884,7 @@ var REASON_CHIPS_MEDIA = [
       if (tab === "videos") loadRecentVideos();
       else if (tab === "photos-feed") loadRecentPhotos();
       else if (tab === "photos-profile") loadProfilePhotos();
+      else if (tab === "quotes") loadQuoteSubmissions();
     } catch (e) { /* the list that was already on screen stays */ }
   });
   // -------------------------------------------------------------------------
