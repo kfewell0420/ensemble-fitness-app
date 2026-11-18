@@ -1731,6 +1731,13 @@ var REASON_CHIPS_MEDIA = [
 
   // ---- Quote Voiceover Library (Ken curates quotes; members record their -
   // ---- own reading of one, building a library of voices) -----------------
+  // Kind, on-brand notes for a quote that isn't used (Ken, Nov 2026: a rejection always carries a reason, in our voice).
+  var REASON_CHIPS_QUOTE = [
+    "Thank you for sharing this. We are building Daily Inspiration around lines that lift people up and point toward strength, hope and showing up. Would you try another one in that spirit?",
+    "We love the heart behind this. Could you shorten it to one clear line? Short and powerful reads best on the Daily Inspiration page.",
+    "Thanks for sending this. We keep Daily Inspiration focused on fitness, health and positive growth, so this one is not the right fit right now. We would love to see another from you.",
+    "This one is close to a quote we already have. We would love a fresh one in your own words."
+  ];
   // ---- Quotes members send in (Nov 2026, Ken) ----------------------------
   async function loadQuoteSubmissions() {
     var el = document.getElementById("quoteSubList");
@@ -1749,8 +1756,8 @@ var REASON_CHIPS_MEDIA = [
         '<div style="font-style:italic; font-size:17px; line-height:1.45; margin-bottom:8px;">“' + escapeHtmlAdmin(x.quote_text) + '”</div>' +
         '<div class="card-sub" style="margin-bottom:10px;">From ' + escapeHtmlAdmin(who) + (x.author ? ' · credited to ' + escapeHtmlAdmin(x.author) : ' · credit to them') + ' · ' + escapeHtmlAdmin(new Date(x.created_at).toLocaleString()) + '</div>' +
         '<div style="display:flex; gap:8px; flex-wrap:wrap;">' +
-          '<button type="button" class="btn btn-primary btn-sm qsub-approve" data-id="' + escapeAttrAdmin(x.id) + '" data-text="' + escapeAttrAdmin(x.quote_text) + '" data-author="' + escapeAttrAdmin(x.author || who) + '">Add to Daily Inspiration</button>' +
-          '<button type="button" class="btn btn-ghost btn-sm qsub-reject" data-id="' + escapeAttrAdmin(x.id) + '">Not now</button>' +
+          '<button type="button" class="btn btn-primary btn-sm qsub-approve" data-id="' + escapeAttrAdmin(x.id) + '" data-user="' + escapeAttrAdmin(x.user_id) + '" data-text="' + escapeAttrAdmin(x.quote_text) + '" data-author="' + escapeAttrAdmin(x.author || who) + '">Add to Daily Inspiration</button>' +
+          '<button type="button" class="btn btn-ghost btn-sm qsub-reject" data-id="' + escapeAttrAdmin(x.id) + '" data-user="' + escapeAttrAdmin(x.user_id) + '">Not now</button>' +
         '</div></div>';
     }).join("");
     el.querySelectorAll(".qsub-approve").forEach(function (b) {
@@ -1759,14 +1766,27 @@ var REASON_CHIPS_MEDIA = [
         b.disabled = true;
         var ins = await window.sb.from("quotes").insert({ quote_text: b.getAttribute("data-text"), author: b.getAttribute("data-author") || null, is_active: true });
         if (ins.error) { b.disabled = false; msg.textContent = "Couldn't add it: " + (ins.error.message || "try again"); msg.className = "form-msg show error"; return; }
-        await window.sb.from("quote_submissions").update({ status: "approved" }).eq("id", b.getAttribute("data-id"));
+        var okNote = "Great news! Your quote was chosen for Daily Inspiration. Thank you for lifting others up.";
+        await window.sb.from("quote_submissions").update({ status: "approved", reviewer_note: okNote, reviewed_at: new Date().toISOString() }).eq("id", b.getAttribute("data-id"));
+        try { await window.sb.rpc("send_removal_notice", { p_recipient: b.getAttribute("data-user"), p_text: okNote }); } catch (e) { /* the note still shows under Your quotes */ }
         await loadQuoteSubmissions(); await loadQuotes();
       });
     });
     el.querySelectorAll(".qsub-reject").forEach(function (b) {
       b.addEventListener("click", async function () {
+        var note = await askReason({
+          title: "Not this time",
+          sub: "The member sees this note under Your quotes and in their notifications. Pick a kind suggestion or write your own.",
+          chips: REASON_CHIPS_QUOTE,
+          initial: REASON_CHIPS_QUOTE[0],
+          okLabel: "Send note",
+          fallback: REASON_CHIPS_QUOTE[0]
+        });
+        if (note === null) return;
         b.disabled = true;
-        await window.sb.from("quote_submissions").update({ status: "rejected" }).eq("id", b.getAttribute("data-id"));
+        var up = await window.sb.from("quote_submissions").update({ status: "rejected", reviewer_note: note, reviewed_at: new Date().toISOString() }).eq("id", b.getAttribute("data-id"));
+        if (up.error) { b.disabled = false; var m2 = document.getElementById("quoteSubMsg"); m2.textContent = "Couldn't save that: " + (up.error.message || "try again"); m2.className = "form-msg show error"; return; }
+        try { await window.sb.rpc("send_removal_notice", { p_recipient: b.getAttribute("data-user"), p_text: ("About your quote: " + note).slice(0, 300) }); } catch (e) { /* the note still shows under Your quotes */ }
         await loadQuoteSubmissions();
       });
     });

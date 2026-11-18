@@ -45,6 +45,9 @@
   .ql-mine { margin-top: 22px; }
   .ql-mine h3 { font-size: 15px; margin: 0 0 8px; }
   .ql-mine-row { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-top: 1px solid rgba(255,255,255,0.1); font-size: 14px; }
+  .ql-mine-wrap { display: block; }
+  .ql-mine-top { display: flex; justify-content: space-between; gap: 12px; }
+  .ql-note { margin-top: 6px; padding: 9px 12px; border-radius: 12px; background: rgba(255,255,255,0.06); font-size: 13px; line-height: 1.45; opacity: .92; }
   .ql-mine-row em { flex: 1; font-style: italic; opacity: .9; }
   .ql-mine-row span { flex: 0 0 auto; font-size: 12px; font-weight: 700; opacity: .8; }
   .app-nav {
@@ -202,13 +205,14 @@
   });
   async function qlLoadMine() {
     if (!currentUser) return;
-    var r = await window.sb.from("quote_submissions").select("id, quote_text, status, created_at")
+    var r = await window.sb.from("quote_submissions").select("id, quote_text, status, created_at, reviewer_note")
       .eq("user_id", currentUser.id).order("created_at", { ascending: false }).limit(10);
     var box = document.getElementById("qlMine"), list = document.getElementById("qlMineList");
     if (r.error || !r.data || !r.data.length) { box.hidden = true; return; }
     box.hidden = false;
     list.innerHTML = r.data.map(function (x) {
-      return '<div class="ql-mine-row"><em>“' + escapeHtml(x.quote_text) + '”</em><span>' + escapeHtml(QL_STATUS[x.status] || x.status) + '</span></div>';
+      return '<div class="ql-mine-row ql-mine-wrap"><div class="ql-mine-top"><em>“' + escapeHtml(x.quote_text) + '”</em><span>' + escapeHtml(QL_STATUS[x.status] || x.status) + '</span></div>' +
+        (x.reviewer_note && x.status !== "pending" ? '<div class="ql-note">' + escapeHtml(x.reviewer_note) + '</div>' : '') + '</div>';
     }).join("");
   }
   document.getElementById("qlSend").addEventListener("click", async function () {
