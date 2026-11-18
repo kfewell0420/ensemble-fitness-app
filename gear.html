@@ -112,6 +112,8 @@
   .gear-count { font-size: 12px; color: var(--faint-invert); margin-bottom: 8px; }
   .gear-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 10px; align-items: start; }
   .gear-grid .empty-state { grid-column: 1 / -1; }
+  /* Ken, Nov 2026: always 3 across on phones (Android was showing 2). */
+  @media (max-width: 720px) { .gear-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
   .gear-tile {
     display: flex; flex-direction: column; text-align: left; padding: 0; cursor: pointer;
     background: #161a22; border: 1px solid rgba(255,255,255,0.1); border-radius: 10px;
