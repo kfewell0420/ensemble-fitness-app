@@ -72,6 +72,8 @@
 
   function destinationFor(row) {
     // Oct 28 (Ken): a comment notification opens your Comments list (see who said it, reply, tap their photo); a message opens Messages.
+    // Nov 2026 (Ken): the "new quote to review" alert (sent to admins only) opens the Quote Library tab of the admin page.
+    if (row.type === "removal" && /^New quote to review/.test(String(row.preview || ""))) return "https://app.ensemblefitness.com/admin.html?tab=quotes";
     if (row.type === "removal") return "profile.html";
     // Nov 2026 (Ken): a comment or a heart/thumbs-up opens the actual post (feed.html?post=<id>); older rows with no post fall back as before.
     if (row.type === "comment") return row.media_id ? "feed.html?post=" + encodeURIComponent(row.media_id) : "profile.html#comments";
