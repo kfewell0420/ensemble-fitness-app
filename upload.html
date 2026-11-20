@@ -4091,6 +4091,7 @@
   window.efIOSAccept = function (a) {
     try {
       var ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+      if (ios && a === "audio/*") return "";   // Nov 2026: iPhone song picker shows every file (nothing greyed out); the change handler below checks the pick
       return (ios && a === "video/*") ? "video/mp4" : a;
     } catch (e) { return a; }
   };
@@ -5571,6 +5572,19 @@
   fileInput.addEventListener("change", function () {
     var files = Array.prototype.slice.call(fileInput.files || []);
     var first = files[0] || null;
+    // Nov 2026: on iPhone the song/recording picker no longer greys files out, so a wrong pick (a video, a photo, a PDF) is caught here.
+    var pkNow = pickedCategoryKey();
+    if (first && (pkNow === "song" || pkNow === "message") && fileKind(first) !== "audio") {
+      var badExt = getExt(first.name);
+      selectedFile = null;
+      showMsg(document.getElementById("uploadMsg"), "That file" + (badExt ? " (." + badExt + ")" : "") + " isn\u2019t an audio file. Please choose an MP3, M4A or WAV song.", "error");
+      fileInput.value = "";
+      dropzoneLabel.textContent = CATEGORY_META[pkNow] ? CATEGORY_META[pkNow].placeholder : "Click to choose a file";
+      uploadBtn.disabled = true;
+      uploadBtn.textContent = "\u2191 Select a file above";
+      updateTrimVisibility(); updateNarrationVisibility(); updateMusicVisibility(); updateMoreOptionsBoxVisibility();
+      return;
+    }
     var firstIsVideo = !!first && fileKind(first) === "video";
     // Videos: take them all (up to 10), in the order picked. Anything else: just the first file, as before.
     var allVideos = firstIsVideo ? files.filter(function (f) { return fileKind(f) === "video"; }) : [];
