@@ -888,23 +888,26 @@ window.efEnsureSound = function (video, audio, keepOriginal) {
       } catch (e) { resolve(null); }
     });
   }
+  // Nov 2026 (artist ask): optional ISRC code on each song. Stored without hyphens (12 characters), shown as CC-XXX-YY-NNNNN.
+  function cleanIsrc(v) { return String(v || "").replace(/[\s-]/g, "").toUpperCase(); }
+  function isrcOk(v) { return /^[A-Z]{2}[A-Z0-9]{3}[0-9]{7}$/.test(v); }
+  function formatIsrc(v) { v = cleanIsrc(v); return v.length === 12 ? v.slice(0, 2) + "-" + v.slice(2, 5) + "-" + v.slice(5, 7) + "-" + v.slice(7) : v; }
   var MM_GENRES = ["Motivational", "Gospel / Inspirational", "Hip-Hop", "R&B", "Pop", "Rock", "High-Energy Cardio", "Chill / Stretch", "Other"];
   async function loadMyMusic() {
     var card = document.getElementById("myMusicCard");
     var list = document.getElementById("myMusicList");
-    var res = await window.sb.from("tracks")
-      .select("id, title, tagline, genre, storage_path, duration_seconds")
-      .eq("submitted_by", currentUser.id).eq("is_active", true)
-      .order("created_at", { ascending: false });
-    if (res.error) {
-      res = await window.sb.from("tracks")
-        .select("id, title, tagline, storage_path, duration_seconds")
+    var res = null;
+    var colSets = [
+      "id, title, tagline, genre, isrc, storage_path, duration_seconds",   // Nov 2026: isrc added (falls back if sql/track-isrc.sql isn't run yet)
+      "id, title, tagline, genre, storage_path, duration_seconds",
+      "id, title, tagline, storage_path, duration_seconds",
+      "id, title, storage_path, duration_seconds"
+    ];
+    for (var ci = 0; ci < colSets.length; ci++) {
+      res = await window.sb.from("tracks").select(colSets[ci])
         .eq("submitted_by", currentUser.id).eq("is_active", true)
         .order("created_at", { ascending: false });
-    }
-    if (res.error) {
-      res = await window.sb.from("tracks").select("id, title, storage_path, duration_seconds")
-        .eq("submitted_by", currentUser.id).eq("is_active", true).order("created_at", { ascending: false });
+      if (!res.error) break;
     }
     var rows = (res && !res.error && res.data) || [];
     if (!rows.length) { card.style.display = "none"; return; }
@@ -928,6 +931,7 @@ window.efEnsureSound = function (video, audio, keepOriginal) {
       var sub = [];
       if (t.duration_seconds) sub.push(formatSongTime(t.duration_seconds));
       if (t.genre) sub.push(t.genre);
+      if (t.isrc) sub.push("ISRC " + formatIsrc(t.isrc));
       if (t.tagline) sub.push("“" + t.tagline + "”");
       row.querySelector(".mm-sub").textContent = sub.join(" · ");
       row.querySelector(".mm-play").addEventListener("click", async function () {
@@ -951,11 +955,13 @@ window.efEnsureSound = function (video, audio, keepOriginal) {
         '<label>Song title</label><input type="text" class="mm-title" maxlength="120" />' +
         '<label>Category</label><select class="mm-genre"><option value="">Choose a category…</option>' + MM_GENRES.map(function (g) { return '<option>' + g.replace(/&/g, "&amp;") + '</option>'; }).join("") + '</select>' +
         '<label>Tagline (optional)</label><input type="text" class="mm-tagline" maxlength="140" placeholder="A short, motivating line about the song" />' +
+        '<label>ISRC code (optional)</label><input type="text" class="mm-isrc" maxlength="17" autocapitalize="characters" autocomplete="off" placeholder="e.g. US-ABC-26-00001" />' +
         '<label>Replace the audio file (optional)</label><input type="file" class="mm-file" accept="audio/*,.mp3,.m4a,.aac,.wav,.ogg,.flac" />' +
         '<div style="display:flex; gap:8px; margin-top:12px;"><button type="button" class="btn btn-primary btn-sm mm-save">Save</button>' +
         '<button type="button" class="btn btn-ghost btn-sm mm-cancel">Cancel</button></div>';
       row.querySelector(".mm-title").value = t.title || "";
       row.querySelector(".mm-tagline").value = t.tagline || "";
+      row.querySelector(".mm-isrc").value = formatIsrc(t.isrc || "");
       row.querySelector(".mm-genre").value = t.genre || "";
       row.querySelector(".mm-cancel").addEventListener("click", head);
       row.querySelector(".mm-save").addEventListener("click", save);
@@ -967,9 +973,11 @@ window.efEnsureSound = function (video, audio, keepOriginal) {
       var file = row.querySelector(".mm-file").files[0];
       function fail(text) { msg.textContent = text; msg.className = "form-msg mm-msg show error"; btn.disabled = false; btn.textContent = "Save"; }
       if (!title) return fail("Please give the song a title.");
+      var isrcVal = cleanIsrc(row.querySelector(".mm-isrc").value);
+      if (isrcVal && !isrcOk(isrcVal)) return fail("That ISRC code doesn\u2019t look right. It has 12 letters and numbers, like US-ABC-26-00001. Fix it or leave it blank.");
       btn.disabled = true; btn.textContent = file ? "Uploading…" : "Saving…";
       var genre = row.querySelector(".mm-genre").value;
-      var update = { title: title, tagline: tagline || null, genre: genre || null };
+      var update = { title: title, tagline: tagline || null, genre: genre || null, isrc: isrcVal || null };
       var newPath = null, oldPath = t.storage_path;
       if (file) {
         var ext = getExt(file.name);
@@ -983,6 +991,10 @@ window.efEnsureSound = function (video, audio, keepOriginal) {
         update.duration_seconds = await mmDuration(file);
       }
       var upd = await window.sb.from("tracks").update(update).eq("id", t.id).select("id");
+      if (upd.error && /isrc/.test(upd.error.message || "")) {
+        delete update.isrc; // sql/track-isrc.sql not run yet
+        upd = await window.sb.from("tracks").update(update).eq("id", t.id).select("id");
+      }
       if (upd.error && /tagline|genre/.test(upd.error.message || "")) {
         delete update.tagline; delete update.genre;
         upd = await window.sb.from("tracks").update(update).eq("id", t.id).select("id");
@@ -992,7 +1004,7 @@ window.efEnsureSound = function (video, audio, keepOriginal) {
         return fail(upd.error ? (upd.error.message || "Couldn't save.") : "Editing songs isn't switched on yet — please try again later.");
       }
       if (newPath) { try { await window.sb.storage.from("tracks").remove([oldPath]); } catch (e) {} }
-      t.title = title; t.tagline = tagline; if ("genre" in update) t.genre = genre;
+      t.title = title; t.tagline = tagline; if ("genre" in update) t.genre = genre; if ("isrc" in update) t.isrc = update.isrc;
       if (newPath) { t.storage_path = newPath; t.duration_seconds = update.duration_seconds; }
       head();
     }

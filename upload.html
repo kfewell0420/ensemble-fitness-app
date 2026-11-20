@@ -1364,6 +1364,9 @@
         <input type="text" id="songTitle" name="songTitle" placeholder="e.g. Morning Light" maxlength="120" />
         <label for="songGenre" class="song-only" style="margin-top:12px; display:block;">Category</label>
         <select id="songGenre" class="song-only"><option value="">Choose a category…</option><option>Motivational</option><option>Gospel / Inspirational</option><option>Hip-Hop</option><option>R&amp;B</option><option>Pop</option><option>Rock</option><option>High-Energy Cardio</option><option>Chill / Stretch</option><option>Other</option></select>
+        <label for="songIsrc" class="song-only" style="margin-top:12px; display:block;">ISRC code (optional)</label>
+        <input type="text" id="songIsrc" class="song-only" maxlength="17" autocapitalize="characters" autocomplete="off" placeholder="e.g. US-ABC-26-00001" />
+        <div class="song-only" style="font-size:12.5px; color:var(--faint-invert); margin-top:4px;">The 12-character code for this recording, if you have one. Only you and our team see it.</div>
         <span class="field-hint song-only">Members filter the music list by category, so pick the closest fit.</span>
         <span class="field-hint msg-only" style="display:none;">Your message goes into the Positive Message library right away, so anyone can pick it to play behind their video. Keep it short and uplifting.</span>
         <span class="field-hint song-only">Your song publishes to the Music Library right away under your display name — no waiting on approval. Our team reviews new songs regularly to make sure they fit the community's motivational vibe.</span>
@@ -1983,6 +1986,10 @@
     } catch (e) { socialShareOn = false; }
     updateSocialShareRow();
   })();
+  // Nov 2026 (artist ask): optional ISRC code on each song. Stored without hyphens (12 characters), shown as CC-XXX-YY-NNNNN.
+  function cleanIsrc(v) { return String(v || "").replace(/[\s-]/g, "").toUpperCase(); }
+  function isrcOk(v) { return /^[A-Z]{2}[A-Z0-9]{3}[0-9]{7}$/.test(v); }
+  function formatIsrc(v) { v = cleanIsrc(v); return v.length === 12 ? v.slice(0, 2) + "-" + v.slice(2, 5) + "-" + v.slice(5, 7) + "-" + v.slice(7) : v; }
   function fileKind(file) {
     if (file.type.indexOf("video") === 0) return "video";
     if (file.type.indexOf("audio") === 0) return "audio";
@@ -5736,6 +5743,11 @@
       document.getElementById("songGenre").focus();
       return;
     }
+    if (precheckKind === "audio" && !messageMode && cleanIsrc(document.getElementById("songIsrc").value) && !isrcOk(cleanIsrc(document.getElementById("songIsrc").value))) {
+      showMsg(msg, "That ISRC code doesn\u2019t look right. It has 12 letters and numbers, like US-ABC-26-00001. Fix it or leave it blank.", "error");
+      document.getElementById("songIsrc").focus();
+      return;
+    }
 
     if (precheckKind === "video" && ((mediaRecorder && mediaRecorder.state === "recording") || voiceFinalizing)) {
       // Nov 2026 (Ken): people finish talking and tap Post. That now ends the voiceover for them, saves it, and carries on posting.
@@ -5788,9 +5800,14 @@
           is_active: true,
           is_independent_artist: !messageMode, // a Positive Message is not an artist song: no tips, no payouts
           submitted_by: currentUser.id,
-          genre: messageMode ? "Positive Message" : (document.getElementById("songGenre").value || null)
+          genre: messageMode ? "Positive Message" : (document.getElementById("songGenre").value || null),
+          isrc: messageMode ? null : (cleanIsrc(document.getElementById("songIsrc").value) || null)
         };
         var { error: trackInsertError } = await window.sb.from("tracks").insert(trackRow);
+        if (trackInsertError && /isrc/i.test(trackInsertError.message || "")) {
+          delete trackRow.isrc; // sql/track-isrc.sql not run yet — the song still publishes
+          ({ error: trackInsertError } = await window.sb.from("tracks").insert(trackRow));
+        }
         if (trackInsertError && /genre/i.test(trackInsertError.message || "")) {
           delete trackRow.genre; // sql/track-genre.sql not run yet — the song still publishes
           ({ error: trackInsertError } = await window.sb.from("tracks").insert(trackRow));
@@ -5803,6 +5820,7 @@
         dropzoneLabel.textContent = CATEGORY_META.song.placeholder;
         songTitleField.value = "";
         document.getElementById("songGenre").value = "";
+        document.getElementById("songIsrc").value = "";
         document.getElementById("songTitleField").style.display = "none";
         document.getElementById("captionField").style.display = "block";
         uploadBtn.textContent = "↑ Select a file above";
